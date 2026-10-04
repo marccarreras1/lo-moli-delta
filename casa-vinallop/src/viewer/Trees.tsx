@@ -30,9 +30,9 @@ export function leafTexture(kind: TreeKind): THREE.Texture {
   const g = c.getContext('2d')!;
   const r = rng(kind === 'olivo' ? 7 : 19);
   const pal = kind === 'olivo'
-    ? ['#7d8a62', '#8f9b74', '#6f7c55', '#a3ad8c', '#b8bfa3', '#66734d']
-    : ['#3e5a2a', '#4b6a31', '#35502a', '#5a7a3a', '#2f4724', '#6a8a45'];
-  const n = kind === 'olivo' ? 420 : 260;
+    ? ['#a3ad92', '#b4bca4', '#96a185', '#c6ccb8', '#d4d8c8', '#8a9678']
+    : ['#2f5a1e', '#3c6d26', '#264c18', '#4d8030', '#1f3d14', '#5f9038'];
+  const n = kind === 'olivo' ? 520 : 380;
   for (let i = 0; i < n; i++) {
     // las hojas se concentran hacia el centro de la tarjeta (borde irregular)
     const a = r() * Math.PI * 2;
@@ -119,13 +119,15 @@ export function soilTexture(): THREE.Texture {
   c.width = c.height = S;
   const g = c.getContext('2d')!;
   const r = rng(23);
-  g.fillStyle = '#ad7a57';
+  // tierra salmón clara (fotos de dron), con zonas de grava gris
+  g.fillStyle = '#c5a487';
   g.fillRect(0, 0, S, S);
   // manchas grandes (humedad, tierra removida)
   for (let i = 0; i < 70; i++) {
     const x = r() * S, y = r() * S, rad = 20 + r() * 70;
     const grd = g.createRadialGradient(x, y, 0, x, y, rad);
-    const tone = r() < 0.5 ? '150,100,70' : '190,140,100';
+    const k = r();
+    const tone = k < 0.35 ? '182,138,108' : k < 0.75 ? '216,196,172' : '176,172,164';
     grd.addColorStop(0, `rgba(${tone},0.35)`);
     grd.addColorStop(1, `rgba(${tone},0)`);
     g.fillStyle = grd;
@@ -141,17 +143,17 @@ export function soilTexture(): THREE.Texture {
   // piedras claras y oscuras
   for (let i = 0; i < 900; i++) {
     const x = r() * S, y = r() * S, s = 0.8 + r() * 3.2;
-    const v = r() < 0.6 ? 200 + r() * 40 : 110 + r() * 30;
-    g.fillStyle = `rgba(${v},${v - 12},${v - 25},${0.6 + r() * 0.4})`;
+    const v = r() < 0.7 ? 205 + r() * 40 : 120 + r() * 30;
+    g.fillStyle = `rgba(${v},${v - 6},${v - 12},${0.55 + r() * 0.4})`;
     g.beginPath();
     g.ellipse(x, y, s, s * (0.6 + r() * 0.4), r() * 3, 0, Math.PI * 2);
     g.fill();
   }
   // matas de hierba seca y algo verde
-  for (let i = 0; i < 160; i++) {
+  for (let i = 0; i < 90; i++) {
     const x = r() * S, y = r() * S;
-    const green = r() < 0.3;
-    g.strokeStyle = green ? 'rgba(110,125,70,0.7)' : 'rgba(190,165,105,0.7)';
+    const green = r() < 0.12;
+    g.strokeStyle = green ? 'rgba(115,125,80,0.6)' : 'rgba(196,176,128,0.6)';
     g.lineWidth = 0.8;
     for (let k = 0; k < 7; k++) {
       g.beginPath();
@@ -212,7 +214,7 @@ export function buildTree(kind: TreeKind, seed: number, width: number, height: n
   const top = new THREE.Vector3(mid.x + (r() - 0.5) * 0.35, trunkH, mid.z + (r() - 0.5) * 0.35);
   wood.push(limb(base, mid, trunkR * 1.25, trunkR, 9), limb(mid, top, trunkR, trunkR * 0.85, 9));
   const canopyR = width / 2;
-  const leafSize = olive ? 0.9 : 1.15;
+  const leafSize = olive ? 1.1 : 1.45;
   const grow = (from: THREE.Vector3, dir: THREE.Vector3, len: number, rad: number, depth: number) => {
     const to = from.clone().add(dir.clone().multiplyScalar(len));
     // la copa no pasa del contorno previsto
@@ -238,7 +240,8 @@ export function buildTree(kind: TreeKind, seed: number, width: number, height: n
   const firstLen = olive ? Math.min(canopyR, height - trunkH) * 0.55 : canopyR * 0.5;
   grow(top, new THREE.Vector3(0, 1, 0), firstLen, trunkR * 0.8, 3);
   // relleno de la copa: racimos repartidos por un elipsoide para que no se vea hueca
-  const fill = olive ? 26 : 70;
+  // copas densas como en las fotos de dron: el olivo casi no deja ver el interior y el algarrobo es una bóveda cerrada
+  const fill = olive ? 34 : 170;
   const cy = trunkH + (height - trunkH) * (olive ? 0.55 : 0.62);
   const ry = (height - trunkH) * (olive ? 0.42 : 0.3);
   for (let i = 0; i < fill; i++) {
@@ -268,10 +271,29 @@ export function buildTree(kind: TreeKind, seed: number, width: number, height: n
 export function leafMaterial(kind: TreeKind) {
   return new THREE.MeshStandardMaterial({
     map: leafTexture(kind), alphaTest: 0.45, side: THREE.DoubleSide, roughness: kind === 'olivo' ? 0.75 : 0.65,
-    color: kind === 'olivo' ? '#e6ebdc' : '#ffffff',
+    color: kind === 'olivo' ? '#f4f6ee' : '#e8efe2',
   });
 }
 
 export function barkMaterial(kind: TreeKind) {
   return new THREE.MeshStandardMaterial({ map: barkTexture(kind), roughness: 0.95 });
+}
+
+/** Mancha de sombra suave (gradiente radial) para las sombras lejanas de los árboles. */
+export function blobTexture(): THREE.Texture {
+  const hit = texCache.get('mancha');
+  if (hit) return hit;
+  const S = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = S;
+  const g = c.getContext('2d')!;
+  const grd = g.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+  grd.addColorStop(0, 'rgba(0,0,0,1)');
+  grd.addColorStop(0.55, 'rgba(0,0,0,0.85)');
+  grd.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = grd;
+  g.fillRect(0, 0, S, S);
+  const t = new THREE.CanvasTexture(c);
+  texCache.set('mancha', t);
+  return t;
 }

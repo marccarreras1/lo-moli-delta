@@ -23,7 +23,7 @@
  * boceto se toman como caras interiores de los muros (con ese criterio la encimera
  * sale de 0,60 m y el sofá de 0,85 m de fondo): Y = 0,30 + fracción × 4,10 m.
  */
-import { FOTOS_PARCELA, PARCELA } from './parcela';
+import { FOTOS_PARCELA, PARCELA, VISTAS_DRON } from './parcela';
 import type { CameraPreset, DataStatus, DesignReference, Furniture, Opening, Outdoor, PendantGroup, ProjectData, Room, Trace, Vec2, Wall } from './types';
 
 const r2 = (x: number) => Math.round(x * 100) / 100;
@@ -247,7 +247,7 @@ const traces: Trace[] = [
 
 // ---------- exterior: solera en L y comedor bajo el algarrobo (decisiones confirmadas; medidas propuestas) ----------
 /** algarrobo: posición aproximada sobre la vista cenital (src/data/parcela.ts) */
-const ALGARROBO: Vec2 = [19.0, 0.6];
+const ALGARROBO: Vec2 = [18.9, 1.0];
 /** solera en L: 3 m delante (frontal B) y 4 m en el lateral del algarrobo (variante editable, dentro del rango 3–4 m) */
 const SOL_FRENTE = 3;
 const SOL_LATERAL = 4;
@@ -313,6 +313,7 @@ const views: CameraPreset[] = [
   view({ id: 'v13b-volta', label: '13b · Vigas y volta desde la zona de día', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.2, 2.7, 1.6], target: [10.2, 2.46, 5.6], fov: 60 }),
   view({ id: 'v14-sin-cubierta', label: '14 · Vista sin cubierta', group: 'exterior', hideRoof: true, position: [9.2, 12, 25], target: [9.2, 3.2, 0], fov: 40 }),
   view({ id: 'v15-corte', label: '15 · Corte longitudinal', group: 'exterior', position: [8.9, -22, 3.4], target: [8.9, 2.46, 3.1], fov: 34, section: true }),
+  ...VISTAS_DRON.map(view),
 ];
 
 // ---------- referencias de diseño (fotos adjuntadas por la propiedad; los enlaces solo indican la procedencia) ----------
@@ -460,7 +461,7 @@ const PROJECT: ProjectData = {
   ],
   discrepancies: [
     'Medidas: el informe da 16,33 × 5,22 m exteriores; el modelo anterior usaba 15,70 × 5,00 m (cadena del boceto como exterior y «5 de ancho»). Se adopta el informe y la cadena pasa a ser interior.',
-    'Superficie: 79,48 m² construidos del informe frente a 85,24 m² del rectángulo de 16,33 × 5,22 m.',
+    'Superficie: 79,48 m² construidos del informe frente a 85,24 m² del rectángulo de 16,33 × 5,22 m. Las fotos de dron sugieren además que el volumen principal actual es más profundo que los anexos: pendiente de contrastar.',
     'Cubierta: plana (propiedad y presupuesto, viguetas con revoltón) frente a inclinada de panel sándwich (informe).',
     'Forjado del altell: el presupuesto lo describe con vigas de madera y tablero atornillado; el techo confirmado de la planta baja es de vigas color cemento con volta: hay que decidir si el altell lleva otro sistema.',
     'Ventanal: «7 m» en los bocetos frente a 9 m solicitados; el presupuesto ya incluye un zuncho 40 × 70.',

@@ -156,6 +156,8 @@ export interface Opening {
    * la opción de ventanal; el resto, si su clave está en las aberturas activas)
    */
   variantKey?: string;
+  /** color propio de la carpintería (p. ej. puertas de madera o metálicas del estado actual) */
+  finishColor?: string;
   /** contraventanas de madera por la cara exterior (abiertas contra la fachada) */
   shutters?: boolean;
   status: DataStatus;

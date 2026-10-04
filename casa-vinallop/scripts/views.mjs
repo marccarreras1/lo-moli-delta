@@ -15,6 +15,7 @@ const filter = args.find((a) => !a.startsWith('--')) ?? '';
 const ambience = (args.find((a) => a.startsWith('--ambiente=')) ?? '--ambiente=dia').split('=')[1];
 const options = JSON.parse((args.find((a) => a.startsWith('--opciones=')) ?? '--opciones={}').slice(11));
 const suffix = (args.find((a) => a.startsWith('--sufijo=')) ?? '--sufijo=').split('=')[1];
+const model = (args.find((a) => a.startsWith('--modelo=')) ?? '--modelo=vinallop').split('=')[1];
 
 const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'pipe', detached: true });
 const stop = () => { try { process.kill(-server.pid); } catch { /* ya detenido */ } };
@@ -33,6 +34,8 @@ page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 await page.goto(`http://localhost:${PORT}/?diagnostico`);
 await page.waitForFunction(() => document.querySelector('canvas') && !document.querySelector('.state-center.loading'), null, { timeout: 60000 });
+await page.evaluate((m) => window.__store.getState().setVisual('modelSource', m), model);
+await page.waitForTimeout(3000);
 await page.evaluate(({ ambience, options }) => {
   const s = window.__store.getState();
   s.setVisual('helpDismissed', true);

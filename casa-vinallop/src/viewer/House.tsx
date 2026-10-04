@@ -393,6 +393,8 @@ function corrugatedTexture() {
  */
 function RoofSegments({ segments, mats }: { segments: RoofSegment[]; mats: MaterialSet }) {
   const base = useMemo(() => corrugatedTexture(), []);
+  const trim = useMemo(() => new THREE.MeshStandardMaterial({ color: '#b46a4a', roughness: 0.9 }), []);
+  useEffect(() => () => trim.dispose(), [trim]);
   const fibro = useMemo(() => segments.map((sg) => {
     const t = base.clone();
     t.repeat.set((sg.rect[2] - sg.rect[0]) / 0.18, 1);
@@ -418,6 +420,19 @@ function RoofSegments({ segments, mats }: { segments: RoofSegment[]; mats: Mater
               <boxGeometry args={[x1 - x0 + 0.1, t, len]} />
             </mesh>
             {gx.map((x) => <SegmentGable key={x} x={x} t={gt} y0={y0} y1={y1} hy0={sg.hy0} hy1={sg.hy1} mat={mats.facade} />)}
+            {sg.material === 'fibrocemento' && (
+              <group>
+                {/* remate de piezas de terracota en los bordes laterales y en el borde alto (fotos de dron) */}
+                {[x0 + 0.06, x1 - 0.06].map((x) => (
+                  <mesh key={x} position={[x, (sg.hy0 + sg.hy1) / 2 + t + 0.03, (y0 + y1) / 2]} rotation={[p, 0, 0]} material={trim} castShadow>
+                    <boxGeometry args={[0.16, 0.06, len]} />
+                  </mesh>
+                ))}
+                <mesh position={[(x0 + x1) / 2, sg.hy0 + t + 0.03, y0 - sg.overhang + 0.06]} material={trim} castShadow>
+                  <boxGeometry args={[x1 - x0 + 0.1, 0.06, 0.16]} />
+                </mesh>
+              </group>
+            )}
           </group>
         );
       })}

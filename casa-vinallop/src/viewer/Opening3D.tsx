@@ -1,5 +1,5 @@
 import { useFrame } from '@react-three/fiber';
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Opening, Vec2, Wall } from '../data/types';
 import { pointOnWall, wallDir, wallNormal } from '../model/geometry';
 import { FRAME, LEAF_T, leafPose, type LeafPose } from '../model/openings';
@@ -23,6 +23,13 @@ export function Opening3D({ o, w, mats, center, fraction, selected, onSelect, pl
     setF(cur.current);
   });
 
+  const own = useMemo(() => {
+    if (!o.finishColor) return null;
+    const m = mats.carpentry.clone();
+    m.color.set(o.finishColor);
+    return m;
+  }, [o.finishColor, mats.carpentry]);
+  useEffect(() => () => own?.dispose(), [own]);
   const d = wallDir(w);
   const n = wallNormal(w);
   const mid = pointOnWall(w, o.offset + o.width / 2);
@@ -58,7 +65,7 @@ export function Opening3D({ o, w, mats, center, fraction, selected, onSelect, pl
     e.stopPropagation();
     onSelect();
   };
-  const frameMat = selected ? mats.selection : mats.carpentry;
+  const frameMat = selected ? mats.selection : own ?? mats.carpentry;
   // la puerta de entrada se coloca junto a la cara interior: el hueco exterior queda profundo y en sombra
   const inset = o.entrance ? inward * (w.thickness / 2 - 0.07) : 0;
   const depth = o.entrance ? 0.12 : w.thickness * 0.6;
@@ -94,7 +101,7 @@ export function Opening3D({ o, w, mats, center, fraction, selected, onSelect, pl
         const start = pointOnWall(w, o.offset + FRAME + leaf.s, leaf.depth + inset);
         const c: Vec2 = [start[0] + (u[0] * leaf.width) / 2, start[1] + (u[1] * leaf.width) / 2];
         const rot = -Math.atan2(u[1], u[0]);
-        if (isDoor) return <DoorLeaf key={i} c={c} y={zMid} rot={rot} width={leaf.width - 0.01} height={leafH} planks={planks} mats={mats} handleLeft={leaf.angle > 90} />;
+        if (isDoor) return <DoorLeaf key={i} c={c} y={zMid} rot={rot} width={leaf.width - 0.01} height={leafH} planks={planks} mats={own ? { ...mats, carpentry: own } : mats} handleLeft={leaf.angle > 90} />;
         const p = 0.035;
         return (
           <group key={i} position={[c[0], zMid, c[1]]} rotation={[0, rot, 0]}>

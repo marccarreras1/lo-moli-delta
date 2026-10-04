@@ -7,7 +7,7 @@
  * grava; un algarrobo grande junto al extremo derecho de la casa (lado del frontal A);
  * solera de hormigón a lo largo del frontal B (las puertas) donde se aparca.
  */
-import type { Site } from './types';
+import type { CameraPreset, Site } from './types';
 
 export const FOTOS_PARCELA = {
   id: 'fotos-parcela',
@@ -18,13 +18,20 @@ export const FOTOS_PARCELA = {
 export const PARCELA: Site = {
   status: 'interpretado',
   sourceId: FOTOS_PARCELA.id,
-  note: 'Entorno aproximado a partir de las fotos (no es un levantamiento). Olivos en retícula de ≈7 m con una posición ligeramente irregular; algarrobo y solera situados a ojo sobre la vista cenital.',
-  ground: '#b98962',
-  olives: { spacing: 7, extent: 46, clear: [-4.5, -4, 21.5, 10.5], seed: 11 },
+  note: 'Entorno aproximado a partir de las fotos de dron (no es un levantamiento). Olivos grandes (copas de 6–7 m) en retícula de ≈9 m que llega a 2–3 m de la casa; algarrobo grande junto a la habitación pequeña, cubriendo en parte su cubierta; solera de hormigón a lo largo del frontal B.',
+  ground: '#c49c80',
+  olives: { spacing: 9, extent: 70, clear: [-1.8, -1.8, 18.1, 7.0], seed: 11 },
   trees: [
-    { id: 'algarrobo', label: 'Algarrobo', c: [19.0, 0.6], r: 3.8, h: 6.2, note: 'Árbol grande de hoja perenne junto al extremo derecho, hacia el frontal A (vista cenital y oblicua).' },
+    { id: 'algarrobo', label: 'Algarrobo', c: [18.9, 1.0], r: 5.4, h: 8.0, note: 'Árbol grande de hoja perenne y copa densa junto al extremo derecho, hacia el frontal A; su copa cubre en parte la habitación pequeña (vistas de dron).' },
   ],
   pavements: [
     { id: 'solera', label: 'Solera de hormigón', rect: [-0.3, 5.22, 17.2, 7.8], note: 'Franja de hormigón de ≈2,5 m a lo largo del frontal B (vista cenital).' },
   ],
 };
+
+/** Vistas de dron como las fotos de la propiedad (mismas en el estado actual y en la reforma). */
+export const VISTAS_DRON: CameraPreset[] = [
+  { id: 'd01-dron-frontal', label: 'Dron · frontal B desde lo alto', group: 'exterior', fixed: true, position: [3.5, 25, 21], target: [9.6, 3.2, 0], fov: 46 },
+  { id: 'd02-dron-cenital', label: 'Dron · vista cenital', group: 'exterior', fixed: true, position: [9.4, 8.5, 40], target: [9.4, 2.6, 0], fov: 42 },
+  { id: 'd03-dron-lejana', label: 'Dron · olivar y entorno', group: 'exterior', fixed: true, position: [-6, 78, 46], target: [10, -6, 0], fov: 52 },
+];

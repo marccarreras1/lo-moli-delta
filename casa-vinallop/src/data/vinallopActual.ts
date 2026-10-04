@@ -23,7 +23,7 @@
  * Todo es INTERPRETADO (±0,3 m en planta y ±0,2 m en altura) salvo el muro del frontal B
  * (0,60 m, propiedad) y lo que se marca como pendiente. No hay medidas escritas del estado actual.
  */
-import { FOTOS_PARCELA, PARCELA } from './parcela';
+import { FOTOS_PARCELA, PARCELA, VISTAS_DRON } from './parcela';
 import type { Opening, ProjectData, Room, RoofSegment, Vec2, Wall } from './types';
 
 /** informe del arquitecto: 16,33 × 5,22 m exteriores */
@@ -51,6 +51,9 @@ const H = {
 };
 
 const F = FOTOS_PARCELA.id;
+/** colores de las carpinterías actuales (fotos de dron): madera marrón y chapa gris */
+const WOOD = '#6e4a32';
+const METAL = '#7f8489';
 const rect = (x0: number, y0: number, x1: number, y1: number): Vec2[] => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
 // espesores de la propiedad: frontal B 0,60 m y el resto 0,40 m; la posición de cada muro sale de las fotos
 const ext = { levelId: 'pb', thickness: T, kind: 'exterior' as const, status: 'interpretado' as const, sourceId: F };
@@ -73,16 +76,16 @@ const walls: Wall[] = [
   { ...ext, kind: 'tabique', id: 'muro-principal-habitacion', a: [X3, T], b: [X3, W - TB], height: H.principal.b },
 ];
 
-const door = (id: string, label: string, wallId: string, x0: number, x1: number, wallA: number, height: number, leaves: number, note: string): Opening => ({
-  id, label, wallId, kind: 'puerta', offset: Math.round((x0 - wallA) * 100) / 100, width: Math.round((x1 - x0) * 100) / 100, sill: 0, height,
+const door = (id: string, label: string, wallId: string, x0: number, x1: number, wallA: number, height: number, leaves: number, note: string, finishColor?: string): Opening => ({
+  id, finishColor, label, wallId, kind: 'puerta', offset: Math.round((x0 - wallA) * 100) / 100, width: Math.round((x1 - x0) * 100) / 100, sill: 0, height,
   system: { type: 'abatible', leaves, status: 'interpretado' }, status: 'interpretado', sourceId: F, note,
 });
 
 const openings: Opening[] = [
-  door('puerta-extremo', 'Puerta del volumen del extremo', 'b-extremo', k(0.85), k(1.55), h, 2.0, 1, 'Puerta metálica gris (vista oblicua).'),
-  door('puerta-anexo', 'Puerta del anexo', 'b-anexo', k(3.55), k(4.55), X1, 2.0, 2, 'Hueco con dos hojas abiertas hacia fuera: una metálica gris y otra de madera (vista oblicua).'),
-  door('puerta-madera', 'Puerta de madera (volumen principal)', 'b-principal', k(9.4), k(10.6), X2, 2.1, 2, 'Puerta de madera de dos hojas. Coincide aproximadamente con la puerta de entrada de 1,20 m de la reforma (9,80–11,00 m con las medidas del informe).'),
-  door('puerta-gris', 'Puerta de la habitación pequeña', 'b-habitacion', k(14.55), k(15.25), X3, 2.0, 1, 'Puerta metálica gris del extremo derecho (vista oblicua), en el volumen bajo de la habitación pequeña.'),
+  door('puerta-extremo', 'Puerta del volumen del extremo', 'b-extremo', k(0.85), k(1.55), h, 2.0, 1, 'Puerta metálica gris (vista oblicua).', METAL),
+  door('puerta-anexo', 'Puerta del anexo', 'b-anexo', k(3.55), k(4.55), X1, 2.0, 2, 'Hueco con dos hojas abiertas hacia fuera: una metálica gris y otra de madera (vista oblicua).', WOOD),
+  door('puerta-madera', 'Puerta de madera (volumen principal)', 'b-principal', k(9.4), k(10.6), X2, 2.1, 2, 'Puerta de madera de dos hojas. Coincide aproximadamente con la puerta de entrada de 1,20 m de la reforma (9,80–11,00 m con las medidas del informe).', WOOD),
+  door('puerta-gris', 'Puerta de la habitación pequeña', 'b-habitacion', k(14.55), k(15.25), X3, 2.0, 1, 'Puerta metálica gris del extremo derecho (vista oblicua), en el volumen bajo de la habitación pequeña.', METAL),
   {
     id: 'ventana-a', label: 'Ventana del frontal A', wallId: 'a-principal', kind: 'ventana', offset: k(5.4), width: 0.6, sill: 1.3, height: 0.6,
     system: null, status: 'pendiente', sourceId: F, note: 'Ventana pequeña vista desde el lado del frontal A; posición y tamaño sin comprobar.',
@@ -123,6 +126,7 @@ export const VINALLOP_ACTUAL: ProjectData = {
   traces: [],
   roofOptions: [],
   roofSegments,
+  views: VISTAS_DRON,
   site: PARCELA,
   measures: [
     { id: 'largo', label: 'Largo total', value: L, unit: 'm', decimals: 2, sourceId: 'boceto-planta-baixa', status: 'documentado', note: 'Se toma el de los bocetos (cadena de cotas).' },
@@ -148,6 +152,7 @@ export const VINALLOP_ACTUAL: ProjectData = {
   discrepancies: [
     'Sin corregir la perspectiva, la vista cenital da un largo de ≈12,7 m para el conjunto; se escala al largo de 16,33 m del informe manteniendo las proporciones.',
     'Superficie: 79,48 m² construidos (informe) frente a 85,24 m² del rectángulo de 16,33 × 5,22 m. Puede que algún volumen sea más estrecho: pendiente.',
+    'Las fotos de dron (cenital y oblicuas) sugieren que el volumen principal es bastante más profundo que los anexos, y que el conjunto no es un rectángulo de 16,33 × 5,22 m: pendiente de contrastar con el informe completo (no se cambia el modelo por una lectura de foto).',
     'La habitación pequeña se incluye dentro de los 16,33 m (el volumen principal termina en ≈14,77 m).',
     'El anexo parece algo más estrecho que el volumen principal en la vista cenital; se dibuja con el mismo ancho.',
   ],
