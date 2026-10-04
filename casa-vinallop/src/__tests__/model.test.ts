@@ -19,15 +19,14 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
   const op = (id: string) => layout.openings.find((o) => o.id === id)!;
   const x0 = (id: string) => Math.min(...room(id).polygon.map((p) => p[0]));
 
-  it('sin errores; único conflicto: la obertura de 2,40 m atraviesa el forjado de 0,30 m (cara inferior a 2,30 m)', () => {
+  it('sin errores ni conflictos: la obertura de 2,40 m queda bajo el forjado (cara inferior a 2,50 m)', () => {
     expect(hasGeometry(VINALLOP)).toBe(true);
     const bad = issues.filter((i) => i.level !== 'aviso');
-    expect(bad.map((i) => i.elementId), JSON.stringify(bad, null, 2)).toEqual(['obertura-225-pb']);
-    expect(bad[0].message).toContain('forjado');
+    expect(bad, JSON.stringify(bad, null, 2)).toEqual([]);
     expect(layout.slabs[0].thickness).toBe(0.3);
   });
-  it('puerta de 70 cm abre hacia la derecha y el armario del pasillo no tiene puertas', () => {
-    expect(op('puerta-70').swing).toEqual({ hinge: 'fin', dir: -1 });
+  it('puerta de 70 cm abre hacia fuera y el armario del pasillo no tiene puertas', () => {
+    expect(op('puerta-70').swing).toEqual({ hinge: 'fin', dir: 1 });
     expect(op('puertas-armario').kind).toBe('paso');
     expect(op('puertas-armario').system).toBeNull();
     const arm = layout.furniture.find((f) => f.id === 'armario-pasillo-mueble')!;
@@ -40,7 +39,7 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     const e = layout.railings!.find((x) => x.id === 'barandilla-escalera')!;
     expect(e.material).toBe('vidrio');
     expect(e.points.every((p) => p[0] === layout.stairs[0].rect[2])).toBe(true);
-    expect(e.rise![1]).toBe(2.6);
+    expect(e.rise![1]).toBe(2.8);
     expect(r.levelId).toBe('altell');
     expect(r.points.every((p) => p[0] === 6.05)).toBe(true);
     expect(Math.max(...r.points.map((p) => p[1]))).toBeLessThan(layout.stairs[0].rect[3]);
@@ -131,8 +130,12 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(layout.walls.find((w) => w.id === 'muro-B')!.thickness).toBe(0.6);
     expect(layout.walls.filter((w) => w.kind === 'exterior' && w.id !== 'muro-B').every((w) => w.thickness === 0.3)).toBe(true);
   });
-  it('altell a 2,60 m solo sobre dormitorio y baño; la zona de día es doble altura', () => {
-    expect(layout.levels.find((l) => l.id === 'altell')!.elevation).toBe(2.6);
+  it('altell a 2,80 m (2,50 m libres por planta con forjado de 0,30 m) solo sobre dormitorio y baño', () => {
+    const lvl = layout.levels.find((l) => l.id === 'altell')!;
+    expect(lvl.elevation).toBe(2.8);
+    expect(lvl.elevation - layout.slabs[0].thickness).toBeGreaterThanOrEqual(2.5);
+    // altura libre del altell hasta la cubierta (descontando canto de cubierta y flecha de la bóveda)
+    expect(layout.topHeight - (layout.roof?.thickness ?? 0) - (layout.roof?.ceiling?.rise ?? 0) - lvl.elevation).toBeGreaterThanOrEqual(2.5);
     const alt = room('altell').polygon;
     expect(Math.max(...alt.map((p) => p[0]))).toBeLessThanOrEqual(6.05);
   });
@@ -152,7 +155,7 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
   it('genera vistas interiores por estancia, incluido el altell a su cota', () => {
     const cams = cameraPresets(layout);
     const alt = cams.find((c) => c.id === 'int-altell');
-    expect(alt?.elevation).toBeCloseTo(2.6, 5);
+    expect(alt?.elevation).toBeCloseTo(2.8, 5);
     expect(cams.some((c) => c.id === 'fachada-A')).toBe(true);
   });
 });
