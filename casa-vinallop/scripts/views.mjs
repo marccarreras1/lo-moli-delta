@@ -27,6 +27,7 @@ await new Promise((res, rej) => {
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
 const page = await ctx.newPage();
+page.setDefaultTimeout(300000);
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
@@ -35,6 +36,7 @@ await page.waitForFunction(() => document.querySelector('canvas') && !document.q
 await page.evaluate(({ ambience, options }) => {
   const s = window.__store.getState();
   s.setVisual('helpDismissed', true);
+  s.setVisual('quality', 'alta');
   s.setVisual('ambience', ambience);
   s.setVisual('showLabels', false);
   s.setVisual('showDims', false);

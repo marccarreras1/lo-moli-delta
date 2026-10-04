@@ -301,7 +301,7 @@ const views: CameraPreset[] = [
   view({ id: 'v04-solera', label: '4 · Solera completa en L', group: 'exterior', position: [-3.5, 14.5, 4.2], target: [11, 5.5, 0], fov: 44 }),
   view({ id: 'v05-algarrobo', label: '5 · Mesa y lámpara bajo el algarrobo', group: 'exterior', position: [16.9, 7.4, 1.6], target: [MESA_EXT[0] + 0.3, MESA_EXT[1] - 0.4, 1.1], fov: 52 }),
   view({ id: 'v06-desde-comedor', label: '6 · La casa desde el comedor exterior', group: 'exterior', position: [19.6, 5.9, 1.6], target: [11, 6.4, 2.0], fov: 54 }),
-  view({ id: 'v07-salon-ventanal', label: '7 · Del salón hacia el ventanal', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [13.95, 3.75, 1.6], target: [11.9, -0.8, 1.45], fov: 60 }),
+  view({ id: 'v07-salon-ventanal', label: '7 · Salón: sofá de obra y ventanal', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.9, 1.5, 1.6], target: [15.2, 3.9, 0.7], fov: 66 }),
   view({ id: 'v08-ventanal-cocina', label: '8 · Del ventanal hacia cocina e isla', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.4, 0.8, 1.6], target: [9.2, 3.6, 1.0], fov: 60 }),
   view({ id: 'v09-cocina-taburetes', label: '9 · Cocina desde el lado de los taburetes', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.7, 0.75, 1.6], target: [8.9, 3.2, 0.75], fov: 56 }),
   view({ id: 'v10-cocina-encimera', label: '10 · Isla desde la cocina', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.35, 3.75, 1.6], target: [8.7, 1.4, 0.7], fov: 58 }),

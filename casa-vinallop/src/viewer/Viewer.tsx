@@ -12,6 +12,9 @@ import { Furniture3D } from './Furniture3D';
 import { House } from './House';
 import { FixtureLights, Pendants } from './Lamps';
 import { Outdoor3D } from './Outdoor3D';
+import { Effects } from './Effects';
+import { Sky, SoftShadows } from '@react-three/drei';
+import { barkMaterial, buildTree, leafMaterial, soilTexture } from './Trees';
 import { solarDirection, useSolar } from '../model/solar';
 import { Installations3D } from '../instalaciones/Installations3D';
 import { useGestion } from '../gestion/store';
@@ -102,8 +105,9 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
     >
       <color attach="background" args={[amb.bg]} />
       <fog attach="fog" args={[amb.bg, 60, 140]} />
-      <Environment intensity={amb.env} exposure={amb.exposure} />
-      <Lights layout={layout} intensity={v.lightIntensity} ambience={v.ambience} shadowSize={quality === 'alta' ? 2048 : 1024} />
+      {v.ambience !== 'noche' && tab !== 'plantas' && <SkyDome ambience={v.ambience} />}
+      <Environment intensity={amb.env * (tab === 'interior' && quality === 'alta' ? 0.7 : 1)} exposure={amb.exposure} />
+      <Lights layout={layout} intensity={v.lightIntensity} ambience={v.ambience} shadowSize={quality === 'alta' ? 2048 : 1024} interior={tab === 'interior' && quality === 'alta'} />
       {layout.site && v.showSite ? <SiteGround layout={layout} site={layout.site} lite={lite} /> : <Ground layout={layout} />}
       <House layout={layout} mats={mats} showRoof={showRoof} showCeiling={tab === 'interior' || section} mode={mode}
         sectionHeight={cutAbs} selection={selection} openFractions={openFractions} onSelect={select} maxElev={maxElev} />
@@ -117,6 +121,8 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
       {instLayers.size > 0 && <group userData={{ helper: true }}><Installations3D points={instPoints} visibleLayers={instLayers} elevationOf={(id) => layout.levels.find((l) => l.id === id)?.elevation ?? 0} selectedId={instSel} onSelect={(id) => useInstalaciones.getState().select(id)} /></group>}
       <Annotations layout={layout} showLabels={v.showLabels && tab !== 'interior'} showDims={v.showDims && tab !== 'interior'} showAreas={v.showAreas}
         roomLabelsVisible={roomLabelsVisible} maxElev={maxElev} selectedOpeningId={selection?.kind === 'opening' ? selection.id : null} />
+      {quality === 'alta' && <Effects interior={tab === 'interior'} night={v.ambience !== 'dia'} />}
+      {quality === 'alta' && <SoftShadows size={18} samples={10} focus={0.5} />}
       <CameraRig presets={cameras} request={cameraRequest} tab={tab} eyeHeight={v.eyeHeight} interiorFov={v.interiorFov}
         layout={layout} saved={saved} insets={insets} onSave={saveCamera} onEnterRoom={onEnterRoom} onPreset={applyPreset} />
       <Disposer />
@@ -150,7 +156,7 @@ function Environment({ intensity, exposure }: { intensity: number; exposure: num
   return null;
 }
 
-function Lights({ layout, intensity, ambience, shadowSize }: { layout: Layout; intensity: number; ambience: Ambience; shadowSize: number }) {
+function Lights({ layout, intensity, ambience, shadowSize, interior = false }: { layout: Layout; intensity: number; ambience: Ambience; shadowSize: number; interior?: boolean }) {
   // la sombra cubre la casa y el comedor exterior si lo hay
   const { minX, minY, maxX, maxY } = layout.bounds;
   const cx = (minX + maxX) / 2;
@@ -174,8 +180,9 @@ function Lights({ layout, intensity, ambience, shadowSize }: { layout: Layout; i
   const k = Math.max(0.35, intensity);
   return (
     <>
-      <hemisphereLight args={[a.sky, a.ground, a.hemiK * k]} />
-      <ambientLight intensity={ambience === 'noche' ? 0.04 : 0.12} />
+      {/* en interiores (calidad alta) menos luz de relleno: más contraste y profundidad; la oclusión ambiental hace el resto */}
+      <hemisphereLight args={[a.sky, a.ground, a.hemiK * k * (interior ? 0.6 : 1)]} />
+      <ambientLight intensity={(ambience === 'noche' ? 0.04 : 0.12) * (interior ? 0.4 : 1)} />
       <primitive object={target} />
       <directionalLight position={pos} target={target} color={a.sun} intensity={a.sunK * k} castShadow
         shadow-mapSize={[shadowSize, shadowSize]} shadow-camera-left={-R} shadow-camera-right={R} shadow-camera-top={R} shadow-camera-bottom={-R}
@@ -238,33 +245,55 @@ function SiteGround({ layout, site, lite }: { layout: Layout; site: Site; lite: 
     }
     return out;
   }, [site, cx, cy]);
-  const trunks = useMemo(() => new THREE.InstancedMesh(new THREE.CylinderGeometry(0.16, 0.26, 1.2, 7), new THREE.MeshStandardMaterial({ color: '#6b5a48', roughness: 1 }), olives.length), [olives.length]);
-  const crowns = useMemo(() => new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, lite ? 0 : 1), new THREE.MeshStandardMaterial({ color: '#8c9670', roughness: 1, flatShading: true }), olives.length), [olives.length, lite]);
+  // olivos procedurales: tres variantes, cada una con su malla instanciada de madera y de hojas
+  const VARIANTS = lite ? 2 : 3;
+  const oliveSets = useMemo(() => Array.from({ length: VARIANTS }, (_, v) => {
+    const t = buildTree('olivo', 101 + v * 37, 4.0, 4.2);
+    const count = olives.filter((_, i) => i % VARIANTS === v).length;
+    const wood = new THREE.InstancedMesh(t.wood, barkMaterial('olivo'), Math.max(1, count));
+    const leaves = new THREE.InstancedMesh(t.leaves, leafMaterial('olivo'), Math.max(1, count));
+    wood.castShadow = leaves.castShadow = true;
+    wood.receiveShadow = leaves.receiveShadow = true;
+    return { wood, leaves };
+  }), [olives, VARIANTS]);
+  const carobs = useMemo(() => site.trees.map((t, i) => {
+    const g = buildTree('algarrobo', 7 + i * 13, t.r * 2, t.h);
+    return { ...g, leafMat: Object.assign(leafMaterial('algarrobo'), { userData: { fade: true } }), barkMat: barkMaterial('algarrobo') };
+  }), [site.trees]);
+  const soil = useMemo(() => {
+    const t = soilTexture().clone();
+    const R = site.olives.extent + 30;
+    t.repeat.set((R * 2) / 7, (R * 2) / 7);
+    t.needsUpdate = true;
+    return t;
+  }, [site.olives.extent]);
   // los árboles que tapan la casa desde la cámara se ocultan (olivos) o se aclaran (algarrobo)
   const hidden = useRef<boolean[]>([]);
   const lastCam = useRef(new THREE.Vector3(Infinity, 0, 0));
-  const treeMats = useMemo(() => site.trees.map(() => Object.assign(new THREE.MeshStandardMaterial({ color: '#4f6a35', roughness: 1, flatShading: true, transparent: true }), { userData: { fade: true } })), [site.trees]);
+  const treeMats = useMemo(() => carobs.map((c) => c.leafMat), [carobs]);
   const writeMatrices = (hide: boolean[]) => {
     const m = new THREE.Matrix4();
     const q = new THREE.Quaternion();
     const zero = new THREE.Vector3(0, 0, 0);
+    const idx = new Array(VARIANTS).fill(0);
     olives.forEach((o, i) => {
+      const v = i % VARIANTS;
+      const j = idx[v]++;
       q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), o.rot);
-      const s = hide[i] ? 0 : 1;
-      m.compose(new THREE.Vector3(o.x, 0.6 * o.k - 0.12, o.y), q, s ? new THREE.Vector3(o.k, o.k, o.k) : zero);
-      trunks.setMatrixAt(i, m);
-      m.compose(new THREE.Vector3(o.x, 2.0 * o.k, o.y), q, s ? new THREE.Vector3(1.9 * o.k, 1.25 * o.k, 1.7 * o.k) : zero);
-      crowns.setMatrixAt(i, m);
+      m.compose(new THREE.Vector3(o.x, -0.12, o.y), q, hide[i] ? zero : new THREE.Vector3(o.k, o.k * (0.9 + (o.rot % 0.2)), o.k));
+      oliveSets[v].wood.setMatrixAt(j, m);
+      oliveSets[v].leaves.setMatrixAt(j, m);
     });
-    trunks.instanceMatrix.needsUpdate = true;
-    crowns.instanceMatrix.needsUpdate = true;
+    oliveSets.forEach((s) => {
+      s.wood.instanceMatrix.needsUpdate = true;
+      s.leaves.instanceMatrix.needsUpdate = true;
+    });
   };
   useEffect(() => {
     hidden.current = olives.map(() => false);
     lastCam.current.set(Infinity, 0, 0);
     writeMatrices(hidden.current);
-    trunks.castShadow = crowns.castShadow = true;
-  }, [olives, trunks, crowns]);
+  }, [olives, oliveSets]);
   useFrame(({ camera }) => {
     if (camera.position.distanceToSquared(lastCam.current) < 0.01) return;
     lastCam.current.copy(camera.position);
@@ -289,22 +318,26 @@ function SiteGround({ layout, site, lite }: { layout: Layout; site: Site; lite: 
       writeMatrices(next);
     }
     site.trees.forEach((t, i) => {
-      treeMats[i].opacity = !inside && occludes(t.c[0], t.c[1], t.h * 0.6, t.r) ? 0.4 : 1;
-      treeMats[i].depthWrite = treeMats[i].opacity === 1;
+      const fade = !inside && occludes(t.c[0], t.c[1], t.h * 0.6, t.r);
+      treeMats[i].opacity = fade ? 0.45 : 1;
+      treeMats[i].transparent = fade;
+      // con transparencia, el recorte de las hojas debe bajar o desaparecerían
+      treeMats[i].alphaTest = fade ? 0.12 : 0.45;
+      treeMats[i].depthWrite = !fade;
     });
   });
-  useEffect(() => () => {
-    for (const im of [trunks, crowns]) {
+  useEffect(() => () => oliveSets.forEach((s) => {
+    for (const im of [s.wood, s.leaves]) {
       im.geometry.dispose();
       (im.material as THREE.Material).dispose();
     }
-  }, [trunks, crowns]);
-  useEffect(() => () => treeMats.forEach((m) => m.dispose()), [treeMats]);
+  }), [oliveSets]);
+  useEffect(() => () => carobs.forEach((c) => { c.wood.dispose(); c.leaves.dispose(); c.leafMat.dispose(); c.barkMat.dispose(); }), [carobs]);
   return (
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[cx, -0.121, cy]} receiveShadow>
         <circleGeometry args={[site.olives.extent + 30, 64]} />
-        <meshStandardMaterial color={site.ground} roughness={1} />
+        <meshStandardMaterial map={soil} color="#cfc5bd" roughness={1} />
       </mesh>
       {site.pavements.map((p) => (
         <mesh key={p.id} position={[(p.rect[0] + p.rect[2]) / 2, -0.1, (p.rect[1] + p.rect[3]) / 2]} receiveShadow>
@@ -312,12 +345,11 @@ function SiteGround({ layout, site, lite }: { layout: Layout; site: Site; lite: 
           <meshStandardMaterial color="#d3cdbf" roughness={0.95} />
         </mesh>
       ))}
-      <primitive object={trunks} />
-      <primitive object={crowns} />
+      {oliveSets.map((s, i) => <group key={i}><primitive object={s.wood} /><primitive object={s.leaves} /></group>)}
       {site.trees.map((t, i) => (
         <group key={t.id} position={[t.c[0], -0.12, t.c[1]]}>
-          <mesh position={[0, t.h * 0.2, 0]} castShadow><cylinderGeometry args={[0.25, 0.4, t.h * 0.4, 8]} /><meshStandardMaterial color="#5e5043" roughness={1} /></mesh>
-          <mesh position={[0, t.h * 0.66, 0]} scale={[t.r, t.h * 0.3, t.r]} castShadow material={treeMats[i]}><icosahedronGeometry args={[1, lite ? 1 : 2]} /></mesh>
+          <mesh geometry={carobs[i].wood} material={carobs[i].barkMat} castShadow receiveShadow />
+          <mesh geometry={carobs[i].leaves} material={carobs[i].leafMat} castShadow receiveShadow />
         </group>
       ))}
     </group>
@@ -405,4 +437,13 @@ export function CompareViewer({ variant }: { variant: Variant }) {
       <FollowCamera />
     </Canvas>
   );
+}
+
+/** Cielo de dispersión atmosférica (día y tarde), coherente con la dirección de la luz. */
+function SkyDome({ ambience }: { ambience: Ambience }) {
+  const a = AMBIENCE[ambience];
+  const az = (a.az * Math.PI) / 180;
+  const el = (a.elev * Math.PI) / 180;
+  const sun: [number, number, number] = [Math.cos(el) * Math.sin(az), Math.sin(el), Math.cos(el) * Math.cos(az)];
+  return <group userData={{ helper: true }}><Sky distance={400} sunPosition={sun} turbidity={ambience === 'tarde' ? 7 : 4} rayleigh={ambience === 'tarde' ? 2.2 : 0.9} mieCoefficient={0.004} mieDirectionalG={0.85} /></group>;
 }
