@@ -209,6 +209,11 @@ function cleanDesigns(x: unknown): Designs {
     base.id = BASE_ID;
     base.name = 'Base';
     base.openingOverrides = {}; // la base nunca guarda cambios de geometría
+    // la antigua combinación por defecto se sustituye por la indicada por la propiedad
+    if (base.presetId === 'mediterraneo-base') {
+      base.finishes = { ...PRESETS[0].selection };
+      base.presetId = PRESETS[0].id;
+    }
     const variants = (Array.isArray(o.variants) ? o.variants : [])
       .map((v, i) => cleanVariant(v, `v${i + 1}`))
       .filter((v): v is Variant => !!v && v.id !== BASE_ID)

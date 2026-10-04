@@ -16,24 +16,28 @@ export const SLOT_LABEL: Record<FinishSlot, string> = {
 
 export const FINISHES: Record<FinishSlot, Finish[]> = {
   fachada: [
+    { id: 'cal-muy-clara-ext', label: 'Cal muy clara (propiedad)', color: '#f4f1ea', roughness: 0.97 },
     { id: 'revoco-blanco-roto', label: 'Revoco mineral blanco roto', color: '#efebe3', roughness: 0.95 },
     { id: 'cal-arena', label: 'Cal tono arena', color: '#e4d7c1', roughness: 0.95 },
     { id: 'blanco-ibicenco', label: 'Encalado blanco', color: '#f7f6f2', roughness: 0.9 },
     { id: 'piedra-clara', label: 'Piedra clara (vista)', color: '#cfc3ad', roughness: 1 },
   ],
   carpinteria: [
+    { id: 'verde-gris-claro', label: 'Verde-gris claro (propiedad)', color: '#aab6a6', roughness: 0.5 },
     { id: 'madera-natural', label: 'Madera natural', color: '#a77d52', roughness: 0.6 },
     { id: 'roble-claro', label: 'Roble claro', color: '#c4a27a', roughness: 0.6 },
     { id: 'aluminio-arena', label: 'Aluminio tono arena', color: '#b9ab94', roughness: 0.4 },
     { id: 'aluminio-grafito', label: 'Aluminio grafito', color: '#4a4a48', roughness: 0.4 },
   ],
   suelo: [
+    { id: 'microcemento-terracota-claro', label: 'Microcemento terracota claro (propiedad)', color: '#cf9a7c', roughness: 0.6 },
     { id: 'microcemento-arena', label: 'Microcemento arena', color: '#d6c8b2', roughness: 0.7 },
     { id: 'barro-cocido', label: 'Barro cocido', color: '#b9805b', roughness: 0.85 },
     { id: 'madera-roble', label: 'Tarima de roble', color: '#b8946a', roughness: 0.65 },
     { id: 'piedra-caliza', label: 'Piedra caliza', color: '#ddd3c0', roughness: 0.8 },
   ],
   paredes: [
+    { id: 'cal-muy-clara', label: 'Cal muy clara (propiedad)', color: '#f6f3ed', roughness: 0.97 },
     { id: 'blanco-roto', label: 'Blanco roto', color: '#f3efe7', roughness: 0.95 },
     { id: 'cal-arena-int', label: 'Cal arena suave', color: '#ebe1d0', roughness: 0.95 },
     { id: 'blanco-puro', label: 'Blanco', color: '#fbfbf9', roughness: 0.95 },
@@ -57,6 +61,15 @@ export const FINISHES: Record<FinishSlot, Finish[]> = {
 };
 
 export const PRESETS: FinishPreset[] = [
+  {
+    // indicación de la propiedad: estilo ibicenco y griego
+    id: 'ibicenca-griega',
+    label: 'Ibicenca y griega · propiedad',
+    selection: {
+      fachada: 'cal-muy-clara-ext', carpinteria: 'verde-gris-claro', suelo: 'microcemento-terracota-claro',
+      paredes: 'cal-muy-clara', cubierta: 'cubierta-blanca', madera: 'roble-claro-mob', textiles: 'lino-crudo',
+    },
+  },
   {
     id: 'mediterraneo-base',
     label: 'Mediterránea · base',

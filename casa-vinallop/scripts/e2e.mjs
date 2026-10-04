@@ -75,7 +75,7 @@ try {
     await pause(page, 400);
     const planTxt = await page.getByTestId('plan-svg').innerText();
     check('Plano de planta baja con dormitorio, baño, armario y cocina y estar', ['Dormitorio', 'Baño', 'Armario', 'Cocina y estar'].every((t) => planTxt.includes(t)));
-    check('Trazos pendientes marcados en el plano', planTxt.includes('Tramo sin trazo'));
+    check('Puntos de agua marcados en el plano', (await page.locator('[data-testid="plan-svg"] [data-trace]').count()) >= 4);
     await page.screenshot({ path: `${OUT}v-03-plano-planta-baja.png` });
     await page.locator('[data-control="level"] button', { hasText: 'Altell' }).click();
     await pause(page, 300);
@@ -100,7 +100,7 @@ try {
     await page.click('[data-action="more-menu"]');
     await page.getByRole('menuitem', { name: 'Medidas y documentación' }).click();
     await page.getByTestId('info-dialog').waitFor();
-    check('Preguntas abiertas visibles en «Medidas y documentación»', (await page.getByTestId('questions').innerText()).includes('baño'));
+    check('Preguntas abiertas visibles en «Medidas y documentación»', (await page.getByTestId('questions').innerText()).toLowerCase().includes('vuelta catalana'));
     await page.keyboard.press('Escape');
 
     // ---------- 2. Modelo de prueba (tareas de interfaz) ----------
@@ -151,7 +151,7 @@ try {
     await page.screenshot({ path: `${OUT}07-material-cambiado.png` });
     await page.click('[data-action="undo"]');
     await pause(page, 300);
-    check('Deshacer el cambio de material', (await sw.getAttribute('aria-checked')) === 'false' && (await page.locator('[data-finish="fachada:revoco-blanco-roto"]').getAttribute('aria-checked')) === 'true');
+    check('Deshacer el cambio de material', (await sw.getAttribute('aria-checked')) === 'false' && (await page.locator('[data-finish="fachada:cal-muy-clara-ext"]').getAttribute('aria-checked')) === 'true');
     await page.click('[data-action="redo"]');
     check('Rehacer el cambio de material', (await sw.getAttribute('aria-checked')) === 'true');
     await page.click('[data-action="undo"]');

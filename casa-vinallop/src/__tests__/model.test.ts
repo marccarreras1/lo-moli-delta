@@ -66,7 +66,7 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(layout.stairs[0].toLevel).toBe('altell');
   });
   it('los trazos y marcas no interpretados se conservan como pendientes, no como estancias', () => {
-    expect(layout.traces.map((t) => t.id)).toContain('trazo-hueco-dormitorio');
+    expect(layout.traces.map((t) => t.id)).toContain('borde-altell');
     expect(layout.traces.filter((t) => t.cross).length).toBeGreaterThan(3);
     expect(layout.rooms.some((r) => r.id.includes('trazo'))).toBe(false);
   });
@@ -76,14 +76,21 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(st.upStatus).toBe('documentado');
     expect(st.rect[0]).toBeGreaterThanOrEqual(6);
   });
-  it('baño en el tramo de 2,5 m; la puerta del pasillo es de un armario (indicación de la propiedad)', () => {
+  it('entrada al baño desde el pasillo y armario al lado abierto al pasillo (propiedad)', () => {
     const b = room('bano').polygon;
-    expect(Math.min(...b.map((p) => p[0]))).toBeCloseTo(3.55, 5);
     expect(Math.max(...b.map((p) => p[0]))).toBeCloseTo(5.95, 5);
-    expect(op('puerta-armario').wallId).toBe('tab-pasillo');
-    expect(layout.openings.some((o) => o.id === 'puerta-bano')).toBe(false);
-    expect(room('armario-pasillo').name).toBe('Armario');
-    expect(['ducha-1', 'ducha-2', 'inodoro', 'lavabo'].every((id) => layout.furniture.some((f) => f.id === id && f.roomId === 'bano'))).toBe(true);
+    expect(op('puerta-bano').wallId).toBe('tab-pasillo');
+    expect(op('puertas-armario').wallId).toBe('tab-pasillo');
+    const arm = room('armario-pasillo').polygon;
+    expect(Math.max(...arm.map((p) => p[0]))).toBeLessThan(op('puerta-bano').offset + 3.55);
+    expect(['ducha', 'inodoro', 'lavabo'].every((id) => layout.furniture.some((f) => f.id === id && f.roomId === 'bano'))).toBe(true);
+  });
+  it('acabados de la propiedad por defecto: cal muy clara, carpintería verde-gris, microcemento terracota claro', () => {
+    const v = baseVariant();
+    expect(v.presetId).toBe('ibicenca-griega');
+    expect(v.finishes.carpinteria).toBe('verde-gris-claro');
+    expect(v.finishes.suelo).toBe('microcemento-terracota-claro');
+    expect(v.finishes.paredes).toBe('cal-muy-clara');
   });
   it('sofá en L, estufa, cocina e isla central (indicaciones de la propiedad)', () => {
     expect(layout.furniture.filter((f) => f.type === 'sofa-l')).toHaveLength(2);

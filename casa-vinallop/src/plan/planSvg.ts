@@ -258,6 +258,17 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
     const g: string[] = [];
     if (op.kind === 'puerta') {
       const sw = doorSwing(op, w);
+      if (!sw) {
+        // giro no definido: hoja(s) cerrada(s) en el plano del muro
+        const a = pointOnWall(w, op.offset);
+        const b = pointOnWall(w, op.offset + op.width);
+        g.push(`<line x1="${n4(a[0])}" y1="${n4(a[1])}" x2="${n4(b[0])}" y2="${n4(b[1])}" stroke-width="0.03"/>`);
+        if ((op.system?.leaves ?? 1) === 2) {
+          const m = pointOnWall(w, op.offset + op.width / 2, -h);
+          const m2 = pointOnWall(w, op.offset + op.width / 2, h);
+          g.push(`<line x1="${n4(m[0])}" y1="${n4(m[1])}" x2="${n4(m2[0])}" y2="${n4(m2[1])}" stroke-width="0.01"/>`);
+        }
+      }
       if (sw) {
         const cross = (sw.openEnd[0] - sw.hinge[0]) * (sw.closedEnd[1] - sw.hinge[1]) - (sw.openEnd[1] - sw.hinge[1]) * (sw.closedEnd[0] - sw.hinge[0]);
         g.push(`<line x1="${n4(sw.hinge[0])}" y1="${n4(sw.hinge[1])}" x2="${n4(sw.openEnd[0])}" y2="${n4(sw.openEnd[1])}" stroke-width="0.03"/>`);

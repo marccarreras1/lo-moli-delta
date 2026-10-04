@@ -45,9 +45,11 @@ const X_DORM = CHAIN[0]; // 3,50 tabique dormitorio / baño
 const X_ESC = r2(CHAIN[0] + CHAIN[1]); // 6,00 tabique baño / escalera
 const X_PUERTA = r2(CHAIN[0] + CHAIN[1] + CHAIN[2]); // 9,50 puerta de entrada
 const Y_PASILLO = 1.2; // línea del pasillo junto al frontal A (medida)
-/** Armario del pasillo: entre la primera ducha y la escalera. Fondo pendiente (≥0,90 m para que abra la hoja dibujada). */
-const ARM_X0 = 5.05;
-const ARM_Y1 = 2.2;
+/** Armario del pasillo: el rectángulo junto a la línea del pasillo (≈1,40 × 0,65), abierto al pasillo (propiedad). */
+const ARM_X1 = 5.0; // eje del tabique entre armario y entrada al baño
+const ARM_Y1 = 1.95; // eje del fondo del armario
+/** Puerta del baño: el arco dibujado en la línea del pasillo, junto a la escalera (propiedad). */
+const BANO_PUERTA_X0 = 5.05;
 const ALT_X1 = r2(X_ESC + TP / 2); // 6,05 borde del altell
 const ESC: [number, number, number, number] = [ALT_X1, r2(Y_PASILLO + TP / 2), 7.25, y1];
 
@@ -75,8 +77,8 @@ const walls: Wall[] = [
   // borde izquierdo de la escalera (cadena 6,00): cierra el baño
   { ...tab, id: 'tab-escalera', a: [X_ESC, Y_PASILLO + TP / 2], b: [X_ESC, y1] },
   // armario con puerta desde el pasillo (indicación de la propiedad); su fondo no está dibujado
-  { ...tab, id: 'tab-armario-lado', a: [ARM_X0 - TP / 2, Y_PASILLO + TP / 2], b: [ARM_X0 - TP / 2, ARM_Y1 + TP] },
-  { ...tab, id: 'tab-armario-fondo', a: [ARM_X0 - TP / 2, ARM_Y1 + TP / 2], b: [X_ESC - TP / 2, ARM_Y1 + TP / 2], status: 'pendiente' },
+  { ...tab, id: 'tab-armario-lado', a: [ARM_X1, Y_PASILLO + TP / 2], b: [ARM_X1, ARM_Y1 + TP / 2] },
+  { ...tab, id: 'tab-armario-fondo', a: [X_DORM + TP / 2, ARM_Y1], b: [ARM_X1 + TP / 2, ARM_Y1] },
 ];
 
 const onAB = (x: number) => r2(x - h); // offset sobre el eje de los muros A y B (empieza en x = 0,15)
@@ -107,9 +109,14 @@ const openings: Opening[] = [
     note: 'Puerta (propiedad) de 70 cm del frontal B. Posición según el alzado B y la marca «×» de la planta (5,20–5,90 m). Bajo el altell: altura 2,20 m (hipótesis). Giro no dibujado.',
   },
   {
-    id: 'puerta-armario', label: 'Puerta del armario', wallId: 'tab-pasillo', kind: 'puerta', offset: r2(ARM_X0 - (X_DORM + TP / 2)), width: 0.9, sill: 0, height: 2.1,
+    id: 'puerta-bano', label: 'Puerta del baño', wallId: 'tab-pasillo', kind: 'puerta', offset: r2(BANO_PUERTA_X0 - (X_DORM + TP / 2)), width: 0.9, sill: 0, height: 2.1,
     system: { type: 'abatible', leaves: 1, status: 'interpretado' }, swing: { hinge: 'inicio', dir: 1 }, status: 'documentado', sourceId: S.prop,
-    note: 'Puerta de un armario (propiedad), no la entrada al baño. Bisagra y giro según el arco dibujado; altura estándar (hipótesis).',
+    note: 'Entrada al baño desde el pasillo (propiedad). Bisagra y giro según el arco dibujado; altura estándar (hipótesis).',
+  },
+  {
+    id: 'puertas-armario', label: 'Puertas del armario', wallId: 'tab-pasillo', kind: 'puerta', offset: 0.05, width: r2(ARM_X1 - TP / 2 - (X_DORM + TP / 2) - 0.05), sill: 0, height: 2.1,
+    system: { type: 'abatible', leaves: 2, status: 'pendiente' }, status: 'documentado', sourceId: S.prop,
+    note: 'Armario que se abre desde el pasillo (propiedad). Tipo de puertas no indicado: dos hojas provisionales.',
   },
 ];
 
@@ -120,9 +127,9 @@ const rooms: Room[] = [
   room('dormitorio', 'pb', 'Dormitorio', rect(x0, y0, X_DORM - TP / 2, y1), 'interpretado', S.planta, 'Cama en el extremo izquierdo, cabecero contra el frontal B, y armario empotrado en el lateral.', { openTo: ['pasillo'] }),
   room('pasillo', 'pb', 'Pasillo', rect(X_DORM - TP / 2, y0, ALT_X1, Y_PASILLO - TP / 2), 'interpretado', S.planta, 'Franja de ≈0,85 m libres junto al frontal A: une la zona de día y el arranque de la escalera con el dormitorio.', { openTo: ['dormitorio', 'dia'] }),
   room('bano', 'pb', 'Baño', [
-    [X_DORM + TP / 2, Y_PASILLO + TP / 2], [ARM_X0 - TP, Y_PASILLO + TP / 2], [ARM_X0 - TP, ARM_Y1 + TP], [X_ESC - TP / 2, ARM_Y1 + TP], [X_ESC - TP / 2, y1], [X_DORM + TP / 2, y1],
-  ], 'documentado', S.prop, 'Dos duchas, una delante de la otra, inodoro y lavabo (propiedad). Puerta de 70 cm al frontal B. Acceso desde el interior pendiente.'),
-  room('armario-pasillo', 'pb', 'Armario', rect(ARM_X0, Y_PASILLO + TP / 2, X_ESC - TP / 2, ARM_Y1), 'interpretado', S.prop, 'Armario con puerta desde el pasillo (propiedad). Ancho según el dibujo; fondo pendiente.'),
+    [ARM_X1 + TP / 2, Y_PASILLO + TP / 2], [X_ESC - TP / 2, Y_PASILLO + TP / 2], [X_ESC - TP / 2, y1], [X_DORM + TP / 2, y1], [X_DORM + TP / 2, ARM_Y1 + TP / 2], [ARM_X1 + TP / 2, ARM_Y1 + TP / 2],
+  ], 'documentado', S.prop, 'Entrada desde el pasillo, junto a la escalera (propiedad). Ducha doble, inodoro y lavabo. Puerta de 70 cm al frontal B.'),
+  room('armario-pasillo', 'pb', 'Armario', rect(X_DORM + TP / 2, Y_PASILLO + TP / 2, ARM_X1 - TP / 2, ARM_Y1 - TP / 2), 'documentado', S.prop, 'Armario que se abre desde el pasillo (propiedad), en el rectángulo dibujado junto a la línea del pasillo.'),
   room('dia', 'pb', 'Cocina y estar', rect(ALT_X1, y0, x1, y1), 'documentado', S.prop, 'Doble altura (propiedad). Escalera en L, cocina junto a la escalera con isla central, sofá en L y estufa.', { openTo: ['pasillo'] }),
   room('altell', 'altell', 'Altell', rect(x0, y0, ALT_X1, y1), 'documentado', S.prop, 'A 2,60 m sobre el dormitorio, el pasillo y el baño (propiedad). La zona de día es de doble altura. Borde hacia la doble altura en el 6,05 (barandilla no dibujada).'),
 ];
@@ -133,8 +140,8 @@ const furniture: Furniture[] = [
   f({ id: 'armario', type: 'armario', label: 'Armario empotrado', roomId: 'dormitorio', x: 0.55, y: r2((y0 + y1) / 2), w: r2(y1 - y0), d: 0.5, h: 2.4, rot: 270, status: 'documentado', note: 'Franja del lateral izquierdo (propiedad). Fondo ≈0,5 m medido.' }),
   f({ id: 'cama', type: 'cama', label: 'Cama 160 × 200', roomId: 'dormitorio', x: 1.98, y: r2(y1 - 1.0), w: 1.6, d: 2.0, h: 0.55, rot: 180, status: 'interpretado', note: 'Dibujada de ≈1,65 × 2,05 m con dos almohadas y el embozo; cabecero contra el frontal B.' }),
   // baño
-  f({ id: 'ducha-1', type: 'ducha', label: 'Ducha 1', roomId: 'bano', x: 4.25, y: 1.58, w: 1.4, d: 0.65, h: 2.0, rot: 0, status: 'documentado', note: 'Primera de las dos duchas (propiedad), junto a la línea del pasillo. Medidas del dibujo (≈1,40 × 0,65).' }),
-  f({ id: 'ducha-2', type: 'ducha', label: 'Ducha 2', roomId: 'bano', x: 3.93, y: 2.4, w: 1.0, d: 0.75, h: 2.0, rot: 270, status: 'documentado', note: 'Segunda ducha, delante de la primera (propiedad). Medidas del dibujo (≈0,75 × 1,00).' }),
+  f({ id: 'armario-pasillo-mueble', type: 'armario', label: 'Armario del pasillo', roomId: 'armario-pasillo', x: 4.23, y: 1.57, w: 1.3, d: 0.6, h: 2.2, rot: 180, status: 'documentado', note: 'Rectángulo de ≈1,40 × 0,65 junto a la línea del pasillo; se abre desde el pasillo (propiedad).' }),
+  f({ id: 'ducha', type: 'ducha', label: 'Ducha doble', roomId: 'bano', x: 3.93, y: 2.5, w: 1.0, d: 0.75, h: 2.0, rot: 270, status: 'documentado', note: 'Rectángulo de ≈0,75 × 1,00 con punto de agua. La propiedad indica dos duchas, una delante de la otra: se interpreta como ducha doble en este recinto.' }),
   f({ id: 'inodoro', type: 'inodoro', label: 'Inodoro', roomId: 'bano', x: 3.88, y: 3.22, w: 0.38, d: 0.65, h: 0.42, rot: 270, status: 'documentado', note: 'En la marca «×» contra el tabique del dormitorio (propiedad: las «×» marcan agua, inodoro y lavabo).' }),
   f({ id: 'lavabo', type: 'lavabo', label: 'Lavabo', roomId: 'bano', x: 4.28, y: r2(y1 - 0.3), w: 1.45, d: 0.6, h: 0.85, rot: 180, status: 'documentado', note: 'Mueble dibujado contra el frontal B, con la marca «×» del lavabo.' }),
   // cocina y estar
@@ -147,8 +154,7 @@ const furniture: Furniture[] = [
 
 const water = (id: string, levelId: string, p: Vec2, note: string, sourceId = S.planta): Trace => ({ id, levelId, label: 'Punto de agua (×)', cross: p, sourceId, note });
 const traces: Trace[] = [
-  { id: 'trazo-hueco-dormitorio', levelId: 'pb', label: 'Tramo sin trazo', sourceId: S.planta, points: [[X_DORM, 2.85], [X_DORM, 3.25]], note: 'Interrupción del tabique dormitorio / baño (≈2,85–3,25 m), junto al inodoro. ¿Entrada al baño desde el dormitorio?' },
-  water('x-ducha', 'pb', [3.72, 2.3], 'En la segunda ducha.'),
+  water('x-ducha', 'pb', [3.72, 2.3], 'En la ducha.'),
   water('x-frontal-a', 'pb', [4.65, y0], 'Sobre la línea del frontal A en el tramo del baño.'),
   water('x-cocina-1', 'pb', [7.57, 3.8], 'En el borde de la encimera.'),
   water('x-cocina-2', 'pb', [8.35, 3.8], 'En el borde de la encimera.'),
@@ -160,7 +166,7 @@ export const VINALLOP: ProjectData = {
   id: 'casa-vinallop',
   name: 'Casa Vinallop',
   isTest: false,
-  version: '0.6 · bocetos y respuestas del 04/10/2026',
+  version: '0.7 · bocetos y respuestas del 04/10/2026',
   levels: [
     { id: 'pb', name: 'Planta baja', elevation: 0, wallHeight: H_PB, elevationStatus: 'documentado' },
     { id: 'altell', name: 'Altell', elevation: ALTELL, wallHeight: r2(H_TOTAL - ALTELL), elevationStatus: 'documentado' },
@@ -213,7 +219,7 @@ export const VINALLOP: ProjectData = {
     { id: S.fa, label: 'Foto del boceto «FRONTAL A»', detail: 'Alzado del lado superior de la planta, visto desde fuera (invertido izquierda-derecha).' },
     { id: S.fb, label: 'Foto del boceto «FRONTAL B»', detail: 'Alzado del lado inferior de la planta, visto desde fuera.' },
     { id: S.altell, label: 'Foto del boceto «ALTELL»', detail: 'Contorno del nivel superior con la escalera; sin cotas.' },
-    { id: S.prop, label: 'Indicaciones de la propiedad (04/10/2026)', detail: 'Escalera al revés; armario en el pasillo; 5 m de ancho; muros de 0,60 m (frontal B) y 0,30 m; armario empotrado; sofá y estufa; cocina con isla; dos duchas, inodoro y lavabo; doble altura y altell a 2,60 m; puerta de 70 cm; cubierta plana con vuelta catalana.' },
+    { id: S.prop, label: 'Indicaciones de la propiedad (04/10/2026)', detail: 'Escalera al revés; entrada al baño desde el pasillo y armario al lado; 5 m de ancho; muros de 0,60 m (frontal B) y 0,30 m; armario empotrado; sofá y estufa; cocina con isla; dos duchas, inodoro y lavabo; doble altura y altell a 2,60 m; puerta de 70 cm; cubierta plana con vuelta catalana.' },
     { id: S.hip, label: 'Hipótesis de visualización', detail: 'Valor provisional para poder dibujar; no figura en los bocetos.' },
   ],
   readings: [
@@ -222,8 +228,9 @@ export const VINALLOP: ProjectData = {
     { sourceId: S.planta, read: '«OBERTURA: 225 CM» y «OBERTURA 7 M» en el lado superior', interpreted: 'Huecos de 2,25 m y 7 m en el frontal A.' },
     { sourceId: S.planta, read: 'Línea paralela al lateral izquierdo con marcas', interpreted: 'Armario empotrado (propiedad).' },
     { sourceId: S.planta, read: 'Rectángulo con dos almohadas y embozo', interpreted: 'Cama de ≈1,60 × 2,00 con el cabecero contra el frontal B.' },
-    { sourceId: S.planta, read: 'Línea paralela al frontal A con un arco de puerta junto a la escalera', interpreted: 'Pasillo; el arco es la puerta de un armario (propiedad).' },
-    { sourceId: S.planta, read: 'Dos rectángulos en L, otro junto al frontal B y marcas «×» en el tramo de 2,5 m', interpreted: 'Baño: dos duchas, inodoro y lavabo; las «×» son puntos de agua (propiedad).' },
+    { sourceId: S.planta, read: 'Línea paralela al frontal A con un arco de puerta junto a la escalera', interpreted: 'Pasillo; el arco es la entrada al baño (propiedad).' },
+    { sourceId: S.planta, read: 'Rectángulo junto a la línea del pasillo (≈1,40 × 0,65)', interpreted: 'Armario que se abre desde el pasillo (propiedad).' },
+    { sourceId: S.planta, read: 'Rectángulo de ≈0,75 × 1,00, otro junto al frontal B y marcas «×» en el tramo de 2,5 m', interpreted: 'Baño: ducha (dos duchas, una delante de la otra), inodoro y lavabo; las «×» son puntos de agua (propiedad).' },
     { sourceId: S.planta, read: 'Escalera con 13 peldaños y un triángulo junto al lado inferior', interpreted: 'Escalera en L que sube hacia el frontal B y gira al altell (propiedad).' },
     { sourceId: S.planta, read: 'Rectángulo largo junto al lado inferior con dos «×» y rectángulo grande en el centro', interpreted: 'Cocina junto a la escalera con isla central (propiedad).' },
     { sourceId: S.planta, read: 'Línea en U desde la jamba de la puerta y círculo junto al lado superior', interpreted: 'Sofá en L y estufa (propiedad).' },
@@ -238,9 +245,10 @@ export const VINALLOP: ProjectData = {
     'Los anchos de los huecos de los alzados no están a escala. Se usan las cotas escritas.',
   ],
   questions: [
-    '¿Por dónde se entra al baño desde dentro? ¿Por el tramo sin trazo del tabique del dormitorio (≈2,85–3,25 m, junto al inodoro)? ¿Qué fondo tiene el armario del pasillo?',
     '¿Qué altura tiene la obertura de 2,25 m de planta baja, bajo el altell?',
     'Vuelta catalana: ¿en qué dirección van las vigas y cada cuánto?',
+    'Ducha: ¿las dos duchas, una delante de la otra, están en el rectángulo de ≈0,75 × 1,00 junto al tabique del dormitorio (ducha doble)?',
+    '¿Se añade una barandilla en el borde del altell hacia la doble altura? No está dibujada.',
   ],
   northDeg: null,
   facades: { A: 'Frontal A', B: 'Frontal B', izquierdo: 'Lateral izquierdo', derecho: 'Lateral derecho' },
