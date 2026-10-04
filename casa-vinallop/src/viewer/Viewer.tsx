@@ -242,7 +242,7 @@ function SiteGround({ layout, site, lite }: { layout: Layout; site: Site; lite: 
   // los árboles que tapan la casa desde la cámara se ocultan (olivos) o se aclaran (algarrobo)
   const hidden = useRef<boolean[]>([]);
   const lastCam = useRef(new THREE.Vector3(Infinity, 0, 0));
-  const treeMats = useMemo(() => site.trees.map(() => new THREE.MeshStandardMaterial({ color: '#4f6a35', roughness: 1, flatShading: true, transparent: true })), [site.trees]);
+  const treeMats = useMemo(() => site.trees.map(() => Object.assign(new THREE.MeshStandardMaterial({ color: '#4f6a35', roughness: 1, flatShading: true, transparent: true }), { userData: { fade: true } })), [site.trees]);
   const writeMatrices = (hide: boolean[]) => {
     const m = new THREE.Matrix4();
     const q = new THREE.Quaternion();
