@@ -122,3 +122,30 @@ export function StatusTag({ status }: { status: DataStatus }) {
   const st = STATUS_STYLE[status];
   return <span className={`tag tag-${status}`}><span aria-hidden>{st.mark}</span> {st.label}</span>;
 }
+
+/**
+ * Botón de acción delicada que se confirma con un segundo clic (sin ventanas del
+ * navegador, que no aparecen cuando la página está incrustada).
+ */
+export function ConfirmButton({ children, confirmLabel, onConfirm, className = 'btn ghost danger', ...rest }: {
+  children: ReactNode;
+  confirmLabel: string;
+  onConfirm: () => void;
+  className?: string;
+  role?: string;
+  disabled?: boolean;
+  'data-action'?: string;
+}) {
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const t = setTimeout(() => setArmed(false), 4000);
+    return () => clearTimeout(t);
+  }, [armed]);
+  return (
+    <button type="button" className={`${className}${armed ? ' armed' : ''}`} aria-live="polite" {...rest}
+      onClick={() => { if (armed) { setArmed(false); onConfirm(); } else setArmed(true); }}>
+      {armed ? confirmLabel : children}
+    </button>
+  );
+}

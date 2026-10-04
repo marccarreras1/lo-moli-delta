@@ -7,7 +7,7 @@ import { overlayReady, useRefs } from '../refs/db';
 import { useModel } from '../state/derived';
 import { BASE_ID, useStore } from '../state/store';
 import { effectiveQuality } from '../viewer/qualityInfo';
-import { Advanced, NumberField, Section, Segmented, Select, Slider, StatusTag, Toggle } from './controls';
+import { Advanced, ConfirmButton, NumberField, Section, Segmented, Select, Slider, StatusTag, Toggle } from './controls';
 import { Icon } from './icons';
 
 const m = (x: number, d = 2) => `${fmtM(x, d)} m`;
@@ -53,15 +53,16 @@ function ProjectRow() {
               <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre de la variante" aria-label="Nombre de la nueva variante" />
               <button type="button" className="btn" onClick={() => { createVariant(name); setName(''); }} data-action="create-variant">Crear</button>
             </div>
-            <p className="hint">La nueva variante copia la activa. La base nunca se sobrescribe.</p>
+            <p className="hint">La nueva variante copia la activa. La base nunca se sobrescribe. Para renombrar la variante activa, escribe el nombre arriba. Eliminar se puede deshacer.</p>
             {variant.id !== BASE_ID && (
               <div className="row">
-                <button type="button" className="btn ghost" onClick={() => { const n = prompt('Nuevo nombre', variant.name); if (n) renameVariant(variant.id, n); }}>
-                  <Icon name="edit" size={16} /> Renombrar
+                <button type="button" className="btn ghost" disabled={!name.trim()} title={name.trim() ? undefined : 'Escribe el nuevo nombre en el campo de arriba'}
+                  onClick={() => { renameVariant(variant.id, name.trim()); setName(''); }} data-action="rename-variant">
+                  <Icon name="edit" size={16} /> Renombrar con ese nombre
                 </button>
-                <button type="button" className="btn ghost danger" onClick={() => { if (confirm(`¿Eliminar la variante «${variant.name}»? Se puede deshacer.`)) deleteVariant(variant.id); }}>
+                <ConfirmButton confirmLabel={`Pulsa otra vez para eliminar «${variant.name}»`} onConfirm={() => deleteVariant(variant.id)} data-action="delete-variant">
                   <Icon name="trash" size={16} /> Eliminar
-                </button>
+                </ConfirmButton>
               </div>
             )}
           </Advanced>

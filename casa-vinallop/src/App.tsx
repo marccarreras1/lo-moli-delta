@@ -5,6 +5,7 @@ import { useModel } from './state/derived';
 import { serializeConfig, useStore, type ViewTab } from './state/store';
 import { BottomSheet } from './ui/BottomSheet';
 import { ControlPanel } from './ui/ControlPanel';
+import { ConfirmButton } from './ui/controls';
 import { Icon } from './ui/icons';
 import { InfoDialog } from './ui/InfoDialog';
 import { PlanView } from './ui/PlanView';
@@ -209,10 +210,9 @@ export default function App() {
                   {visual.modelSource === 'prueba' && <Icon name="check" size={16} />} Modelo de prueba (ficticio)
                 </button>
                 <hr />
-                <button type="button" role="menuitem" className="danger" disabled={empty} onClick={() => {
-                  setMenu(null);
-                  if (confirm('¿Borrar todas las variantes y materiales elegidos de este proyecto? Se puede deshacer mientras no recargues.')) useStore.getState().resetDesign();
-                }} data-action="reset-design">Borrar cambios de diseño…</button>
+                <ConfirmButton role="menuitem" className="danger" disabled={empty} data-action="reset-design"
+                  confirmLabel="Pulsa otra vez para borrar variantes y materiales (se puede deshacer)"
+                  onConfirm={() => { setMenu(null); useStore.getState().resetDesign(); }}>Borrar cambios de diseño…</ConfirmButton>
                 {!mobile && <p className="menu-note">{AVISO}</p>}
               </div>
             )}

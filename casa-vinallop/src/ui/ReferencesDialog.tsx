@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { fmtM } from '../model/geometry';
 import { metersPerPx, REF_KIND_LABEL, type RefKind, type RefMeta, useRefs } from '../refs/db';
-import { NumberField, Select } from './controls';
+import { ConfirmButton, NumberField, Select } from './controls';
 import { Icon } from './icons';
 import { Modal } from './Modal';
 
@@ -143,9 +143,9 @@ function RefDetail({ r, url, onDeleted }: { r: RefMeta; url?: string; onDeleted:
             )}
           </fieldset>
         )}
-        <button type="button" className="btn ghost danger" onClick={() => { if (confirm(`¿Eliminar «${r.name}» de este dispositivo? No se puede deshacer.`)) { void remove(r.id); onDeleted(); } }}>
+        <ConfirmButton confirmLabel="Pulsa otra vez: se borra de este dispositivo y no se puede deshacer" onConfirm={() => { void remove(r.id); onDeleted(); }}>
           <Icon name="trash" size={16} /> Eliminar del dispositivo
-        </button>
+        </ConfirmButton>
       </div>
     </div>
   );
