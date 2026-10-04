@@ -14,9 +14,8 @@ mkdirSync(OUT, { recursive: true });
 const samples = Number(process.argv[2] ?? 64);
 const filter = process.argv[3] ?? '';
 const JOBS = [
-  ['v12-bano-entrada', 'dia'], ['v12b-bano-ducha', 'dia'], ['v12c-celosia', 'dia'],
-  ['v04-solera', 'dia'], ['v05-algarrobo', 'dia'], ['v05-algarrobo', 'tarde'],
-  ['v09-cocina-taburetes', 'dia'], ['v07-salon-ventanal', 'dia'], ['v13b-volta', 'dia'], ['v01-exterior', 'dia'],
+  ['v12-bano-entrada', 'dia'], ['v12c-celosia', 'dia'], ['v04-solera', 'dia'], ['v05-algarrobo', 'dia'],
+  ['v09-cocina-taburetes', 'dia'], ['v07-salon-ventanal', 'dia'], ['v13b-volta', 'dia'],
 ].filter(([v]) => v.includes(filter));
 
 const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'pipe', detached: true });
@@ -45,7 +44,10 @@ log('aplicación cargada');
 for (const [view, amb] of JOBS) {
   const t0 = Date.now();
   await page.evaluate((a) => window.__store.getState().setVisual('ambience', a), amb);
-  await page.click(`[data-view="${view}"]`);
+  await page.evaluate((id) => {
+    const v = window.__layout.views.find((x) => x.id === id);
+    window.__store.getState().goView(id, v.group === 'interior' ? 'interior' : 'exterior');
+  }, view);
   log(`vista ${view}`);
   // espera a que la cámara se detenga
   await page.waitForFunction(() => {
@@ -65,12 +67,12 @@ for (const [view, amb] of JOBS) {
     try {
       const amb = window.__store.getState().visual.ambience;
       const t0 = performance.now();
-      const canvas = await mod.renderPhoto(v.gl, v.scene, v.camera, { samples: n, sky: amb, exposure, onProgress: (d, t) => { if (d % 4 === 0 || d === 1) console.log(`[render] ${d}/${t} · ${Math.round((performance.now() - t0) / 1000)} s`); } });
+      const canvas = await mod.renderPhoto(v.gl, v.scene, v.camera, { samples: n, sky: amb, exposure, denoise: true, studioLights: exposure > 1 ? mod.studioLights(window.__layout) : undefined, onProgress: (d, t) => { if (d % 4 === 0 || d === 1 || d === t) console.log(`[render] ${d}/${t} · ${Math.round((performance.now() - t0) / 1000)} s`); } });
       return canvas.toDataURL('image/png');
     } finally {
       v.setFrameloop('always');
     }
-  }, [interior ? samples * 2 : samples, interior ? Number(process.env.EXP ?? 5) : 1]);
+  }, [samples, interior ? Number(process.env.EXP ?? 3) : 1]);
   const name = `${view}${amb === 'dia' ? '' : `-${amb}`}.png`;
   writeFileSync(OUT + name, Buffer.from(data.split(',')[1], 'base64'));
   console.log(`✔ ${name} · ${samples} muestras · ${Math.round((Date.now() - t0) / 1000)} s`);

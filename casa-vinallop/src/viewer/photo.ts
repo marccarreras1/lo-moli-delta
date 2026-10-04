@@ -17,6 +17,10 @@ export interface PhotoOptions {
   signal?: AbortSignal;
   /** exposición (como en una cámara: los interiores necesitan más que el exterior) */
   exposure?: number;
+  /** luces de estudio (posiciones en el mundo): ayuda de visualización en interiores sin ventanas */
+  studioLights?: [number, number, number][];
+  /** filtro de ruido que conserva bordes (bilateral) aplicado al resultado */
+  denoise?: boolean;
   /** usar las texturas procedurales (por defecto sí) */
   textures?: boolean;
 }
@@ -241,16 +245,26 @@ export async function renderPhoto(gl: THREE.WebGLRenderer, scene: THREE.Scene, c
     pt.transmissiveBounces = 4;
     // la luz de entorno de la escena actúa como cielo; el fondo se conserva
     trace = buildTraceScene(scene);
+    for (const p of o.studioLights ?? []) {
+      // plafón cálido de ≈1000 lm (≈80 cd) por estancia
+      const l = new THREE.PointLight(0xffd9b0, 80, 0, 2);
+      l.position.set(p[0], p[1], p[2]);
+      trace.scene.add(l);
+    }
     trace.scene.environment = sky;
     trace.scene.environmentIntensity = 1;
     pt.setScene(trace.scene, camera);
     // las primeras llamadas pueden no sumar muestras mientras se compilan los shaders: se cuenta
     // por las muestras reales del trazador (con teselas 2×2, cuatro llamadas = una muestra)
     let guard = 0;
+    const ctx = gl.getContext();
+    const px = new Uint8Array(4);
     while (pt.samples < o.samples && guard < o.samples * 8 + 200) {
       if (o.signal?.aborted) throw new DOMException('Render cancelado', 'AbortError');
       pt.renderSample();
       guard++;
+      // la GPU trabaja en diferido: leer un píxel obliga a terminar la muestra (progreso real y cancelable)
+      ctx.readPixels(0, 0, 1, 1, ctx.RGBA, ctx.UNSIGNED_BYTE, px);
       if (guard % 4 === 0) {
         o.onProgress?.(Math.min(o.samples, Math.floor(pt.samples)), o.samples);
         await new Promise((r) => setTimeout(r, 0));
@@ -261,6 +275,7 @@ export async function renderPhoto(gl: THREE.WebGLRenderer, scene: THREE.Scene, c
     out.width = gl.domElement.width;
     out.height = gl.domElement.height;
     out.getContext('2d')!.drawImage(gl.domElement, 0, 0);
+    if (o.denoise) denoiseCanvas(out);
     return out;
   } finally {
     gl.toneMappingExposure = prevExposure;
@@ -275,4 +290,60 @@ export async function renderPhoto(gl: THREE.WebGLRenderer, scene: THREE.Scene, c
       gl.setSize(w, h, false);
     }
   }
+}
+
+/** Una luz de estudio en el techo de cada estancia (a 0,3 m del techo del nivel). */
+export function studioLights(layout: { rooms: { levelId: string; polygon: [number, number][] }[]; levels: { id: string; elevation: number; wallHeight: number }[] }): [number, number, number][] {
+  return layout.rooms.map((r) => {
+    const l = layout.levels.find((x) => x.id === r.levelId);
+    const xs = r.polygon.map((p) => p[0]);
+    const ys = r.polygon.map((p) => p[1]);
+    return [(Math.min(...xs) + Math.max(...xs)) / 2, (l?.elevation ?? 0) + Math.max(2.2, (l?.wallHeight ?? 2.5) - 0.3), (Math.min(...ys) + Math.max(...ys)) / 2] as [number, number, number];
+  });
+}
+
+/**
+ * Filtro bilateral (dos pasadas, ventana 5 × 5): promedia píxeles vecinos de color parecido, de modo
+ * que reduce el ruido de pocas muestras sin borrar los bordes. Es un postproceso, no añade detalle.
+ */
+export function denoiseCanvas(c: HTMLCanvasElement, passes = 2) {
+  const ctx = c.getContext('2d', { willReadFrequently: true })!;
+  const { width: w, height: h } = c;
+  const img = ctx.getImageData(0, 0, w, h);
+  let src = new Float32Array(img.data);
+  const R = 2;
+  const ss = 2 * 1.6 * 1.6;
+  const sr = 2 * 38 * 38;
+  const sw: number[] = [];
+  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) sw.push(Math.exp(-(dx * dx + dy * dy) / ss));
+  for (let p = 0; p < passes; p++) {
+    const dst = new Float32Array(src.length);
+    for (let y = 0; y < h; y++)
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        // referencia: media 3 × 3 (más estable que el píxel ruidoso)
+        let mr = 0, mg = 0, mb = 0, mn = 0;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          const xx = Math.min(w - 1, Math.max(0, x + dx));
+          const yy = Math.min(h - 1, Math.max(0, y + dy));
+          const j = (yy * w + xx) * 4;
+          mr += src[j]; mg += src[j + 1]; mb += src[j + 2]; mn++;
+        }
+        mr /= mn; mg /= mn; mb /= mn;
+        let r = 0, g = 0, b = 0, ws = 0, k = 0;
+        for (let dy = -R; dy <= R; dy++)
+          for (let dx = -R; dx <= R; dx++, k++) {
+            const xx = Math.min(w - 1, Math.max(0, x + dx));
+            const yy = Math.min(h - 1, Math.max(0, y + dy));
+            const j = (yy * w + xx) * 4;
+            const d2 = (src[j] - mr) ** 2 + (src[j + 1] - mg) ** 2 + (src[j + 2] - mb) ** 2;
+            const wt = sw[k] * Math.exp(-d2 / sr);
+            r += src[j] * wt; g += src[j + 1] * wt; b += src[j + 2] * wt; ws += wt;
+          }
+        dst[i] = r / ws; dst[i + 1] = g / ws; dst[i + 2] = b / ws; dst[i + 3] = 255;
+      }
+    src = dst;
+  }
+  for (let i = 0; i < src.length; i++) img.data[i] = src[i];
+  ctx.putImageData(img, 0, 0);
 }

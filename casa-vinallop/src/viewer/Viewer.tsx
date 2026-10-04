@@ -35,6 +35,7 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
   const tab = useStore((s) => s.tab);
   const v = useStore((s) => s.visual);
   const instPoints = useResolvedPoints(layout);
+  if (typeof location !== 'undefined' && location.search.includes('diagnostico')) (window as unknown as Record<string, unknown>).__layout = layout;
   const instLayers = useVisibleLayers();
   const instSel = useInstalaciones((s) => s.selectedId);
   const selection = useStore((s) => s.selection);
