@@ -306,7 +306,7 @@ const views: CameraPreset[] = [
   view({ id: 'v09-cocina-taburetes', label: '9 · Cocina desde el lado de los taburetes', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.7, 0.75, 1.6], target: [8.9, 3.2, 0.75], fov: 56 }),
   view({ id: 'v10-cocina-encimera', label: '10 · Isla desde la cocina', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.35, 3.75, 1.6], target: [8.7, 1.4, 0.7], fov: 58 }),
   view({ id: 'v11-dormitorio', label: '11 · Dormitorio', group: 'interior', eyeLevel: true, roomId: 'dormitorio', elevation: 0, position: [3.45, 0.7, 1.6], target: [1.8, 3.9, 0.9], fov: 60 }),
-  view({ id: 'v12-bano-entrada', label: '12 · Baño desde la entrada', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [5.6, 1.4, 1.6], target: [4.85, 4.5, 1.05], fov: 70 }),
+  view({ id: 'v12-bano-entrada', label: '12 · Baño desde la entrada', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [5.5, 2.05, 1.6], target: [4.7, 4.6, 1.05], fov: 72 }),
   view({ id: 'v12b-bano-ducha', label: '12b · Baño desde la ducha (duchas enfrentadas)', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [5.05, 4.25, 1.6], target: [5.05, 1.6, 1.2], fov: 66 }),
   view({ id: 'v12c-celosia', label: '12c · Detalle de la celosía', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [4.45, 2.35, 1.6], target: [4.15, 3.6, 1.15], fov: 52 }),
   view({ id: 'v13-altell', label: '13 · Altell, vigas cemento y volta terracota', group: 'interior', eyeLevel: true, roomId: 'altell', elevation: 2.8, position: [4.9, 2.46, 1.6], target: [12, 2.46, 1.6], fov: 64 }),

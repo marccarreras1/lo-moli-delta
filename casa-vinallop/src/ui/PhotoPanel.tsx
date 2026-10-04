@@ -78,7 +78,7 @@ export function PhotoPanel({ projectName, variantName, viewLabel, onClose }: { p
       const q = QUALITY.find((x) => x.id === quality)!;
       const t0 = performance.now();
       const canvas = await mod.renderPhoto(gl, scene, camera, {
-        samples: q.samples, sky: ambience, denoise, studioLights: tab === 'interior' && studio ? mod.studioLights(layout) : undefined, exposure: exposure === 'auto' ? (tab === 'interior' ? 3 : 1) : Number(exposure), scale: RES.find((x) => x.id === res)!.scale, signal: ac.signal,
+        samples: q.samples, sky: ambience, denoise, studioLights: tab === 'interior' && studio ? mod.studioLights(layout) : undefined, exposure: exposure === 'auto' ? (tab === 'interior' ? 2.4 : 1) : Number(exposure), scale: RES.find((x) => x.id === res)!.scale, signal: ac.signal,
         onProgress: (done, total) => setSt({ k: 'muestreando', done, total, t0 }),
       });
       setSt({ k: 'listo', canvas, samples: q.samples, ms: performance.now() - t0 });
@@ -123,7 +123,7 @@ export function PhotoPanel({ projectName, variantName, viewLabel, onClose }: { p
       <div className="photo-row">
         <label>Exposición
           <select value={exposure} disabled={running} onChange={(e) => setExposure(e.target.value)} data-testid="photo-exposure">
-            <option value="auto">Automática ({tab === 'interior' ? 'interior ×3' : 'exterior ×1'})</option>
+            <option value="auto">Automática ({tab === 'interior' ? 'interior ×2,4' : 'exterior ×1'})</option>
             {['1', '2', '3', '5', '8'].map((x) => <option key={x} value={x}>×{x}</option>)}
           </select>
         </label>

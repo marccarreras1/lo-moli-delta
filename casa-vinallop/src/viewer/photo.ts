@@ -246,8 +246,8 @@ export async function renderPhoto(gl: THREE.WebGLRenderer, scene: THREE.Scene, c
     // la luz de entorno de la escena actúa como cielo; el fondo se conserva
     trace = buildTraceScene(scene);
     for (const p of o.studioLights ?? []) {
-      // plafón cálido de ≈1000 lm (≈80 cd) por estancia
-      const l = new THREE.PointLight(0xffd9b0, 80, 0, 2);
+      // plafón cálido de ≈1500 lm (≈120 cd) por estancia
+      const l = new THREE.PointLight(0xffd9b0, 120, 0, 2);
       l.position.set(p[0], p[1], p[2]);
       trace.scene.add(l);
     }

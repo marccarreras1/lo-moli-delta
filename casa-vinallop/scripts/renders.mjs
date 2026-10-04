@@ -49,14 +49,17 @@ for (const [view, amb] of JOBS) {
     window.__store.getState().goView(id, v.group === 'interior' ? 'interior' : 'exterior');
   }, view);
   log(`vista ${view}`);
-  // espera a que la cámara se detenga
-  await page.waitForFunction(() => {
-    const c = window.__visor.camera;
-    const k = c.matrixWorld.elements.map((x) => x.toFixed(4)).join();
+  // espera a que la cámara llegue a la posición de la vista y se detenga
+  await page.waitForFunction((id) => {
+    const v = window.__layout.views.find((x) => x.id === id);
+    const c = window.__visor.camera.position;
+    const [x, y, h] = v.position;
+    const d = Math.hypot(c.x - x, c.z - y);
+    const k = c.toArray().map((n) => n.toFixed(3)).join();
     const same = window.__lastCam === k;
     window.__lastCam = k;
-    return same;
-  }, null, { polling: 400, timeout: 20000 });
+    return same && (v.group === 'interior' ? d < 0.3 : true);
+  }, view, { polling: 500, timeout: 60000 });
   log('cámara quieta');
   await page.waitForTimeout(1500);
   const interior = await page.evaluate(() => window.__store.getState().tab === 'interior');
@@ -72,7 +75,7 @@ for (const [view, amb] of JOBS) {
     } finally {
       v.setFrameloop('always');
     }
-  }, [samples, interior ? Number(process.env.EXP ?? 3) : 1]);
+  }, [samples, interior ? Number(process.env.EXP ?? 2.4) : 1]);
   const name = `${view}${amb === 'dia' ? '' : `-${amb}`}.png`;
   writeFileSync(OUT + name, Buffer.from(data.split(',')[1], 'base64'));
   console.log(`✔ ${name} · ${samples} muestras · ${Math.round((Date.now() - t0) / 1000)} s`);
