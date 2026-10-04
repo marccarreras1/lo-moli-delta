@@ -131,7 +131,7 @@ const rooms: Room[] = [
   room('pasillo', 'pb', 'Pasillo', rect(X_DORM - TP / 2, y0, ALT_X1, Y_PASILLO - TP / 2), 'interpretado', S.planta, 'Franja de ≈0,85 m libres junto al frontal A: une la zona de día y el arranque de la escalera con el dormitorio.', { openTo: ['dormitorio', 'dia'] }),
   room('bano', 'pb', 'Baño', [
     [ARM_X1 + TP / 2, Y_PASILLO + TP / 2], [X_ESC - TP / 2, Y_PASILLO + TP / 2], [X_ESC - TP / 2, y1], [X_DORM + TP / 2, y1], [X_DORM + TP / 2, ARM_Y1 + TP / 2], [ARM_X1 + TP / 2, ARM_Y1 + TP / 2],
-  ], 'documentado', S.prop, 'Entrada desde el pasillo, junto a la escalera (propiedad). Ducha doble, inodoro y lavabo. Puerta de 70 cm al frontal B.'),
+  ], 'documentado', S.prop, 'Entrada desde el pasillo, junto a la escalera (propiedad). Inodoro y lavabo; ducha doble junto a la puerta exterior de 70 cm, que abre hacia fuera.'),
   room('armario-pasillo', 'pb', 'Armario', rect(X_DORM + TP / 2, Y_PASILLO + TP / 2, ARM_X1 - TP / 2, ARM_Y1 - TP / 2), 'documentado', S.prop, 'Armario que se abre desde el pasillo (propiedad), en el rectángulo dibujado junto a la línea del pasillo.'),
   room('dia', 'pb', 'Cocina y estar', rect(ALT_X1, y0, x1, y1), 'documentado', S.prop, 'Doble altura (propiedad). Entrada al baño por el pasillo. Escalera en L, cocina junto a la escalera con isla central, sofá en L y estufa.', { openTo: ['pasillo'] }),
   room('altell', 'altell', 'Altell', rect(x0, y0, ALT_X1, y1), 'documentado', S.prop, 'Zona diáfana a 2,80 m con cama de matrimonio (propiedad), sobre el dormitorio, el pasillo y el baño. La zona de día es de doble altura. Borde hacia la doble altura en el 6,05, con barandilla.'),
@@ -148,7 +148,8 @@ const furniture: Furniture[] = [
   f({ id: 'mesita-altell-2', type: 'mesita', label: 'Mesita', roomId: 'altell', x: 3.55, y: 4.17, w: 0.45, d: 0.45, h: 0.5, rot: 180, status: 'propuesto' }),
   // baño
   f({ id: 'armario-pasillo-mueble', type: 'armario', label: 'Armario del pasillo', roomId: 'armario-pasillo', x: 4.23, y: 1.57, w: 1.3, d: 0.6, h: 2.2, rot: 180, status: 'documentado', open: true, color: '#d9b98f', note: 'Rectángulo de ≈1,40 × 0,65 junto a la línea del pasillo; abierto al pasillo, sin puertas, en madera de haya o pino (propiedad). Tono aproximado.' }),
-  f({ id: 'ducha', type: 'ducha', label: 'Ducha doble', roomId: 'bano', x: 3.93, y: 2.5, w: 1.0, d: 0.75, h: 2.0, rot: 270, status: 'documentado', note: 'Rectángulo de ≈0,75 × 1,00 con punto de agua. La propiedad confirma las dos duchas dentro de este rectángulo, una delante de la otra: ducha doble en este recinto (confirmado).' }),
+  // ducha doble junto a la puerta exterior de 70 cm (propiedad): contra el tabique de la escalera y el frontal B
+  f({ id: 'ducha', type: 'ducha', label: 'Ducha doble', roomId: 'bano', x: 5.55, y: r2(y1 - 0.8), w: 1.6, d: 0.8, h: 2.0, rot: 90, status: 'documentado', note: 'Dos duchas una delante de la otra, junto a la puerta exterior de 70 cm (propiedad). Por eso la puerta abre hacia fuera. Medidas de 0,80 × 1,60 m elegidas para visualizar.' }),
   f({ id: 'inodoro', type: 'inodoro', label: 'Inodoro', roomId: 'bano', x: 3.88, y: 3.22, w: 0.38, d: 0.65, h: 0.42, rot: 270, status: 'documentado', note: 'En la marca «×» contra el tabique del dormitorio (propiedad: las «×» marcan agua, inodoro y lavabo).' }),
   f({ id: 'lavabo', type: 'lavabo', label: 'Lavabo', roomId: 'bano', x: 4.28, y: r2(y1 - 0.3), w: 1.45, d: 0.6, h: 0.85, rot: 180, status: 'documentado', note: 'Mueble dibujado contra el frontal B, con la marca «×» del lavabo.' }),
   // cocina y estar
@@ -161,7 +162,8 @@ const furniture: Furniture[] = [
 
 const water = (id: string, levelId: string, p: Vec2, note: string, sourceId = S.planta): Trace => ({ id, levelId, label: 'Punto de agua (×)', cross: p, sourceId, note });
 const traces: Trace[] = [
-  water('x-ducha', 'pb', [3.72, 2.3], 'En la ducha.'),
+  water('x-ducha', 'pb', [3.72, 2.3], 'Marca «×» del boceto en el rectángulo de ≈0,75 × 1,00 m. La ducha está junto a la puerta exterior (propiedad).'),
+  { id: 'rect-bano', levelId: 'pb', label: 'Rectángulo del baño', sourceId: S.planta, points: [[3.55, 2.0], [4.3, 2.0], [4.3, 3.0], [3.55, 3.0]], closed: true, note: 'Rectángulo de ≈0,75 × 1,00 m dibujado en el baño. Se había tomado por la ducha; la propiedad sitúa la ducha junto a la puerta exterior, así que queda sin uso asignado.' },
   water('x-frontal-a', 'pb', [4.65, y0], 'Sobre la línea del frontal A en el tramo del baño.'),
   water('x-cocina-1', 'pb', [7.57, 3.8], 'En el borde de la encimera.'),
   water('x-cocina-2', 'pb', [8.35, 3.8], 'En el borde de la encimera.'),
@@ -190,7 +192,7 @@ export const VINALLOP: ProjectData = {
   stairs: [
     {
       id: 'escalera', fromLevel: 'pb', toLevel: 'altell', rect: ESC, up: '+y', upStatus: 'documentado', winderEnd: 0.65, risers: 15, status: 'interpretado', sourceId: S.planta,
-      note: 'Escalera en L: arranca junto al pasillo (lado del frontal A), sube hacia el frontal B y en el tramo final gira con peldaños compensados para desembarcar en el altell. Sentido indicado por la propiedad; ancho ≈1,20 m y 15 peldaños hasta 2,80 m (≈0,19 m de tabica). Con el altell más alto la huella queda justa: comprobar con el arquitecto.',
+      note: 'Escalera en L: arranca junto al pasillo (lado del frontal A), sube hacia el frontal B y en el tramo final gira con peldaños compensados para desembarcar en el altell. Sentido indicado por la propiedad; ancho ≈1,20 m y 15 tabicas de ≈0,187 m hasta 2,80 m. Huellas sobre la línea de huella: 10 rectas de 0,25 m en el tramo recto (2,50 m) y 4 compensadas en el giro, de ≈0,25 m a 0,50 m del borde interior; cumple tabica ≤ 0,20 m y huella ≥ 0,22 m sin alargar la escalera. Los peldaños compensados son estrechos junto al eje: lo revisará el arquitecto.',
     },
   ],
   traces,
@@ -269,8 +271,7 @@ export const VINALLOP: ProjectData = {
     'Los anchos de los huecos de los alzados no están a escala. Se usan las cotas escritas.',
   ],
   questions: [
-    'Dices «el interior aquello es la ducha doble»: ¿la ducha doble está dentro del baño junto a la puerta exterior de 70 cm (en la esquina del frontal B con la escalera)? Ahora está en el rectángulo de 0,75 × 1,00 m junto al pasillo.',
-    'Con el altell a 2,80 m la escalera necesita 15 peldaños en ≈3,15 m de recorrido (huella ≈0,21 m, justa). ¿Lo revisa el arquitecto o se alarga la escalera?',
+    'En el baño queda libre el rectángulo de ≈0,75 × 1,00 m con una «×» que yo había tomado por la ducha: ¿qué es (mueble, armario, otro punto de agua) o se quita?',
   ],
   northDeg: null,
   facades: { A: 'Frontal A', B: 'Frontal B', izquierdo: 'Lateral izquierdo', derecho: 'Lateral derecho' },

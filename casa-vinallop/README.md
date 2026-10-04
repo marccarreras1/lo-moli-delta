@@ -54,5 +54,5 @@ Coordenadas en metros: X hacia la derecha del papel, Y hacia abajo. La planta 2D
 
 ## Pendiente de confirmar
 
-- Situación de la ducha doble (¿junto a la puerta exterior de 70 cm?) y recorrido de la escalera con el altell a 2,80 m.
+- Uso del rectángulo de ≈0,75 × 1,00 m del baño (la ducha doble está junto a la puerta exterior).
 - Estado actual: situación y medidas de la habitación pequeña (dibujada en el extremo derecho, junto al algarrobo).

@@ -25,6 +25,13 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(bad, JSON.stringify(bad, null, 2)).toEqual([]);
     expect(layout.slabs[0].thickness).toBe(0.3);
   });
+  it('ducha doble junto a la puerta exterior de 70 cm, dentro del baño', () => {
+    const d = layout.furniture.find((f) => f.id === 'ducha')!;
+    const o = op('puerta-70');
+    const doorMid = o.offset + 0.15 + o.width / 2;
+    expect(Math.abs(d.x - doorMid)).toBeLessThan(0.5);
+    expect(d.y + d.w / 2).toBeCloseTo(4.4, 2);
+  });
   it('puerta de 70 cm abre hacia fuera y el armario del pasillo no tiene puertas', () => {
     expect(op('puerta-70').swing).toEqual({ hinge: 'fin', dir: 1 });
     expect(op('puertas-armario').kind).toBe('paso');
