@@ -1,7 +1,7 @@
 import { Line } from '@react-three/drei';
 import { useMemo } from 'react';
 import * as THREE from 'three';
-import type { Layout, Opening, Stair, Trace, Vec2, Wall } from '../data/types';
+import type { Layout, Opening, Railing, RoofSegment, Stair, Trace, Vec2, Wall } from '../data/types';
 import { AMBER } from '../ui/status';
 import { pointOnWall, wallDir, wallNormal, wallPieces } from '../model/geometry';
 import type { MaterialSet } from './materials';
@@ -59,8 +59,12 @@ export function House({ layout, mats, showRoof, showCeiling, mode, sectionHeight
       {layout.stairs.filter((st) => visible(st.fromLevel)).map((st) => (
         <StairMesh key={st.id} st={st} from={elev(st.fromLevel)} to={elev(st.toLevel)} mat={mats.stair} />
       ))}
+      {(layout.railings ?? []).filter((r) => visible(r.levelId)).map((r) => <RailingMesh key={r.id} r={r} y={elev(r.levelId)} mat={mats.metal} />)}
       {layout.traces.filter((t) => visible(t.levelId)).map((t) => <TraceLine key={t.id} t={t} y={elev(t.levelId) + 0.03} />)}
-      {showCeiling && mode === 'solido' && (layout.roof?.ceiling ? <Vaults layout={layout} mats={mats} /> : <Ceiling layout={layout} mats={mats} />)}
+      {layout.roofSegments?.length ? (
+        ((showRoof && mode !== 'corte') || (showCeiling && mode === 'solido')) && <RoofSegments segments={layout.roofSegments} mats={mats} />
+      ) : null}
+      {!layout.roofSegments?.length && showCeiling && mode === 'solido' && (layout.roof?.ceiling ? <Vaults layout={layout} mats={mats} /> : <Ceiling layout={layout} mats={mats} />)}
       {showRoof && mode !== 'corte' && <Roof layout={layout} mats={mats} />}
       {showRoof && !showCeiling && mode === 'solido' && layout.roof?.ceiling && <Vaults layout={layout} mats={mats} />}
     </group>
@@ -327,6 +331,102 @@ function Gable({ L, H, mats, profile }: { L: number; W: number; H: number; mats:
     <group>
       {[0.3, L].map((x) => (
         <mesh key={x} geometry={geo} position={[x, H, 0]} rotation={[0, -Math.PI / 2, 0]} material={mats.facade} castShadow>
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/** Textura de chapa ondulada (franjas claras y oscuras a lo largo de la pendiente). */
+function corrugatedTexture() {
+  const n = 16;
+  const data = new Uint8Array(n * 4);
+  for (let i = 0; i < n; i++) {
+    const v = Math.round(150 + 34 * Math.cos((i / n) * Math.PI * 2));
+    data.set([v, v, v - 6, 255], i * 4);
+  }
+  const t = new THREE.DataTexture(data, n, 1);
+  t.wrapS = THREE.RepeatWrapping;
+  t.wrapT = THREE.RepeatWrapping;
+  t.magFilter = THREE.LinearFilter;
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.needsUpdate = true;
+  return t;
+}
+
+/**
+ * Cubiertas a un agua por volúmenes (estado actual): faldón alto en y0 y bajo en y1,
+ * con hastiales triangulares sobre los muros transversales.
+ */
+function RoofSegments({ segments, mats }: { segments: RoofSegment[]; mats: MaterialSet }) {
+  const base = useMemo(() => corrugatedTexture(), []);
+  const fibro = useMemo(() => segments.map((sg) => {
+    const t = base.clone();
+    t.repeat.set((sg.rect[2] - sg.rect[0]) / 0.18, 1);
+    t.needsUpdate = true;
+    return new THREE.MeshStandardMaterial({ color: '#b4b2a8', map: t, roughness: 0.95, side: THREE.DoubleSide });
+  }), [segments, base]);
+  return (
+    <group>
+      {segments.map((sg, i) => {
+        const [x0, y0, x1, y1] = sg.rect;
+        const t = sg.material === 'fibrocemento' ? 0.05 : 0.2;
+        const run = y1 - y0;
+        const p = Math.atan2(sg.hy0 - sg.hy1, run);
+        const len = (run + 2 * sg.overhang) / Math.cos(p);
+        const mat = sg.material === 'fibrocemento' ? fibro[i] : mats.roof;
+        // los hastiales se apoyan en los muros de los extremos del faldón (eje a 0,15 m del borde exterior si es fachada)
+        const isEnd = (x: number) => !segments.some((o) => o !== sg && (Math.abs(o.rect[0] - x) < 1e-6 || Math.abs(o.rect[2] - x) < 1e-6));
+        const gx = [isEnd(x0) ? x0 + 0.15 : x0, isEnd(x1) ? x1 - 0.15 : x1];
+        return (
+          <group key={sg.id}>
+            <mesh position={[(x0 + x1) / 2, (sg.hy0 + sg.hy1) / 2 + t / 2, (y0 + y1) / 2]} rotation={[p, 0, 0]} castShadow receiveShadow material={mat}>
+              <boxGeometry args={[x1 - x0 + 0.1, t, len]} />
+            </mesh>
+            {gx.map((x) => <SegmentGable key={x} x={x} y0={y0} y1={y1} hy0={sg.hy0} hy1={sg.hy1} mat={mats.facade} />)}
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+function SegmentGable({ x, y0, y1, hy0, hy1, mat }: { x: number; y0: number; y1: number; hy0: number; hy1: number; mat: THREE.Material }) {
+  const geo = useMemo(() => {
+    const s = new THREE.Shape();
+    s.moveTo(y0, hy1);
+    s.lineTo(y1, hy1);
+    s.lineTo(y0, hy0);
+    s.closePath();
+    return new THREE.ExtrudeGeometry(s, { depth: 0.3, bevelEnabled: false });
+  }, [y0, y1, hy0, hy1]);
+  // la forma vive en (y_planta, altura); girada -90° en Y su eje X pasa a ser el eje Y de planta y se extruye hacia -x
+  return <mesh geometry={geo} position={[x + 0.15, 0, 0]} rotation={[0, -Math.PI / 2, 0]} material={mat} castShadow receiveShadow />;
+}
+
+/** Barandilla: pasamanos, zócalo inferior y barrotes verticales a lo largo de cada tramo. */
+function RailingMesh({ r, y, mat }: { r: Railing; y: number; mat: THREE.Material }) {
+  const parts: { pos: [number, number, number]; size: [number, number, number]; rotY: number }[] = [];
+  for (let i = 0; i < r.points.length - 1; i++) {
+    const [ax, ay] = r.points[i];
+    const [bx, by] = r.points[i + 1];
+    const len = Math.hypot(bx - ax, by - ay);
+    const rotY = -Math.atan2(by - ay, bx - ax);
+    const mx = (ax + bx) / 2;
+    const my = (ay + by) / 2;
+    parts.push({ pos: [mx, y + r.height - 0.02, my], size: [len, 0.04, 0.05], rotY });
+    parts.push({ pos: [mx, y + 0.06, my], size: [len, 0.03, 0.03], rotY });
+    const n = Math.max(1, Math.round(len / r.spacing));
+    for (let k = 0; k <= n; k++) {
+      const t = k / n;
+      parts.push({ pos: [ax + (bx - ax) * t, y + r.height / 2, ay + (by - ay) * t], size: [0.02, r.height, 0.02], rotY });
+    }
+  }
+  return (
+    <group>
+      {parts.map((p, i) => (
+        <mesh key={i} position={p.pos} rotation={[0, p.rotY, 0]} material={mat} castShadow>
+          <boxGeometry args={p.size} />
         </mesh>
       ))}
     </group>

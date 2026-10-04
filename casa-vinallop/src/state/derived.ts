@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { buildTestModel } from '../data/modeloPrueba';
 import { VINALLOP } from '../data/vinallop';
+import { VINALLOP_ACTUAL } from '../data/vinallopActual';
 import { cameraPresets } from '../model/cameras';
 import { hasGeometry, resolveLayout } from '../model/resolve';
 import { validateLayout } from '../model/validate';
@@ -12,7 +13,7 @@ const TEST = buildTestModel();
 export function useModel() {
   const source = useStore((s) => s.visual.modelSource);
   const designs = useStore((s) => s.designs);
-  const project = source === 'prueba' ? TEST : VINALLOP;
+  const project = source === 'prueba' ? TEST : source === 'actual' ? VINALLOP_ACTUAL : VINALLOP;
   const d = activeDesign({ designs, visual: { modelSource: source } as never });
   const variant = d.activeId === BASE_ID ? d.base : d.variants.find((v) => v.id === d.activeId) ?? d.base;
   const isBase = variant.id === BASE_ID;

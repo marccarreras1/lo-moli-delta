@@ -18,13 +18,18 @@ export function cameraPresets(layout: Layout): CameraPreset[] {
   ];
   // una vista por cada fachada identificada (sin puntos cardinales)
   for (const [fid, name] of Object.entries(layout.facades)) {
-    const w = layout.walls.find((x) => x.facade === fid);
+    const ws = layout.walls.filter((x) => x.facade === fid);
+    const w = ws[0];
     if (!w) continue;
-    const mid = pointOnWall(w, Math.hypot(w.b[0] - w.a[0], w.b[1] - w.a[1]) / 2);
+    // una fachada puede estar partida en tramos (volúmenes de distinta altura): se centra en el conjunto
+    const ends = ws.flatMap((x) => [x.a, x.b]);
+    const mid: [number, number] = [(Math.min(...ends.map((p) => p[0])) + Math.max(...ends.map((p) => p[0]))) / 2, (Math.min(...ends.map((p) => p[1])) + Math.max(...ends.map((p) => p[1]))) / 2];
     let n = wallNormal(w);
     if ((cx - mid[0]) * n[0] + (cy - mid[1]) * n[1] > 0) n = [-n[0], -n[1]];
     const d = R * 1.6;
-    list.push({ id: `fachada-${fid}`, label: name, group: 'exterior', position: [mid[0] + n[0] * d, mid[1] + n[1] * d, 1.7], target: [mid[0], mid[1], 1.4] });
+    // con entorno (olivar) la cámara se eleva para mirar por encima de las copas
+    const camH = layout.site ? 6.5 : 1.7;
+    list.push({ id: `fachada-${fid}`, label: name, group: 'exterior', position: [mid[0] + n[0] * d, mid[1] + n[1] * d, camH], target: [mid[0], mid[1], 1.4] });
   }
   list.push({ id: 'cenital', label: 'Cenital', group: 'planta', position: [cx, cy + 0.001, R * 1.7], target: [cx, cy, 0] });
   // interiores: desde la esquina más despejada de cada estancia, mirando a la opuesta

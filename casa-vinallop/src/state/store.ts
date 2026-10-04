@@ -14,7 +14,7 @@ import type { OpeningOverride, Variant } from '../model/resolve';
 export type ViewTab = 'exterior' | 'plantas' | 'interior';
 export type DisplayMode = 'solido' | 'atenuado' | 'corte';
 export type PlanLayout = '2d' | '3d';
-export type ModelSource = 'vinallop' | 'prueba';
+export type ModelSource = 'vinallop' | 'actual' | 'prueba';
 export type Ambience = 'neutra' | 'calida' | 'nublada';
 export type Quality = 'auto' | 'alta' | 'ligera';
 export type SheetState = 'cerrado' | 'parcial' | 'ampliado';
@@ -25,6 +25,8 @@ export interface Visual {
   showLabels: boolean;
   showDims: boolean;
   showAreas: boolean;
+  /** entorno de la parcela (olivar, algarrobo, solera) si el proyecto lo define */
+  showSite: boolean;
   mode: DisplayMode;
   sectionHeight: number;
   lightIntensity: number;
@@ -67,6 +69,7 @@ export const defaultVisual = (): Visual => ({
   showLabels: true,
   showDims: true,
   showAreas: true,
+  showSite: true,
   mode: 'solido',
   sectionHeight: 1.2,
   lightIntensity: 1,
@@ -146,6 +149,7 @@ function cleanVisual(x: unknown): Visual {
     showLabels: bool(o.showLabels, d.showLabels),
     showDims: bool(o.showDims, d.showDims),
     showAreas: bool(o.showAreas, d.showAreas),
+    showSite: bool(o.showSite, d.showSite),
     mode: pick(o.mode, ['solido', 'atenuado', 'corte'] as const, d.mode),
     sectionHeight: num(o.sectionHeight, 0.4, 2.6, d.sectionHeight),
     lightIntensity: num(o.lightIntensity, 0.35, 1.8, d.lightIntensity),
@@ -157,7 +161,7 @@ function cleanVisual(x: unknown): Visual {
     overlayRefId: typeof o.overlayRefId === 'string' ? o.overlayRefId : null,
     overlayOpacity: num(o.overlayOpacity, 0, 1, d.overlayOpacity),
     helpDismissed: bool(o.helpDismissed, d.helpDismissed),
-    modelSource: pick(o.modelSource, ['vinallop', 'prueba'] as const, d.modelSource),
+    modelSource: pick(o.modelSource, ['vinallop', 'actual', 'prueba'] as const, d.modelSource),
     levelId: typeof o.levelId === 'string' ? o.levelId.slice(0, 40) : null,
   };
 }
@@ -243,7 +247,7 @@ function read(k: string): unknown {
   }
 }
 
-const projectIdOf = (src: ModelSource) => (src === 'prueba' ? 'modelo-prueba' : 'casa-vinallop');
+const projectIdOf = (src: ModelSource) => (src === 'prueba' ? 'modelo-prueba' : src === 'actual' ? 'casa-vinallop-actual' : 'casa-vinallop');
 
 function load() {
   if (typeof window === 'undefined') return { visual: defaultVisual(), designs: {}, cameras: {} };
@@ -306,10 +310,18 @@ export const useStore = create<Store>((set, get) => {
       set({ cameraRequest: { id: get().cameras[tab] ? 'memoria' : 'inicio', nonce: nonce++ } });
     },
     setVisual: (k, v) => {
+      const prev = get().visual.modelSource;
       set((s) => ({ visual: { ...s.visual, [k]: v } }));
-      if (k === 'modelSource') {
-        set((st) => ({ selection: null, past: [], future: [], openFractions: {}, cameras: {}, lastPreset: {}, visual: { ...st.visual, levelId: null } }));
-        set({ cameraRequest: { id: 'inicio', nonce: nonce++ } });
+      if (k === 'modelSource' && v !== prev) {
+        // entre fases de Casa Vinallop (misma huella) se conserva la cámara para comparar
+        const samePlot = prev !== 'prueba' && v !== 'prueba';
+        if (samePlot) {
+          set((st) => ({ selection: null, past: [], future: [], openFractions: {}, visual: { ...st.visual, levelId: null } }));
+          set((st) => ({ cameraRequest: { id: st.cameras[st.tab] ? 'memoria' : 'inicio', nonce: nonce++, instant: true } }));
+        } else {
+          set((st) => ({ selection: null, past: [], future: [], openFractions: {}, cameras: {}, lastPreset: {}, visual: { ...st.visual, levelId: null } }));
+          set({ cameraRequest: { id: 'inicio', nonce: nonce++ } });
+        }
       }
     },
     setOpenFraction: (id, f) => set((s) => ({ openFractions: { ...s.openFractions, [id]: Math.max(0, Math.min(1, f)) } })),
@@ -417,7 +429,7 @@ export function serializeConfig(s: Pick<Store, 'designs' | 'visual' | 'cameras'>
     app: CONFIG_APP_ID,
     schema: CONFIG_SCHEMA,
     exportedAt: new Date().toISOString(),
-    proyecto: s.visual.modelSource === 'prueba' ? 'Modelo de prueba (ficticio)' : 'Casa Vinallop',
+    proyecto: s.visual.modelSource === 'prueba' ? 'Modelo de prueba (ficticio)' : s.visual.modelSource === 'actual' ? 'Casa Vinallop · estado actual' : 'Casa Vinallop',
     varianteActiva: activeVariant(s).name,
     aviso: 'Modelo de estudio y visualización. No es un proyecto técnico de ejecución.',
     visual: s.visual,

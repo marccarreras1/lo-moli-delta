@@ -10,6 +10,8 @@ Herramienta para explorar la casa de Vinallop en tres modos (Exterior, Plantas, 
 - Cada dato lleva su estado: *documentado* (cota escrita), *interpretado* (medido o deducido del dibujo), *propuesto* o *pendiente*. Los trazos que no se entienden se dibujan tal cual, en ámbar, como «sin interpretar».
 - Las preguntas abiertas están en la aplicación: menú ⋯ → «Medidas y documentación».
 - Las fotografías **no** están en el repositorio. Para superponerlas al plano, añádelas en «Referencias» (se guardan solo en el navegador).
+- **Fases:** «Reforma» (bocetos) y «Estado actual» (la casa antes de la reforma, interpretada a partir de las fotos de la propiedad: tres volúmenes de una planta con cubiertas de fibrocemento a un agua). Se cambia en el panel; la cámara se mantiene para comparar.
+- **Entorno de la parcela** (olivar, algarrobo y solera de hormigón) aproximado a partir de las fotos; se oculta en «Visibilidad → Entorno».
 - Existe además un **modelo de prueba ficticio** para probar la interfaz (menú ⋯ → «Modelo de prueba»), siempre marcado como tal.
 
 ## Ejecutar
@@ -31,6 +33,8 @@ No necesita backend ni servicios externos. No se ha publicado en ningún sitio.
 | Qué | Archivo |
 | --- | --- |
 | Geometría de Casa Vinallop (muros, huecos, estancias, mobiliario, medidas, fuentes) | `src/data/vinallop.ts` |
+| Estado actual (antes de la reforma) | `src/data/vinallopActual.ts` |
+| Entorno de la parcela | `src/data/parcela.ts` |
 | Tipos del modelo de datos (estados documentado / interpretado / propuesto / pendiente) | `src/data/types.ts` |
 | Materiales y combinaciones | `src/data/acabados.ts` |
 | Modelo de prueba ficticio | `src/data/modeloPrueba.ts` |
@@ -50,6 +54,5 @@ Coordenadas en metros: X hacia la derecha del papel, Y hacia abajo. La planta 2D
 
 ## Pendiente de confirmar
 
-- Acceso al baño desde el interior y fondo del armario del pasillo.
-- Altura de la obertura de 2,25 m de planta baja (bajo el altell).
-- Dirección y separación de las vigas de la vuelta catalana.
+- Diseño de la barandilla del altell (dibujada de 1,00 m con barrotes) y si la escalera lleva barandilla en su lado abierto.
+- Estado actual: espesores de los muros existentes y el volumen bajo junto al algarrobo (no dibujado).

@@ -5,3 +5,4 @@ screenshots
 # Documentación privada: no subir planos, informes ni fotografías al repositorio
 docs-privados/
 *.pdf
+*.tsbuildinfo

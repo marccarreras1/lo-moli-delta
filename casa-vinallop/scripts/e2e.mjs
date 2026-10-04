@@ -81,6 +81,7 @@ try {
     await pause(page, 300);
     const altTxt = await page.getByTestId('plan-svg').innerText();
     check('Selector de nivel: plano del altell', altTxt.includes('Altell') && altTxt.includes('desembarco') && !altTxt.includes('Dormitorio'));
+    check('Barandilla del altell dibujada en su plano', (await page.locator('[data-testid="plan-svg"] [data-railing]').count()) === 1);
     await page.screenshot({ path: `${OUT}v-04-plano-altell.png` });
     await page.click('[data-action="export-menu"]');
     const [svgA] = await Promise.all([page.waitForEvent('download'), page.click('[data-action="export-svg"]')]);
@@ -96,12 +97,40 @@ try {
     await pause(page, 1000);
     check('Vista interior del altell', (await page.locator('.view-title').innerText()).includes('Altell'));
     await page.screenshot({ path: `${OUT}v-06-interior-altell.png` });
+    await page.selectOption('[data-control="interior-camera"]', 'mirador-altell');
+    await pause(page, 1000);
+    await page.screenshot({ path: `${OUT}v-06b-altell-barandilla.png` });
     await page.click('[data-tab="exterior"]');
     await page.click('[data-action="more-menu"]');
     await page.getByRole('menuitem', { name: 'Medidas y documentación' }).click();
     await page.getByTestId('info-dialog').waitFor();
     check('Preguntas abiertas visibles en «Medidas y documentación»', (await page.getByTestId('questions').innerText()).toLowerCase().includes('altell'));
     await page.keyboard.press('Escape');
+
+    // Fase: estado actual (fotos antes de la reforma) con el entorno de la parcela
+    await page.locator('[data-control="phase"] button', { hasText: 'Estado actual' }).click();
+    await waitReady(page);
+    await pause(page, 1200);
+    check('Fase «Estado actual»: cambia el proyecto', (await page.getByTestId('view-status').innerText()).includes('Estado actual'));
+    check('Estado actual: el visor muestra contenido', await canvasVaried(page));
+    check('Entorno de la parcela activable', await page.locator('[data-control="site"]').isEnabled());
+    await page.click('[data-camera="general"]');
+    await pause(page, 900);
+    await page.screenshot({ path: `${OUT}v-07-estado-actual.png` });
+    await page.click('[data-camera="fachada-B"]');
+    await pause(page, 900);
+    await page.screenshot({ path: `${OUT}v-08-estado-actual-frontal-b.png` });
+    await page.click('[data-tab="plantas"]');
+    await page.locator('[data-control="plan-layout"] button', { hasText: 'Plano 2D' }).click();
+    await page.getByTestId('plan-svg').waitFor();
+    await page.screenshot({ path: `${OUT}v-09-estado-actual-plano.png` });
+    const actTxt = await page.getByTestId('plan-svg').innerText();
+    check('Plano del estado actual con sus tres volúmenes', ['Volumen del extremo', 'Anexo', 'Volumen principal'].every((t) => actTxt.includes(t)));
+    await page.click('[data-tab="exterior"]');
+    await page.locator('[data-control="phase"] button', { hasText: 'Reforma' }).click();
+    await waitReady(page);
+    await pause(page, 600);
+    check('Vuelta a la fase «Reforma»', !(await page.getByTestId('view-status').innerText()).includes('Estado actual'));
 
     // ---------- 2. Modelo de prueba (tareas de interfaz) ----------
     await page.click('[data-action="more-menu"]');

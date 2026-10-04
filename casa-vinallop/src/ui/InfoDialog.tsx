@@ -69,6 +69,25 @@ export function InfoDialog({ onClose }: { onClose: () => void }) {
           <ul className="plain">{project.stairs.map((st) => <li key={st.id}>{st.note}</li>)}</ul>
         </>
       )}
+      {(project.railings?.length ?? 0) > 0 && (
+        <>
+          <h3>Barandillas</h3>
+          <ul className="plain">{project.railings!.map((r) => <li key={r.id}><strong>{r.label}</strong> ({r.status}): {r.note}</li>)}</ul>
+        </>
+      )}
+      {project.roofSegments?.length ? (
+        <>
+          <h3>Cubiertas por volúmenes</h3>
+          <ul className="plain">{project.roofSegments.map((s) => <li key={s.id}><strong>{s.label}</strong> ({s.status}): alero {s.hy0.toLocaleString('es-ES')} m en el frontal A y {s.hy1.toLocaleString('es-ES')} m en el frontal B. {s.note}</li>)}</ul>
+        </>
+      ) : null}
+      {project.site && (
+        <>
+          <h3>Entorno de la parcela</h3>
+          <p>{project.site.note}</p>
+          <ul className="plain">{[...project.site.trees, ...project.site.pavements].map((x) => <li key={x.id}><strong>{x.label}:</strong> {x.note}</li>)}</ul>
+        </>
+      )}
       {project.traces.length > 0 && (
         <>
           <h3>Trazos y marcas sin interpretar</h3>

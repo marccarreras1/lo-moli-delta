@@ -1,7 +1,7 @@
-import { Canvas } from '@react-three/fiber';
-import { useEffect, useMemo } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import type { Layout } from '../data/types';
+import type { Layout, Site } from '../data/types';
 import { useModel } from '../state/derived';
 import { type Ambience, useStore } from '../state/store';
 import { Annotations } from './Annotations';
@@ -66,7 +66,7 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
       <color attach="background" args={['#f5f3ee']} />
       <fog attach="fog" args={['#f5f3ee', 60, 140]} />
       <Lights layout={layout} intensity={v.lightIntensity} ambience={v.ambience} shadowSize={quality === 'alta' ? 2048 : 1024} />
-      <Ground layout={layout} />
+      {layout.site && v.showSite ? <SiteGround layout={layout} site={layout.site} lite={quality !== 'alta'} /> : <Ground layout={layout} />}
       <House layout={layout} mats={mats} showRoof={showRoof} showCeiling={tab === 'interior'} mode={mode}
         sectionHeight={cutAbs} selection={selection} openFractions={openFractions} onSelect={select} maxElev={maxElev} />
       {v.showFurniture && <Furniture3D items={furniture} mats={mats} elevationOf={(f) => roomLevel.get(f.roomId) ?? 0} />}
@@ -123,6 +123,127 @@ function Ground({ layout }: { layout: Layout }) {
         <meshStandardMaterial color="#ecebe5" roughness={1} />
       </mesh>
       <gridHelper args={[grid, grid, '#dcdcd3', '#e4e3dc']} position={[cx, -0.115, cy]} />
+    </group>
+  );
+}
+
+/** generador pseudoaleatorio determinista (la parcela se ve igual en cada carga) */
+function rng(seed: number) {
+  let s = seed >>> 0 || 1;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+
+/**
+ * Entorno de la parcela aproximado a partir de las fotos: terreno rojizo, olivar en
+ * retícula ligeramente irregular, algarrobo y solera. No es un levantamiento.
+ */
+function SiteGround({ layout, site, lite }: { layout: Layout; site: Site; lite: boolean }) {
+  const { minX, minY, maxX, maxY } = layout.bounds;
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  const olives = useMemo(() => {
+    const r = rng(site.olives.seed);
+    const { spacing: s, extent, clear } = site.olives;
+    const out: { x: number; y: number; k: number; rot: number }[] = [];
+    for (let gx = -extent; gx <= extent; gx += s) {
+      for (let gy = -extent; gy <= extent; gy += s) {
+        const x = cx + gx + (r() - 0.5) * 1.6;
+        const y = cy + gy + (r() - 0.5) * 1.6;
+        const k = 0.8 + r() * 0.45;
+        const rot = r() * Math.PI * 2;
+        if (Math.hypot(gx, gy) > extent) continue;
+        if (x > clear[0] && x < clear[2] && y > clear[1] && y < clear[3]) continue;
+        if (site.trees.some((t) => Math.hypot(t.c[0] - x, t.c[1] - y) < t.r + 1.5)) continue;
+        out.push({ x, y, k, rot });
+      }
+    }
+    return out;
+  }, [site, cx, cy]);
+  const trunks = useMemo(() => new THREE.InstancedMesh(new THREE.CylinderGeometry(0.16, 0.26, 1.2, 7), new THREE.MeshStandardMaterial({ color: '#6b5a48', roughness: 1 }), olives.length), [olives.length]);
+  const crowns = useMemo(() => new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, lite ? 0 : 1), new THREE.MeshStandardMaterial({ color: '#8c9670', roughness: 1, flatShading: true }), olives.length), [olives.length, lite]);
+  // los árboles que tapan la casa desde la cámara se ocultan (olivos) o se aclaran (algarrobo)
+  const hidden = useRef<boolean[]>([]);
+  const lastCam = useRef(new THREE.Vector3(Infinity, 0, 0));
+  const treeMats = useMemo(() => site.trees.map(() => new THREE.MeshStandardMaterial({ color: '#4f6a35', roughness: 1, flatShading: true, transparent: true })), [site.trees]);
+  const writeMatrices = (hide: boolean[]) => {
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const zero = new THREE.Vector3(0, 0, 0);
+    olives.forEach((o, i) => {
+      q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), o.rot);
+      const s = hide[i] ? 0 : 1;
+      m.compose(new THREE.Vector3(o.x, 0.6 * o.k - 0.12, o.y), q, s ? new THREE.Vector3(o.k, o.k, o.k) : zero);
+      trunks.setMatrixAt(i, m);
+      m.compose(new THREE.Vector3(o.x, 2.0 * o.k, o.y), q, s ? new THREE.Vector3(1.9 * o.k, 1.25 * o.k, 1.7 * o.k) : zero);
+      crowns.setMatrixAt(i, m);
+    });
+    trunks.instanceMatrix.needsUpdate = true;
+    crowns.instanceMatrix.needsUpdate = true;
+  };
+  useEffect(() => {
+    hidden.current = olives.map(() => false);
+    lastCam.current.set(Infinity, 0, 0);
+    writeMatrices(hidden.current);
+    trunks.castShadow = crowns.castShadow = true;
+  }, [olives, trunks, crowns]);
+  useFrame(({ camera }) => {
+    if (camera.position.distanceToSquared(lastCam.current) < 0.01) return;
+    lastCam.current.copy(camera.position);
+    const cam = camera.position;
+    const centre = new THREE.Vector3(cx, 1.5, cy);
+    const toHouse = centre.clone().sub(cam);
+    const dHouse = toHouse.length();
+    toHouse.normalize();
+    const halfDiag = Math.hypot(maxX - minX, maxY - minY) / 2;
+    const houseAng = Math.atan(halfDiag / Math.max(dHouse, 0.1));
+    const occludes = (x: number, y: number, h: number, r: number) => {
+      const v = new THREE.Vector3(x, h, y).sub(cam);
+      const d = v.length();
+      if (d > dHouse - 1 || d < 0.1) return false;
+      return v.normalize().angleTo(toHouse) < houseAng + Math.atan(r / d) * 0.9;
+    };
+    // en interiores (cámara dentro de la casa) no se oculta nada
+    const inside = cam.x > minX && cam.x < maxX && cam.z > minY && cam.z < maxY;
+    const next = olives.map((o) => !inside && occludes(o.x, o.y, 2 * o.k, 2 * o.k));
+    if (next.some((h, i) => h !== hidden.current[i])) {
+      hidden.current = next;
+      writeMatrices(next);
+    }
+    site.trees.forEach((t, i) => {
+      treeMats[i].opacity = !inside && occludes(t.c[0], t.c[1], t.h * 0.6, t.r) ? 0.25 : 1;
+      treeMats[i].depthWrite = treeMats[i].opacity === 1;
+    });
+  });
+  useEffect(() => () => {
+    for (const im of [trunks, crowns]) {
+      im.geometry.dispose();
+      (im.material as THREE.Material).dispose();
+    }
+  }, [trunks, crowns]);
+  useEffect(() => () => treeMats.forEach((m) => m.dispose()), [treeMats]);
+  return (
+    <group>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[cx, -0.121, cy]} receiveShadow>
+        <circleGeometry args={[site.olives.extent + 30, 64]} />
+        <meshStandardMaterial color={site.ground} roughness={1} />
+      </mesh>
+      {site.pavements.map((p) => (
+        <mesh key={p.id} position={[(p.rect[0] + p.rect[2]) / 2, -0.1, (p.rect[1] + p.rect[3]) / 2]} receiveShadow>
+          <boxGeometry args={[p.rect[2] - p.rect[0], 0.04, p.rect[3] - p.rect[1]]} />
+          <meshStandardMaterial color="#d3cdbf" roughness={0.95} />
+        </mesh>
+      ))}
+      <primitive object={trunks} />
+      <primitive object={crowns} />
+      {site.trees.map((t, i) => (
+        <group key={t.id} position={[t.c[0], -0.12, t.c[1]]}>
+          <mesh position={[0, t.h * 0.2, 0]} castShadow><cylinderGeometry args={[0.25, 0.4, t.h * 0.4, 8]} /><meshStandardMaterial color="#5e5043" roughness={1} /></mesh>
+          <mesh position={[0, t.h * 0.62, 0]} scale={[t.r, t.h * 0.36, t.r]} castShadow material={treeMats[i]}><icosahedronGeometry args={[1, lite ? 1 : 2]} /></mesh>
+        </group>
+      ))}
     </group>
   );
 }

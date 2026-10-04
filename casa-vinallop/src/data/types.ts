@@ -87,6 +87,20 @@ export interface Trace {
   note: string;
 }
 
+/** Barandilla sobre el suelo de un nivel (p. ej. el borde del altell hacia la doble altura). */
+export interface Railing {
+  id: string;
+  levelId: string;
+  label: string;
+  points: Vec2[];
+  height: number;
+  /** separación entre barrotes */
+  spacing: number;
+  status: DataStatus;
+  sourceId: string;
+  note?: string;
+}
+
 /** Lo que se lee literalmente en una fuente y cómo se interpreta. */
 export interface Reading {
   sourceId: string;
@@ -182,6 +196,38 @@ export interface RoofOption {
   ceiling?: { type: 'vuelta-catalana'; spacing: number; rise: number; status: DataStatus; note: string };
 }
 
+/**
+ * Faldón de cubierta inclinada sobre un volumen (estado actual: cubiertas a un agua
+ * escalonadas). Alto en y0 y bajo en y1; sobre los muros laterales se cierran hastiales.
+ */
+export interface RoofSegment {
+  id: string;
+  label: string;
+  /** [x0, y0, x1, y1] en planta, por la cara exterior de los muros */
+  rect: [number, number, number, number];
+  /** altura del alero en y0 y en y1 */
+  hy0: number;
+  hy1: number;
+  overhang: number;
+  material: 'fibrocemento' | 'losa';
+  status: DataStatus;
+  sourceId: string;
+  note?: string;
+}
+
+/** Entorno de la parcela, aproximado a partir de fotografías (no es un levantamiento). */
+export interface Site {
+  status: DataStatus;
+  sourceId: string;
+  note: string;
+  /** color del terreno */
+  ground: string;
+  /** olivar en retícula aproximada; se deja libre la zona `clear` alrededor de la casa */
+  olives: { spacing: number; extent: number; clear: [number, number, number, number]; seed: number };
+  trees: { id: string; label: string; c: Vec2; r: number; h: number; note: string }[];
+  pavements: { id: string; label: string; rect: [number, number, number, number]; note: string }[];
+}
+
 /** Definición completa de un proyecto (Casa Vinallop o modelo de prueba). */
 export interface ProjectData {
   id: string;
@@ -211,6 +257,12 @@ export interface ProjectData {
   /** fachadas identificadas: id → nombre visible */
   facades: Record<string, string>;
   notices: string[];
+  /** cubiertas inclinadas por volúmenes; si existen, sustituyen a `roofOptions` */
+  roofSegments?: RoofSegment[];
+  railings?: Railing[];
+  site?: Site;
+  /** fase de la casa que representa (solo Casa Vinallop) */
+  phase?: 'actual' | 'reforma';
 }
 
 /** Proyecto resuelto con una variante aplicada. */

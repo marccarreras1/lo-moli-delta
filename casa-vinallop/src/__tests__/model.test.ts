@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildTestModel } from '../data/modeloPrueba';
 import { VINALLOP } from '../data/vinallop';
+import { VINALLOP_ACTUAL } from '../data/vinallopActual';
 import { cameraPresets } from '../model/cameras';
 import { polygonArea, wallPieces } from '../model/geometry';
 import { leafPose } from '../model/openings';
@@ -18,11 +19,16 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
   const op = (id: string) => layout.openings.find((o) => o.id === id)!;
   const x0 = (id: string) => Math.min(...room(id).polygon.map((p) => p[0]));
 
-  it('tiene geometría y no tiene errores; el único conflicto es el hueco de 3 m contra el forjado del altell', () => {
+  it('tiene geometría y no tiene errores ni conflictos (la obertura de 2,40 m queda bajo el forjado del altell)', () => {
     expect(hasGeometry(VINALLOP)).toBe(true);
     const bad = issues.filter((i) => i.level !== 'aviso');
-    expect(bad.map((i) => i.elementId), JSON.stringify(bad, null, 2)).toEqual(['obertura-225-pb']);
-    expect(bad[0].message).toContain('forjado');
+    expect(bad, JSON.stringify(bad, null, 2)).toEqual([]);
+  });
+  it('barandilla en el borde del altell, libre en el desembarco de la escalera', () => {
+    const r = layout.railings!.find((x) => x.id === 'barandilla-altell')!;
+    expect(r.levelId).toBe('altell');
+    expect(r.points.every((p) => p[0] === 6.05)).toBe(true);
+    expect(Math.max(...r.points.map((p) => p[1]))).toBeLessThan(layout.stairs[0].rect[3]);
   });
   it('altell diáfano con cama de matrimonio', () => {
     const camas = layout.furniture.filter((f) => f.type === 'cama' && f.roomId === 'altell');
@@ -58,7 +64,7 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     const start = o.offset + 0.15;
     expect(start).toBeGreaterThanOrEqual(x0('dia'));
     expect(issues.some((i) => i.elementId === o.id && i.level === 'conflicto')).toBe(false);
-    expect(op('obertura-225-pb').height).toBe(3);
+    expect(op('obertura-225-pb').height).toBe(2.4);
   });
   it('los huecos son reales en los muros (también el del altell)', () => {
     for (const o of layout.openings) {
@@ -73,7 +79,7 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(layout.stairs[0].toLevel).toBe('altell');
   });
   it('los trazos y marcas no interpretados se conservan como pendientes, no como estancias', () => {
-    expect(layout.traces.map((t) => t.id)).toContain('borde-altell');
+    expect(layout.railings!.map((t) => t.id)).toContain('barandilla-altell');
     expect(layout.traces.filter((t) => t.cross).length).toBeGreaterThan(3);
     expect(layout.rooms.some((r) => r.id.includes('trazo'))).toBe(false);
   });
@@ -119,6 +125,7 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(layout.roofOptions).toHaveLength(1);
     expect(layout.roof?.type).toBe('plana');
     expect(layout.roof?.ceiling?.type).toBe('vuelta-catalana');
+    expect(layout.roof?.ceiling?.spacing).toBe(0.55);
   });
   it('la puerta de 70 cm está en el baño', () => {
     const o = op('puerta-70');
@@ -195,4 +202,42 @@ describe('carpinterías', () => {
   });
   it('fijo no abre', () => expect(leafPose('fijo', 2, 2, 1).free).toBe(0));
   it('cerrado no deja paso', () => expect(leafPose('plegable', 6, 4, 0).free).toBe(0));
+});
+
+describe('Casa Vinallop · estado actual (fotos antes de la reforma)', () => {
+  const layout = resolveLayout(VINALLOP_ACTUAL, baseVariant());
+  it('sin errores ni conflictos y con la misma huella que la reforma', () => {
+    const bad = validateLayout(layout).filter((i) => i.level !== 'aviso');
+    expect(bad, JSON.stringify(bad, null, 2)).toEqual([]);
+    const ref = resolveLayout(VINALLOP, baseVariant()).bounds;
+    expect(layout.bounds).toEqual(ref);
+  });
+  it('tres volúmenes con cubiertas a un agua escalonadas que caen hacia el frontal B', () => {
+    const segs = layout.roofSegments!;
+    expect(segs.map((s) => s.id)).toEqual(['cub-extremo', 'cub-anexo', 'cub-principal']);
+    for (const s of segs) expect(s.hy0).toBeGreaterThan(s.hy1);
+    expect(segs[0].hy0).toBeLessThan(segs[1].hy0);
+    expect(segs[1].hy0).toBeLessThan(segs[2].hy0);
+    expect(layout.roof).toBeNull();
+    expect(layout.levels).toHaveLength(1);
+  });
+  it('todo interpretado o pendiente (no hay medidas del estado actual) y entorno de la parcela', () => {
+    for (const x of [...layout.walls, ...layout.openings, ...layout.rooms, ...layout.roofSegments!]) expect(['interpretado', 'pendiente']).toContain(x.status);
+    expect(layout.site?.status).toBe('interpretado');
+    expect(VINALLOP.site).toBe(layout.site);
+    expect(layout.phase).toBe('actual');
+    expect(VINALLOP.phase).toBe('reforma');
+  });
+  it('la puerta de madera actual coincide con la entrada de 1,20 m de la reforma', () => {
+    const w = layout.walls.find((x) => x.id === 'b-principal')!;
+    const o = layout.openings.find((x) => x.id === 'puerta-madera')!;
+    const x0 = w.a[0] + o.offset;
+    expect(Math.abs(x0 - 9.5)).toBeLessThan(0.2);
+    expect(Math.abs(x0 + o.width - 10.7)).toBeLessThan(0.2);
+  });
+  it('muros de las fachadas a la altura de su volumen', () => {
+    const hA = (id: string) => layout.walls.find((x) => x.id === id)!.height;
+    expect(hA('a-principal')).toBeGreaterThan(hA('b-principal'));
+    expect(cameraPresets(layout).find((c) => c.id === 'fachada-B')!.target[0]).toBeCloseTo(7.85, 1);
+  });
 });

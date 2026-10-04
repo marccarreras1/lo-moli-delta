@@ -2,9 +2,9 @@
  * Validaciones del modelo. Detectan errores evidentes y conflictos sin
  * corregir nada automáticamente: la geometría no se deforma para "encajar".
  */
-import type { Layout, Vec2 } from '../data/types';
+import type { Layout, Vec2, Wall } from '../data/types';
 import {
-  bbox, doorSwing, pointOnWall, fmtM, furnitureFootprint, isSelfIntersecting, overlapArea, pointInPolygon, polygonArea, wallLength,
+  bbox, distPointSegment, doorSwing, pointOnWall, fmtM, wallDir, furnitureFootprint, isSelfIntersecting, overlapArea, pointInPolygon, polygonArea, wallLength,
 } from './geometry';
 
 export type IssueLevel = 'error' | 'conflicto' | 'aviso';
@@ -36,9 +36,9 @@ export function validateLayout(layout: Layout): Issue[] {
     }
     if (!(o.width > 0) || !(o.height > 0)) add('error', o.id, `${o.label}: dimensiones no positivas.`);
     const L = wallLength(w);
-    // en muros exteriores el eje empieza en la esquina: la parte libre va de t/2 a L - t/2
-    const minS = w.kind === 'exterior' ? w.thickness / 2 : 0;
-    const maxS = w.kind === 'exterior' ? L - w.thickness / 2 : L;
+    // la parte libre empieza tras el medio espesor de los muros perpendiculares que llegan a cada extremo
+    const minS = endHalf(w, w.a, layout.walls);
+    const maxS = L - endHalf(w, w.b, layout.walls);
     if (o.offset < minS - 1e-6 || o.offset + o.width > maxS + 1e-6)
       add('error', o.id, `${o.label}: el hueco sale de su muro (${fmtM(o.offset)}–${fmtM(o.offset + o.width)} m sobre ${fmtM(L)} m).`);
     if (o.sill < 0 || o.sill + o.height > w.height + 1e-6)
@@ -183,4 +183,17 @@ function wallRect(w: { a: Vec2; b: Vec2; thickness: number }, s0: number, s1: nu
   const h = w.thickness / 2 - 0.005; // margen para no detectar el contacto de caras
   const p = (s: number, k: number): Vec2 => [w.a[0] + u[0] * s + n[0] * k, w.a[1] + u[1] * s + n[1] * k];
   return [p(s0, -h), p(s1, -h), p(s1, h), p(s0, h)];
+}
+
+/** medio espesor del muro perpendicular que llega al extremo `p` de `w` (0 si no hay ninguno) */
+function endHalf(w: Wall, p: Vec2, walls: Wall[]) {
+  const d = wallDir(w);
+  let half = 0;
+  for (const x of walls) {
+    if (x === w || x.levelId !== w.levelId) continue;
+    const dx = wallDir(x);
+    if (Math.abs(d[0] * dx[0] + d[1] * dx[1]) > 0.1) continue; // solo perpendiculares
+    if (distPointSegment(p, x.a, x.b) <= w.thickness / 2 + 1e-3) half = Math.max(half, x.thickness / 2);
+  }
+  return half;
 }

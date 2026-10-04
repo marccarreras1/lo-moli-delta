@@ -200,7 +200,10 @@ export default function App() {
                 <button type="button" role="menuitem" onClick={() => { setMenu(null); importRef.current?.click(); }} data-action="import-json">Importar configuración…</button>
                 <hr />
                 <button type="button" role="menuitemradio" aria-checked={visual.modelSource === 'vinallop'} onClick={() => { setMenu(null); setVisual('modelSource', 'vinallop'); }} data-action="source-vinallop">
-                  {visual.modelSource === 'vinallop' && <Icon name="check" size={16} />} Casa Vinallop
+                  {visual.modelSource === 'vinallop' && <Icon name="check" size={16} />} Casa Vinallop · reforma
+                </button>
+                <button type="button" role="menuitemradio" aria-checked={visual.modelSource === 'actual'} onClick={() => { setMenu(null); setVisual('modelSource', 'actual'); }} data-action="source-actual">
+                  {visual.modelSource === 'actual' && <Icon name="check" size={16} />} Casa Vinallop · estado actual
                 </button>
                 <button type="button" role="menuitemradio" aria-checked={visual.modelSource === 'prueba'} onClick={() => { setMenu(null); setVisual('modelSource', 'prueba'); }} data-action="source-prueba">
                   {visual.modelSource === 'prueba' && <Icon name="check" size={16} />} Modelo de prueba (ficticio)
@@ -288,6 +291,7 @@ export default function App() {
                 <h1 className="view-title">{viewTitle}{camLabel && tab !== 'plantas' ? <span> · {camLabel}</span> : null}</h1>
                 <div className="view-status" data-testid="view-status">
                   {project.isTest ? <span className="flag flag-test"><Icon name="alert" size={14} /> Modelo de prueba · ficticio</span> : <span className="flag">Casa Vinallop</span>}
+                  {project.phase === 'actual' && <span className="flag flag-phase">Estado actual · interpretado de fotos</span>}
                   <span className="flag">{variant.name === 'Base' ? 'Base' : `Variante: ${variant.name}`}</span>
                   {conflicts > 0 && <span className="flag flag-error"><Icon name="alert" size={14} /> {conflicts} conflicto{conflicts > 1 ? 's' : ''}</span>}
                 </div>

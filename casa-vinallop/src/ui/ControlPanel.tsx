@@ -43,6 +43,7 @@ function ProjectRow() {
         <strong>{project.name}</strong>
         {project.isTest && <span className="flag flag-test">Ficticio · no es Casa Vinallop</span>}
       </div>
+      {project.phase && <PhaseSwitch />}
       {!empty && (
         <>
           <Select label="Variante" id="variant" value={variant.id} onChange={selectVariant}
@@ -67,6 +68,19 @@ function ProjectRow() {
         </>
       )}
     </div>
+  );
+}
+
+/** Estado actual (fotos antes de la reforma) frente a la reforma (bocetos). Misma huella y misma cámara. */
+function PhaseSwitch() {
+  const source = useStore((s) => s.visual.modelSource);
+  const setVisual = useStore((s) => s.setVisual);
+  return (
+    <>
+      <Segmented label="Fase" id="phase" value={source === 'actual' ? 'actual' : 'vinallop'} onChange={(x) => setVisual('modelSource', x)}
+        options={[{ value: 'actual', label: 'Estado actual' }, { value: 'vinallop', label: 'Reforma' }]} />
+      {source === 'actual' && <p className="hint">Interpretado a partir de las fotos de la casa antes de la reforma. Sin medidas tomadas en obra.</p>}
+    </>
   );
 }
 
@@ -189,7 +203,7 @@ function VisibilitySection() {
   const tab = useStore((s) => s.tab);
   const v = useStore((s) => s.visual);
   const setVisual = useStore((s) => s.setVisual);
-  const hasRoof = !!layout.roof;
+  const hasRoof = !!layout.roof || !!layout.roofSegments?.length;
   const roofReason = !hasRoof ? 'No hay cubierta definida en el modelo.' : tab === 'plantas' ? 'En Plantas se oculta automáticamente; se recupera al salir.' : tab === 'interior' ? 'En Interior se muestra el techo de cada estancia.' : undefined;
   return (
     <Section title="Visibilidad" id="visibilidad">
@@ -198,6 +212,8 @@ function VisibilitySection() {
       <Toggle id="labels" label="Nombres" checked={v.showLabels} onChange={(x) => setVisual('showLabels', x)} />
       <Toggle id="dims" label="Cotas" checked={v.showDims} onChange={(x) => setVisual('showDims', x)} />
       <Toggle id="areas" label="Superficies" checked={v.showAreas} onChange={(x) => setVisual('showAreas', x)} />
+      <Toggle id="site" label="Entorno (olivar)" checked={v.showSite && !!layout.site} onChange={(x) => setVisual('showSite', x)}
+        disabledReason={layout.site ? undefined : 'Este modelo no tiene entorno definido.'} />
       {tab === 'exterior' && (
         <>
           <Segmented label="Muros" id="mode" value={v.mode} onChange={(x) => setVisual('mode', x)} options={[{ value: 'solido', label: 'Sólidos' }, { value: 'atenuado', label: 'Atenuados' }, { value: 'corte', label: 'Corte' }]} />
