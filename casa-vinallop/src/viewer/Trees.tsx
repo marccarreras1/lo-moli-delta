@@ -24,16 +24,50 @@ export function leafTexture(kind: TreeKind): THREE.Texture {
   const key = `hojas-${kind}`;
   const hit = texCache.get(key);
   if (hit) return hit;
-  const S = 256;
+  const S = kind === 'algarrobo' ? 512 : 256;
   const c = document.createElement('canvas');
   c.width = c.height = S;
   const g = c.getContext('2d')!;
   const r = rng(kind === 'olivo' ? 7 : 19);
   const pal = kind === 'olivo'
     ? ['#a3ad92', '#b4bca4', '#96a185', '#c6ccb8', '#d4d8c8', '#8a9678']
-    : ['#2f5a1e', '#3c6d26', '#264c18', '#4d8030', '#1f3d14', '#5f9038'];
+    : ['#3b5230', '#4a6238', '#33472a', '#566d40', '#2c3d24', '#8aa85c'];
   const n = kind === 'olivo' ? 520 : 380;
-  for (let i = 0; i < n; i++) {
+  if (kind === 'algarrobo') {
+    // hojas compuestas: raquis con 3–5 pares de folíolos redondeados (fotos del algarrobo)
+    for (let i = 0; i < 150; i++) {
+      const a = r() * Math.PI * 2;
+      const rad = Math.sqrt(r()) * S * 0.42;
+      const young = r() < 0.12;
+      g.save();
+      g.translate(S / 2 + Math.cos(a) * rad, S / 2 + Math.sin(a) * rad);
+      g.rotate(r() * Math.PI * 2);
+      const pairs = 3 + Math.floor(r() * 3);
+      const col = young ? pal[5] : pal[Math.floor(r() * 5)];
+      g.strokeStyle = 'rgba(60,70,40,0.7)';
+      g.lineWidth = 1;
+      g.beginPath();
+      g.moveTo(0, 0);
+      g.lineTo(pairs * 16 + 10, 0);
+      g.stroke();
+      for (let k = 0; k < pairs; k++) {
+        for (const side of [-1, 1]) {
+          // folíolo con luz en el haz y algo más oscuro en el borde
+          const x = 10 + k * 16;
+          const y = side * 11;
+          const grd = g.createRadialGradient(x - 2, y - 2, 1, x, y, 11);
+          grd.addColorStop(0, col);
+          grd.addColorStop(1, 'rgba(30,40,22,0.95)');
+          g.fillStyle = grd;
+          g.beginPath();
+          g.ellipse(x, y, 10 + r() * 2.5, 7 + r() * 1.5, side * 0.5, 0, Math.PI * 2);
+          g.fill();
+        }
+      }
+      g.restore();
+    }
+  }
+  for (let i = 0; i < (kind === 'algarrobo' ? 0 : n); i++) {
     // las hojas se concentran hacia el centro de la tarjeta (borde irregular)
     const a = r() * Math.PI * 2;
     const rad = Math.sqrt(r()) * S * 0.46;
@@ -85,7 +119,7 @@ export function barkTexture(kind: TreeKind): THREE.Texture {
   c.height = H;
   const g = c.getContext('2d')!;
   const r = rng(kind === 'olivo' ? 3 : 5);
-  g.fillStyle = kind === 'olivo' ? '#7a7062' : '#5f5246';
+  g.fillStyle = kind === 'olivo' ? '#7a7062' : '#8a8073';
   g.fillRect(0, 0, W, H);
   for (let i = 0; i < 220; i++) {
     const x = r() * W;
@@ -206,15 +240,43 @@ export function buildTree(kind: TreeKind, seed: number, width: number, height: n
   const wood: THREE.BufferGeometry[] = [];
   const leaves: THREE.BufferGeometry[] = [];
   const olive = kind === 'olivo';
-  const trunkH = olive ? height * 0.28 : height * 0.32;
-  const trunkR = olive ? 0.22 + r() * 0.08 : 0.32;
+  // algarrobo (fotos): tronco de ≈1 m en la base, retorcido, que se abre en ramas gruesas a 2–2,5 m
+  const trunkH = olive ? height * 0.32 : height * 0.29;
+  const trunkR = olive ? 0.22 + r() * 0.08 : 0.44;
   const base = new THREE.Vector3(0, 0, 0);
-  // tronco algo inclinado y retorcido (dos tramos)
-  const mid = new THREE.Vector3((r() - 0.5) * 0.3, trunkH * 0.55, (r() - 0.5) * 0.3);
-  const top = new THREE.Vector3(mid.x + (r() - 0.5) * 0.35, trunkH, mid.z + (r() - 0.5) * 0.35);
-  wood.push(limb(base, mid, trunkR * 1.25, trunkR, 9), limb(mid, top, trunkR, trunkR * 0.85, 9));
+  // tronco inclinado y retorcido: varios tramos con desvíos (más en el algarrobo)
+  const steps = olive ? 2 : 4;
+  let prev = base;
+  let rad = trunkR * 1.3;
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps;
+    const lean = olive ? 0.18 : 0.32;
+    const next = new THREE.Vector3(prev.x + (r() - 0.5) * lean + (olive ? 0 : 0.06), trunkH * t, prev.z + (r() - 0.5) * lean);
+    const nr = trunkR * (1.3 - 0.45 * t);
+    wood.push(limb(prev, next, rad, nr, 11));
+    // rebordes del tronco retorcido: tiras más finas que giran alrededor
+    if (!olive) for (let k = 0; k < 3; k++) {
+      const a0 = (k / 3) * Math.PI * 2 + t * 1.4;
+      const a1 = a0 + 0.5;
+      const o0 = new THREE.Vector3(Math.cos(a0) * rad * 0.8, 0, Math.sin(a0) * rad * 0.8);
+      const o1 = new THREE.Vector3(Math.cos(a1) * nr * 0.8, 0, Math.sin(a1) * nr * 0.8);
+      wood.push(limb(prev.clone().add(o0), next.clone().add(o1), rad * 0.38, nr * 0.38, 6));
+    }
+    prev = next;
+    rad = nr;
+  }
+  const top = prev;
+  // raíces vistas que se abren en el pie
+  const roots = olive ? 4 : 7;
+  for (let i = 0; i < roots; i++) {
+    const a = (i / roots) * Math.PI * 2 + r() * 0.5;
+    const reach = (olive ? 0.55 : 1.15) * (0.7 + r() * 0.5);
+    const from = new THREE.Vector3(Math.cos(a) * trunkR * 0.5, olive ? 0.25 : 0.45, Math.sin(a) * trunkR * 0.5);
+    const to = new THREE.Vector3(Math.cos(a) * reach, -0.04, Math.sin(a) * reach);
+    wood.push(limb(from, to, trunkR * (olive ? 0.35 : 0.4), 0.05, 6));
+  }
   const canopyR = width / 2;
-  const leafSize = olive ? 1.1 : 1.45;
+  const leafSize = olive ? 1.1 : 1.0;
   const grow = (from: THREE.Vector3, dir: THREE.Vector3, len: number, rad: number, depth: number) => {
     const to = from.clone().add(dir.clone().multiplyScalar(len));
     // la copa no pasa del contorno previsto
@@ -241,13 +303,16 @@ export function buildTree(kind: TreeKind, seed: number, width: number, height: n
   grow(top, new THREE.Vector3(0, 1, 0), firstLen, trunkR * 0.8, 3);
   // relleno de la copa: racimos repartidos por un elipsoide para que no se vea hueca
   // copas densas como en las fotos de dron: el olivo casi no deja ver el interior y el algarrobo es una bóveda cerrada
-  const fill = olive ? 34 : 170;
-  const cy = trunkH + (height - trunkH) * (olive ? 0.55 : 0.62);
-  const ry = (height - trunkH) * (olive ? 0.42 : 0.3);
+  const fill = olive ? 34 : 360;
+  // el algarrobo tiene la copa baja y ancha, con ramas que cuelgan por los bordes
+  const cy = trunkH + (height - trunkH) * (olive ? 0.55 : 0.5);
+  const ry = (height - trunkH) * (olive ? 0.42 : 0.42);
   for (let i = 0; i < fill; i++) {
     const a = r() * Math.PI * 2;
     const u = Math.sqrt(r());
-    const p = new THREE.Vector3(Math.cos(a) * u * canopyR * 0.92, cy + (r() - 0.5) * 2 * ry * (1 - u * 0.5), Math.sin(a) * u * canopyR * 0.92);
+    const droop = olive ? 0 : u * u * 1.6;
+    const p = new THREE.Vector3(Math.cos(a) * u * canopyR * 0.95, cy + (r() - 0.5) * 2 * ry * (1 - u * 0.5) - droop, Math.sin(a) * u * canopyR * 0.95);
+    p.y = Math.max(p.y, olive ? 1.75 : 1.7);
     cluster(p, leafSize * (0.9 + r() * 0.5), r, leaves);
   }
   const w = mergeGeometries(wood.map((g) => g.toNonIndexed()), false)!;
@@ -270,8 +335,8 @@ export function buildTree(kind: TreeKind, seed: number, width: number, height: n
 
 export function leafMaterial(kind: TreeKind) {
   return new THREE.MeshStandardMaterial({
-    map: leafTexture(kind), alphaTest: 0.45, side: THREE.DoubleSide, roughness: kind === 'olivo' ? 0.75 : 0.65,
-    color: kind === 'olivo' ? '#f4f6ee' : '#e8efe2',
+    map: leafTexture(kind), alphaTest: 0.5, side: THREE.DoubleSide, roughness: kind === 'olivo' ? 0.75 : 0.65,
+    color: kind === 'olivo' ? '#f4f6ee' : '#ffffff',
   });
 }
 
@@ -295,5 +360,54 @@ export function blobTexture(): THREE.Texture {
   g.fillRect(0, 0, S, S);
   const t = new THREE.CanvasTexture(c);
   texCache.set('mancha', t);
+  return t;
+}
+
+/** Hojarasca: hojas y vainas secas sobre la tierra (bajo el algarrobo). */
+export function litterTexture(): THREE.Texture {
+  const hit = texCache.get('hojarasca');
+  if (hit) return hit;
+  const S = 256;
+  const c = document.createElement('canvas');
+  c.width = c.height = S;
+  const g = c.getContext('2d')!;
+  const r = rng(53);
+  g.fillStyle = '#8a7462';
+  g.fillRect(0, 0, S, S);
+  for (let i = 0; i < 1400; i++) {
+    const v = 50 + r() * 90;
+    g.fillStyle = `rgba(${v + 20},${v + 8},${v - 5},0.9)`;
+    g.save();
+    g.translate(r() * S, r() * S);
+    g.rotate(r() * Math.PI);
+    g.fillRect(-3, -1.2, 6 + r() * 8, 2.4);
+    g.restore();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(3, 3);
+  texCache.set('hojarasca', t);
+  return t;
+}
+
+/** Máscara de disco con borde suave (canal verde, para alphaMap). */
+export function discAlphaTexture(): THREE.Texture {
+  const hit = texCache.get('disco');
+  if (hit) return hit;
+  const S = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = S;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#000';
+  g.fillRect(0, 0, S, S);
+  const grd = g.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+  grd.addColorStop(0, '#fff');
+  grd.addColorStop(0.6, '#e0e0e0');
+  grd.addColorStop(1, '#000');
+  g.fillStyle = grd;
+  g.fillRect(0, 0, S, S);
+  const t = new THREE.CanvasTexture(c);
+  texCache.set('disco', t);
   return t;
 }

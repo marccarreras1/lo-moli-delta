@@ -15,7 +15,7 @@ import { Outdoor3D } from './Outdoor3D';
 import { Landscape } from './Landscape';
 import { Effects } from './Effects';
 import { Sky, SoftShadows } from '@react-three/drei';
-import { barkMaterial, blobTexture, buildTree, leafMaterial, soilTexture } from './Trees';
+import { barkMaterial, blobTexture, buildTree, discAlphaTexture, leafMaterial, litterTexture, soilTexture } from './Trees';
 import { solarDirection, useSolar } from '../model/solar';
 import { Installations3D } from '../instalaciones/Installations3D';
 import { useGestion } from '../gestion/store';
@@ -238,7 +238,7 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
       for (let gy = -extent; gy <= extent; gy += s) {
         const x = cx + gx + (r() - 0.5) * 1.6;
         const y = cy + gy + (r() - 0.5) * 1.6;
-        const k = 0.95 + r() * 0.4;
+        const k = 0.88 + r() * 0.32;
         const rot = r() * Math.PI * 2;
         if (Math.hypot(gx, gy) > extent) continue;
         if (x > clear[0] && x < clear[2] && y > clear[1] && y < clear[3]) continue;
@@ -255,7 +255,7 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
   // olivos procedurales: tres variantes, cada una con su malla instanciada de madera y de hojas
   const VARIANTS = lite ? 2 : 3;
   const oliveSets = useMemo(() => Array.from({ length: VARIANTS }, (_, v) => {
-    const t = buildTree('olivo', 101 + v * 37, 6.2, 4.8);
+    const t = buildTree('olivo', 101 + v * 37, 5.6, 4.8);
     const count = olives.filter((_, i) => i % VARIANTS === v).length;
     const wood = new THREE.InstancedMesh(t.wood, barkMaterial('olivo'), Math.max(1, count));
     const leaves = new THREE.InstancedMesh(t.leaves, leafMaterial('olivo'), Math.max(1, count));
@@ -299,6 +299,8 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
   const hidden = useRef<boolean[]>([]);
   const lastCam = useRef(new THREE.Vector3(Infinity, 0, 0));
   const treeMats = useMemo(() => carobs.map((c) => c.leafMat), [carobs]);
+  const litter = useMemo(() => new THREE.MeshStandardMaterial({ color: '#4a3b2e', map: litterTexture(), alphaMap: discAlphaTexture(), transparent: true, depthWrite: false, roughness: 1, polygonOffset: true, polygonOffsetFactor: -1 }), []);
+  useEffect(() => () => litter.dispose(), [litter]);
   const writeMatrices = (hide: boolean[]) => {
     const m = new THREE.Matrix4();
     const q = new THREE.Quaternion();
@@ -346,7 +348,8 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
       writeMatrices(next);
     }
     site.trees.forEach((t, i) => {
-      const fade = !inside && occludes(t.c[0], t.c[1], t.h * 0.6, t.r);
+      // solo se aclara desde vistas altas que buscan la casa; a la altura de los ojos el árbol se ve como es
+      const fade = !inside && cam.y > 6 && occludes(t.c[0], t.c[1], t.h * 0.6, t.r);
       treeMats[i].opacity = fade ? 0.45 : 1;
       treeMats[i].transparent = fade;
       // con transparencia, el recorte de las hojas debe bajar o desaparecerían
@@ -384,6 +387,10 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
         <group key={t.id} position={[t.c[0], -0.12, t.c[1]]}>
           <mesh geometry={carobs[i].wood} material={carobs[i].barkMat} castShadow receiveShadow />
           <mesh geometry={carobs[i].leaves} material={carobs[i].leafMat} castShadow receiveShadow />
+          {/* alfombra de hojas y vainas caídas bajo la copa (fotos) */}
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, 0]} material={litter} receiveShadow>
+            <circleGeometry args={[t.r * 0.8, 40]} />
+          </mesh>
         </group>
       ))}
     </group>

@@ -247,11 +247,12 @@ const traces: Trace[] = [
 
 // ---------- exterior: solera en L y comedor bajo el algarrobo (decisiones confirmadas; medidas propuestas) ----------
 /** algarrobo: posición aproximada sobre la vista cenital (src/data/parcela.ts) */
-const ALGARROBO: Vec2 = [18.9, 1.0];
+const ALGARROBO: Vec2 = [17.7, 2.3];
 /** solera en L: 3 m delante (frontal B) y 4 m en el lateral del algarrobo (variante editable, dentro del rango 3–4 m) */
 const SOL_FRENTE = 3;
 const SOL_LATERAL = 4;
-const MESA_EXT: Vec2 = [r2(L + SOL_LATERAL / 2 + 0.05), 3.65];
+/** la mesa va en la esquina de la L, bajo el borde de la copa (el tronco está a ≈1,4 m del lateral) */
+const MESA_EXT: Vec2 = [r2(L + 2.3), r2(W + 1.5)];
 const outdoor: Outdoor = {
   pavements: [
     { id: 'grava-comedor', label: 'Transición de grava', rect: [-0.5, -0.5, r2(L + SOL_LATERAL + 0.5), r2(W + SOL_FRENTE + 0.5)], joints: 0, status: 'propuesto', note: 'Borde de grava de 0,50 m entre la solera y la tierra; también junto a los frentes sin solera.' },
@@ -260,7 +261,7 @@ const outdoor: Outdoor = {
       note: 'Solera continua en L (confirmada; anchos de la variante 3 m delante / 4 m lateral, dentro del rango 3–4 m). Tramo de 3 m de fondo a lo largo de todo el frontal B (puerta de entrada). Cemento claro mate con juntas cada ≈3 m; pendiente del 1,5–2 % hacia fuera y rigola en el borde (propuesta de evacuación, pendiente de desarrollo técnico).',
     },
     {
-      id: 'solera-l-lateral', label: 'Solera en L · tramo lateral', rect: [L, 0, r2(L + SOL_LATERAL), r2(W + SOL_FRENTE)], joints: 2, permeable: { c: ALGARROBO, r: 1.4 }, status: 'confirmado',
+      id: 'solera-l-lateral', label: 'Solera en L · tramo lateral', rect: [L, 0, r2(L + SOL_LATERAL), r2(W + SOL_FRENTE)], joints: 2, permeable: { c: ALGARROBO, r: 1.2 }, status: 'confirmado',
       note: 'Tramo de 4 m junto al lateral derecho, bajo el algarrobo, continuo con el delantero y al mismo nivel. Se recorta alrededor del tronco para dejar zona permeable sobre las raíces; la posición del árbol es aproximada.',
     },
   ],
@@ -273,8 +274,8 @@ const outdoor: Outdoor = {
   ],
   lights: [],
   domeLamp: {
-    c: MESA_EXT, bottom: 1.95, diameter: 0.6, treeAnchor: { c: [r2(MESA_EXT[0] + 0.15), r2(MESA_EXT[1] - 0.2)], h: 3.3 },
-    post: [r2(MESA_EXT[0] + 1.75), r2(MESA_EXT[1] + 0.35)], status: 'propuesto',
+    c: MESA_EXT, bottom: 1.95, diameter: 0.6, treeAnchor: { c: [r2(MESA_EXT[0] - 0.3), r2(MESA_EXT[1] - 0.6)], h: 3.4 },
+    post: [r2(MESA_EXT[0] - 1.75), r2(MESA_EXT[1] + 0.35)], status: 'propuesto',
     note: 'Cúpula grande de metal oscuro centrada sobre la mesa, luz cálida regulable (referencia 11). Suspensión desde una rama del algarrobo o desde un pie independiente: el anclaje está SIN RESOLVER (resistencia de la rama, crecimiento, viento y alimentación eléctrica exterior por comprobar).',
   },
   drains: [
@@ -299,8 +300,8 @@ const views: CameraPreset[] = [
   view({ id: 'v02b-fachada-a', label: '2b · Fachada A y ventanal', group: 'exterior', position: [11.2, -14, 2.0], target: [11, 0, 2.6], fov: 42 }),
   view({ id: 'v03-entrada', label: '3 · Entrada y puerta de madera', group: 'exterior', position: [12.9, 8.9, 1.6], target: [10.4, 5.2, 1.6], fov: 40 }),
   view({ id: 'v04-solera', label: '4 · Solera completa en L', group: 'exterior', position: [-3.5, 14.5, 4.2], target: [11, 5.5, 0], fov: 44 }),
-  view({ id: 'v05-algarrobo', label: '5 · Mesa y lámpara bajo el algarrobo', group: 'exterior', position: [16.9, 7.4, 1.6], target: [MESA_EXT[0] + 0.3, MESA_EXT[1] - 0.4, 1.1], fov: 52 }),
-  view({ id: 'v06-desde-comedor', label: '6 · La casa desde el comedor exterior', group: 'exterior', position: [19.6, 5.9, 1.6], target: [11, 6.4, 2.0], fov: 54 }),
+  view({ id: 'v05-algarrobo', label: '5 · Mesa y lámpara bajo el algarrobo', group: 'exterior', position: [14.6, 10.6, 1.6], target: [MESA_EXT[0] + 0.6, MESA_EXT[1] - 1.2, 1.4], fov: 56 }),
+  view({ id: 'v06-desde-comedor', label: '6 · La casa desde el comedor exterior', group: 'exterior', position: [20.6, 8.6, 1.6], target: [11, 5.6, 2.0], fov: 56 }),
   view({ id: 'v07-salon-ventanal', label: '7 · Salón: sofá de obra y ventanal', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.9, 1.5, 1.6], target: [15.2, 3.9, 0.7], fov: 66 }),
   view({ id: 'v08-ventanal-cocina', label: '8 · Del ventanal hacia cocina e isla', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.4, 0.8, 1.6], target: [9.2, 3.6, 1.0], fov: 60 }),
   view({ id: 'v09-cocina-taburetes', label: '9 · Cocina desde el lado de los taburetes', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.7, 0.75, 1.6], target: [8.9, 3.2, 0.75], fov: 56 }),

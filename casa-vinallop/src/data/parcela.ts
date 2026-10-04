@@ -22,7 +22,7 @@ export const PARCELA: Site = {
   ground: '#c49c80',
   olives: { spacing: 9, extent: 70, clear: [-1.8, -1.8, 18.1, 7.0], seed: 11 },
   trees: [
-    { id: 'algarrobo', label: 'Algarrobo', c: [18.9, 1.0], r: 5.4, h: 8.0, note: 'Árbol grande de hoja perenne y copa densa junto al extremo derecho, hacia el frontal A; su copa cubre en parte la habitación pequeña (vistas de dron).' },
+    { id: 'algarrobo', label: 'Algarrobo', c: [17.7, 2.3], r: 5.4, h: 8.0, note: 'Algarrobo grande y viejo (fotos de dron y de suelo): tronco muy grueso (≈1 m en la base) y retorcido, con raíces vistas; se abre en ramas gruesas a 2–2,5 m; copa ancha y baja que cubre la habitación pequeña. Tronco a ≈1,4 m del lateral derecho, hacia la mitad (a ojo).' },
   ],
   pavements: [
     { id: 'solera', label: 'Solera de hormigón', rect: [-0.3, 5.22, 17.2, 7.8], note: 'Franja de hormigón de ≈2,5 m a lo largo del frontal B (vista cenital).' },
@@ -33,5 +33,6 @@ export const PARCELA: Site = {
 export const VISTAS_DRON: CameraPreset[] = [
   { id: 'd01-dron-frontal', label: 'Dron · frontal B desde lo alto', group: 'exterior', fixed: true, position: [3.5, 25, 21], target: [9.6, 3.2, 0], fov: 46 },
   { id: 'd02-dron-cenital', label: 'Dron · vista cenital', group: 'exterior', fixed: true, position: [9.4, 8.5, 40], target: [9.4, 2.6, 0], fov: 42 },
+  { id: 'd04-algarrobo', label: 'Algarrobo desde el olivar (a pie)', group: 'exterior', fixed: true, position: [23.2, 7.6, 1.6], target: [16.6, 2.2, 2.5], fov: 62 },
   { id: 'd03-dron-lejana', label: 'Dron · olivar y entorno', group: 'exterior', fixed: true, position: [-6, 78, 46], target: [10, -6, 0], fov: 52 },
 ];

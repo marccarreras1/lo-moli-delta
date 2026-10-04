@@ -34,6 +34,7 @@ await page.waitForFunction(() => document.querySelector('canvas') && !document.q
 await page.evaluate(() => {
   const s = window.__store.getState();
   s.setVisual('helpDismissed', true);
+  s.setVisual('quality', 'ligera');
   s.setVisual('showLabels', false);
   s.setVisual('showDims', false);
   s.setVisual('showAreas', false);
