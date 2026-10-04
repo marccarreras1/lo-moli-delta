@@ -74,13 +74,13 @@ try {
     await page.getByTestId('plan-svg').waitFor();
     await pause(page, 400);
     const planTxt = await page.getByTestId('plan-svg').innerText();
-    check('Plano de planta baja con dormitorio, baño y zona de día', ['Dormitorio', 'Baño', 'Zona de día'].every((t) => planTxt.includes(t)));
-    check('Trazos no interpretados marcados en el plano', planTxt.includes('sin interpretar'));
+    check('Plano de planta baja con dormitorio, baño, armario y cocina y estar', ['Dormitorio', 'Baño', 'Armario', 'Cocina y estar'].every((t) => planTxt.includes(t)));
+    check('Trazos pendientes marcados en el plano', planTxt.includes('Tramo sin trazo'));
     await page.screenshot({ path: `${OUT}v-03-plano-planta-baja.png` });
     await page.locator('[data-control="level"] button', { hasText: 'Altell' }).click();
     await pause(page, 300);
     const altTxt = await page.getByTestId('plan-svg').innerText();
-    check('Selector de nivel: plano del altell', altTxt.includes('Altell') && altTxt.includes('hueco de escalera') && !altTxt.includes('Dormitorio'));
+    check('Selector de nivel: plano del altell', altTxt.includes('Altell') && altTxt.includes('desembarco') && !altTxt.includes('Dormitorio'));
     await page.screenshot({ path: `${OUT}v-04-plano-altell.png` });
     await page.click('[data-action="export-menu"]');
     const [svgA] = await Promise.all([page.waitForEvent('download'), page.click('[data-action="export-svg"]')]);
@@ -92,7 +92,7 @@ try {
     await page.screenshot({ path: `${OUT}v-05-cenital.png` });
     await page.click('[data-tab="interior"]');
     await pause(page, 900);
-    await page.selectOption('[data-control="interior-camera"]', 'int-altell-izq');
+    await page.selectOption('[data-control="interior-camera"]', 'int-altell');
     await pause(page, 1000);
     check('Vista interior del altell', (await page.locator('.view-title').innerText()).includes('Altell'));
     await page.screenshot({ path: `${OUT}v-06-interior-altell.png` });
@@ -100,7 +100,7 @@ try {
     await page.click('[data-action="more-menu"]');
     await page.getByRole('menuitem', { name: 'Medidas y documentación' }).click();
     await page.getByTestId('info-dialog').waitFor();
-    check('Preguntas abiertas visibles en «Medidas y documentación»', (await page.getByTestId('questions').innerText()).includes('ancho real'));
+    check('Preguntas abiertas visibles en «Medidas y documentación»', (await page.getByTestId('questions').innerText()).includes('baño'));
     await page.keyboard.press('Escape');
 
     // ---------- 2. Modelo de prueba (tareas de interfaz) ----------

@@ -50,9 +50,6 @@ Coordenadas en metros: X hacia la derecha del papel, Y hacia abajo. La planta 2D
 
 ## Pendiente de confirmar
 
-- Ancho real (sin cota; ≈5,10 m con la escala gráfica) y espesor de muros.
-- Si la cadena de cotas (15,70 m) es exterior o interior.
-- Trazo en U y círculo del tramo de 5 m; franja estrecha junto al baño; uso exacto del tramo del baño.
-- Inicio exacto de la obertura de 7 m, posición del hueco de 70 cm y si es puerta o ventana.
-- Extensión y cota del altell; sentido de subida de la escalera.
-- Cubierta, carpinterías y orientación.
+- Acceso al baño desde el interior y fondo del armario del pasillo.
+- Altura de la obertura de 2,25 m de planta baja (bajo el altell).
+- Dirección y separación de las vigas de la vuelta catalana.

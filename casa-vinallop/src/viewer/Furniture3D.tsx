@@ -117,6 +117,31 @@ function Piece({ f, mats }: { f: Furniture; mats: MaterialSet }): ReactNode {
           <B y={0.46} z={-d / 2 + 0.06} w={w - 0.04} h={0.36} d={0.12} m={mats.textile} />
         </>
       );
+    case 'sofa-l':
+      // tramo de sofá en L: asiento y respaldo, sin brazos (los tramos se juntan en la esquina)
+      return (
+        <>
+          <B w={w} h={0.1} d={d - 0.04} m={mats.wood} />
+          <B y={0.1} w={w} h={0.32} d={d} m={mats.textile} />
+          <B y={0.42} z={-d / 2 + 0.11} w={w} h={h - 0.42} d={0.22} m={mats.textile} />
+        </>
+      );
+    case 'isla':
+      return (
+        <>
+          <B w={w - 0.04} h={0.86} d={d - 0.04} m={mats.wood} />
+          <B y={0.86} w={w} h={0.04} d={d} m={mats.counter} />
+        </>
+      );
+    case 'estufa':
+      // estufa redonda con salida de humos hasta la cubierta (salida supuesta)
+      return (
+        <>
+          <mesh position={[0, 0.03, 0]} material={mats.counter} receiveShadow><cylinderGeometry args={[w / 2, w / 2, 0.06, 32]} /></mesh>
+          <mesh position={[0, 0.06 + (h - 0.06) / 2, 0]} material={mats.poche} castShadow><cylinderGeometry args={[w * 0.32, w * 0.36, h - 0.06, 32]} /></mesh>
+          <mesh position={[0, h + 2.45, 0]} material={mats.metal}><cylinderGeometry args={[0.075, 0.075, 4.9, 16]} /></mesh>
+        </>
+      );
     case 'nevera':
       return <B w={w} h={h} d={d} m={mats.counter} />;
     case 'inodoro':

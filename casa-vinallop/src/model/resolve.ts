@@ -3,6 +3,7 @@
  * La geometría base nunca se modifica: las variantes guardan solo diferencias.
  */
 import type { FinishSelection, Layout, Opening, OpeningSystem, ProjectData, RoofType } from '../data/types';
+import { wallLength, wallSegmentRect } from './geometry';
 import { normalizeLeaves } from './openings';
 
 export interface OpeningOverride {
@@ -51,8 +52,11 @@ export function resolveLayout(p: ProjectData, v: Variant | null): Layout {
   const xs: number[] = [];
   const ys: number[] = [];
   for (const w of p.walls) {
-    xs.push(w.a[0] - w.thickness / 2, w.b[0] + w.thickness / 2, w.a[0] + w.thickness / 2, w.b[0] - w.thickness / 2);
-    ys.push(w.a[1] - w.thickness / 2, w.b[1] + w.thickness / 2, w.a[1] + w.thickness / 2, w.b[1] - w.thickness / 2);
+    const [e0, e1] = w.ext ?? [0, 0];
+    for (const [x, y] of wallSegmentRect(w, -e0, wallLength(w) + e1)) {
+      xs.push(x);
+      ys.push(y);
+    }
   }
   for (const r of p.rooms) for (const [x, y] of r.polygon) { xs.push(x); ys.push(y); }
   const bounds = xs.length ? { minX: Math.min(...xs), minY: Math.min(...ys), maxX: Math.max(...xs), maxY: Math.max(...ys) } : { minX: 0, minY: 0, maxX: 0, maxY: 0 };

@@ -129,7 +129,8 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
     for (const f of furniture) {
       const fp = furnitureFootprint(f);
       const bad = conflictIds.has(f.id) ? ' stroke="#b3261e" stroke-width="0.03"' : '';
-      out.push(`<polygon points="${pts(fp)}"${f.type === 'alfombra' ? ' fill="none" stroke-dasharray="0.05 0.05"' : ''}${bad}/>`);
+      if (f.type === 'estufa') out.push(`<circle cx="${n4(f.x)}" cy="${n4(f.y)}" r="${n4(f.w / 2)}"${bad}/>`);
+      else out.push(`<polygon points="${pts(fp)}"${f.type === 'alfombra' ? ' fill="none" stroke-dasharray="0.05 0.05"' : ''}${bad}/>`);
       if (f.type === 'cama') {
         const r = (f.rot * Math.PI) / 180;
         const back = (k: number): Vec2 => [Math.sin(r) * (f.d / 2 - k), -Math.cos(r) * (f.d / 2 - k)];
@@ -145,7 +146,13 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
       if (f.type === 'banera') {
         out.push(`<polygon points="${pts(furnitureFootprint({ ...f, w: f.w - 0.14, d: f.d - 0.14 }))}" fill="none" stroke-width="0.01"/>`);
       }
-      if (f.type === 'banco') {
+      if (f.type === 'isla') {
+        out.push(`<polygon points="${pts(furnitureFootprint({ ...f, w: f.w - 0.08, d: f.d - 0.08 }))}" fill="none" stroke-width="0.008"/>`);
+      }
+      if (f.type === 'estufa') {
+        out.push(`<circle cx="${n4(f.x)}" cy="${n4(f.y)}" r="${n4(f.w * 0.34)}" fill="#3a3833" stroke="none"/><circle cx="${n4(f.x)}" cy="${n4(f.y)}" r="0.075" fill="#bdbab3" stroke="none"/>`);
+      }
+      if (f.type === 'banco' || f.type === 'sofa-l') {
         // respaldo contra el muro (lado local -y)
         const r = (f.rot * Math.PI) / 180;
         const k = f.d / 2 - 0.12;
@@ -211,7 +218,7 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
       const confirmed = (st.upStatus ?? st.status) === 'documentado';
       out.push(`<text x="${n4(cx + 0.14)}" y="${n4(cy)}" font-size="0.15" fill="${stc.color}" transform="rotate(${st.up === '+y' ? 90 : -90} ${n4(cx + 0.14)} ${n4(cy)})" text-anchor="middle">sube${confirmed ? '' : ' (sentido pendiente)'}</text>`);
     } else if (st.toLevel === level?.id) {
-      out.push(`<polygon points="${pts(box)}" fill="#ecebe5" stroke="#7d8277" stroke-width="0.012" stroke-dasharray="0.1 0.06"/><line x1="${n4(ax)}" y1="${n4(ay)}" x2="${n4(bx)}" y2="${n4(by)}" stroke="#9fa39a" stroke-width="0.008"/><text x="${n4((ax + bx) / 2)}" y="${n4((ay + by) / 2)}" font-size="0.15" fill="#687066" text-anchor="middle" transform="rotate(-90 ${n4((ax + bx) / 2)} ${n4((ay + by) / 2)})">hueco de escalera</text>`);
+      out.push(`<polygon points="${pts(box)}" fill="#ecebe5" stroke="#7d8277" stroke-width="0.012" stroke-dasharray="0.1 0.06"/><line x1="${n4(ax)}" y1="${n4(ay)}" x2="${n4(bx)}" y2="${n4(by)}" stroke="#9fa39a" stroke-width="0.008"/><text x="${n4((ax + bx) / 2)}" y="${n4((ay + by) / 2)}" font-size="0.15" fill="#687066" text-anchor="middle" transform="rotate(-90 ${n4((ax + bx) / 2)} ${n4((ay + by) / 2)})">escalera · desembarco</text>`);
     }
   }
   out.push('</g>');

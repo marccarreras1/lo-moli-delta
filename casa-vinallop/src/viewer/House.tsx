@@ -48,7 +48,7 @@ export function House({ layout, mats, showRoof, showCeiling, mode, sectionHeight
       {layout.openings.map((o) => {
         const w = layout.walls.find((x) => x.id === o.wallId);
         if (!w) return null;
-        const def = o.kind === 'puerta' ? 0.9 : 0;
+        const def = o.kind === 'puerta' && o.swing ? 0.9 : 0;
         return (
           <group key={o.id} position={[0, elev(w.levelId), 0]}>
             <Opening3D o={o} w={w} mats={mats} center={center} fraction={openFractions[o.id] ?? def}
@@ -60,8 +60,9 @@ export function House({ layout, mats, showRoof, showCeiling, mode, sectionHeight
         <StairMesh key={st.id} st={st} from={elev(st.fromLevel)} to={elev(st.toLevel)} mat={mats.stair} />
       ))}
       {layout.traces.filter((t) => visible(t.levelId)).map((t) => <TraceLine key={t.id} t={t} y={elev(t.levelId) + 0.03} />)}
-      {showCeiling && mode === 'solido' && <Ceiling layout={layout} mats={mats} />}
+      {showCeiling && mode === 'solido' && (layout.roof?.ceiling ? <Vaults layout={layout} mats={mats} /> : <Ceiling layout={layout} mats={mats} />)}
       {showRoof && mode !== 'corte' && <Roof layout={layout} mats={mats} />}
+      {showRoof && !showCeiling && mode === 'solido' && layout.roof?.ceiling && <Vaults layout={layout} mats={mats} />}
     </group>
   );
 }
@@ -195,6 +196,44 @@ function SectionCaps({ layout, mats, h }: { layout: Layout; mats: MaterialSet; h
   );
 }
 
+/**
+ * Vuelta catalana bajo la cubierta: bovedillas rebajadas entre vigas que cruzan el
+ * ancho de la casa. Separación y flecha según la definición del proyecto.
+ */
+function Vaults({ layout, mats }: { layout: Layout; mats: MaterialSet }) {
+  const c = layout.roof!.ceiling!;
+  const ext = layout.walls.filter((w) => w.kind === 'exterior');
+  // interior libre entre muros exteriores
+  const xs = ext.filter((w) => Math.abs(w.a[0] - w.b[0]) < 1e-6).map((w) => [w.a[0] - w.thickness / 2, w.a[0] + w.thickness / 2]);
+  const ys = ext.filter((w) => Math.abs(w.a[1] - w.b[1]) < 1e-6).map((w) => [w.a[1] - w.thickness / 2, w.a[1] + w.thickness / 2]);
+  const ix0 = Math.min(...xs.map((p) => p[1]));
+  const ix1 = Math.max(...xs.map((p) => p[0]));
+  const iy0 = Math.min(...ys.map((p) => p[1]));
+  const iy1 = Math.max(...ys.map((p) => p[0]));
+  const span = iy1 - iy0;
+  const n = Math.max(1, Math.round((ix1 - ix0) / c.spacing));
+  const s = (ix1 - ix0) / n;
+  const crown = layout.topHeight - 0.05;
+  const spring = crown - c.rise;
+  const R = (s * s / 4 + c.rise * c.rise) / (2 * c.rise);
+  const theta = 2 * Math.asin(Math.min(1, s / 2 / R));
+  const beamH = 0.16;
+  return (
+    <group>
+      {Array.from({ length: n }, (_, i) => (
+        <mesh key={`v${i}`} position={[ix0 + s * (i + 0.5), crown - R, (iy0 + iy1) / 2]} rotation={[Math.PI / 2, 0, 0]} material={mats.ceiling}>
+          <cylinderGeometry args={[R, R, span, 12, 1, true, Math.PI - theta / 2, theta]} />
+        </mesh>
+      ))}
+      {Array.from({ length: n + 1 }, (_, i) => (
+        <mesh key={`b${i}`} position={[ix0 + s * i, spring - beamH / 2 + 0.03, (iy0 + iy1) / 2]} material={mats.wood} castShadow>
+          <boxGeometry args={[0.12, beamH, span]} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function Ceiling({ layout, mats }: { layout: Layout; mats: MaterialSet }) {
   const { minX, minY, maxX, maxY } = layout.bounds;
   const L = maxX - minX;
@@ -226,14 +265,13 @@ function RoofShape({ layout, mats }: { layout: Layout; mats: MaterialSet }) {
     return (
       <group>
         <mesh position={[L / 2, H + t / 2, W / 2]} castShadow receiveShadow material={mats.roof}><boxGeometry args={[L, t, W]} /></mesh>
-        {/* peto perimetral */}
-        {[
+        {(r.parapet ?? 0) > 0 && [
           [L / 2, 0.1, L, 0.2], [L / 2, W - 0.1, L, 0.2],
         ].map(([x, y, lx, ly], i) => (
-          <mesh key={i} position={[x, H + t + 0.2, y]} material={mats.facade}><boxGeometry args={[lx, 0.4, ly]} /></mesh>
+          <mesh key={i} position={[x, H + t + r.parapet! / 2, y]} material={mats.facade}><boxGeometry args={[lx, r.parapet!, ly]} /></mesh>
         ))}
-        {[0.1, L - 0.1].map((x, i) => (
-          <mesh key={`s${i}`} position={[x, H + t + 0.2, W / 2]} material={mats.facade}><boxGeometry args={[0.2, 0.4, W]} /></mesh>
+        {(r.parapet ?? 0) > 0 && [0.1, L - 0.1].map((x, i) => (
+          <mesh key={`s${i}`} position={[x, H + t + r.parapet! / 2, W / 2]} material={mats.facade}><boxGeometry args={[0.2, r.parapet!, W]} /></mesh>
         ))}
       </group>
     );

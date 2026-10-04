@@ -145,7 +145,8 @@ export interface Room {
 
 export type FurnitureType =
   | 'cama' | 'mesita' | 'armario' | 'sofa' | 'mesa' | 'silla' | 'mesa-centro'
-  | 'butaca' | 'alfombra' | 'encimera' | 'nevera' | 'inodoro' | 'lavabo' | 'ducha' | 'banera' | 'banco';
+  | 'butaca' | 'alfombra' | 'encimera' | 'nevera' | 'inodoro' | 'lavabo' | 'ducha' | 'banera' | 'banco'
+  | 'sofa-l' | 'isla' | 'estufa';
 
 export interface Furniture {
   id: string;
@@ -173,6 +174,10 @@ export interface RoofOption {
   thickness: number;
   status: DataStatus;
   note: string;
+  /** altura del peto perimetral (0 = sin peto) */
+  parapet?: number;
+  /** acabado interior bajo la cubierta */
+  ceiling?: { type: 'vuelta-catalana'; spacing: number; rise: number; status: DataStatus; note: string };
 }
 
 /** Definición completa de un proyecto (Casa Vinallop o modelo de prueba). */

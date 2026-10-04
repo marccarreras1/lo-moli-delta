@@ -30,34 +30,66 @@ export function cameraPresets(layout: Layout): CameraPreset[] {
   // interiores: desde la esquina más despejada de cada estancia, mirando a la opuesta
   const obstacles = [
     ...layout.furniture.filter((f) => f.type !== 'alfombra').map((f) => furnitureFootprint(f)),
+    ...layout.stairs.map((st) => [[st.rect[0], st.rect[1]], [st.rect[2], st.rect[1]], [st.rect[2], st.rect[3]], [st.rect[0], st.rect[3]]] as [number, number][]),
     ...layout.openings.flatMap((o) => {
       const w = layout.walls.find((x) => x.id === o.wallId);
       const sw = w ? doorSwing(o, w) : null;
       return sw ? [sw.zone] : [];
     }),
   ];
+  /** distancia al obstáculo más próximo (muestreando sus bordes); -1 si cae dentro */
   const clearance = (p: [number, number]) => {
-    if (obstacles.some((poly) => pointInPolygon(p, poly))) return -1;
     let best = Infinity;
-    for (const poly of obstacles) for (const [x, y] of poly) best = Math.min(best, Math.hypot(x - p[0], y - p[1]));
+    for (const poly of obstacles) {
+      if (pointInPolygon(p, poly)) return -1;
+      for (let i = 0; i < poly.length; i++) {
+        const [ax, ay] = poly[i];
+        const [bx, by] = poly[(i + 1) % poly.length];
+        for (let t = 0; t <= 1; t += 0.1) best = Math.min(best, Math.hypot(ax + (bx - ax) * t - p[0], ay + (by - ay) * t - p[1]));
+      }
+    }
     return best;
   };
+  // interiores: punto despejado cerca del borde de la estancia, mirando a través de ella
   for (const r of layout.rooms) {
     const b = bbox(r.polygon);
     const c = centroid(r.polygon);
     const w = b.maxX - b.minX;
     const h = b.maxY - b.minY;
     if (w < 1 || h < 1) continue;
-    const m = Math.min(0.45, w / 4, h / 4);
-    const corners: [number, number][] = [[b.maxX - m, b.minY + m], [b.minX + m, b.minY + m], [b.maxX - m, b.maxY - m], [b.minX + m, b.maxY - m]];
-    const inside = corners.filter((p) => pointInPolygon(p, r.polygon));
-    const pos = (inside.length ? inside : corners).reduce((a, p) => (clearance(p) > clearance(a) ? p : a));
+    const m = Math.min(0.4, w / 4, h / 4);
+    let pos: [number, number] = [c[0], c[1]];
+    let score = -Infinity;
+    for (let x = b.minX + m; x <= b.maxX - m + 1e-6; x += 0.2)
+      for (let y = b.minY + m; y <= b.maxY - m + 1e-6; y += 0.2) {
+        const p: [number, number] = [x, y];
+        if (!pointInPolygon(p, r.polygon)) continue;
+        const cl = clearance(p);
+        if (cl < Math.min(0.5, Math.min(w, h) / 4)) continue;
+        const sc = Math.hypot(x - c[0], y - c[1]) + 0.3 * Math.min(cl, 1.5);
+        if (sc > score) {
+          score = sc;
+          pos = p;
+        }
+      }
     const tx = c[0] + (c[0] - pos[0]) * 0.6;
     const ty = c[1] + (c[1] - pos[1]) * 0.6;
     const elevation = layout.levels.find((l) => l.id === r.levelId)?.elevation ?? 0;
     list.push({
       id: `int-${r.id}`, label: r.name, group: 'interior', eyeLevel: true, roomId: r.id, elevation,
       position: [pos[0], pos[1], 1.6], target: [tx, ty, 1.2],
+    });
+  }
+  // altell parcial: mirador hacia la zona de doble altura
+  for (const r of layout.rooms) {
+    const lvl = layout.levels.find((l) => l.id === r.levelId);
+    if (!lvl || lvl.elevation <= 0) continue;
+    const b = bbox(r.polygon);
+    if (maxX - b.maxX < 2) continue;
+    const cyr = (b.minY + b.maxY) / 2;
+    list.push({
+      id: `mirador-${r.id}`, label: `${r.name} → doble altura`, group: 'interior', eyeLevel: true, roomId: r.id, elevation: lvl.elevation,
+      position: [Math.max(b.minX + 0.6, b.maxX - 2.2), cyr, 1.6], target: [maxX - 1, cyr, 0.2],
     });
   }
   const glass = layout.openings.find((o) => o.kind === 'cristalera');

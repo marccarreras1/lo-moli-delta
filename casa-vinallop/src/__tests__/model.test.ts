@@ -41,7 +41,8 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(op('obertura-225-altell').width).toBe(2.25);
     expect(op('puerta-120').width).toBe(1.2);
     expect(op('puerta-120').wallId).toBe('muro-B');
-    expect(op('obertura-70').width).toBe(0.7);
+    expect(op('puerta-70').width).toBe(0.7);
+    expect(op('puerta-70').kind).toBe('puerta');
   });
   it('la puerta de 1,20 m está donde marca la cadena (9,50–10,70 m)', () => {
     expect(op('puerta-120').offset + 0.15).toBeCloseTo(9.5, 5);
@@ -65,7 +66,7 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(layout.stairs[0].toLevel).toBe('altell');
   });
   it('los trazos y marcas no interpretados se conservan como pendientes, no como estancias', () => {
-    expect(layout.traces.map((t) => t.id)).toContain('trazo-circulo');
+    expect(layout.traces.map((t) => t.id)).toContain('trazo-hueco-dormitorio');
     expect(layout.traces.filter((t) => t.cross).length).toBeGreaterThan(3);
     expect(layout.rooms.some((r) => r.id.includes('trazo'))).toBe(false);
   });
@@ -82,13 +83,31 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(op('puerta-armario').wallId).toBe('tab-pasillo');
     expect(layout.openings.some((o) => o.id === 'puerta-bano')).toBe(false);
     expect(room('armario-pasillo').name).toBe('Armario');
-    expect(['banera', 'ducha', 'lavabo'].every((id) => layout.furniture.some((f) => f.id === id && f.roomId === 'bano'))).toBe(true);
+    expect(['ducha-1', 'ducha-2', 'inodoro', 'lavabo'].every((id) => layout.furniture.some((f) => f.id === id && f.roomId === 'bano'))).toBe(true);
   });
-  it('banco corrido en L junto al frontal B y el lateral derecho', () => {
-    expect(layout.furniture.filter((f) => f.type === 'banco')).toHaveLength(2);
+  it('sofá en L, estufa, cocina e isla central (indicaciones de la propiedad)', () => {
+    expect(layout.furniture.filter((f) => f.type === 'sofa-l')).toHaveLength(2);
+    expect(layout.furniture.some((f) => f.type === 'estufa')).toBe(true);
+    expect(layout.furniture.some((f) => f.type === 'isla')).toBe(true);
+    expect(layout.furniture.some((f) => f.id === 'encimera')).toBe(true);
   });
-  it('el hueco de 70 cm está en el baño', () => {
-    const o = op('obertura-70');
+  it('5 m de ancho, muro del frontal B de 0,60 m y resto de 0,30 m', () => {
+    expect(layout.bounds.maxY - layout.bounds.minY).toBeCloseTo(5, 5);
+    expect(layout.walls.find((w) => w.id === 'muro-B')!.thickness).toBe(0.6);
+    expect(layout.walls.filter((w) => w.kind === 'exterior' && w.id !== 'muro-B').every((w) => w.thickness === 0.3)).toBe(true);
+  });
+  it('altell a 2,60 m solo sobre dormitorio y baño; la zona de día es doble altura', () => {
+    expect(layout.levels.find((l) => l.id === 'altell')!.elevation).toBe(2.6);
+    const alt = room('altell').polygon;
+    expect(Math.max(...alt.map((p) => p[0]))).toBeLessThanOrEqual(6.05);
+  });
+  it('cubierta plana con vuelta catalana por dentro', () => {
+    expect(layout.roofOptions).toHaveLength(1);
+    expect(layout.roof?.type).toBe('plana');
+    expect(layout.roof?.ceiling?.type).toBe('vuelta-catalana');
+  });
+  it('la puerta de 70 cm está en el baño', () => {
+    const o = op('puerta-70');
     const x = o.offset + 0.15;
     expect(x).toBeGreaterThanOrEqual(3.55);
     expect(x + o.width).toBeLessThanOrEqual(5.95);
@@ -96,8 +115,8 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
   it('sin orientación definida', () => expect(layout.northDeg).toBeNull());
   it('genera vistas interiores por estancia, incluido el altell a su cota', () => {
     const cams = cameraPresets(layout);
-    const alt = cams.find((c) => c.id === 'int-altell-izq');
-    expect(alt?.elevation).toBeCloseTo(3.3, 5);
+    const alt = cams.find((c) => c.id === 'int-altell');
+    expect(alt?.elevation).toBeCloseTo(2.6, 5);
     expect(cams.some((c) => c.id === 'fachada-A')).toBe(true);
   });
 });

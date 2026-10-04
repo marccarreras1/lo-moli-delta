@@ -85,7 +85,7 @@ export function buildTestModel(): ProjectData {
     roofOptions: [
       { type: 'dos-aguas', label: 'Dos aguas', pitchDeg: 18, overhang: 0.25, thickness: 0.18, status: 'propuesto', note: 'Alternativa del modelo de prueba.' },
       { type: 'un-agua', label: 'Un agua', pitchDeg: 8, overhang: 0.25, thickness: 0.18, status: 'propuesto', note: 'Alternativa del modelo de prueba.' },
-      { type: 'plana', label: 'Plana', pitchDeg: 0, overhang: 0, thickness: 0.25, status: 'propuesto', note: 'Alternativa del modelo de prueba.' },
+      { type: 'plana', label: 'Plana', pitchDeg: 0, overhang: 0, thickness: 0.25, status: 'propuesto', note: 'Alternativa del modelo de prueba.', parapet: 0.4 },
     ],
     measures: [
       { id: 'largo', label: 'Largo exterior', value: L, unit: 'm', decimals: 2, sourceId: 'prueba', status: 'interpretado' },
