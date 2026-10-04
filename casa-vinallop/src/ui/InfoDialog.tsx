@@ -12,8 +12,8 @@ export function InfoDialog({ onClose }: { onClose: () => void }) {
   return (
     <Modal title="Medidas y documentación" onClose={onClose} wide testId="info-dialog">
       <p className="lead">
-        <strong>Documentado</strong> = figura en una fuente (no comprobado en obra). <strong>Interpretado</strong> = deducido de un boceto sin cota.
-        <strong> Propuesto</strong> = decisión de diseño a estudiar. <strong>Pendiente</strong> = no se distingue o falta.
+        <strong>Confirmado</strong> = indicado por la propiedad. <strong>Documentado</strong> = escrito en un boceto. <strong>Interpretado</strong> = deducido de un dibujo o una foto sin cota.
+        <strong> Propuesto</strong> = decisión de diseño a estudiar. <strong>Pendiente</strong> = no se distingue o falta. Nada está comprobado en obra.
       </p>
       {project.isTest && <p className="callout">Estás viendo el <strong>modelo de prueba</strong>: geometría ficticia para probar la interfaz. No es Casa Vinallop.</p>}
 
@@ -24,8 +24,37 @@ export function InfoDialog({ onClose }: { onClose: () => void }) {
         <li>Referencias guardadas en este dispositivo: {refs.length} ({refs.filter((r) => r.kind === 'boceto').length} de bocetos, {refs.filter((r) => r.calibration).length} calibradas).</li>
         <li>Orientación: {project.northDeg === null ? 'no establecida. No se muestran puntos cardinales ni estudio solar.' : `${project.northDeg}°`}</li>
         <li>Niveles documentados: {project.levels.length ? project.levels.map((l) => l.name).join(', ') : 'ninguno'}.</li>
-        <li>La web de referencia (casa.backtesting.ai) no se ha podido abrir desde el entorno de desarrollo; la interfaz sigue las especificaciones escritas.</li>
+        <li>La web de referencia (casa.backtesting.ai) y los enlaces de Pinterest no se han podido abrir desde el entorno de desarrollo (red bloqueada). La interfaz y los espacios siguen las descripciones escritas de la propiedad; no se ha copiado ni descargado ninguna imagen.</li>
+        <li>Texturas y modelos: generados en el propio código (texturas procedurales y piezas hechas por revolución o extrusión), sin imágenes ni modelos de terceros.</li>
       </ul>
+
+      {(project.checks ?? []).length > 0 && (
+        <>
+          <h3>Contraste de dimensiones entre fuentes</h3>
+          <div className="tbl-wrap">
+            <table className="tbl" data-testid="checks">
+              <thead><tr><th>Dimensión</th><th>Fuentes</th><th>Situación</th></tr></thead>
+              <tbody>{project.checks!.map((c) => (
+                <tr key={c.label}><td>{c.label}</td><td>{c.items.map((x) => <div key={x.source}><strong>{x.value}</strong> · {x.source}</div>)}</td><td><StatusTag status={c.status} /> {c.note}</td></tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </>
+      )}
+      {(project.references ?? []).length > 0 && (
+        <>
+          <h3>Referencias visuales de diseño</h3>
+          <p className="hint">Sirven para el aspecto, no como geometría ni como texturas. {project.references!.every((r) => !r.consulted) ? 'Ninguna se ha podido abrir desde este entorno: se han modelado a partir de su descripción escrita. Conviene revisarlas contra las vistas preparadas.' : ''}</p>
+          <div className="tbl-wrap">
+            <table className="tbl" data-testid="references">
+              <thead><tr><th>Espacio</th><th>Qué se toma</th><th>Enlace</th></tr></thead>
+              <tbody>{project.references!.map((r) => (
+                <tr key={r.id}><td>{r.space}</td><td>{r.use}</td><td><a href={r.url} target="_blank" rel="noreferrer noopener">{r.url.replace('https://', '')}</a>{r.consulted ? '' : ' · no consultada'}</td></tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </>
+      )}
 
       {project.questions.length > 0 && (
         <>
@@ -52,7 +81,7 @@ export function InfoDialog({ onClose }: { onClose: () => void }) {
       )}
       {project.furniture.some((f) => f.note) && (
         <>
-          <h3>Elementos dibujados en el boceto</h3>
+          <h3>Mobiliario y elementos</h3>
           <div className="tbl-wrap">
             <table className="tbl">
               <thead><tr><th>Elemento</th><th>Medida</th><th>Lectura</th><th>Dato</th></tr></thead>
@@ -73,6 +102,22 @@ export function InfoDialog({ onClose }: { onClose: () => void }) {
         <>
           <h3>Barandillas</h3>
           <ul className="plain">{project.railings!.map((r) => <li key={r.id}><strong>{r.label}</strong> ({r.status}): {r.note}</li>)}</ul>
+        </>
+      )}
+      {project.outdoor && (
+        <>
+          <h3>Comedor exterior bajo el algarrobo</h3>
+          <ul className="plain">
+            {project.outdoor.pavements.map((p) => <li key={p.id}><strong>{p.label}</strong> ({p.status}): {p.note}</li>)}
+            {project.outdoor.furniture.filter((f) => f.note).map((f) => <li key={f.id}><strong>{f.label}</strong> ({f.status}): {f.note}</li>)}
+            {project.outdoor.lights.map((l) => <li key={l.id}><strong>Luz exterior</strong> ({l.status}): {l.note}</li>)}
+          </ul>
+        </>
+      )}
+      {(project.pendants ?? []).length > 0 && (
+        <>
+          <h3>Lámparas colgantes (alternativas A y B, ubicación sin elegir)</h3>
+          <ul className="plain">{project.pendants!.map((g) => <li key={g.id}><strong>{g.label}</strong> ({g.status}): {g.note}</li>)}</ul>
         </>
       )}
       {project.roofSegments?.length ? (

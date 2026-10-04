@@ -14,6 +14,7 @@ export function cameraPresets(layout: Layout): CameraPreset[] {
   const cy = (minY + maxY) / 2;
   const R = Math.max(L, W);
   const list: CameraPreset[] = [
+    ...(layout.views ?? []),
     { id: 'general', label: 'Vista general', group: 'exterior', position: [cx + R * 0.8, minY - R * 1.3, R * 0.85], target: [cx, cy, Math.min(2.5, layout.topHeight * 0.3)] },
   ];
   // una vista por cada fachada identificada (sin puntos cardinales)
@@ -106,4 +107,11 @@ export function cameraPresets(layout: Layout): CameraPreset[] {
     list.push({ id: 'ext-cristalera', label: `Exterior → ${glass.label.toLowerCase()}`, group: 'interior', eyeLevel: true, position: [mid[0] + n[0] * 5, mid[1] + n[1] * 5, 1.6], target: [mid[0], mid[1], 1.3] });
   }
   return list;
+}
+
+/** vista inicial de cada modo: las vistas preparadas del proyecto tienen prioridad sobre las calculadas */
+export function defaultPreset(tab: 'exterior' | 'plantas' | 'interior', presets: CameraPreset[]) {
+  if (tab === 'exterior') return presets.find((p) => p.fixed && p.group === 'exterior' && !p.section && !p.hideRoof) ?? presets.find((p) => p.id === 'general');
+  if (tab === 'plantas') return presets.find((p) => p.id === 'cenital');
+  return presets.find((p) => p.fixed && p.group === 'interior') ?? presets.find((p) => p.group === 'interior' && p.roomId) ?? presets.find((p) => p.group === 'interior');
 }

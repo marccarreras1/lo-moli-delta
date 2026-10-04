@@ -2,7 +2,7 @@
  * Aplica una variante de diseño sobre la definición del proyecto.
  * La geometría base nunca se modifica: las variantes guardan solo diferencias.
  */
-import type { FinishSelection, Layout, Opening, OpeningSystem, ProjectData, RoofType } from '../data/types';
+import { DEFAULT_OPTIONS, type DesignOptions, type FinishSelection, type Furniture, type Layout, type Opening, type OpeningSystem, type ProjectData, type RoofType } from '../data/types';
 import { wallLength, wallSegmentRect } from './geometry';
 import { normalizeLeaves } from './openings';
 
@@ -15,6 +15,14 @@ export interface OpeningOverride {
   leaves?: number;
 }
 
+export interface FurnitureOverride {
+  x?: number;
+  y?: number;
+  w?: number;
+  d?: number;
+  rot?: number;
+}
+
 export interface Variant {
   id: string;
   name: string;
@@ -23,6 +31,8 @@ export interface Variant {
   roofType: RoofType | null;
   finishes: FinishSelection;
   presetId: string | null;
+  options: DesignOptions;
+  furnitureOverrides: Record<string, FurnitureOverride>;
 }
 
 export function resolveLayout(p: ProjectData, v: Variant | null): Layout {
@@ -48,6 +58,13 @@ export function resolveLayout(p: ProjectData, v: Variant | null): Layout {
       status: changedGeom ? 'propuesto' : o.status,
     };
   });
+  const fo = v?.furnitureOverrides ?? {};
+  const applyF = (f: Furniture): Furniture => {
+    const x = fo[f.id];
+    return x ? { ...f, ...x, status: 'propuesto' } : f;
+  };
+  const furniture = p.furniture.map(applyF);
+  const outdoor = p.outdoor ? { ...p.outdoor, furniture: p.outdoor.furniture.map(applyF) } : undefined;
   const roof = p.roofOptions.length ? p.roofOptions.find((r) => r.type === v?.roofType) ?? p.roofOptions[0] : null;
   const xs: number[] = [];
   const ys: number[] = [];
@@ -62,7 +79,7 @@ export function resolveLayout(p: ProjectData, v: Variant | null): Layout {
   const bounds = xs.length ? { minX: Math.min(...xs), minY: Math.min(...ys), maxX: Math.max(...xs), maxY: Math.max(...ys) } : { minX: 0, minY: 0, maxX: 0, maxY: 0 };
   const elev = (id: string) => p.levels.find((l) => l.id === id)?.elevation ?? 0;
   const topHeight = p.walls.filter((w) => w.kind === 'exterior').reduce((m, w) => Math.max(m, elev(w.levelId) + w.height), 0) || 2.5;
-  return { ...p, openings, roof, bounds, topHeight };
+  return { ...p, openings, furniture, outdoor, roof, bounds, topHeight, options: { ...DEFAULT_OPTIONS, ...(v?.options ?? {}) } };
 }
 
 /** cota de la base de un muro (cota de su nivel) */

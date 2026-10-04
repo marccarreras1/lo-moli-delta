@@ -8,6 +8,7 @@ import {
   bbox, centroid, doorSwing, fmtM, furnitureFootprint, pointOnWall, polygonArea, wallDir, wallNormal, wallPieces, wallSegmentRect,
 } from '../model/geometry';
 import { FRAME, leafPose } from '../model/openings';
+import { passages } from '../model/passages';
 import type { Issue } from '../model/validate';
 import { ACCENT, AMBER, STATUS_STYLE } from '../ui/status';
 
@@ -23,7 +24,7 @@ export interface PlanOverlay {
 }
 
 export interface PlanOptions {
-  selection: { kind: 'room' | 'opening'; id: string } | null;
+  selection: { kind: 'room' | 'opening' | 'furniture'; id: string } | null;
   showDims: boolean;
   showAreas: boolean;
   showFurniture: boolean;
@@ -34,6 +35,8 @@ export interface PlanOptions {
   /** nivel que se dibuja; por defecto el primero */
   levelId?: string | null;
   forExport?: { title: string; subtitle: string };
+  /** distancias libres entre muebles y muros (ver src/model/passages.ts) */
+  showPassages?: boolean;
 }
 
 const CUT_REL = 1.0; // plano de corte a 1,00 m sobre el suelo del nivel
@@ -125,12 +128,15 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
 
   // Mobiliario (trazo secundario)
   if (o.showFurniture) {
-    out.push('<g class="furniture" stroke="#9fa39a" stroke-width="0.012" fill="#fefdfb" pointer-events="none">');
+    out.push('<g class="furniture" stroke="#9fa39a" stroke-width="0.012" fill="#fefdfb">');
+    const selFurniture = o.selection?.kind === 'furniture' ? o.selection.id : null;
     for (const f of furniture) {
       const fp = furnitureFootprint(f);
-      const bad = conflictIds.has(f.id) ? ' stroke="#b3261e" stroke-width="0.03"' : '';
-      if (f.type === 'estufa') out.push(`<circle cx="${n4(f.x)}" cy="${n4(f.y)}" r="${n4(f.w / 2)}"${bad}/>`);
-      else out.push(`<polygon points="${pts(fp)}"${f.type === 'alfombra' ? ' fill="none" stroke-dasharray="0.05 0.05"' : ''}${bad}/>`);
+      const bad = conflictIds.has(f.id) ? ' stroke="#b3261e" stroke-width="0.03"' : f.id === selFurniture ? ` stroke="${ACCENT}" stroke-width="0.035"` : '';
+      const hit = o.forExport ? '' : ` data-furniture="${esc(f.id)}" class="furniture-hit"`;
+      const round = f.type === 'estufa' || f.type === 'taburete' || f.type === 'mesa-exterior' || f.type === 'maceta' || f.type === 'jarron';
+      if (round) out.push(`<circle cx="${n4(f.x)}" cy="${n4(f.y)}" r="${n4(f.w / 2)}"${bad}${hit}/>`);
+      else out.push(`<polygon points="${pts(fp)}"${f.type === 'alfombra' ? ' fill="none" stroke-dasharray="0.05 0.05" pointer-events="none"' : ''}${bad}${f.type === 'alfombra' ? '' : hit}/>`);
       if (f.type === 'cama') {
         const r = (f.rot * Math.PI) / 180;
         const back = (k: number): Vec2 => [Math.sin(r) * (f.d / 2 - k), -Math.cos(r) * (f.d / 2 - k)];
@@ -141,7 +147,20 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
         out.push(`<line x1="${n4(a[0][0])}" y1="${n4(a[0][1])}" x2="${n4(a[1][0])}" y2="${n4(a[1][1])}"/>`);
       }
       if (f.type === 'ducha') {
-        out.push(`<line x1="${n4(fp[0][0])}" y1="${n4(fp[0][1])}" x2="${n4(fp[2][0])}" y2="${n4(fp[2][1])}" stroke-width="0.008"/><line x1="${n4(fp[1][0])}" y1="${n4(fp[1][1])}" x2="${n4(fp[3][0])}" y2="${n4(fp[3][1])}" stroke-width="0.008"/>`);
+        out.push(`<line x1="${n4(fp[0][0])}" y1="${n4(fp[0][1])}" x2="${n4(fp[2][0])}" y2="${n4(fp[2][1])}" stroke-width="0.008" pointer-events="none"/><line x1="${n4(fp[1][0])}" y1="${n4(fp[1][1])}" x2="${n4(fp[3][0])}" y2="${n4(fp[3][1])}" stroke-width="0.008" pointer-events="none"/>`);
+        // celosía (propuesta): extremo −x completo y cara +z salvo el acceso de 0,70 m, con cortina
+        const r = (f.rot * Math.PI) / 180;
+        const P = (lx: number, lz: number): Vec2 => [f.x + lx * Math.cos(r) - lz * Math.sin(r), f.y + lx * Math.sin(r) + lz * Math.cos(r)];
+        const t = 0.05;
+        const lat = [[P(-f.w / 2 - t, -f.d / 2), P(-f.w / 2 - t, f.d / 2 + 2 * t)], [P(-f.w / 2 + 0.7, f.d / 2 + t), P(f.w / 2, f.d / 2 + t)]];
+        for (const [a, b] of lat) out.push(`<line x1="${n4(a[0])}" y1="${n4(a[1])}" x2="${n4(b[0])}" y2="${n4(b[1])}" stroke="#b5653f" stroke-width="0.09" stroke-dasharray="0.03 0.025" pointer-events="none"/>`);
+        const c0 = P(-f.w / 2, f.d / 2 + 0.11);
+        const c1 = P(-f.w / 2 + 0.7, f.d / 2 + 0.11);
+        out.push(`<line x1="${n4(c0[0])}" y1="${n4(c0[1])}" x2="${n4(c1[0])}" y2="${n4(c1[1])}" stroke="${AMBER}" stroke-width="0.012" stroke-dasharray="0.04 0.03" pointer-events="none"/>`);
+        if (o.showLabels) {
+          const lp = P(-f.w / 2 + 0.35, f.d / 2 + 0.32);
+          out.push(`<text x="${n4(lp[0])}" y="${n4(lp[1])}" font-size="0.1" fill="#687066" stroke="none" text-anchor="middle" pointer-events="none">acceso · cortina</text>`);
+        }
       }
       if (f.type === 'banera') {
         out.push(`<polygon points="${pts(furnitureFootprint({ ...f, w: f.w - 0.14, d: f.d - 0.14 }))}" fill="none" stroke-width="0.01"/>`);
@@ -164,6 +183,21 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
         const [cx, cy] = centroid(fp);
         out.push(`<circle cx="${n4(cx)}" cy="${n4(cy)}" r="${n4(Math.min(f.w, f.d) * 0.32)}" fill="none"/>`);
       }
+    }
+    out.push('</g>');
+  }
+
+  // Espacios de paso entre muebles y muros
+  if (o.showPassages && o.showFurniture) {
+    const col = { ok: '#3f7a4a', justo: AMBER, estrecho: '#b3261e' } as const;
+    out.push('<g class="passages" pointer-events="none">');
+    for (const p of passages(layout).filter((x) => x.levelId === level?.id)) {
+      const c = col[p.level];
+      const mx = (p.a[0] + p.b[0]) / 2;
+      const my = (p.a[1] + p.b[1]) / 2;
+      const vertical = Math.abs(p.a[0] - p.b[0]) < 1e-6;
+      out.push(`<g data-passage="${p.level}"><line x1="${n4(p.a[0])}" y1="${n4(p.a[1])}" x2="${n4(p.b[0])}" y2="${n4(p.b[1])}" stroke="${c}" stroke-width="0.02"/>`
+        + `<text x="${n4(mx + (vertical ? 0.06 : 0))}" y="${n4(my - (vertical ? 0 : 0.06))}" font-size="0.12" fill="${c}" paint-order="stroke" stroke="#fefdfb" stroke-width="0.04" ${vertical ? '' : 'text-anchor="middle"'}>${fmtM(p.width)}</text></g>`);
     }
     out.push('</g>');
   }
@@ -215,7 +249,7 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
           : `<line x1="${n4(ax + wl)}" y1="${n4(ay)}" x2="${n4(ax)}" y2="${n4(by)}"/>`;
         out.push(`<g stroke="#2f3430" stroke-width="0.012">${seg}</g>`);
       }
-      const confirmed = (st.upStatus ?? st.status) === 'documentado';
+      const confirmed = ['documentado', 'confirmado'].includes(st.upStatus ?? st.status);
       out.push(`<text x="${n4(cx + 0.14)}" y="${n4(cy)}" font-size="0.15" fill="${stc.color}" transform="rotate(${st.up === '+y' ? 90 : -90} ${n4(cx + 0.14)} ${n4(cy)})" text-anchor="middle">sube${confirmed ? '' : ' (sentido pendiente)'}</text>`);
     } else if (st.toLevel === level?.id) {
       out.push(`<polygon points="${pts(box)}" fill="#ecebe5" stroke="#7d8277" stroke-width="0.012" stroke-dasharray="0.1 0.06"/><line x1="${n4(ax)}" y1="${n4(ay)}" x2="${n4(bx)}" y2="${n4(by)}" stroke="#9fa39a" stroke-width="0.008"/><text x="${n4((ax + bx) / 2)}" y="${n4((ay + by) / 2)}" font-size="0.15" fill="#687066" text-anchor="middle" transform="rotate(-90 ${n4((ax + bx) / 2)} ${n4((ay + by) / 2)})">escalera · desembarco</text>`);
@@ -399,10 +433,10 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
   const ly = maxY + 1.75;
   out.push(`<g class="legend" font-size="0.16" fill="#3d433b">`);
   let lx = minX;
-  for (const s of ['documentado', 'interpretado', 'propuesto', 'pendiente'] as DataStatus[]) {
+  for (const s of ['confirmado', 'documentado', 'interpretado', 'propuesto', 'pendiente'] as DataStatus[]) {
     const st = STATUS_STYLE[s];
     out.push(`<line x1="${n4(lx)}" y1="${n4(ly)}" x2="${n4(lx + 0.5)}" y2="${n4(ly)}" stroke="${st.color}" stroke-width="0.03" ${st.dash ? `stroke-dasharray="${st.dash}"` : ''}/><text x="${n4(lx + 0.6)}" y="${n4(ly + 0.055)}">${st.label}</text>`);
-    lx += 1.95;
+    lx += st.label.length * 0.085 + 0.8;
   }
   out.push('</g>');
   const sx = maxX - 5;

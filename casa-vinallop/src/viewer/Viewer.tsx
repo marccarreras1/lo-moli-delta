@@ -1,21 +1,28 @@
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import type { Layout, Site } from '../data/types';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import type { CameraPreset, Layout, Site } from '../data/types';
 import { useModel } from '../state/derived';
 import { type Ambience, useStore } from '../state/store';
 import { Annotations } from './Annotations';
 import { CameraRig } from './CameraRig';
 import { Furniture3D } from './Furniture3D';
 import { House } from './House';
+import { FixtureLights, Pendants } from './Lamps';
+import { Outdoor3D } from './Outdoor3D';
 import { useMaterials } from './materials';
 import { effectiveQuality } from './qualityInfo';
 import { glRef } from './support';
 
-const AMBIENCE: Record<Ambience, { sky: string; ground: string; sun: string; sunK: number; hemiK: number; elev: number; az: number }> = {
-  neutra: { sky: '#ffffff', ground: '#dcd8cf', sun: '#ffffff', sunK: 2.0, hemiK: 0.8, elev: 42, az: 35 },
-  calida: { sky: '#fff6ea', ground: '#dccdb6', sun: '#ffe2bd', sunK: 2.0, hemiK: 0.7, elev: 24, az: 300 },
-  nublada: { sky: '#f2f4f5', ground: '#d6d6d2', sun: '#f4f6f8', sunK: 0.9, hemiK: 1.25, elev: 60, az: 20 },
+/**
+ * Escenas de luz ambientales (no son un estudio solar: la orientación y la ubicación no están
+ * confirmadas). Día, tarde cálida y noche con las lámparas encendidas.
+ */
+const AMBIENCE: Record<Ambience, { bg: string; sky: string; ground: string; sun: string; sunK: number; hemiK: number; elev: number; az: number; env: number; exposure: number; lamps: number }> = {
+  dia: { bg: '#eef0ec', sky: '#e3ebf2', ground: '#d6c3a8', sun: '#fff4e6', sunK: 2.5, hemiK: 0.7, elev: 44, az: 68, env: 0.9, exposure: 1.0, lamps: 0.12 },
+  tarde: { bg: '#f1e1cc', sky: '#f4dcc0', ground: '#c09474', sun: '#ffbe85', sunK: 2.3, hemiK: 0.55, elev: 15, az: 295, env: 0.5, exposure: 1.05, lamps: 0.6 },
+  noche: { bg: '#161b24', sky: '#27324a', ground: '#141110', sun: '#9fb2d6', sunK: 0.18, hemiK: 0.16, elev: 55, az: 140, env: 0.05, exposure: 1.15, lamps: 1 },
 };
 
 export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void; insets: { bottom: number; right: number }; onEnterRoom: (id: string) => void }) {
@@ -31,17 +38,34 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
   const quality = effectiveQuality(v.quality);
   // en Plantas la vista cenital se secciona como ajuste contextual, sin cambiar las preferencias
   const mode = tab === 'plantas' ? (v.mode === 'atenuado' ? 'atenuado' : 'corte') : v.mode;
+  const section = v.longSection && tab === 'exterior';
   const level = layout.levels.find((l) => l.id === v.levelId) ?? layout.levels[0];
   const levelElev = level?.elevation ?? 0;
   // plano de corte relativo al nivel activo; los niveles superiores se ocultan al seccionar
   const cutAbs = levelElev + (tab === 'plantas' ? Math.min(v.sectionHeight, 1.5) : v.sectionHeight);
   const maxElev = mode === 'corte' || tab === 'plantas' ? levelElev : Infinity;
-  const mats = useMaterials(variant.finishes, mode, cutAbs);
+  const amb = AMBIENCE[v.ambience];
+  const lampLevel = amb.lamps * v.lampDimmer;
+  const mats = useMaterials(variant.finishes, mode, cutAbs, section, lampLevel);
   const elevOfLevel = (id: string) => layout.levels.find((l) => l.id === id)?.elevation ?? 0;
   const roomLevel = new Map(layout.rooms.map((r) => [r.id, elevOfLevel(r.levelId)]));
   const furniture = layout.furniture.filter((f) => (roomLevel.get(f.roomId) ?? 0) <= maxElev + 1e-6);
+  const elevationOf = (f: { roomId: string }) => roomLevel.get(f.roomId) ?? 0;
   const showRoof = v.showRoof && tab === 'exterior';
   const roomLabelsVisible = tab === 'plantas' || (tab === 'exterior' && (!showRoof || mode !== 'solido'));
+  const selFurniture = selection?.kind === 'furniture' ? selection.id : null;
+  const onSelectFurniture = (id: string) => select({ kind: 'furniture', id });
+  // las luces artificiales solo se calculan cuando aportan (tarde, noche o interior)
+  const artificial = lampLevel > 0.05 && (tab === 'interior' || v.ambience !== 'dia');
+  const lite = quality !== 'alta';
+  const setVisual = useStore((s) => s.setVisual);
+  // las vistas preparadas fijan lo que necesitan ver (corte longitudinal, sin cubierta)
+  const applyPreset = (p: CameraPreset) => {
+    if (p.group !== 'exterior') return;
+    const st = useStore.getState().visual;
+    if (st.longSection !== !!p.section) setVisual('longSection', !!p.section);
+    if (p.fixed && st.showRoof === !!p.hideRoof) setVisual('showRoof', !p.hideRoof);
+  };
 
   return (
     <Canvas
@@ -51,7 +75,7 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
       gl={{ preserveDrawingBuffer: true, antialias: quality === 'alta' }}
       onCreated={({ gl, scene, camera }) => {
         gl.localClippingEnabled = true;
-        gl.toneMapping = THREE.ACESFilmicToneMapping;
+        gl.toneMapping = THREE.NeutralToneMapping;
         gl.toneMappingExposure = 1.0;
         glRef.current = gl;
         glRef.scene = scene;
@@ -63,27 +87,60 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
       onPointerMissed={(e) => { if (e.type === 'click') select(null); }}
       data-testid="viewer-canvas"
     >
-      <color attach="background" args={['#f5f3ee']} />
-      <fog attach="fog" args={['#f5f3ee', 60, 140]} />
+      <color attach="background" args={[amb.bg]} />
+      <fog attach="fog" args={[amb.bg, 60, 140]} />
+      <Environment intensity={amb.env} exposure={amb.exposure} />
       <Lights layout={layout} intensity={v.lightIntensity} ambience={v.ambience} shadowSize={quality === 'alta' ? 2048 : 1024} />
-      {layout.site && v.showSite ? <SiteGround layout={layout} site={layout.site} lite={quality !== 'alta'} /> : <Ground layout={layout} />}
-      <House layout={layout} mats={mats} showRoof={showRoof} showCeiling={tab === 'interior'} mode={mode}
+      {layout.site && v.showSite ? <SiteGround layout={layout} site={layout.site} lite={lite} /> : <Ground layout={layout} />}
+      <House layout={layout} mats={mats} showRoof={showRoof} showCeiling={tab === 'interior' || section} mode={mode}
         sectionHeight={cutAbs} selection={selection} openFractions={openFractions} onSelect={select} maxElev={maxElev} />
-      {v.showFurniture && <Furniture3D items={furniture} mats={mats} elevationOf={(f) => roomLevel.get(f.roomId) ?? 0} />}
+      {v.showFurniture && <Furniture3D items={furniture} mats={mats} elevationOf={elevationOf} options={layout.options} selectedId={selFurniture} onSelect={onSelectFurniture} />}
+      {v.showFurniture && layout.outdoor && tab !== 'plantas' && (
+        <Outdoor3D outdoor={layout.outdoor} mats={mats} options={layout.options} level={artificial ? lampLevel : 0} selectedId={selFurniture} onSelect={onSelectFurniture} />
+      )}
+      {v.showFurniture && maxElev === Infinity && <Pendants layout={layout} mats={mats} level={lampLevel} lights={artificial} />}
+      {v.showFurniture && artificial && <FixtureLights furniture={furniture} elevationOf={elevationOf} level={lampLevel} />}
       <Annotations layout={layout} showLabels={v.showLabels && tab !== 'interior'} showDims={v.showDims && tab !== 'interior'} showAreas={v.showAreas}
         roomLabelsVisible={roomLabelsVisible} maxElev={maxElev} selectedOpeningId={selection?.kind === 'opening' ? selection.id : null} />
       <CameraRig presets={cameras} request={cameraRequest} tab={tab} eyeHeight={v.eyeHeight} interiorFov={v.interiorFov}
-        layout={layout} saved={saved} insets={insets} onSave={saveCamera} onEnterRoom={onEnterRoom} />
+        layout={layout} saved={saved} insets={insets} onSave={saveCamera} onEnterRoom={onEnterRoom} onPreset={applyPreset} />
       <Disposer />
     </Canvas>
   );
 }
 
+/** Luz de entorno sin descargas: «RoomEnvironment» de Three.js filtrado con PMREM. */
+function Environment({ intensity, exposure }: { intensity: number; exposure: number }) {
+  const gl = useThree((s) => s.gl);
+  const scene = useThree((s) => s.scene);
+  const env = useMemo(() => {
+    const pm = new THREE.PMREMGenerator(gl);
+    const room = new RoomEnvironment();
+    const t = pm.fromScene(room, 0.04).texture;
+    room.dispose();
+    pm.dispose();
+    return t;
+  }, [gl]);
+  useEffect(() => {
+    scene.environment = env;
+    return () => {
+      scene.environment = null;
+      env.dispose();
+    };
+  }, [scene, env]);
+  useEffect(() => {
+    scene.environmentIntensity = intensity;
+    gl.toneMappingExposure = exposure;
+  }, [scene, gl, intensity, exposure]);
+  return null;
+}
+
 function Lights({ layout, intensity, ambience, shadowSize }: { layout: Layout; intensity: number; ambience: Ambience; shadowSize: number }) {
+  // la sombra cubre la casa y el comedor exterior si lo hay
   const { minX, minY, maxX, maxY } = layout.bounds;
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
-  const R = Math.max(maxX - minX, maxY - minY, 6);
+  const R = Math.max(maxX - minX, maxY - minY, 6) * (layout.outdoor ? 0.75 : 0.6);
   const a = AMBIENCE[ambience];
   const target = useMemo(() => {
     const o = new THREE.Object3D();
@@ -99,12 +156,12 @@ function Lights({ layout, intensity, ambience, shadowSize }: { layout: Layout; i
   return (
     <>
       <hemisphereLight args={[a.sky, a.ground, a.hemiK * k]} />
-      <ambientLight intensity={0.25} />
+      <ambientLight intensity={ambience === 'noche' ? 0.04 : 0.12} />
       <primitive object={target} />
       <directionalLight position={pos} target={target} color={a.sun} intensity={a.sunK * k} castShadow
         shadow-mapSize={[shadowSize, shadowSize]} shadow-camera-left={-R} shadow-camera-right={R} shadow-camera-top={R} shadow-camera-bottom={-R}
         shadow-camera-near={1} shadow-camera-far={90} shadow-bias={-0.0004} shadow-normalBias={0.02} shadow-radius={4} />
-      <directionalLight position={[cx - 20, 12, cy - 25]} intensity={0.3 * k} />
+      <directionalLight position={[cx - 20, 12, cy - 25]} intensity={(ambience === 'noche' ? 0.04 : 0.25) * k} />
     </>
   );
 }
@@ -213,7 +270,7 @@ function SiteGround({ layout, site, lite }: { layout: Layout; site: Site; lite: 
       writeMatrices(next);
     }
     site.trees.forEach((t, i) => {
-      treeMats[i].opacity = !inside && occludes(t.c[0], t.c[1], t.h * 0.6, t.r) ? 0.25 : 1;
+      treeMats[i].opacity = !inside && occludes(t.c[0], t.c[1], t.h * 0.6, t.r) ? 0.4 : 1;
       treeMats[i].depthWrite = treeMats[i].opacity === 1;
     });
   });
@@ -241,7 +298,7 @@ function SiteGround({ layout, site, lite }: { layout: Layout; site: Site; lite: 
       {site.trees.map((t, i) => (
         <group key={t.id} position={[t.c[0], -0.12, t.c[1]]}>
           <mesh position={[0, t.h * 0.2, 0]} castShadow><cylinderGeometry args={[0.25, 0.4, t.h * 0.4, 8]} /><meshStandardMaterial color="#5e5043" roughness={1} /></mesh>
-          <mesh position={[0, t.h * 0.62, 0]} scale={[t.r, t.h * 0.36, t.r]} castShadow material={treeMats[i]}><icosahedronGeometry args={[1, lite ? 1 : 2]} /></mesh>
+          <mesh position={[0, t.h * 0.66, 0]} scale={[t.r, t.h * 0.3, t.r]} castShadow material={treeMats[i]}><icosahedronGeometry args={[1, lite ? 1 : 2]} /></mesh>
         </group>
       ))}
     </group>

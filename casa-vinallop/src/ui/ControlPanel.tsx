@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FINISHES, PRESETS, SLOT_LABEL } from '../data/acabados';
 import type { FinishSlot, OpeningSystem, RoofType } from '../data/types';
 import { bbox, fmtM, polygonArea } from '../model/geometry';
+import { defaultPreset } from '../model/cameras';
 import { LEAF_OPTIONS, leafPose, SYSTEM_LABEL } from '../model/openings';
 import { overlayReady, useRefs } from '../refs/db';
 import { useModel } from '../state/derived';
@@ -19,8 +20,10 @@ export function ControlPanel({ onOpenInfo, onOpenRefs }: { onOpenInfo: () => voi
     <div className="panel-content">
       <ProjectRow />
       {!empty && <SelectionBlock />}
+      {!empty && <PreparedViews />}
       {!empty && <ViewSection />}
       {!empty && <VisibilitySection />}
+      {!empty && <ProposalsSection />}
       {!empty && <OpeningsSection />}
       {!empty && <MaterialsSection />}
       {!empty && <LightSection />}
@@ -85,6 +88,102 @@ function PhaseSwitch() {
   );
 }
 
+/** Mueble seleccionado: datos, estado y edición de posición, medidas y giro (solo en variantes). */
+function FurnitureSelection({ id }: { id: string }) {
+  const { layout, isBase, variant, issues } = useModel();
+  const select = useStore((s) => s.select);
+  const override = useStore((s) => s.overrideFurniture);
+  const clear = useStore((s) => s.clearFurnitureOverride);
+  const createVariant = useStore((s) => s.createVariant);
+  const f = layout.furniture.find((x) => x.id === id) ?? layout.outdoor?.furniture.find((x) => x.id === id);
+  if (!f) return null;
+  const own = issues.filter((i) => i.elementId === f.id);
+  return (
+    <div className="selection" aria-live="polite" data-testid="selection">
+      <div className="selection-head">
+        <span className="eyebrow">Mueble seleccionado</span>
+        <button type="button" className="icon-btn" onClick={() => select(null)} aria-label="Quitar selección"><Icon name="close" size={16} /></button>
+      </div>
+      <strong className="selection-title">{f.label}</strong>
+      <dl className="facts tnum">
+        <dt>Medidas</dt><dd>{m(f.w)} × {m(f.d)} · alto {m(f.h)}</dd>
+        <dt>Posición</dt><dd>{m(f.x)} · {m(f.y)} · giro {Math.round(f.rot)}°</dd>
+        {f.status && <><dt>Dato</dt><dd><StatusTag status={f.status} /></dd></>}
+      </dl>
+      {f.note && <p className="hint">{f.note}</p>}
+      {own.map((i, k) => <p key={k} className={`issue-inline issue-${i.level}`}><Icon name="alert" size={14} /> {i.message}</p>)}
+      <div className="design-box">
+        <span className="eyebrow">Diseño · {isBase ? 'base' : variant.name}</span>
+        {isBase ? (
+          <>
+            <p className="hint">La base no se modifica. Para mover o cambiar este mueble, crea una variante.</p>
+            <button type="button" className="btn" data-action="variant-from-furniture" onClick={() => createVariant(`${f.label} · estudio`)}><Icon name="plus" size={16} /> Crear variante para este mueble</button>
+          </>
+        ) : (
+          <>
+            <div className="grid2">
+              <NumberField id="fu-x" label="Posición X" unit="m" value={f.x} min={-20} max={60} onCommit={(x) => override(f.id, { x })} />
+              <NumberField id="fu-y" label="Posición Y" unit="m" value={f.y} min={-20} max={40} onCommit={(y) => override(f.id, { y })} />
+              <NumberField id="fu-w" label="Largo" unit="m" value={f.w} min={0.1} max={8} onCommit={(w) => override(f.id, { w })} />
+              <NumberField id="fu-d" label="Fondo" unit="m" value={f.d} min={0.1} max={8} onCommit={(d) => override(f.id, { d })} />
+            </div>
+            <NumberField id="fu-rot" label="Giro" unit="°" decimals={0} value={f.rot} min={-360} max={360} onCommit={(rot) => override(f.id, { rot })} />
+            <p className="hint">Cambios de esta variante, marcados como propuestos. Activa «Espacios de paso» para comprobar la circulación.</p>
+            {variant.furnitureOverrides[f.id] && <button type="button" className="btn ghost" onClick={() => clear(f.id)}>Quitar cambios de este mueble</button>}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Propuestas que se comparan desde la misma cámara. No borran lo confirmado: cada opción indica
+ * si es una decisión de la propiedad o una propuesta pendiente.
+ */
+function ProposalsSection() {
+  const { layout, project } = useModel();
+  const setOption = useStore((s) => s.setOption);
+  const setRoof = useStore((s) => s.setRoof);
+  const o = layout.options;
+  const hasLattice = layout.furniture.some((f) => f.type === 'ducha');
+  const hasPendants = (project.pendants ?? []).length > 0;
+  const hasEntrance = layout.openings.some((x) => x.entrance);
+  if (!hasLattice && !hasPendants && !hasEntrance && layout.roofOptions.length < 2) return null;
+  return (
+    <Section title="Propuestas para comparar" id="propuestas">
+      <p className="hint">Alternativas pendientes de elegir. Se cambian sin mover la cámara; lo confirmado por la propiedad no cambia.</p>
+      {hasLattice && (
+        <>
+          <Segmented label="Separación de la ducha" id="opt-celosia" value={o.celosia} onChange={(x) => setOption('celosia', x)}
+            options={[{ value: 'A', label: 'Celosía A · fina' }, { value: 'B', label: 'Celosía B · cuadrada' }]} />
+          <p className="hint">Celosía cerámica con huecos reales, vidrio por la cara de ducha y cortina en el acceso con carril propio (propuesta).</p>
+        </>
+      )}
+      {hasPendants && (
+        <>
+          <Segmented label="Lámparas colgantes" id="opt-lamparas" value={o.lamparas} onChange={(x) => setOption('lamparas', x)}
+            options={[{ value: 'A', label: 'A · tonos de barro' }, { value: 'B', label: 'B · terracota clara' }]} />
+          <Segmented label="Ubicación de las lámparas" id="opt-ubicacion" value={o.lamparasUbicacion} onChange={(x) => setOption('lamparasUbicacion', x)}
+            options={[{ value: 'isla', label: 'Sobre la isla' }, { value: 'salon', label: 'Sobre la mesa del salón' }]} />
+        </>
+      )}
+      {layout.roofOptions.length > 1 && (
+        <Segmented label="Cubierta exterior" id="opt-cubierta" value={layout.roof?.type ?? layout.roofOptions[0].type} onChange={(x) => setRoof(x as RoofType)}
+          options={layout.roofOptions.map((r) => ({ value: r.type, label: r.status === 'propuesto' ? 'Con peto (propuesta)' : 'Plana (confirmada)' }))} />
+      )}
+      {hasEntrance && (
+        <>
+          <Segmented label="Hoja de la puerta de entrada" id="opt-puerta" value={o.puertaEntrada} onChange={(x) => setOption('puertaEntrada', x)}
+            options={[{ value: 'tablones', label: 'Tablones de madera' }, { value: 'verde-gris', label: 'Verde-gris' }]} />
+          <Toggle id="opt-entrada" label="Volumen saliente en la entrada (variante)" checked={o.entradaSaliente} onChange={(x) => setOption('entradaSaliente', x)} />
+          <p className="hint">Los marcos verde-gris claro están confirmados por la propiedad; la hoja de tablones y el volumen saliente son propuestas de la referencia.</p>
+        </>
+      )}
+    </Section>
+  );
+}
+
 function SelectionBlock() {
   const { layout, issues } = useModel();
   const sel = useStore((s) => s.selection);
@@ -120,6 +219,7 @@ function SelectionBlock() {
       </div>
     );
   }
+  if (sel.kind === 'furniture') return <FurnitureSelection id={sel.id} />;
   const o = layout.openings.find((x) => x.id === sel.id);
   if (!o) return null;
   const own = issues.filter((i) => i.elementId === o.id);
@@ -141,13 +241,56 @@ function SelectionBlock() {
   );
 }
 
+/** Vistas preparadas del proyecto (posiciones fijas comprobadas) y vistas favoritas del usuario. */
+function PreparedViews() {
+  const { project } = useModel();
+  const goView = useStore((s) => s.goView);
+  const current = useStore((s) => s.lastPreset[s.tab]);
+  const favorites = useStore((s) => s.favorites);
+  const addFavorite = useStore((s) => s.addFavorite);
+  const removeFavorite = useStore((s) => s.removeFavorite);
+  const goFavorite = useStore((s) => s.goFavorite);
+  const [name, setName] = useState('');
+  const views = project.views ?? [];
+  if (!views.length && !favorites.length) return null;
+  const tabOf = (g: string) => (g === 'interior' ? 'interior' : g === 'planta' ? 'plantas' : 'exterior') as 'exterior' | 'plantas' | 'interior';
+  return (
+    <Section title="Vistas preparadas" id="vistas">
+      <div className="view-list" role="list">
+        {views.map((c) => (
+          <button key={c.id} type="button" role="listitem" className={`view-item${current === c.id ? ' on' : ''}`} aria-pressed={current === c.id}
+            onClick={() => goView(c.id, tabOf(c.group))} data-view={c.id} data-view-tab={tabOf(c.group)}>
+            {c.label}
+          </button>
+        ))}
+      </div>
+      <Advanced label={`Favoritas (${favorites.length})`}>
+        <div className="row">
+          <input type="text" id="fav-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre de la vista" aria-label="Nombre de la vista favorita" />
+          <button type="button" className="btn" onClick={() => { addFavorite(name); setName(''); }} data-action="add-favorite">Guardar vista actual</button>
+        </div>
+        {favorites.length > 0 ? (
+          <ul className="fav-list">
+            {favorites.map((f) => (
+              <li key={f.id}>
+                <button type="button" className="link" onClick={() => goFavorite(f.id)} data-favorite={f.id}>{f.label}</button>
+                <button type="button" className="icon-btn" onClick={() => removeFavorite(f.id)} aria-label={`Quitar «${f.label}» de favoritas`}><Icon name="close" size={14} /></button>
+              </li>
+            ))}
+          </ul>
+        ) : <p className="hint">Guarda la posición de cámara actual para volver a ella. Se guarda en este dispositivo.</p>}
+      </Advanced>
+    </Section>
+  );
+}
+
 function ViewSection() {
   const { layout, cameras } = useModel();
   const tab = useStore((s) => s.tab);
   const v = useStore((s) => s.visual);
   const setVisual = useStore((s) => s.setVisual);
   const requestCamera = useStore((s) => s.requestCamera);
-  const current = useStore((s) => s.lastPreset[s.tab]) ?? (tab === 'exterior' ? 'general' : tab === 'interior' ? cameras.find((c) => c.group === 'interior' && c.roomId)?.id ?? '' : 'cenital');
+  const current = useStore((s) => s.lastPreset[s.tab]) ?? defaultPreset(tab, cameras)?.id ?? '';
   const refs = useRefs((s) => s.list);
   const overlayable = refs.filter(overlayReady);
   const levels = layout.levels;
@@ -162,7 +305,7 @@ function ViewSection() {
       ) : <p className="hint">Nivel: {levels[0]?.name} (único documentado).</p>}
       {tab === 'exterior' && (
         <div className="chips" role="group" aria-label="Posiciones de cámara">
-          {cameras.filter((c) => c.group === 'exterior').map((c) => (
+          {cameras.filter((c) => c.group === 'exterior' && !c.fixed).map((c) => (
             <button key={c.id} type="button" className={`chip${current === c.id ? ' on' : ''}`} aria-pressed={current === c.id} onClick={() => requestCamera(c.id)} data-camera={c.id}>
               {current === c.id && <Icon name="check" size={14} />} {c.label}
             </button>
@@ -215,6 +358,11 @@ function VisibilitySection() {
       <Toggle id="areas" label="Superficies" checked={v.showAreas} onChange={(x) => setVisual('showAreas', x)} />
       <Toggle id="site" label="Entorno (olivar)" checked={v.showSite && !!layout.site} onChange={(x) => setVisual('showSite', x)}
         disabledReason={layout.site ? undefined : 'Este modelo no tiene entorno definido.'} />
+      <Toggle id="passages" label="Espacios de paso" checked={v.showPassages} onChange={(x) => setVisual('showPassages', x)}
+        disabledReason={layout.furniture.length ? undefined : 'No hay mobiliario en el modelo.'} />
+      {v.showPassages && <p className="hint">En el plano 2D: verde ≥ 0,90 m · ámbar 0,70–0,90 m · rojo &lt; 0,70 m entre muebles y muros enfrentados.</p>}
+      <Toggle id="long-section" label="Corte longitudinal" checked={v.longSection} onChange={(x) => setVisual('longSection', x)}
+        disabledReason={tab === 'exterior' ? undefined : 'Disponible en Exterior (vista «12b · Corte longitudinal»).'} />
       {tab === 'exterior' && (
         <>
           <Segmented label="Muros" id="mode" value={v.mode} onChange={(x) => setVisual('mode', x)} options={[{ value: 'solido', label: 'Sólidos' }, { value: 'atenuado', label: 'Atenuados' }, { value: 'corte', label: 'Corte' }]} />
@@ -243,7 +391,7 @@ function OpeningsSection() {
   const { variant } = useModel();
   if (!layout.openings.length) return null;
   const o = sel?.kind === 'opening' ? layout.openings.find((x) => x.id === sel.id) : undefined;
-  const def = o?.kind === 'puerta' ? 0.9 : 0;
+  const def = o?.kind === 'puerta' && o.swing && !o.entrance && layout.walls.find((w) => w.id === o.wallId)?.kind !== 'exterior' ? 0.9 : 0;
   const f = o ? fractions[o.id] ?? def : 0;
   const pose = o?.system ? leafPose(o.system.type, o.system.leaves, o.width, f) : null;
   const canAnimate = !!o?.system && o.system.type !== 'fijo';
@@ -298,8 +446,11 @@ function MaterialsSection() {
   const { layout, variant } = useModel();
   const setFinish = useStore((s) => s.setFinish);
   const applyPreset = useStore((s) => s.applyPreset);
-  const setRoof = useStore((s) => s.setRoof);
-  const slots = (Object.keys(SLOT_LABEL) as FinishSlot[]).filter((s) => (s === 'cubierta' ? !!layout.roof : s === 'madera' || s === 'textiles' ? layout.furniture.length > 0 : true));
+  const slots = (Object.keys(SLOT_LABEL) as FinishSlot[]).filter((s) => (
+    s === 'cubierta' ? !!layout.roof
+      : s === 'boveda' ? !!layout.roof?.ceiling
+        : s === 'encimera' ? layout.furniture.some((f) => f.type === 'encimera' || f.type === 'isla')
+          : s === 'madera' || s === 'textiles' ? layout.furniture.length > 0 : true));
   return (
     <Section title="Materiales" id="materiales" defaultOpen={false}>
       <div className="chips" role="group" aria-label="Combinaciones">
@@ -325,10 +476,6 @@ function MaterialsSection() {
           </div>
         </fieldset>
       ))}
-      {layout.roofOptions.length > 1 && (
-        <Segmented label="Forma de cubierta (alternativa)" id="roof-type" value={layout.roof?.type ?? layout.roofOptions[0].type} onChange={(x) => setRoof(x as RoofType)}
-          options={layout.roofOptions.map((r) => ({ value: r.type, label: r.label }))} />
-      )}
       <p className="hint">Acabados propuestos, no materiales contratados. No cambian ninguna medida y se pueden deshacer.</p>
     </Section>
   );
@@ -339,9 +486,10 @@ function LightSection() {
   const setVisual = useStore((s) => s.setVisual);
   return (
     <Section title="Iluminación" id="luz" defaultOpen={false}>
-      <Segmented label="Ambiente" id="ambience" value={v.ambience} onChange={(x) => setVisual('ambience', x)} options={[{ value: 'neutra', label: 'Neutra' }, { value: 'calida', label: 'Cálida' }, { value: 'nublada', label: 'Difusa' }]} />
-      <Slider id="light" label="Intensidad" value={v.lightIntensity} min={0.35} max={1.8} step={0.05} onChange={(x) => setVisual('lightIntensity', x)} format={pct} />
-      <p className="hint">Luz para leer volúmenes, no un estudio solar: no hay orientación ni hora definidas.</p>
+      <Segmented label="Ambiente" id="ambience" value={v.ambience} onChange={(x) => setVisual('ambience', x)} options={[{ value: 'dia', label: 'Día' }, { value: 'tarde', label: 'Tarde cálida' }, { value: 'noche', label: 'Noche' }]} />
+      <Slider id="light" label="Luz natural" value={v.lightIntensity} min={0.35} max={1.8} step={0.05} onChange={(x) => setVisual('lightIntensity', x)} format={pct} />
+      <Slider id="dimmer" label="Lámparas (≈2700 K, regulables)" value={v.lampDimmer} min={0} max={1} step={0.05} onChange={(x) => setVisual('lampDimmer', x)} format={pct} />
+      <p className="hint">Escenas ambientales para leer volúmenes y materiales, no un estudio solar: la orientación y la ubicación no están confirmadas. De día las lámparas apenas se notan; en la tarde y la noche se encienden las colgantes, los apliques, la luz de la cocina y el farol del comedor.</p>
       <Advanced label="Calidad de imagen">
         <Segmented label="Calidad" id="quality" value={v.quality} onChange={(x) => setVisual('quality', x)} options={[{ value: 'auto', label: 'Automática' }, { value: 'alta', label: 'Alta' }, { value: 'ligera', label: 'Ligera' }]} />
         <p className="hint">Activa ahora: {effectiveQuality(v.quality) === 'alta' ? 'alta (sombras suaves, más resolución)' : 'ligera (sombras sencillas, menos resolución)'}.</p>

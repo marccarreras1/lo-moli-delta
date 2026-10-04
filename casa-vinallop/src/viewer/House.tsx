@@ -6,6 +6,7 @@ import { AMBER } from '../ui/status';
 import { pointOnWall, wallDir, wallNormal, wallPieces } from '../model/geometry';
 import type { MaterialSet } from './materials';
 import { Opening3D } from './Opening3D';
+import { uvBox } from './textures';
 
 /** plano (x, y) → escena (x, altura, y) */
 export const P = (x: number, y: number, h = 0) => new THREE.Vector3(x, h, y);
@@ -17,9 +18,9 @@ interface HouseProps {
   showCeiling: boolean;
   mode: 'solido' | 'atenuado' | 'corte';
   sectionHeight: number;
-  selection: { kind: 'room' | 'opening'; id: string } | null;
+  selection: { kind: 'room' | 'opening' | 'furniture'; id: string } | null;
   openFractions: Record<string, number>;
-  onSelect: (s: { kind: 'room' | 'opening'; id: string }) => void;
+  onSelect: (s: { kind: 'room' | 'opening' | 'furniture'; id: string }) => void;
   /** niveles con cota superior a esta se ocultan (plantas y corte) */
   maxElev: number;
 }
@@ -48,17 +49,22 @@ export function House({ layout, mats, showRoof, showCeiling, mode, sectionHeight
       {layout.openings.map((o) => {
         const w = layout.walls.find((x) => x.id === o.wallId);
         if (!w) return null;
-        const def = o.kind === 'puerta' && o.swing ? 0.9 : 0;
+        // las puertas interiores se ven abiertas; la de entrada, cerrada (se aprecian la hoja y el hueco)
+        const def = o.kind === 'puerta' && o.swing && !o.entrance && w.kind !== 'exterior' ? 0.9 : 0;
         return (
           <group key={o.id} position={[0, elev(w.levelId), 0]}>
-            <Opening3D o={o} w={w} mats={mats} center={center} fraction={openFractions[o.id] ?? def}
+            <Opening3D o={o} w={w} mats={mats} center={center} fraction={openFractions[o.id] ?? def} planks={!!o.entrance && layout.options.puertaEntrada === 'tablones'}
               selected={selection?.kind === 'opening' && selection.id === o.id} onSelect={() => onSelect({ kind: 'opening', id: o.id })} />
           </group>
         );
       })}
       {layout.stairs.filter((st) => visible(st.fromLevel)).map((st) => (
-        <StairMesh key={st.id} st={st} from={elev(st.fromLevel)} to={elev(st.toLevel)} mat={mats.stair} />
+        <StairMesh key={st.id} st={st} from={elev(st.fromLevel)} to={elev(st.toLevel)} mats={mats} />
       ))}
+      {layout.options.entradaSaliente && layout.openings.filter((o) => o.entrance).map((o) => {
+        const w = layout.walls.find((x) => x.id === o.wallId);
+        return w ? <EntranceVolume key={`ev-${o.id}`} o={o} w={w} center={center} mats={mats} /> : null;
+      })}
       {(layout.railings ?? []).filter((r) => visible(r.levelId)).map((r) => <RailingMesh key={r.id} r={r} y={elev(r.levelId)} mats={mats} />)}
       {layout.traces.filter((t) => visible(t.levelId)).map((t) => <TraceLine key={t.id} t={t} y={elev(t.levelId) + 0.03} />)}
       {layout.roofSegments?.length ? (
@@ -97,8 +103,11 @@ function SlabMesh({ poly, top, thickness, mat }: { poly: Vec2[]; top: number; th
   return <mesh geometry={geo} rotation={[-Math.PI / 2, 0, 0]} position={[0, top - thickness, 0]} castShadow receiveShadow material={mat} />;
 }
 
-/** Escalera recta: un bloque por peldaño, de la cota de un nivel a la del otro. */
-function StairMesh({ st, from, to, mat }: { st: Stair; from: number; to: number; mat: THREE.Material }) {
+/**
+ * Escalera de obra encalada con huella de terracota y canto (propuesta de acabado). Un bloque por
+ * peldaño desde el suelo, de la cota de un nivel a la del otro.
+ */
+function StairMesh({ st, from, to, mats }: { st: Stair; from: number; to: number; mats: MaterialSet }) {
   const [ax, ay, bx, by] = st.rect;
   const n = Math.max(1, st.risers);
   const rise = (to - from) / n;
@@ -106,16 +115,25 @@ function StairMesh({ st, from, to, mat }: { st: Stair; from: number; to: number;
   const run = alongX ? bx - ax : by - ay;
   const width = alongX ? by - ay : bx - ax;
   const tread = run / n;
+  const cap = 0.03;
+  const nose = 0.02;
   return (
     <group>
       {Array.from({ length: n }, (_, i) => {
         // i = 0 es el primer peldaño (arranque)
         const k = st.up === '+x' || st.up === '+y' ? i : n - 1 - i;
-        const s = (alongX ? ax : ay) + tread * (k + 0.5);
-        const hgt = rise * (i + 1);
-        const pos: [number, number, number] = alongX ? [s, from + hgt / 2, (ay + by) / 2] : [(ax + bx) / 2, from + hgt / 2, s];
-        const size: [number, number, number] = alongX ? [tread, hgt, width] : [width, hgt, tread];
-        return <mesh key={i} position={pos} castShadow receiveShadow material={mat}><boxGeometry args={size} /></mesh>;
+        const dirSign = st.up === '+x' || st.up === '+y' ? -1 : 1;
+        const sMid = (alongX ? ax : ay) + tread * (k + 0.5);
+        const top = rise * (i + 1);
+        const body = top - cap;
+        const pos: [number, number, number] = alongX ? [sMid, from + body / 2, (ay + by) / 2] : [(ax + bx) / 2, from + body / 2, sMid];
+        const capPos: [number, number, number] = alongX ? [sMid + (dirSign * nose) / 2, from + top - cap / 2, (ay + by) / 2] : [(ax + bx) / 2, from + top - cap / 2, sMid + (dirSign * nose) / 2];
+        return (
+          <group key={i}>
+            <mesh position={pos} castShadow receiveShadow material={mats.stair} geometry={alongX ? uvBox(tread, body, width) : uvBox(width, body, tread)} />
+            <mesh position={capPos} castShadow receiveShadow material={mats.terracottaTile} geometry={alongX ? uvBox(tread + nose, cap, width) : uvBox(width, cap, tread + nose)} />
+          </group>
+        );
       })}
     </group>
   );
@@ -170,9 +188,8 @@ function WallMesh({ wall, openings, mats, center }: { wall: Wall; openings: Open
       {pieces.map((p, i) => {
         const c = pointOnWall(wall, (p.s0 + p.s1) / 2);
         return (
-          <mesh key={i} position={[c[0], (p.z0 + p.z1) / 2, c[1]]} rotation={[0, rotY, 0]} castShadow receiveShadow material={materials}>
-            <boxGeometry args={[p.s1 - p.s0, p.z1 - p.z0, wall.thickness]} />
-          </mesh>
+          <mesh key={i} position={[c[0], (p.z0 + p.z1) / 2, c[1]]} rotation={[0, rotY, 0]} castShadow receiveShadow material={materials}
+            geometry={uvBox(p.s1 - p.s0, p.z1 - p.z0, wall.thickness)} />
         );
       })}
     </group>
@@ -201,8 +218,11 @@ function SectionCaps({ layout, mats, h }: { layout: Layout; mats: MaterialSet; h
 }
 
 /**
- * Vuelta catalana bajo la cubierta: bovedillas rebajadas entre vigas que cruzan el
- * ancho de la casa. Separación y flecha según la definición del proyecto.
+ * Volta catalana en terracota (confirmado): bovedillas cerámicas rebajadas entre vigas que cruzan
+ * el ancho de la casa cada `spacing`. Ladrillo de rasilla a matajunta con juntas claras (textura a
+ * escala real) y canto visible de 4 cm. Las vigas llevan el mismo color que la volta (propiedad); el
+ * tono exacto sale de una referencia que no se ha podido abrir desde este entorno.
+ * La clave queda bajo el forjado de cubierta, dentro de la altura de 6,20 m.
  */
 function Vaults({ layout, mats }: { layout: Layout; mats: MaterialSet }) {
   const c = layout.roof!.ceiling!;
@@ -217,22 +237,31 @@ function Vaults({ layout, mats }: { layout: Layout; mats: MaterialSet }) {
   const span = iy1 - iy0;
   const n = Math.max(1, Math.round((ix1 - ix0) / c.spacing));
   const s = (ix1 - ix0) / n;
-  const crown = layout.topHeight - 0.05;
+  const crown = layout.topHeight - (layout.roof?.thickness ?? 0.25) - 0.01;
   const spring = crown - c.rise;
   const R = (s * s / 4 + c.rise * c.rise) / (2 * c.rise);
   const theta = 2 * Math.asin(Math.min(1, s / 2 / R));
-  const beamH = 0.16;
+  const beamH = 0.12;
+  const geo = useMemo(() => {
+    // cáscara cilíndrica abierta con UV en metros (u: a lo largo del arco · v: a lo ancho de la casa)
+    const g = new THREE.CylinderGeometry(R, R, span, 14, 1, true, Math.PI - theta / 2, theta);
+    const uv = g.attributes.uv as THREE.BufferAttribute;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * R * theta, uv.getY(i) * span);
+    uv.needsUpdate = true;
+    return g;
+  }, [R, span, theta]);
+  const outer = useMemo(() => new THREE.CylinderGeometry(R + 0.04, R + 0.04, span, 14, 1, true, Math.PI - theta / 2, theta), [R, span, theta]);
+  useEffect(() => () => { geo.dispose(); outer.dispose(); }, [geo, outer]);
   return (
     <group>
       {Array.from({ length: n }, (_, i) => (
-        <mesh key={`v${i}`} position={[ix0 + s * (i + 0.5), crown - R, (iy0 + iy1) / 2]} rotation={[Math.PI / 2, 0, 0]} material={mats.ceiling}>
-          <cylinderGeometry args={[R, R, span, 12, 1, true, Math.PI - theta / 2, theta]} />
-        </mesh>
+        <group key={`v${i}`} position={[ix0 + s * (i + 0.5), crown - R, (iy0 + iy1) / 2]} rotation={[Math.PI / 2, 0, 0]}>
+          <mesh geometry={geo} material={mats.vault} receiveShadow />
+          <mesh geometry={outer} material={mats.cut} />
+        </group>
       ))}
       {Array.from({ length: n + 1 }, (_, i) => (
-        <mesh key={`b${i}`} position={[ix0 + s * i, spring - beamH / 2 + 0.03, (iy0 + iy1) / 2]} material={mats.wood} castShadow>
-          <boxGeometry args={[0.12, beamH, span]} />
-        </mesh>
+        <mesh key={`b${i}`} position={[ix0 + s * i, spring - beamH / 2 + 0.02, (iy0 + iy1) / 2]} material={mats.beam} castShadow geometry={uvBox(0.08, beamH, span)} />
       ))}
     </group>
   );
@@ -264,25 +293,29 @@ function RoofShape({ layout, mats }: { layout: Layout; mats: MaterialSet }) {
   const H = layout.topHeight;
   const r = layout.roof!;
   const o = r.overhang;
-  if (r.type === 'plana') {
+  if (r.type === 'plana' || r.type === 'plana-peto') {
+    // el forjado de cubierta queda dentro de la altura de los alzados (6,20 m)
     const t = r.thickness;
+    const p = r.parapet ?? 0;
+    const pt = 0.3;
+    const edges: [number, number, number, number][] = [[L / 2, pt / 2, L, pt], [L / 2, W - pt / 2, L, pt], [pt / 2, W / 2, pt, W - 2 * pt], [L - pt / 2, W / 2, pt, W - 2 * pt]];
     return (
       <group>
-        <mesh position={[L / 2, H + t / 2, W / 2]} castShadow receiveShadow material={mats.roof}><boxGeometry args={[L, t, W]} /></mesh>
-        {(r.parapet ?? 0) > 0 && [
-          [L / 2, 0.1, L, 0.2], [L / 2, W - 0.1, L, 0.2],
-        ].map(([x, y, lx, ly], i) => (
-          <mesh key={i} position={[x, H + t + r.parapet! / 2, y]} material={mats.facade}><boxGeometry args={[lx, r.parapet!, ly]} /></mesh>
-        ))}
-        {(r.parapet ?? 0) > 0 && [0.1, L - 0.1].map((x, i) => (
-          <mesh key={`s${i}`} position={[x, H + t + r.parapet! / 2, W / 2]} material={mats.facade}><boxGeometry args={[0.2, r.parapet!, W]} /></mesh>
+        <mesh position={[L / 2, H - t / 2, W / 2]} castShadow receiveShadow material={mats.roof} geometry={uvBox(L - 0.02, t, W - 0.02)} />
+        {p > 0 && edges.map(([x, y, lx, ly], i) => (
+          <group key={i}>
+            {/* peto encalado con remate redondeado continuo (propuesta) */}
+            <mesh position={[x, H + (p - pt / 2) / 2, y]} material={mats.facade} castShadow receiveShadow geometry={uvBox(lx, p - pt / 2, ly)} />
+            <mesh position={[x, H + p - pt / 2, y]} rotation={lx > ly ? [0, 0, Math.PI / 2] : [Math.PI / 2, 0, 0]} material={mats.facade} castShadow>
+              <cylinderGeometry args={[pt / 2, pt / 2, Math.max(lx, ly), 16, 1, false]} />
+            </mesh>
+          </group>
         ))}
       </group>
     );
   }
   const pitch = (r.pitchDeg * Math.PI) / 180;
   if (r.type === 'un-agua') {
-    // cae hacia la fachada C (y = 0): alto en la fachada A
     const run = W + 2 * o;
     const rise = Math.tan(pitch) * W;
     const slopeLen = run / Math.cos(pitch);
@@ -436,9 +469,18 @@ function RailingMesh({ r, y, mats }: { r: Railing; y: number; mats: MaterialSet 
       const rotY = -Math.atan2(by - ay, bx - ax);
       const parts: { geo: THREE.BufferGeometry; mat: THREE.Material }[] = [];
       if (r.material === 'vidrio') {
-        parts.push({ geo: bandGeometry(len, b0, b1, 0.03, r.height - 0.03, 0.02), mat: mats.glass });
-        parts.push({ geo: bandGeometry(len, b0, b1, r.height - 0.03, r.height, 0.035), mat: mats.metal });
-        parts.push({ geo: bandGeometry(len, b0, b1, 0, 0.03, 0.05), mat: mats.metal });
+        // vidrio laminado sobre perfil en U anclado al forjado, con canto superior protegido
+        parts.push({ geo: bandGeometry(len, b0, b1, 0.08, r.height - 0.015, 0.02), mat: mats.glass });
+        parts.push({ geo: bandGeometry(len, b0, b1, r.height - 0.015, r.height, 0.028), mat: mats.metal });
+        parts.push({ geo: bandGeometry(len, b0, b1, 0, 0.1, 0.07), mat: mats.metal });
+        // anclajes del perfil cada ≈0,6 m
+        const na = Math.max(2, Math.round(len / 0.6));
+        for (let k = 0; k <= na; k++) {
+          const sk = (len * k) / na;
+          const g = new THREE.BoxGeometry(0.05, 0.04, 0.1);
+          g.translate(sk, b0 + (b1 - b0) * (k / na) + 0.02, 0);
+          parts.push({ geo: g, mat: mats.blackMetal });
+        }
       } else {
         parts.push({ geo: bandGeometry(len, b0, b1, r.height - 0.04, r.height, 0.05), mat: mats.metal });
         parts.push({ geo: bandGeometry(len, b0, b1, 0.04, 0.07, 0.03), mat: mats.metal });
@@ -461,6 +503,34 @@ function RailingMesh({ r, y, mats }: { r: Railing; y: number; mats: MaterialSet 
           {sg.parts.map((p, k) => <mesh key={k} geometry={p.geo} material={p.mat} castShadow={p.mat !== mats.glass} />)}
         </group>
       ))}
+    </group>
+  );
+}
+
+/**
+ * Variante: pequeño volumen saliente encalado alrededor de la puerta de entrada, con un hueco
+ * profundo que prolonga la jamba. No cambia la distribución interior.
+ */
+function EntranceVolume({ o, w, center, mats }: { o: Opening; w: Wall; center: Vec2; mats: MaterialSet }) {
+  const n = wallNormal(w);
+  const mid = pointOnWall(w, o.offset + o.width / 2);
+  const out = (center[0] - mid[0]) * n[0] + (center[1] - mid[1]) * n[1] > 0 ? -1 : 1;
+  const depth = 0.7;
+  const side = 0.45;
+  const height = o.height + 0.55;
+  const face = pointOnWall(w, o.offset + o.width / 2, out * (w.thickness / 2 + depth / 2));
+  const rot = -Math.atan2(wallDir(w)[1], wallDir(w)[0]);
+  const totalW = o.width + 2 * side;
+  return (
+    <group position={[face[0], 0, face[1]]} rotation={[0, rot, 0]}>
+      {[-1, 1].map((k) => (
+        <mesh key={k} position={[k * (o.width / 2 + side / 2), height / 2, 0]} material={mats.facade} castShadow receiveShadow geometry={uvBox(side, height, depth)} />
+      ))}
+      <mesh position={[0, o.height + (height - o.height) / 2, 0]} material={mats.facade} castShadow receiveShadow geometry={uvBox(o.width, height - o.height, depth)} />
+      {/* remate redondeado continuo */}
+      <mesh position={[0, height, 0]} rotation={[0, 0, Math.PI / 2]} material={mats.facade} castShadow>
+        <cylinderGeometry args={[depth / 2, depth / 2, totalW, 16, 1, false, 0, Math.PI]} />
+      </mesh>
     </group>
   );
 }

@@ -4,12 +4,15 @@ import type { Opening, Vec2, Wall } from '../data/types';
 import { pointOnWall, wallDir, wallNormal } from '../model/geometry';
 import { FRAME, LEAF_T, leafPose, type LeafPose } from '../model/openings';
 import type { MaterialSet } from './materials';
+import { uvBox } from './textures';
 
 const reduceMotion = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 /** Carpintería en su hueco real: marco + hojas animadas según su sistema. */
-export function Opening3D({ o, w, mats, center, fraction, selected, onSelect }: {
+export function Opening3D({ o, w, mats, center, fraction, selected, onSelect, planks = false }: {
   o: Opening; w: Wall; mats: MaterialSet; center: Vec2; fraction: number; selected: boolean; onSelect: () => void;
+  /** hoja de tablones verticales de madera natural (variante de la puerta de entrada) */
+  planks?: boolean;
 }) {
   const [f, setF] = useState(fraction);
   const cur = useRef(fraction);
@@ -56,10 +59,12 @@ export function Opening3D({ o, w, mats, center, fraction, selected, onSelect }: 
     onSelect();
   };
   const frameMat = selected ? mats.selection : mats.carpentry;
-  const depth = w.thickness * 0.6;
+  // la puerta de entrada se coloca junto a la cara interior: el hueco exterior queda profundo y en sombra
+  const inset = o.entrance ? inward * (w.thickness / 2 - 0.07) : 0;
+  const depth = o.entrance ? 0.12 : w.thickness * 0.6;
   return (
     <group onClick={click}>
-      <group position={[mid[0], o.sill + o.height / 2, mid[1]]} rotation={[0, rotWall, 0]}>
+      <group position={[mid[0] + n[0] * inset, o.sill + o.height / 2, mid[1] + n[1] * inset]} rotation={[0, rotWall, 0]}>
         <mesh position={[0, o.height / 2 - FRAME / 2, 0]} material={frameMat}><boxGeometry args={[o.width, FRAME, depth]} /></mesh>
         {!isDoor && <mesh position={[0, -o.height / 2 + FRAME / 2, 0]} material={frameMat}><boxGeometry args={[o.width, FRAME, depth]} /></mesh>}
         <mesh position={[-o.width / 2 + FRAME / 2, 0, 0]} material={frameMat}><boxGeometry args={[FRAME, o.height, depth]} /></mesh>
@@ -72,15 +77,10 @@ export function Opening3D({ o, w, mats, center, fraction, selected, onSelect }: 
       {leaves.map((leaf, i) => {
         const a = (leaf.angle * Math.PI) / 180;
         const u: Vec2 = [d[0] * Math.cos(a) + n[0] * Math.sin(a), d[1] * Math.cos(a) + n[1] * Math.sin(a)];
-        const start = pointOnWall(w, o.offset + FRAME + leaf.s, leaf.depth);
+        const start = pointOnWall(w, o.offset + FRAME + leaf.s, leaf.depth + inset);
         const c: Vec2 = [start[0] + (u[0] * leaf.width) / 2, start[1] + (u[1] * leaf.width) / 2];
         const rot = -Math.atan2(u[1], u[0]);
-        if (isDoor)
-          return (
-            <mesh key={i} position={[c[0], zMid, c[1]]} rotation={[0, rot, 0]} material={mats.wood} castShadow>
-              <boxGeometry args={[leaf.width - 0.01, leafH, 0.04]} />
-            </mesh>
-          );
+        if (isDoor) return <DoorLeaf key={i} c={c} y={zMid} rot={rot} width={leaf.width - 0.01} height={leafH} planks={planks} mats={mats} handleLeft={leaf.angle > 90} />;
         const p = 0.035;
         return (
           <group key={i} position={[c[0], zMid, c[1]]} rotation={[0, rot, 0]}>
@@ -92,6 +92,44 @@ export function Opening3D({ o, w, mats, center, fraction, selected, onSelect }: 
           </group>
         );
       })}
+    </group>
+  );
+}
+
+/**
+ * Hoja de puerta. Tablones: tablas verticales de ≈15 cm con junta en V, travesaños por la cara
+ * interior y tirador de forja. Pintada: hoja lisa en el color de la carpintería con tirador.
+ */
+function DoorLeaf({ c, y, rot, width, height, planks, mats, handleLeft }: {
+  c: Vec2; y: number; rot: number; width: number; height: number; planks: boolean; mats: MaterialSet; handleLeft: boolean;
+}) {
+  const t = 0.045;
+  const hx = (handleLeft ? -1 : 1) * (width / 2 - 0.09);
+  if (!planks)
+    return (
+      <group position={[c[0], y, c[1]]} rotation={[0, rot, 0]}>
+        <mesh material={mats.carpentry} castShadow receiveShadow geometry={uvBox(width, height, t)} />
+        {[-1, 1].map((k) => <mesh key={k} position={[hx, -height / 2 + 1.0, k * (t / 2 + 0.025)]} material={mats.brass} geometry={uvBox(0.02, 0.14, 0.02)} />)}
+      </group>
+    );
+  const n = Math.max(3, Math.round(width / 0.15));
+  const bw = width / n;
+  return (
+    <group position={[c[0], y, c[1]]} rotation={[0, rot, 0]}>
+      {Array.from({ length: n }, (_, i) => (
+        <mesh key={i} position={[-width / 2 + bw * (i + 0.5), 0, 0]} material={mats.carpentryWood} castShadow receiveShadow geometry={uvBox(bw - 0.006, height, t)} />
+      ))}
+      {/* fondo de las juntas */}
+      <mesh material={mats.woodBeam} geometry={uvBox(width - 0.01, height - 0.01, t * 0.5)} />
+      {/* travesaños interiores */}
+      {[0.25, 0.75].map((f) => <mesh key={f} position={[0, -height / 2 + height * f, -t / 2 - 0.012]} material={mats.carpentryWood} geometry={uvBox(width - 0.04, 0.12, 0.024)} />)}
+      {/* tirador y bocallave de forja */}
+      {[-1, 1].map((k) => (
+        <group key={k} position={[hx, -height / 2 + 1.05, k * (t / 2 + 0.03)]}>
+          <mesh material={mats.blackMetal} geometry={uvBox(0.018, 0.22, 0.018)} />
+          <mesh position={[0, 0, -k * 0.015]} material={mats.blackMetal} geometry={uvBox(0.05, 0.3, 0.006)} />
+        </group>
+      ))}
     </group>
   );
 }

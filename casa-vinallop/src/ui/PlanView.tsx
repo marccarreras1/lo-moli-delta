@@ -21,8 +21,8 @@ export function PlanView({ fitNonce }: { fitNonce: number }) {
     return { href: urls[r.id], x: r.alignment!.x, y: r.alignment!.y, rotation: r.alignment!.rotation, widthM: r.width * k, heightM: r.height * k, opacity: s.overlayOpacity };
   }, [refs, urls, s.overlayRefId, s.overlayOpacity]);
   const svg = useMemo(
-    () => planSvg(layout, { selection, showDims: s.showDims, showAreas: s.showAreas, showFurniture: s.showFurniture, showLabels: s.showLabels, issues, openFractions, overlay, levelId: s.levelId }),
-    [s.levelId, layout, selection, s.showDims, s.showAreas, s.showFurniture, s.showLabels, issues, openFractions, overlay],
+    () => planSvg(layout, { selection, showDims: s.showDims, showAreas: s.showAreas, showFurniture: s.showFurniture, showLabels: s.showLabels, issues, openFractions, overlay, levelId: s.levelId, showPassages: s.showPassages }),
+    [s.levelId, layout, selection, s.showDims, s.showAreas, s.showFurniture, s.showLabels, issues, openFractions, overlay, s.showPassages],
   );
   const [view, setView] = useState({ k: 1, x: 0, y: 0 });
   useEffect(() => setView({ k: 1, x: 0, y: 0 }), [fitNonce]);
@@ -84,7 +84,9 @@ export function PlanView({ fitNonce }: { fitNonce: number }) {
             const hit = document.elementFromPoint(e.clientX, e.clientY) as Element | null;
             const op = hit?.closest('[data-opening]');
             const room = hit?.closest('[data-room]');
+            const fu = hit?.closest('[data-furniture]');
             if (op) select({ kind: 'opening', id: op.getAttribute('data-opening')! });
+            else if (fu) select({ kind: 'furniture', id: fu.getAttribute('data-furniture')! });
             else if (room) select({ kind: 'room', id: room.getAttribute('data-room')! });
             else select(null);
           }

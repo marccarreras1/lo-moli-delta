@@ -47,7 +47,7 @@ const F = FOTOS_PARCELA.id;
 const rect = (x0: number, y0: number, x1: number, y1: number): Vec2[] => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
 // espesores de la propiedad: frontal B 0,60 m y el resto 0,40 m; la posición de cada muro sale de las fotos
 const ext = { levelId: 'pb', thickness: T, kind: 'exterior' as const, status: 'interpretado' as const, sourceId: F };
-const extB = { ...ext, thickness: TB, status: 'documentado' as const, sourceId: 'indicacion-propiedad' };
+const extB = { ...ext, thickness: TB, status: 'confirmado' as const, sourceId: 'indicacion-propiedad' };
 
 const walls: Wall[] = [
   { ...ext, id: 'a-extremo', facade: 'A', a: [h, h], b: [X1, h], ext: [h, 0], height: H.extremo.a },
@@ -119,13 +119,13 @@ export const VINALLOP_ACTUAL: ProjectData = {
   site: PARCELA,
   measures: [
     { id: 'largo', label: 'Largo total', value: L, unit: 'm', decimals: 2, sourceId: 'boceto-planta-baixa', status: 'documentado', note: 'Se toma el de los bocetos (cadena de cotas).' },
-    { id: 'ancho', label: 'Ancho', value: W, unit: 'm', decimals: 2, sourceId: 'indicacion-propiedad', status: 'documentado' },
+    { id: 'ancho', label: 'Ancho', value: W, unit: 'm', decimals: 2, sourceId: 'indicacion-propiedad', status: 'confirmado' },
     { id: 'vol-extremo', label: 'Largo del volumen del extremo', value: X1, unit: 'm', decimals: 1, sourceId: F, status: 'interpretado', note: 'Proporción de la vista cenital.' },
     { id: 'vol-anexo', label: 'Largo del anexo', value: X2 - X1, unit: 'm', decimals: 1, sourceId: F, status: 'interpretado', note: 'Proporción de la vista cenital.' },
     { id: 'vol-principal', label: 'Largo del volumen principal', value: X3 - X2, unit: 'm', decimals: 1, sourceId: F, status: 'interpretado', note: 'Proporción de la vista cenital.' },
     { id: 'vol-habitacion', label: 'Largo de la habitación pequeña', value: L - X3, unit: 'm', decimals: 1, sourceId: F, status: 'interpretado', note: 'Proporción de la vista cenital.' },
-    { id: 'espesor-b', label: 'Muro del frontal B (existente)', value: TB, unit: 'm', decimals: 2, sourceId: 'indicacion-propiedad', status: 'documentado', note: '«El espesor de 0,6 sí» (propiedad). Se conserva en la reforma.' },
-    { id: 'espesor-resto', label: 'Resto de muros existentes', value: T, unit: 'm', decimals: 2, sourceId: 'indicacion-propiedad', status: 'documentado', note: '«0,40 m» (propiedad).' },
+    { id: 'espesor-b', label: 'Muro del frontal B (existente)', value: TB, unit: 'm', decimals: 2, sourceId: 'indicacion-propiedad', status: 'confirmado', note: '«El espesor de 0,6 sí» (propiedad). Se conserva en la reforma.' },
+    { id: 'espesor-resto', label: 'Resto de muros existentes', value: T, unit: 'm', decimals: 2, sourceId: 'indicacion-propiedad', status: 'confirmado', note: '«0,40 m» (propiedad).' },
     { id: 'alero-principal', label: 'Aleros del volumen principal (A / B)', value: H.principal.a, unit: 'm', decimals: 1, sourceId: F, status: 'interpretado', note: `${H.principal.a} m en el frontal A y ${H.principal.b} m en el frontal B, estimados con una puerta como referencia.` },
   ],
   sources: [

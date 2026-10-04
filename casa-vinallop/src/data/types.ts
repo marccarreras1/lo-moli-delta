@@ -9,8 +9,12 @@
 
 export type Vec2 = [number, number];
 
-/** documentado = figura en una fuente (no comprobado en obra). */
-export type DataStatus = 'documentado' | 'interpretado' | 'propuesto' | 'pendiente';
+/**
+ * confirmado = decisión o medida indicada por la propiedad · documentado = figura escrita en una
+ * fuente (boceto) · interpretado = medido o deducido de un dibujo o foto · propuesto = decisión de
+ * diseño pendiente de validar · pendiente = falta o no se distingue. Nada está comprobado en obra.
+ */
+export type DataStatus = 'confirmado' | 'documentado' | 'interpretado' | 'propuesto' | 'pendiente';
 
 export interface Source {
   id: string;
@@ -145,6 +149,8 @@ export interface Opening {
   system: { type: OpeningSystem; leaves: number; status: DataStatus } | null;
   /** abatibles: bisagra en el inicio/fin del hueco y sentido (+1 hacia la normal (-dy, dx) del muro) */
   swing?: { hinge: 'inicio' | 'fin'; dir: 1 | -1 };
+  /** puerta de entrada principal (admite la variante de hoja de tablones y el volumen saliente) */
+  entrance?: boolean;
   status: DataStatus;
   sourceId: string;
   note?: string;
@@ -167,7 +173,14 @@ export interface Room {
 export type FurnitureType =
   | 'cama' | 'mesita' | 'armario' | 'sofa' | 'mesa' | 'silla' | 'mesa-centro'
   | 'butaca' | 'alfombra' | 'encimera' | 'nevera' | 'inodoro' | 'lavabo' | 'ducha' | 'banera' | 'banco'
-  | 'sofa-l' | 'isla' | 'estufa';
+  | 'sofa-l' | 'isla' | 'estufa'
+  | 'taburete' | 'mesa-exterior' | 'silla-exterior' | 'maceta' | 'farola' | 'aplique' | 'jarron' | 'balda';
+
+/** Módulo de una cocina lineal (de izquierda a derecha según el eje del mueble). */
+export interface KitchenModule {
+  kind: 'fregadero' | 'lavavajillas' | 'placa-horno' | 'frigorifico' | 'cajones' | 'puertas';
+  w: number;
+}
 
 export interface Furniture {
   id: string;
@@ -187,9 +200,11 @@ export interface Furniture {
   color?: string;
   /** armario abierto, sin puertas (se ven las baldas) */
   open?: boolean;
+  /** cocina lineal: módulos bajo encimera */
+  modules?: KitchenModule[];
 }
 
-export type RoofType = 'dos-aguas' | 'un-agua' | 'plana';
+export type RoofType = 'dos-aguas' | 'un-agua' | 'plana' | 'plana-peto';
 
 export interface RoofOption {
   type: RoofType;
@@ -239,6 +254,58 @@ export interface Site {
   pavements: { id: string; label: string; rect: [number, number, number, number]; note: string }[];
 }
 
+/** Pavimento exterior (solera) con juntas y, si hace falta, una zona permeable alrededor de un árbol. */
+export interface OutdoorPavement {
+  id: string;
+  label: string;
+  rect: [number, number, number, number];
+  /** separación de juntas (m) */
+  joints: number;
+  /** zona sin pavimentar (alcorque) */
+  permeable?: { c: Vec2; r: number };
+  status: DataStatus;
+  note: string;
+}
+
+/** Elementos exteriores del proyecto (comedor bajo el algarrobo). */
+export interface Outdoor {
+  pavements: OutdoorPavement[];
+  furniture: Furniture[];
+  /** puntos de luz exterior (farolas con soporte propio) */
+  lights: { id: string; c: Vec2; h: number; status: DataStatus; note: string }[];
+}
+
+/** Grupo de lámparas colgantes en una ubicación candidata. */
+export interface PendantGroup {
+  id: string;
+  location: 'isla' | 'salon';
+  label: string;
+  points: Vec2[];
+  /** cota de la parte baja de las lámparas sobre el suelo */
+  bottom: number;
+  status: DataStatus;
+  note: string;
+}
+
+/** Contraste de una dimensión entre fuentes (no se elige ninguna sin validación). */
+export interface DimensionCheck {
+  label: string;
+  items: { source: string; value: string }[];
+  status: DataStatus;
+  note: string;
+}
+
+/** Referencia visual de diseño (no es geometría ni textura). */
+export interface DesignReference {
+  id: string;
+  space: string;
+  url: string;
+  /** qué se ha tomado de ella y cómo */
+  use: string;
+  /** si se ha podido abrir desde este entorno */
+  consulted: boolean;
+}
+
 /** Definición completa de un proyecto (Casa Vinallop o modelo de prueba). */
 export interface ProjectData {
   id: string;
@@ -272,12 +339,34 @@ export interface ProjectData {
   roofSegments?: RoofSegment[];
   railings?: Railing[];
   site?: Site;
+  outdoor?: Outdoor;
+  pendants?: PendantGroup[];
+  /** vistas preparadas (posiciones fijas) */
+  views?: CameraPreset[];
+  checks?: DimensionCheck[];
+  references?: DesignReference[];
   /** fase de la casa que representa (solo Casa Vinallop) */
   phase?: 'actual' | 'reforma';
 }
 
 /** Proyecto resuelto con una variante aplicada. */
+/** Alternativas de diseño que se comparan desde la misma cámara (no borran lo confirmado). */
+export interface DesignOptions {
+  /** separación de ducha: A = celosía fina geométrica · B = celosía de huecos cuadrados */
+  celosia: 'A' | 'B';
+  /** lámparas colgantes cerámicas: A = siluetas variadas en tonos de barro · B = terracota clara, más ligeras */
+  lamparas: 'A' | 'B';
+  lamparasUbicacion: 'isla' | 'salon';
+  /** hoja de la puerta de entrada */
+  puertaEntrada: 'verde-gris' | 'tablones';
+  /** pequeño volumen saliente en la entrada (variante) */
+  entradaSaliente: boolean;
+}
+
+export const DEFAULT_OPTIONS: DesignOptions = { celosia: 'A', lamparas: 'A', lamparasUbicacion: 'isla', puertaEntrada: 'tablones', entradaSaliente: false };
+
 export interface Layout extends ProjectData {
+  options: DesignOptions;
   roof: RoofOption | null;
   /** coronación de los muros exteriores (m) */
   topHeight: number;
@@ -295,6 +384,14 @@ export interface CameraPreset {
   roomId?: string;
   /** cota del nivel de la estancia: la altura de ojos se suma a ella */
   elevation?: number;
+  /** posición fija (no se aleja para encuadrar toda la casa) */
+  fixed?: boolean;
+  /** campo visual propio */
+  fov?: number;
+  /** vista de sección: activa el corte longitudinal */
+  section?: boolean;
+  /** vista sin cubierta */
+  hideRoof?: boolean;
 }
 
 export interface Finish {
@@ -304,7 +401,7 @@ export interface Finish {
   roughness: number;
 }
 
-export type FinishSlot = 'fachada' | 'paredes' | 'suelo' | 'carpinteria' | 'madera' | 'cubierta' | 'textiles';
+export type FinishSlot = 'fachada' | 'paredes' | 'suelo' | 'carpinteria' | 'madera' | 'cubierta' | 'textiles' | 'boveda' | 'encimera';
 export type FinishSelection = Record<FinishSlot, string>;
 
 export interface FinishPreset {

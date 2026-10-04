@@ -18,7 +18,7 @@
  * sale de 0,60 m y el sofá de 0,85 m de fondo): Y = 0,30 + fracción × 4,10 m.
  */
 import { FOTOS_PARCELA, PARCELA } from './parcela';
-import type { Furniture, Opening, ProjectData, Room, Trace, Vec2, Wall } from './types';
+import type { CameraPreset, DataStatus, DesignReference, Furniture, Opening, Outdoor, PendantGroup, ProjectData, Room, Trace, Vec2, Wall } from './types';
 
 const r2 = (x: number) => Math.round(x * 100) / 100;
 const rect = (x0: number, y0: number, x1: number, y1: number): Vec2[] => [[r2(x0), r2(y0)], [r2(x1), r2(y0)], [r2(x1), r2(y1)], [r2(x0), r2(y1)]];
@@ -103,7 +103,7 @@ const openings: Opening[] = [
   },
   {
     id: 'puerta-120', label: 'Puerta de entrada (1,20 m)', wallId: 'muro-B', kind: 'puerta', offset: onAB(X_PUERTA), width: 1.2, sill: 0, height: 3.0,
-    system: { type: 'abatible', leaves: 1, status: 'interpretado' }, swing: { hinge: 'inicio', dir: -1 }, status: 'documentado', sourceId: S.planta,
+    system: { type: 'abatible', leaves: 1, status: 'interpretado' }, swing: { hinge: 'inicio', dir: -1 }, entrance: true, status: 'documentado', sourceId: S.planta,
     note: 'Anchura y posición documentadas (cadena de cotas y «120 cm» del frontal B). En el muro de 0,60 m. Una hoja con bisagra en el lado del 9,50, abre hacia dentro. Altura medida en el alzado B (≈3,0 m).',
   },
   {
@@ -142,6 +142,10 @@ const furniture: Furniture[] = [
   // dormitorio
   f({ id: 'armario', type: 'armario', label: 'Armario empotrado', roomId: 'dormitorio', x: 0.55, y: r2((y0 + y1) / 2), w: r2(y1 - y0), d: 0.5, h: 2.4, rot: 270, status: 'documentado', note: 'Franja del lateral izquierdo (propiedad). Fondo ≈0,5 m medido.' }),
   f({ id: 'cama', type: 'cama', label: 'Cama 160 × 200', roomId: 'dormitorio', x: 1.98, y: r2(y1 - 1.0), w: 1.6, d: 2.0, h: 0.55, rot: 180, status: 'interpretado', note: 'Dibujada de ≈1,65 × 2,05 m con dos almohadas y el embozo; cabecero contra el frontal B.' }),
+  f({ id: 'mesita-dorm', type: 'mesita', label: 'Mesita', roomId: 'dormitorio', x: 3.05, y: 4.18, w: 0.4, d: 0.36, h: 0.5, rot: 180, status: 'propuesto', note: 'Al lado libre de la cama (el otro lado queda junto al armario empotrado).' }),
+  f({ id: 'balda-dorm', type: 'balda', label: 'Balda de apoyo', roomId: 'dormitorio', x: 1.0, y: 4.25, w: 0.3, d: 0.25, h: 0.55, rot: 180, status: 'propuesto', note: 'Balda volada de madera entre el armario y la cama: deja libre el suelo y el paso al armario.' }),
+  f({ id: 'aplique-dorm-1', type: 'aplique', label: 'Aplique de pared', roomId: 'dormitorio', x: 0.98, y: 4.36, w: 0.16, d: 0.08, h: 1.3, rot: 180, status: 'propuesto' }),
+  f({ id: 'aplique-dorm-2', type: 'aplique', label: 'Aplique de pared', roomId: 'dormitorio', x: 2.98, y: 4.36, w: 0.16, d: 0.08, h: 1.3, rot: 180, status: 'propuesto' }),
   // altell (zona diáfana)
   f({ id: 'cama-altell', type: 'cama', label: 'Cama de matrimonio 160 × 200', roomId: 'altell', x: 2.5, y: r2(y1 - 1.0), w: 1.6, d: 2.0, h: 0.55, rot: 180, status: 'propuesto', note: 'Cama de matrimonio en el altell (propiedad). Posición propuesta: cabecero contra el frontal B, mirando a la obertura de 2,25 m.' }),
   f({ id: 'mesita-altell-1', type: 'mesita', label: 'Mesita', roomId: 'altell', x: 1.45, y: 4.17, w: 0.45, d: 0.45, h: 0.5, rot: 180, status: 'propuesto' }),
@@ -153,17 +157,29 @@ const furniture: Furniture[] = [
   f({ id: 'inodoro', type: 'inodoro', label: 'Inodoro', roomId: 'bano', x: 3.88, y: 3.22, w: 0.38, d: 0.65, h: 0.42, rot: 270, status: 'documentado', note: 'En la marca «×» contra el tabique del dormitorio (propiedad: las «×» marcan agua, inodoro y lavabo).' }),
   f({ id: 'lavabo', type: 'lavabo', label: 'Lavabo', roomId: 'bano', x: 4.28, y: r2(y1 - 0.3), w: 1.45, d: 0.6, h: 0.85, rot: 180, status: 'documentado', note: 'Mueble dibujado contra el frontal B, con la marca «×» del lavabo.' }),
   // cocina y estar
-  f({ id: 'encimera', type: 'encimera', label: 'Cocina', roomId: 'dia', x: 8.35, y: r2(y1 - 0.3), w: 2.2, d: 0.6, h: 0.9, rot: 180, status: 'documentado', note: 'Cocina junto a la escalera (propiedad), contra el frontal B, con dos puntos de agua «×».' }),
-  f({ id: 'isla', type: 'isla', label: 'Isla central', roomId: 'dia', x: 8.8, y: 2.38, w: 1.5, d: 1.65, h: 0.9, rot: 0, status: 'documentado', note: 'Isla central de la cocina (propiedad). Medidas del dibujo (≈1,55 × 1,65).' }),
+  // cocina lineal contra el frontal B (propiedad); módulos propuestos sobre los dos puntos de agua del boceto.
+  // Con rot 180 el eje local va de 9,45 m a 7,25 m: frigorífico, placa y horno, lavavajillas, fregadero.
+  f({ id: 'encimera', type: 'encimera', label: 'Cocina', roomId: 'dia', x: 8.35, y: r2(y1 - 0.3), w: 2.2, d: 0.6, h: 0.9, rot: 180, status: 'confirmado',
+    modules: [{ kind: 'frigorifico', w: 0.55 }, { kind: 'placa-horno', w: 0.6 }, { kind: 'lavavajillas', w: 0.45 }, { kind: 'fregadero', w: 0.6 }],
+    note: 'Cocina junto a la escalera (propiedad), contra el frontal B. Módulos propuestos: fregadero sobre la «×» de 7,57 m, lavavajillas junto a la de 8,35 m, placa con horno debajo y frigorífico integrado bajo encimera (no cabe una columna: a la derecha está la puerta de entrada). Frentes lisos de madera clara, encimera y salpicadero minerales, balda corrida y grifo negro mate según la referencia de cocina (descrita, no consultada).' }),
+  // isla de obra (propuesta): 1,60 m de largo como la referencia; fondo elegido para dejar 1,00 m de paso hasta la cocina
+  f({ id: 'isla', type: 'isla', label: 'Isla de obra', roomId: 'dia', x: 8.8, y: 2.33, w: 1.6, d: 0.95, h: 0.9, rot: 0, status: 'propuesto',
+    note: 'Isla central (propiedad) con la estructura de la referencia: apoyos macizos, hueco para taburetes hacia el frontal A y estantes abiertos en los costados; revestimiento de piezas estrechas verticales de terracota con juntas claras y encimera clara de cantos suavizados. 1,60 m de largo (referencia) y 0,95 m de fondo (propuesto: deja 1,00 m de paso hasta la cocina). El boceto dibuja un rectángulo de ≈1,55 × 1,65 m, que se conserva como trazo.' }),
+  ...[8.3, 8.8, 9.3].map((x, i) => f({ id: `taburete-${i + 1}`, type: 'taburete', label: 'Taburete', roomId: 'dia', x, y: 1.6, w: 0.38, d: 0.38, h: 0.65, rot: 0, status: 'propuesto' })),
   f({ id: 'sofa-b', type: 'sofa-l', label: 'Sofá en L (frontal B)', roomId: 'dia', x: 12.75, y: 3.97, w: 4.0, d: 0.85, h: 0.8, rot: 180, status: 'documentado', note: 'Sofá (propiedad): tramo desde la jamba de la puerta hasta ≈14,75 m, fondo ≈0,85 m.' }),
   f({ id: 'sofa-lateral', type: 'sofa-l', label: 'Sofá en L (lateral derecho)', roomId: 'dia', x: 15.07, y: 3.0, w: 2.8, d: 0.65, h: 0.8, rot: 90, status: 'documentado', note: 'Segundo tramo del sofá contra el lateral derecho, desde ≈1,60 m; fondo dibujado ≈0,65 m.' }),
   f({ id: 'estufa', type: 'estufa', label: 'Estufa', roomId: 'dia', x: 14.43, y: 0.9, w: 0.8, d: 0.8, h: 1.0, rot: 0, status: 'documentado', note: 'El círculo del boceto (propiedad), junto al frontal A al final de la obertura de 7 m. Dibujado de ≈1 m de diámetro; salida de humos supuesta.' }),
+  f({ id: 'alfombra-salon', type: 'alfombra', label: 'Alfombra de fibra natural', roomId: 'dia', x: 12.85, y: 2.75, w: 2.4, d: 1.7, h: 0.012, rot: 0, status: 'propuesto', note: 'Alfombra de yute o sisal (referencia del salón, descrita).' }),
+  f({ id: 'mesa-salon', type: 'mesa-centro', label: 'Mesa de madera 110 × 80', roomId: 'dia', x: 12.85, y: 2.75, w: 1.1, d: 0.8, h: 0.4, rot: 0, status: 'propuesto', note: 'Mesa de 110 × 80 cm (indicación). Se dibuja baja, delante del sofá de obra; si es de comedor (0,75 m) hay que revisar la posición.' }),
+  f({ id: 'jarron-salon', type: 'jarron', label: 'Jarrón de barro', roomId: 'dia', x: 13.15, y: 2.65, w: 0.22, d: 0.22, h: 0.42, rot: 0, status: 'propuesto' }),
+  f({ id: 'maceta-salon', type: 'maceta', label: 'Maceta de barro con olivo', roomId: 'dia', x: 10.9, y: 0.75, w: 0.5, d: 0.5, h: 1.5, rot: 0, status: 'propuesto' }),
 ];
 
 const water = (id: string, levelId: string, p: Vec2, note: string, sourceId = S.planta): Trace => ({ id, levelId, label: 'Punto de agua (×)', cross: p, sourceId, note });
 const traces: Trace[] = [
   water('x-ducha', 'pb', [3.72, 2.3], 'Marca «×» del boceto en el rectángulo de ≈0,75 × 1,00 m. La ducha está junto a la puerta exterior (propiedad).'),
   { id: 'rect-bano', levelId: 'pb', label: 'Rectángulo del baño', sourceId: S.planta, points: [[3.55, 2.0], [4.3, 2.0], [4.3, 3.0], [3.55, 3.0]], closed: true, note: 'Rectángulo de ≈0,75 × 1,00 m dibujado en el baño. Se había tomado por la ducha; la propiedad sitúa la ducha junto a la puerta exterior, así que queda sin uso asignado.' },
+  { id: 'isla-boceto', levelId: 'pb', kind: 'nota', label: 'Isla del boceto', sourceId: S.planta, points: [[8.05, 1.55], [9.55, 1.55], [9.55, 3.2], [8.05, 3.2]], closed: true, note: 'Rectángulo de ≈1,55 × 1,65 m dibujado como isla. Con ese fondo quedarían ≈0,60 m de paso hasta la cocina; la propuesta lo reduce a 0,95 m.' },
   water('x-frontal-a', 'pb', [4.65, y0], 'Sobre la línea del frontal A en el tramo del baño.'),
   water('x-cocina-1', 'pb', [7.57, 3.8], 'En el borde de la encimera.'),
   water('x-cocina-2', 'pb', [8.35, 3.8], 'En el borde de la encimera.'),
@@ -171,7 +187,77 @@ const traces: Trace[] = [
   { id: 'doble-altura', levelId: 'altell', kind: 'nota', label: 'Doble altura (cocina y estar)', sourceId: S.prop, points: [[10.7, 2.35]], note: 'Zona de día de doble altura (propiedad).' },
 ];
 
-export const VINALLOP: ProjectData = {
+// ---------- comedor exterior bajo el algarrobo (decisión confirmada; medidas orientativas) ----------
+/** algarrobo: posición aproximada sobre la vista cenital (src/data/parcela.ts) */
+const ALGARROBO: Vec2 = [18.4, 0.6];
+const MESA_EXT: Vec2 = [18.4, 3.7];
+const outdoor: Outdoor = {
+  pavements: [
+    { id: 'grava-comedor', label: 'Transición de grava', rect: [15.95, 1.15, 20.85, 6.05], joints: 0, status: 'propuesto', note: 'Franja de grava de 0,45 m entre la solera y la tierra.' },
+    {
+      id: 'solera-comedor', label: 'Solera de cemento claro', rect: [16.4, 1.6, 20.4, 5.6], joints: 2, permeable: { c: ALGARROBO, r: 1.35 }, status: 'propuesto',
+      note: 'Solera de ≈4 × 4 m (propuesta orientativa) con juntas cada 2 m. Se recorta alrededor del tronco para dejar una zona permeable sobre las raíces; la posición del árbol es aproximada.',
+    },
+  ],
+  furniture: [
+    f({ id: 'mesa-exterior', type: 'mesa-exterior', label: 'Mesa redonda Ø 1,80', roomId: 'exterior', x: MESA_EXT[0], y: MESA_EXT[1], w: 1.8, d: 1.8, h: 0.75, rot: 0, status: 'propuesto', note: 'Mesa circular para ocho plazas con tablero mineral claro mate y pie central (referencia descrita). Diámetro orientativo.' }),
+    ...Array.from({ length: 8 }, (_, i) => {
+      const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
+      return f({ id: `silla-exterior-${i + 1}`, type: 'silla-exterior', label: 'Silla exterior', roomId: 'exterior', x: r2(MESA_EXT[0] + Math.cos(a) * 1.2), y: r2(MESA_EXT[1] + Math.sin(a) * 1.2), w: 0.46, d: 0.5, h: 0.8, rot: r2((Math.atan2(Math.cos(a), Math.sin(a)) * 180) / Math.PI + 180), status: 'propuesto' });
+    }),
+    f({ id: 'maceta-ext-1', type: 'maceta', label: 'Maceta de barro', roomId: 'exterior', x: 16.75, y: 5.25, w: 0.55, d: 0.55, h: 0.9, rot: 0, status: 'propuesto' }),
+    f({ id: 'maceta-ext-2', type: 'maceta', label: 'Maceta de barro', roomId: 'exterior', x: 20.05, y: 5.3, w: 0.45, d: 0.45, h: 0.7, rot: 0, status: 'propuesto' }),
+    f({ id: 'maceta-ext-3', type: 'maceta', label: 'Maceta de barro', roomId: 'exterior', x: 20.05, y: 1.95, w: 0.5, d: 0.5, h: 0.8, rot: 0, status: 'propuesto' }),
+  ],
+  lights: [
+    { id: 'farola-comedor', c: [16.7, 2.0], h: 2.3, status: 'propuesto', note: 'Farol de luz cálida con soporte propio (no colgado del árbol).' },
+  ],
+};
+
+// ---------- lámparas colgantes (alternativas A y B; ubicación sin elegir) ----------
+const pendants: PendantGroup[] = [
+  { id: 'lamparas-isla', location: 'isla', label: 'Sobre la isla', points: [[8.28, 2.33], [8.8, 2.33], [9.32, 2.33]], bottom: 1.65, status: 'propuesto', note: 'Tres piezas a 0,52 m sobre la isla de 1,60 m; parte baja a 0,75 m de la encimera.' },
+  { id: 'lamparas-salon', location: 'salon', label: 'Sobre la mesa del salón', points: [[12.45, 2.75], [12.85, 2.75], [13.25, 2.75]], bottom: 2.0, status: 'propuesto', note: 'Tres piezas sobre la mesa de 110 × 80 cm. Con la mesa baja se cuelgan a 2,00 m para no estorbar al pasar (más bajas quedarían a la altura de la cabeza).' },
+];
+
+// ---------- vistas preparadas ----------
+const view = (v: CameraPreset): CameraPreset => ({ fixed: true, ...v });
+const views: CameraPreset[] = [
+  view({ id: 'v01-exterior', label: '1 · Exterior a tres cuartos', group: 'exterior', position: [27, 15.5, 8.5], target: [9.5, 2.2, 1.8], fov: 38 }),
+  view({ id: 'v02-fachada-a', label: '2 · Fachada A y ventanal', group: 'exterior', position: [10.6, -13.5, 2.2], target: [10.2, 0, 2.6], fov: 42 }),
+  view({ id: 'v03-entrada', label: '3 · Entrada', group: 'exterior', position: [13.3, 8.3, 1.6], target: [10.1, 4.95, 1.6], fov: 42 }),
+  view({ id: 'v04-algarrobo', label: '4 · Algarrobo y comedor desde la casa', group: 'exterior', position: [15.4, 7.3, 1.65], target: [18.6, 2.6, 1.1], fov: 50 }),
+  view({ id: 'v05-desde-comedor', label: '5 · La casa desde el comedor', group: 'exterior', position: [20.2, 8.8, 1.6], target: [11, 5.4, 2.1], fov: 52 }),
+  view({ id: 'v06-ventanal', label: '6 · Desde el ventanal hacia sofá, cocina e isla', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.1, 0.75, 1.6], target: [10.3, 4.0, 1.15], fov: 62 }),
+  view({ id: 'v07-salon-exterior', label: '7 · Del salón al exterior', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.6, 3.25, 1.6], target: [11.4, -1, 1.5], fov: 58 }),
+  view({ id: 'v08-cocina-isla', label: '8 · Cocina e isla', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.45, 1.2, 1.6], target: [8.6, 2.9, 0.7], fov: 55 }),
+  view({ id: 'v09-dormitorio', label: '9 · Dormitorio desde la entrada', group: 'interior', eyeLevel: true, roomId: 'dormitorio', elevation: 0, position: [3.15, 0.7, 1.6], target: [1.5, 3.7, 0.9], fov: 60 }),
+  view({ id: 'v10-bano', label: '10 · Baño desde la puerta', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [4.75, 2.3, 1.6], target: [4.3, 4.4, 1.15], fov: 66 }),
+  view({ id: 'v10b-celosia', label: '10b · Detalle de la celosía de la ducha', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [4.45, 3.5, 1.6], target: [5.6, 3.85, 1.15], fov: 58 }),
+  view({ id: 'v11-altell', label: '11 · Altell hacia la doble altura y la volta', group: 'interior', eyeLevel: true, roomId: 'altell', elevation: 2.8, position: [4.6, 2.35, 1.6], target: [11.5, 2.35, 1.3], fov: 64 }),
+  view({ id: 'v11b-volta', label: '11b · Volta catalana desde la zona de día', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [11.6, 2.6, 1.6], target: [9.6, 2.35, 5.6], fov: 60 }),
+  view({ id: 'v12a-sin-cubierta', label: '12 · Vista sin cubierta', group: 'exterior', hideRoof: true, position: [8.6, 10.5, 25], target: [8.6, 2.6, 0], fov: 40 }),
+  view({ id: 'v12b-corte', label: '12b · Corte longitudinal', group: 'exterior', position: [8.6, -21, 3.4], target: [8.6, 2.35, 3.1], fov: 34, section: true }),
+];
+
+// ---------- referencias de diseño (enlaces de Pinterest: bloqueados en este entorno) ----------
+const ref = (id: string, space: string, url: string, use: string): DesignReference => ({ id, space, url, use, consulted: false });
+const references: DesignReference[] = [
+  ref('ref-cocina', 'Cocina', 'https://pin.it/wgLbpxrAO', 'Frentes lisos de madera clara con veta y nudos, encimera y salpicadero minerales claros, balda corrida de madera, grifo negro mate, muebles dentro de una envolvente mineral.'),
+  ref('ref-puerta', 'Puerta y fachada', 'https://pin.it/1XBtdMDQr', 'Volúmenes blancos mates, puerta de tablones verticales de madera natural en hueco profundo; volumen saliente de entrada como variante.'),
+  ref('ref-salon', 'Salón', 'https://pin.it/6qqQwbqFc', 'Sofá de obra en L con colchonetas y cojines crudos, mesa de madera, alfombra de fibra, paredes arena muy clara. Su techo no se copia.'),
+  ref('ref-bano', 'Baño', 'https://pin.it/6CBWKrJoy', 'Lavabo de obra claro con cajones de madera y hueco inferior, espejo grande, franja de piezas terracota verticales, grifería de latón. Un solo lavabo por el espacio.'),
+  ref('ref-isla-estructura', 'Isla (estructura)', 'https://pin.it/1w3VfOFCm', 'Isla de obra con apoyos macizos, hueco para taburetes y estantes abiertos laterales; ≈1,60 m de largo y 0,90 m de alto.'),
+  ref('ref-isla-acabado', 'Isla (acabado)', 'https://pin.it/1336RMdx5', 'Piezas estrechas verticales de terracota con juntas claras, encimera clara y cantos suavizados.'),
+  ref('ref-celosia-a', 'Ducha · celosía A', 'https://pin.it/1gksDy9jg', 'Celosía cerámica terracota de patrón fino y geométrico dentro de un paño claro.'),
+  ref('ref-celosia-b', 'Ducha · celosía B', 'https://pin.it/lgNFCU41S', 'Celosía terracota de huecos cuadrados con piezas de más presencia.'),
+  ref('ref-lamparas-a', 'Lámparas A', 'https://pin.it/2erJw1OyI', 'Colgantes cerámicos de siluetas variadas en tonos de barro.'),
+  ref('ref-lamparas-b', 'Lámparas B', 'https://pin.it/6rVBGp24T', 'Colgantes de terracota clara, formas variadas y composición ligera.'),
+  ref('ref-color-techo', 'Color de vigas y volta', 'https://pin.it/2w7oHIAJn', 'Color de las vigas y de la volta catalana (indicación de la propiedad: los dos con el mismo color). Hasta ver la imagen se usa la terracota confirmada.'),
+  ref('ref-comedor-exterior', 'Comedor exterior', 'https://pin.it/6BEmckzBK', 'Mesa circular grande de tablero mineral grueso y pie central, sillas ligeras oscuras con detalles de madera, solera clara.'),
+];
+
+const PROJECT: ProjectData = {
   id: 'casa-vinallop',
   name: 'Casa Vinallop',
   isTest: false,
@@ -196,6 +282,15 @@ export const VINALLOP: ProjectData = {
     },
   ],
   traces,
+  outdoor,
+  pendants,
+  views,
+  references,
+  checks: [
+    { label: 'Dimensiones generales', items: [{ source: 'Bocetos (cadena de cotas) y propiedad', value: '15,70 × 5,00 m; altura 6,20 m' }, { source: 'Especificación inicial del estudio', value: '17 × 4,5 × 5 m' }], status: 'pendiente', note: 'Se mantiene 15,70 × 5,00 m (cadena escrita en el boceto y «5 de ancho» de la propiedad). Las cifras de 17 × 4,5 × 5 m no aparecen en los bocetos: pendiente de validar con el levantamiento.' },
+    { label: 'Ventanal del frontal A', items: [{ source: 'Boceto (planta y alzado A)', value: '«OBERTURA 7 M»' }, { source: 'Especificación inicial del estudio', value: 'Ventanal de 9 m' }], status: 'pendiente', note: 'Se dibuja 7 m (escrito dos veces en los bocetos). No se cambia sin confirmación.' },
+    { label: 'Superficie del altell', items: [{ source: 'Calculada sobre el modelo', value: '23,6 m² (5,75 × 4,10 m interior)' }], status: 'interpretado', note: 'Resultado del cálculo, no una medida tomada.' },
+  ],
   railings: [
     {
       id: 'barandilla-altell', levelId: 'altell', label: 'Barandilla del altell', points: [[ALT_X1, y0], [ALT_X1, r2(y1 - 0.65)]], height: 1.0, material: 'vidrio', spacing: 0, status: 'documentado', sourceId: S.prop,
@@ -210,7 +305,12 @@ export const VINALLOP: ProjectData = {
     {
       type: 'plana', label: 'Plana', pitchDeg: 0, overhang: 0, thickness: 0.25, parapet: 0, status: 'documentado',
       note: 'Cubierta plana (propiedad), coronada a 6,20 m como los alzados. Canto provisional.',
-      ceiling: { type: 'vuelta-catalana', spacing: 0.55, rise: 0.1, status: 'documentado', note: 'Por dentro, vuelta catalana (propiedad). Vigas cruzando el ancho de la casa cada 0,55 m (propiedad); flecha de 0,10 m.' },
+      ceiling: { type: 'vuelta-catalana', spacing: 0.55, rise: 0.1, status: 'confirmado', note: 'Por dentro, vuelta catalana (propiedad). Vigas cruzando el ancho de la casa cada 0,55 m (propiedad); flecha de 0,10 m. Bovedilla cerámica en terracota (confirmado). Vigas del mismo color que la volta (propiedad); el tono exacto está en una referencia de Pinterest que no se ha podido abrir: pendiente de la imagen.' },
+    },
+    {
+      type: 'plana-peto', label: 'Plana con peto ibicenco (propuesta)', pitchDeg: 0, overhang: 0, thickness: 0.25, parapet: 0.45, status: 'propuesto',
+      note: 'Propuesta estética pendiente de validación: remate blanco continuo y redondeado con peto de 0,45 m que oculta pendientes y capas. Eleva la coronación de 6,20 m a ≈6,65 m: contrastar con la altura de los alzados. No sustituye el cálculo ni el diseño de impermeabilización y desagües. El interior no pierde altura.',
+      ceiling: { type: 'vuelta-catalana', spacing: 0.55, rise: 0.1, status: 'confirmado', note: 'Igual que la opción base.' },
     },
   ],
   measures: [
@@ -277,3 +377,29 @@ export const VINALLOP: ProjectData = {
   facades: { A: 'Frontal A', B: 'Frontal B', izquierdo: 'Lateral izquierdo', derecho: 'Lateral derecho' },
   notices: ['Geometría de los bocetos fotografiados y de las respuestas de la propiedad. Revisa las preguntas en «Medidas y documentación».'],
 };
+
+/**
+ * Lo indicado por la propiedad pasa de «documentado» a «confirmado» (se distingue de lo que solo
+ * está escrito en un boceto). No cambia ningún valor.
+ */
+function confirmByOwner(p: ProjectData): ProjectData {
+  const c = <T extends { status: DataStatus; sourceId?: string }>(x: T): T => (x.sourceId === S.prop && x.status === 'documentado' ? { ...x, status: 'confirmado' } : x);
+  return {
+    ...p,
+    levels: p.levels.map((l) => (l.id === 'altell' ? { ...l, elevationStatus: 'confirmado' } : l)),
+    walls: p.walls.map(c),
+    openings: p.openings.map((o) => {
+      const x = c(o);
+      return x.system && x.sourceId === S.prop && x.system.status === 'documentado' ? { ...x, system: { ...x.system, status: 'confirmado' } } : x;
+    }),
+    rooms: p.rooms.map(c),
+    slabs: p.slabs.map(c),
+    stairs: p.stairs.map((st) => ({ ...st, upStatus: st.upStatus === 'documentado' ? 'confirmado' : st.upStatus })),
+    railings: p.railings?.map(c),
+    measures: p.measures.map(c),
+    furniture: p.furniture.map((f) => (f.status === 'documentado' && /propiedad/.test(f.note ?? '') ? { ...f, status: 'confirmado' } : f)),
+    roofOptions: p.roofOptions.map((r) => (r.status === 'documentado' ? { ...r, status: 'confirmado' } : r)),
+  };
+}
+
+export const VINALLOP: ProjectData = confirmByOwner(PROJECT);

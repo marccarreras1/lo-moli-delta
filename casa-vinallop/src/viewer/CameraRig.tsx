@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import type { CameraPreset, Layout } from '../data/types';
+import { defaultPreset } from '../model/cameras';
 import { bbox, pointInPolygon } from '../model/geometry';
 import type { CameraState, ViewTab } from '../state/store';
 
@@ -18,19 +19,17 @@ interface Props {
   insets: { bottom: number; right: number };
   onSave: (tab: ViewTab, c: CameraState) => void;
   onEnterRoom: (roomId: string) => void;
+  /** se avisa al aplicar una vista (para activar el corte o quitar la cubierta si la vista lo pide) */
+  onPreset?: (p: CameraPreset) => void;
 }
 
 const reduceMotion = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 const toScene = ([x, y, h]: [number, number, number]) => new THREE.Vector3(x, h, y);
 const EXT_FOV = 35;
 
-function defaultFor(tab: ViewTab, presets: CameraPreset[]) {
-  if (tab === 'exterior') return presets.find((p) => p.id === 'general');
-  if (tab === 'plantas') return presets.find((p) => p.id === 'cenital');
-  return presets.find((p) => p.group === 'interior' && p.roomId) ?? presets.find((p) => p.group === 'interior');
-}
+const defaultFor = defaultPreset;
 
-export function CameraRig({ presets, request, tab, eyeHeight, interiorFov, layout, saved, insets, onSave, onEnterRoom }: Props) {
+export function CameraRig({ presets, request, tab, eyeHeight, interiorFov, layout, saved, insets, onSave, onEnterRoom, onPreset }: Props) {
   const controls = useRef<OrbitControlsImpl>(null);
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
   const size = useThree((s) => s.size);
@@ -119,12 +118,19 @@ export function CameraRig({ presets, request, tab, eyeHeight, interiorFov, layou
       pos.y = base + eyeHeight;
       target.y += base + dz * 0.5;
     }
-    if (p.group === 'exterior' || p.group === 'planta') pos.copy(framed(pos, target, EXT_FOV));
+    const fov = p.fov ?? (p.group === 'interior' ? interiorFov : EXT_FOV);
+    if ((p.group === 'exterior' || p.group === 'planta') && !p.fixed) pos.copy(framed(pos, target, fov));
+    if (p.fixed && p.group === 'exterior') {
+      // las vistas fijas se compusieron en apaisado: en pantallas estrechas la cámara se aleja
+      const asp = Math.max(1, size.width - insets.right) / Math.max(1, size.height - insets.bottom);
+      if (asp < 1.5) pos.copy(target.clone().add(pos.clone().sub(target).multiplyScalar(Math.min(2.4, 1.5 / asp))));
+    }
     if (p.roomId) {
       roomRef.current = p.roomId;
       onEnterRoom(p.roomId);
     } else roomRef.current = null;
-    go(pos, target, p.group === 'interior' ? interiorFov : EXT_FOV, instant, p.group === 'interior');
+    if (id !== 'inicio' || p.fixed) onPreset?.(p);
+    go(pos, target, fov, instant, p.group === 'interior');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [request.nonce, presets.length]);
 

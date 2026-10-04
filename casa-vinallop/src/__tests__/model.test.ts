@@ -3,7 +3,8 @@ import { buildTestModel } from '../data/modeloPrueba';
 import { VINALLOP } from '../data/vinallop';
 import { VINALLOP_ACTUAL } from '../data/vinallopActual';
 import { cameraPresets } from '../model/cameras';
-import { polygonArea, wallPieces } from '../model/geometry';
+import { furnitureFootprint, pointInPolygon, polygonArea, wallPieces, wallSegmentRect } from '../model/geometry';
+import { passages } from '../model/passages';
 import { leafPose } from '../model/openings';
 import { hasGeometry, resolveLayout, type Variant } from '../model/resolve';
 import { validateLayout } from '../model/validate';
@@ -107,7 +108,7 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
   it('la escalera arranca junto al pasillo y sube hacia el frontal B (indicación de la propiedad)', () => {
     const st = layout.stairs[0];
     expect(st.up).toBe('+y');
-    expect(st.upStatus).toBe('documentado');
+    expect(st.upStatus).toBe('confirmado');
     expect(st.rect[0]).toBeGreaterThanOrEqual(6);
   });
   it('entrada al baño desde el pasillo y armario al lado abierto al pasillo (propiedad)', () => {
@@ -147,7 +148,9 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(Math.max(...alt.map((p) => p[0]))).toBeLessThanOrEqual(6.05);
   });
   it('cubierta plana con vuelta catalana por dentro', () => {
-    expect(layout.roofOptions).toHaveLength(1);
+    expect(layout.roofOptions.map((r) => r.type)).toEqual(['plana', 'plana-peto']);
+    expect(layout.roofOptions[0].status).toBe('confirmado');
+    expect(layout.roofOptions[1].status).toBe('propuesto');
     expect(layout.roof?.type).toBe('plana');
     expect(layout.roof?.ceiling?.type).toBe('vuelta-catalana');
     expect(layout.roof?.ceiling?.spacing).toBe(0.55);
@@ -252,9 +255,9 @@ describe('Casa Vinallop · estado actual (fotos antes de la reforma)', () => {
   it('solo el frontal B (0,60 m) es documentado; el resto, interpretado o pendiente; entorno de la parcela', () => {
     for (const w of layout.walls.filter((x) => x.facade === 'B')) {
       expect(w.thickness).toBe(0.6);
-      expect(w.status).toBe('documentado');
+      expect(w.status).toBe('confirmado');
     }
-    expect(layout.measures.find((m) => m.id === 'espesor-resto')!.status).toBe('documentado');
+    expect(layout.measures.find((m) => m.id === 'espesor-resto')!.status).toBe('confirmado');
     expect(layout.walls.filter((x) => x.facade !== 'B').every((x) => x.thickness === 0.4)).toBe(true);
     const rest = [...layout.walls.filter((x) => x.facade !== 'B'), ...layout.openings, ...layout.rooms, ...layout.roofSegments!];
     for (const x of rest) expect(['interpretado', 'pendiente']).toContain(x.status);
@@ -274,5 +277,69 @@ describe('Casa Vinallop · estado actual (fotos antes de la reforma)', () => {
     const hA = (id: string) => layout.walls.find((x) => x.id === id)!.height;
     expect(hA('a-principal')).toBeGreaterThan(hA('b-principal'));
     expect(cameraPresets(layout).find((c) => c.id === 'fachada-B')!.target[0]).toBeCloseTo(7.85, 1);
+  });
+});
+
+describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
+  const layout = resolveLayout(VINALLOP, baseVariant());
+  const views = layout.views ?? [];
+  const inWall = (p: [number, number]) => layout.walls.some((w) => {
+    const r = wallSegmentRect(w, -(w.ext?.[0] ?? 0), Math.hypot(w.b[0] - w.a[0], w.b[1] - w.a[1]) + (w.ext?.[1] ?? 0));
+    return pointInPolygon(p, r, -1e-3);
+  });
+  it('doce vistas preparadas (con detalle de celosía y corte)', () => {
+    expect(views.length).toBeGreaterThanOrEqual(13);
+    expect(views.some((v) => v.section)).toBe(true);
+    expect(views.some((v) => v.hideRoof)).toBe(true);
+  });
+  it('ninguna cámara atraviesa muros ni muebles; las interiores están dentro de su estancia a ≈1,60 m', () => {
+    const fps = [...layout.furniture, ...(layout.outdoor?.furniture ?? [])].filter((f) => f.type !== 'alfombra').map((f) => furnitureFootprint(f));
+    for (const v of views) {
+      const p: [number, number] = [v.position[0], v.position[1]];
+      expect(inWall(p), v.id).toBe(false);
+      expect(fps.some((fp) => pointInPolygon(p, fp, -1e-3)), v.id).toBe(false);
+      if (v.group === 'interior') {
+        const room = layout.rooms.find((r) => r.id === v.roomId)!;
+        expect(pointInPolygon(p, room.polygon), v.id).toBe(true);
+        expect(v.position[2]).toBeCloseTo(1.6, 1);
+      } else {
+        const b = layout.bounds;
+        expect(p[0] < b.minX || p[0] > b.maxX || p[1] < b.minY || p[1] > b.maxY, v.id).toBe(true);
+      }
+    }
+  });
+  it('alternativas A/B de celosía y lámparas sin borrar lo confirmado', () => {
+    const v = { ...baseVariant(), id: 'v', name: 'V', options: { ...baseVariant().options, celosia: 'B' as const, lamparas: 'B' as const, lamparasUbicacion: 'salon' as const } };
+    const l2 = resolveLayout(VINALLOP, v);
+    expect(l2.options.celosia).toBe('B');
+    expect(l2.furniture.find((f) => f.id === 'ducha')!.status).toBe('confirmado');
+    expect(l2.pendants!.find((g) => g.location === 'salon')!.points).toHaveLength(3);
+  });
+  it('la isla deja ≥ 0,90 m de paso hasta la cocina y la mesa del salón es de 110 × 80', () => {
+    const p = passages(layout).find((x) => x.between === 'cocina · isla de obra' || x.between === 'isla de obra · cocina');
+    expect(p!.width).toBeGreaterThanOrEqual(0.9);
+    const mesa = layout.furniture.find((f) => f.id === 'mesa-salon')!;
+    expect([mesa.w, mesa.d]).toEqual([1.1, 0.8]);
+  });
+  it('editar un mueble en una variante lo marca como propuesto sin tocar la base', () => {
+    const v = { ...baseVariant(), id: 'v', name: 'V', furnitureOverrides: { isla: { x: 9.0, w: 1.8 } } };
+    const l2 = resolveLayout(VINALLOP, v);
+    const isla = l2.furniture.find((f) => f.id === 'isla')!;
+    expect([isla.x, isla.w, isla.status]).toEqual([9.0, 1.8, 'propuesto']);
+    expect(layout.furniture.find((f) => f.id === 'isla')!.x).toBe(8.8);
+  });
+  it('comedor exterior: mesa Ø 1,80 con 8 sillas sobre solera de 4 × 4 que deja libre el tronco', () => {
+    const o = layout.outdoor!;
+    expect(o.furniture.filter((f) => f.type === 'silla-exterior')).toHaveLength(8);
+    const sol = o.pavements.find((p) => p.id === 'solera-comedor')!;
+    expect(sol.rect[2] - sol.rect[0]).toBeCloseTo(4, 5);
+    expect(sol.permeable!.r).toBeGreaterThan(1);
+    expect(layout.site!.trees[0].c).toEqual(sol.permeable!.c);
+  });
+  it('volta catalana confirmada en terracota con vigas cada 0,55 m; contraste de dimensiones pendiente', () => {
+    expect(layout.roof!.ceiling!.status).toBe('confirmado');
+    expect(baseVariant().finishes.boveda).toBe('terracota-volta');
+    expect(layout.checks!.find((c) => c.label.startsWith('Dimensiones'))!.status).toBe('pendiente');
+    expect(layout.references!.every((r) => !r.consulted)).toBe(true);
   });
 });

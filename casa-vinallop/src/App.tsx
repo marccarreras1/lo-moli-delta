@@ -1,8 +1,9 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AVISO, APP_VERSION, exportJson, exportPng, exportSvg } from './export/export';
+import { AVISO, APP_VERSION, detectExport, exportGlb, exportJson, exportPng, exportSvg, type ExportMode } from './export/export';
 import { useRefs } from './refs/db';
 import { useModel } from './state/derived';
 import { serializeConfig, useStore, type ViewTab } from './state/store';
+import { defaultPreset } from './model/cameras';
 import { BottomSheet } from './ui/BottomSheet';
 import { ControlPanel } from './ui/ControlPanel';
 import { ConfirmButton } from './ui/controls';
@@ -53,7 +54,8 @@ export default function App() {
   const [menu, setMenu] = useState<null | 'export' | 'more'>(null);
   const [toast, setToast] = useState<{ text: string; error?: boolean } | null>(null);
   const [roomName, setRoomName] = useState<string | null>(null);
-  const [gl] = useState(() => webglAvailable());
+  const [gl, setGl] = useState(() => webglAvailable());
+  const [exportMode, setExportMode] = useState<ExportMode>('enlace');
   const [ready, setReady] = useState(false);
   const [slow, setSlow] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -70,6 +72,7 @@ export default function App() {
   const lastPreset = useStore((s) => s.lastPreset[s.tab]);
 
   useEffect(() => void loadRefs(), [loadRefs]);
+  useEffect(() => { void detectExport().then(setExportMode); }, []);
   useEffect(() => {
     if (ready || empty) return;
     const t = setTimeout(() => setSlow(true), 12000);
@@ -96,7 +99,10 @@ export default function App() {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       if (t.closest('input, textarea, select, [contenteditable="true"]')) return;
-      if (e.key === 'Escape') setMenu(null);
+      if (e.key === 'Escape') {
+        setMenu(null);
+        if (useStore.getState().visual.presentation) useStore.getState().setVisual('presentation', false);
+      }
       if (!(e.ctrlKey || e.metaKey)) return;
       const k = e.key.toLowerCase();
       if (k === 'z' && !e.shiftKey) { e.preventDefault(); useStore.getState().undo(); }
@@ -115,18 +121,24 @@ export default function App() {
   const planVisible = !empty && (tab === 'plantas' ? visual.planLayout === '2d' || !gl : !gl);
   const conflicts = issues.filter((i) => i.level !== 'aviso').length;
   const viewTitle = TABS.find((t) => t.id === tab)!.label;
-  const presetId = lastPreset ?? (tab === 'exterior' ? 'general' : tab === 'plantas' ? 'cenital' : cameras.find((c) => c.group === 'interior' && c.roomId)?.id);
+  const presetId = lastPreset ?? defaultPreset(tab, cameras)?.id;
   const camLabel = cameras.find((c) => c.id === presetId)?.label;
   const bottomInset = mobile ? sheetH : 0;
   const insets = useMemo(() => ({ bottom: bottomInset, right: mobile ? sideW : 0 }), [bottomInset, sideW, mobile]);
 
-  const doExport = async (kind: 'png' | 'svg' | 'json') => {
+  const doExport = async (kind: 'png' | 'png-alta' | 'glb' | 'svg' | 'json') => {
     setMenu(null);
+    const label = camLabel ? `${viewTitle} · ${camLabel}` : viewTitle;
     try {
-      if (kind === 'png') await exportPng(project.name, variant.name, camLabel ? `${viewTitle} · ${camLabel}` : viewTitle);
-      else if (kind === 'svg') exportSvg(layout, { showDims: true, showAreas: true, showFurniture: visual.showFurniture, showLabels: true, issues, openFractions: {}, levelId: visual.levelId }, variant.name);
-      else exportJson(serializeConfig(useStore.getState()), project.name, variant.name);
-      setToast({ text: kind === 'png' ? 'Imagen exportada.' : kind === 'svg' ? 'Plano exportado.' : 'Configuración exportada.' });
+      if (kind === 'png' || kind === 'png-alta') {
+        if (kind === 'png-alta') setToast({ text: 'Preparando la imagen de alta resolución…' });
+        await exportPng(project.name, variant.name, label, kind === 'png-alta' ? 3 : 1);
+      } else if (kind === 'glb') {
+        setToast({ text: 'Preparando el modelo 3D…' });
+        await exportGlb(project.name, variant.name);
+      } else if (kind === 'svg') await exportSvg(layout, { showDims: true, showAreas: true, showFurniture: visual.showFurniture, showLabels: true, issues, openFractions: {}, levelId: visual.levelId }, variant.name);
+      else await exportJson(serializeConfig(useStore.getState()), project.name, variant.name);
+      setToast({ text: kind.startsWith('png') ? 'Imagen exportada.' : kind === 'glb' ? 'Modelo 3D exportado (GLB dentro de un ZIP).' : kind === 'svg' ? 'Plano exportado.' : 'Configuración exportada.' });
     } catch (e) {
       setToast({ text: e instanceof Error ? e.message : 'No se pudo exportar.', error: true });
     }
@@ -138,10 +150,13 @@ export default function App() {
   };
 
   const panel = <ControlPanel onOpenInfo={() => setDialog('info')} onOpenRefs={() => setDialog('refs')} />;
-  const help = HELP[tab][coarse ? 'touch' : 'mouse'];
+  // sin visor 3D solo hay plano: la ayuda es la del plano, nunca la de navegación 3D
+  const help = HELP[gl ? tab : 'plantas'][coarse ? 'touch' : 'mouse'];
+  const presenting = visual.presentation && !empty;
+  const views = project.views ?? [];
 
   return (
-    <div className={`app tab-${tab}${mobile ? ' is-mobile' : ''}${tablet ? ' is-tablet' : ''}`}>
+    <div className={`app tab-${tab}${mobile ? ' is-mobile' : ''}${tablet ? ' is-tablet' : ''}${presenting ? ' presenting' : ''}`}>
       <header className="topbar">
         <div className="brand">
           <span className="brand-name">Casa Vinallop</span>
@@ -168,17 +183,16 @@ export default function App() {
             </>
           )}
           <div className="menu">
-            {!mobile && (
+            {!mobile && exportMode !== 'no' && !visual.presentation && (
               <button type="button" className="btn" aria-haspopup="menu" aria-expanded={menu === 'export'} onClick={() => setMenu(menu === 'export' ? null : 'export')} data-action="export-menu">
                 <Icon name="download" size={16} /> Exportar
               </button>
             )}
             {menu === 'export' && (
               <div className="menu-list" role="menu">
-                <button type="button" role="menuitem" disabled={!threeVisible || !ready} onClick={() => doExport('png')} data-action="export-png">Imagen PNG de la vista</button>
-                <button type="button" role="menuitem" disabled={empty} onClick={() => doExport('svg')} data-action="export-svg">Plano SVG</button>
-                <button type="button" role="menuitem" onClick={() => doExport('json')} data-action="export-json">Configuración JSON</button>
-                {(empty || !threeVisible) && <p className="menu-note">{empty ? 'Sin modelo todavía: solo se puede exportar la configuración.' : 'La imagen PNG se exporta desde una vista 3D.'}</p>}
+                <ExportItems threeReady={threeVisible && ready} empty={empty} onExport={doExport} />
+                {(empty || !threeVisible) && <p className="menu-note">{empty ? 'Sin modelo todavía: solo se puede exportar la configuración.' : 'La imagen y el modelo 3D se exportan desde una vista 3D.'}</p>}
+                {exportMode === 'claude' && <p className="menu-note">Cada descarga te pide confirmación.</p>}
               </div>
             )}
           </div>
@@ -190,15 +204,15 @@ export default function App() {
                   <>
                     <button type="button" role="menuitem" disabled={!past} onClick={() => { useStore.getState().undo(); setMenu(null); }}>Deshacer</button>
                     <button type="button" role="menuitem" disabled={!future} onClick={() => { useStore.getState().redo(); setMenu(null); }}>Rehacer</button>
-                    <button type="button" role="menuitem" disabled={!threeVisible || !ready} onClick={() => doExport('png')}>Exportar imagen PNG</button>
-                    <button type="button" role="menuitem" disabled={empty} onClick={() => doExport('svg')}>Exportar plano SVG</button>
-                    <button type="button" role="menuitem" onClick={() => doExport('json')}>Exportar configuración</button>
+                    {exportMode !== 'no' && <ExportItems threeReady={threeVisible && ready} empty={empty} onExport={doExport} />}
                     <hr />
                   </>
                 )}
                 <button type="button" role="menuitem" onClick={() => { setMenu(null); setDialog('refs'); }}>Referencias ({refsCount})</button>
                 <button type="button" role="menuitem" onClick={() => { setMenu(null); setDialog('info'); }}>Medidas y documentación</button>
                 <button type="button" role="menuitem" onClick={() => { setMenu(null); importRef.current?.click(); }} data-action="import-json">Importar configuración…</button>
+                <button type="button" role="menuitem" onClick={() => { setMenu(null); setVisual('presentation', true); }} data-action="presentation-on">Modo presentación</button>
+                {exportMode === 'no' && <p className="menu-note">Esta vista no permite descargar archivos: la exportación está disponible en la aplicación local o en claude.ai.</p>}
                 <hr />
                 <button type="button" role="menuitemradio" aria-checked={visual.modelSource === 'vinallop'} onClick={() => { setMenu(null); setVisual('modelSource', 'vinallop'); }} data-action="source-vinallop">
                   {visual.modelSource === 'vinallop' && <Icon name="check" size={16} />} Casa Vinallop · reforma
@@ -230,7 +244,7 @@ export default function App() {
       </header>
 
       <div className="workspace">
-        {!mobile && (
+        {!mobile && !presenting && (
           <aside className={`side-panel${panelOpen ? ' open' : ''}`} aria-label="Controles" data-testid="side-panel" hidden={!panelOpen}>
             <div className="side-head">
               <span className="side-title">Controles</span>
@@ -241,7 +255,7 @@ export default function App() {
         )}
 
         <main ref={viewportRef} className="viewport" aria-label={`Visor · ${viewTitle}`}>
-          {!mobile && !panelOpen && (
+          {!mobile && !panelOpen && !presenting && (
             <button type="button" className="panel-open-btn" onClick={() => setPanelOpen(true)} data-action="open-panel"><Icon name="panel" /> Controles</button>
           )}
 
@@ -251,7 +265,17 @@ export default function App() {
             <>
               {planVisible && (
                 <div className="pane">
-                  {!gl && <p className="callout floating">El visor 3D no está disponible en este navegador. Se muestra el plano 2D.</p>}
+                  {!gl && (
+                    <div className="callout floating webgl-diag" role="alert" data-testid="webgl-diag">
+                      <strong>El visor 3D no se ha podido iniciar en este navegador.</strong>
+                      <span>WebGL no está disponible o está desactivado (aceleración gráfica apagada, modo de ahorro o un navegador antiguo). Se muestra el plano 2D: es una planta, no una vista interior ni un render.</span>
+                      <button type="button" className="btn" onClick={() => {
+                        const ok = webglAvailable();
+                        setGl(ok);
+                        setToast(ok ? { text: 'WebGL disponible: cargando el visor 3D. Tus cambios se conservan.' } : { text: 'WebGL sigue sin estar disponible. Prueba a activar la aceleración gráfica del navegador.', error: true });
+                      }} data-action="retry-webgl">Reintentar el visor 3D</button>
+                    </div>
+                  )}
                   <PlanView fitNonce={fitNonce} />
                 </div>
               )}
@@ -321,7 +345,8 @@ export default function App() {
         </main>
       </div>
 
-      {mobile && <BottomSheet onHeight={setSheetH} onSide={setSideW}>{panel}</BottomSheet>}
+      {mobile && !presenting && <BottomSheet onHeight={setSheetH} onSide={setSideW}>{panel}</BottomSheet>}
+      {presenting && <Presentation views={views} current={lastPreset} onExit={() => setVisual('presentation', false)} />}
       {dialog === 'info' && <InfoDialog onClose={() => setDialog(null)} />}
       {(dialog === 'refs' || dialog === 'refs-add') && <ReferencesDialog autoPick={dialog === 'refs-add'} onClose={() => setDialog(null)} />}
       {menu && <div className="menu-backdrop" onClick={() => setMenu(null)} />}
@@ -349,6 +374,45 @@ function EmptyState({ refsCount, onAdd, onRefs, onTest }: { refsCount: number; o
       </div>
       <button type="button" className="link" onClick={onTest} data-action="empty-test">Probar la interfaz con un modelo de prueba ficticio</button>
       <p className="fine">Las imágenes se guardan solo en este dispositivo.</p>
+    </div>
+  );
+}
+
+function ExportItems({ threeReady, empty, onExport }: { threeReady: boolean; empty: boolean; onExport: (k: 'png' | 'png-alta' | 'glb' | 'svg' | 'json') => void }) {
+  return (
+    <>
+      <button type="button" role="menuitem" disabled={!threeReady} onClick={() => onExport('png')} data-action="export-png">Imagen PNG de la vista</button>
+      <button type="button" role="menuitem" disabled={!threeReady} onClick={() => onExport('png-alta')} data-action="export-png-hq">Imagen de alta resolución (×3)</button>
+      <button type="button" role="menuitem" disabled={!threeReady} onClick={() => onExport('glb')} data-action="export-glb">Modelo 3D GLB con materiales (ZIP)</button>
+      <button type="button" role="menuitem" disabled={empty} onClick={() => onExport('svg')} data-action="export-svg">Plano SVG</button>
+      <button type="button" role="menuitem" onClick={() => onExport('json')} data-action="export-json">Configuración JSON</button>
+    </>
+  );
+}
+
+/** Modo presentación: visor amplio, sin controles de edición; recorrido por las vistas preparadas. */
+function Presentation({ views, current, onExit }: { views: { id: string; label: string; group: string }[]; current: string | undefined; onExit: () => void }) {
+  const goView = useStore((s) => s.goView);
+  const i = Math.max(0, views.findIndex((v) => v.id === current));
+  const go = (k: number) => {
+    const v = views[(k + views.length) % views.length];
+    if (v) goView(v.id, v.group === 'interior' ? 'interior' : 'exterior');
+  };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).closest('input, textarea, select')) return;
+      if (e.key === 'ArrowRight') go(i + 1);
+      if (e.key === 'ArrowLeft') go(i - 1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+  return (
+    <div className="presentation-bar" role="toolbar" aria-label="Presentación" data-testid="presentation">
+      {views.length > 0 && <button type="button" className="tool" onClick={() => go(i - 1)} aria-label="Vista anterior"><Icon name="back" /></button>}
+      <span className="presentation-label">{views[i]?.label ?? 'Presentación'}</span>
+      {views.length > 0 && <button type="button" className="tool" onClick={() => go(i + 1)} aria-label="Vista siguiente"><Icon name="forward" /></button>}
+      <button type="button" className="btn" onClick={onExit} data-action="presentation-off">Salir</button>
     </div>
   );
 }

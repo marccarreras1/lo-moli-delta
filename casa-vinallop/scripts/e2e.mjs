@@ -132,6 +132,65 @@ try {
     await pause(page, 600);
     check('Vuelta a la fase «Reforma»', !(await page.getByTestId('view-status').innerText()).includes('Estado actual'));
 
+    // Vistas preparadas, propuestas, mobiliario y exportaciones nuevas
+    check('Vistas preparadas en el panel', (await page.locator('[data-view]').count()) >= 13);
+    await page.click('[data-view="v12b-corte"]');
+    await pause(page, 1500);
+    check('Vista «Corte longitudinal» activa el corte', (await page.locator('[data-control="long-section"]').isChecked()));
+    await page.screenshot({ path: `${OUT}v-10-corte-longitudinal.png` });
+    await page.click('[data-view="v01-exterior"]');
+    await pause(page, 1200);
+    check('Las demás vistas exteriores quitan el corte', !(await page.locator('[data-control="long-section"]').isChecked()));
+    await page.click('[data-view="v10b-celosia"]');
+    await pause(page, 1500);
+    check('Vista de la celosía en Interior', (await page.locator('.view-title').innerText()).includes('celosía'));
+    await page.locator('[data-control="opt-celosia"] button', { hasText: 'Celosía B' }).click();
+    await pause(page, 900);
+    check('Cambiar a la celosía B mantiene la cámara', (await page.locator('.view-title').innerText()).includes('celosía') && await canvasVaried(page));
+    await page.screenshot({ path: `${OUT}v-11-celosia-b.png` });
+    await page.locator('[data-control="opt-celosia"] button', { hasText: 'Celosía A' }).click();
+    await page.click('[data-tab="plantas"]');
+    await page.getByTestId('plan-svg').waitFor();
+    await page.locator('[data-testid="plan-svg"] [data-furniture="isla"]').click({ force: true });
+    await pause(page, 300);
+    check('Seleccionar un mueble en el plano', (await page.getByTestId('selection').innerText()).includes('Isla de obra'));
+    await page.click('[data-action="variant-from-furniture"]');
+    await pause(page, 300);
+    await page.fill('[data-control="fu-w"]', '1,80');
+    await page.press('[data-control="fu-w"]', 'Enter');
+    await pause(page, 300);
+    check('Editar el largo de la isla en una variante', (await page.getByTestId('selection').innerText()).includes('1,80'));
+    await page.click('[data-action="undo"]');
+    await page.click('[data-action="undo"]');
+    await pause(page, 300);
+    await page.locator('[data-control="passages"]').check({ force: true });
+    await pause(page, 400);
+    check('Espacios de paso en el plano', (await page.locator('[data-testid="plan-svg"] [data-passage]').count()) > 3);
+    await page.screenshot({ path: `${OUT}v-12-pasos.png` });
+    await page.locator('[data-control="passages"]').uncheck({ force: true });
+    await page.click('[data-tab="exterior"]');
+    await waitReady(page);
+    await pause(page, 1200);
+    await page.click('[data-action="export-menu"]');
+    const [hq] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }), page.click('[data-action="export-png-hq"]')]);
+    const hqPath = `${OUT}export-alta.png`;
+    await hq.saveAs(hqPath);
+    const hqW = readFileSync(hqPath).readUInt32BE(16);
+    check('Imagen de alta resolución (más píxeles que el visor)', hqW > 1440, `${hqW} px de ancho`);
+    await page.click('[data-action="export-menu"]');
+    const [glb] = await Promise.all([page.waitForEvent('download', { timeout: 120000 }), page.click('[data-action="export-glb"]')]);
+    const glbPath = `${OUT}export-modelo.zip`;
+    await glb.saveAs(glbPath);
+    const zipBuf = readFileSync(glbPath);
+    check('Modelo GLB dentro de un ZIP', zipBuf.readUInt32LE(0) === 0x04034b50 && zipBuf.includes(Buffer.from('glTF')) && zipBuf.length > 100000, `${glb.suggestedFilename()} · ${Math.round(zipBuf.length / 1024)} KB`);
+    await page.click('[data-action="more-menu"]');
+    await page.click('[data-action="presentation-on"]');
+    await pause(page, 600);
+    check('Modo presentación: sin panel de controles', (await page.getByTestId('presentation').count()) === 1 && (await page.getByTestId('side-panel').count()) === 0);
+    await page.screenshot({ path: `${OUT}v-13-presentacion.png` });
+    await page.click('[data-action="presentation-off"]');
+    await pause(page, 300);
+
     // ---------- 2. Modelo de prueba (tareas de interfaz) ----------
     await page.click('[data-action="more-menu"]');
     await page.click('[data-action="source-prueba"]');
@@ -390,7 +449,8 @@ try {
       const sheet = page.getByTestId('bottom-sheet');
       const landscape = wd > ht;
       await page.click('[data-action="sheet-toggle"]');
-      await pause(page, 300);
+      // la transición del panel tarda más con el visor 3D cargado (renderizado por software)
+      await pause(page, 900);
       if (landscape) {
         const sb = await sheet.boundingBox();
         check(`${wd}×${ht}: en horizontal el panel se abre a un lado`, (await sheet.getAttribute('data-state')) !== 'cerrado' && sb.width <= wd * 0.5, `${Math.round(sb.width)} px de ${wd}`);
@@ -415,9 +475,9 @@ try {
         await page.screenshot({ path: `${OUT}res-${wd}x${ht}-panel.png` });
         await page.click('[data-action="sheet-toggle"]');
         await page.click('[data-action="sheet-toggle"]');
-        await pause(page, 300);
+        await pause(page, 600);
         await page.click('[data-action="sheet-toggle"]');
-        await pause(page, 300);
+        await pause(page, 600);
         check(`${wd}×${ht}: panel inferior ampliado`, (await sheet.getAttribute('data-state')) === 'ampliado');
         await page.screenshot({ path: `${OUT}res-${wd}x${ht}-ampliado.png` });
       }

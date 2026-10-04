@@ -12,6 +12,8 @@ export const SLOT_LABEL: Record<FinishSlot, string> = {
   cubierta: 'Cubierta',
   madera: 'Madera de mobiliario',
   textiles: 'Textiles',
+  boveda: 'Volta catalana y vigas (techo)',
+  encimera: 'Encimeras y salpicadero',
 };
 
 export const FINISHES: Record<FinishSlot, Finish[]> = {
@@ -35,12 +37,14 @@ export const FINISHES: Record<FinishSlot, Finish[]> = {
     { id: 'barro-cocido', label: 'Barro cocido', color: '#b9805b', roughness: 0.85 },
     { id: 'madera-roble', label: 'Tarima de roble', color: '#b8946a', roughness: 0.65 },
     { id: 'piedra-caliza', label: 'Piedra caliza', color: '#ddd3c0', roughness: 0.8 },
+    { id: 'mineral-claro', label: 'Mineral claro (propuesta para equilibrar la terracota)', color: '#e3dccf', roughness: 0.75 },
   ],
   paredes: [
     { id: 'cal-muy-clara', label: 'Cal muy clara (propiedad)', color: '#f6f3ed', roughness: 0.97 },
     { id: 'blanco-roto', label: 'Blanco roto', color: '#f3efe7', roughness: 0.95 },
     { id: 'cal-arena-int', label: 'Cal arena suave', color: '#ebe1d0', roughness: 0.95 },
     { id: 'blanco-puro', label: 'Blanco', color: '#fbfbf9', roughness: 0.95 },
+    { id: 'arena-muy-clara', label: 'Arena muy clara (referencia del salón · propuesta)', color: '#efe6d8', roughness: 0.96 },
   ],
   cubierta: [
     { id: 'teja-arabe', label: 'Teja árabe envejecida', color: '#b07a5a', roughness: 0.9 },
@@ -48,6 +52,7 @@ export const FINISHES: Record<FinishSlot, Finish[]> = {
     { id: 'cubierta-blanca', label: 'Acabado blanco (plana)', color: '#ecebe6', roughness: 0.9 },
   ],
   madera: [
+    { id: 'madera-clara-nudos', label: 'Madera clara con veta y nudos (referencia de cocina)', color: '#d2b48c', roughness: 0.62 },
     { id: 'madera-natural-mob', label: 'Madera natural', color: '#a98058', roughness: 0.6 },
     { id: 'roble-claro-mob', label: 'Roble claro', color: '#c9ab84', roughness: 0.6 },
     { id: 'madera-oscura', label: 'Nogal', color: '#6f4f36', roughness: 0.6 },
@@ -58,6 +63,16 @@ export const FINISHES: Record<FinishSlot, Finish[]> = {
     { id: 'terracota-suave', label: 'Terracota suave', color: '#c38f73', roughness: 1 },
     { id: 'verde-salvia', label: 'Verde salvia', color: '#a9b59b', roughness: 1 },
   ],
+  boveda: [
+    { id: 'terracota-volta', label: 'Terracota (confirmado)', color: '#b9714f', roughness: 0.9 },
+    { id: 'terracota-clara-volta', label: 'Terracota clara', color: '#c98d6c', roughness: 0.9 },
+    { id: 'terracota-encalada', label: 'Terracota encalada (no elegida)', color: '#e9ddd0', roughness: 0.95 },
+  ],
+  encimera: [
+    { id: 'mineral-claro-enc', label: 'Mineral claro mate (referencia de cocina)', color: '#e8e3da', roughness: 0.55 },
+    { id: 'microcemento-blanco', label: 'Microcemento blanco roto', color: '#efebe4', roughness: 0.6 },
+    { id: 'piedra-arenisca', label: 'Piedra arenisca', color: '#d9cbb3', roughness: 0.7 },
+  ],
 };
 
 export const PRESETS: FinishPreset[] = [
@@ -67,7 +82,16 @@ export const PRESETS: FinishPreset[] = [
     label: 'Ibicenca y griega · propiedad',
     selection: {
       fachada: 'cal-muy-clara-ext', carpinteria: 'verde-gris-claro', suelo: 'microcemento-terracota-claro',
-      paredes: 'cal-muy-clara', cubierta: 'cubierta-blanca', madera: 'roble-claro-mob', textiles: 'lino-crudo',
+      paredes: 'cal-muy-clara', cubierta: 'cubierta-blanca', madera: 'madera-clara-nudos', textiles: 'lino-crudo', boveda: 'terracota-volta', encimera: 'mineral-claro-enc',
+    },
+  },
+  {
+    // referencias de diseño: suelo mineral claro y paredes arena (propuestas); lo confirmado se mantiene
+    id: 'referencias-calidas',
+    label: 'Ibicenca cálida · referencias (propuesta)',
+    selection: {
+      fachada: 'cal-muy-clara-ext', carpinteria: 'verde-gris-claro', suelo: 'mineral-claro',
+      paredes: 'arena-muy-clara', cubierta: 'cubierta-blanca', madera: 'madera-clara-nudos', textiles: 'lino-crudo', boveda: 'terracota-volta', encimera: 'mineral-claro-enc',
     },
   },
   {
@@ -75,7 +99,7 @@ export const PRESETS: FinishPreset[] = [
     label: 'Mediterránea · base',
     selection: {
       fachada: 'revoco-blanco-roto', carpinteria: 'madera-natural', suelo: 'microcemento-arena',
-      paredes: 'blanco-roto', cubierta: 'teja-arabe', madera: 'madera-natural-mob', textiles: 'lino-crudo',
+      paredes: 'blanco-roto', cubierta: 'teja-arabe', madera: 'madera-natural-mob', textiles: 'lino-crudo', boveda: 'terracota-volta', encimera: 'microcemento-blanco',
     },
   },
   {
@@ -83,7 +107,7 @@ export const PRESETS: FinishPreset[] = [
     label: 'Ibicenca · clara',
     selection: {
       fachada: 'blanco-ibicenco', carpinteria: 'roble-claro', suelo: 'piedra-caliza',
-      paredes: 'blanco-puro', cubierta: 'teja-clara', madera: 'roble-claro-mob', textiles: 'arena-calida',
+      paredes: 'blanco-puro', cubierta: 'teja-clara', madera: 'roble-claro-mob', textiles: 'arena-calida', boveda: 'terracota-clara-volta', encimera: 'microcemento-blanco',
     },
   },
   {
@@ -91,7 +115,7 @@ export const PRESETS: FinishPreset[] = [
     label: 'Tierra · cálida',
     selection: {
       fachada: 'cal-arena', carpinteria: 'aluminio-arena', suelo: 'barro-cocido',
-      paredes: 'cal-arena-int', cubierta: 'teja-arabe', madera: 'madera-natural-mob', textiles: 'terracota-suave',
+      paredes: 'cal-arena-int', cubierta: 'teja-arabe', madera: 'madera-natural-mob', textiles: 'terracota-suave', boveda: 'terracota-volta', encimera: 'piedra-arenisca',
     },
   },
 ];

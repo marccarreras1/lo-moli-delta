@@ -7,15 +7,15 @@
  */
 import { create } from 'zustand';
 import { PRESETS } from '../data/acabados';
-import type { FinishSlot, RoofType } from '../data/types';
+import { DEFAULT_OPTIONS, type DesignOptions, type FinishSlot, type RoofType } from '../data/types';
 import { LEAF_OPTIONS, normalizeLeaves } from '../model/openings';
-import type { OpeningOverride, Variant } from '../model/resolve';
+import type { FurnitureOverride, OpeningOverride, Variant } from '../model/resolve';
 
 export type ViewTab = 'exterior' | 'plantas' | 'interior';
 export type DisplayMode = 'solido' | 'atenuado' | 'corte';
 export type PlanLayout = '2d' | '3d';
 export type ModelSource = 'vinallop' | 'actual' | 'prueba';
-export type Ambience = 'neutra' | 'calida' | 'nublada';
+export type Ambience = 'dia' | 'tarde' | 'noche';
 export type Quality = 'auto' | 'alta' | 'ligera';
 export type SheetState = 'cerrado' | 'parcial' | 'ampliado';
 
@@ -41,6 +41,24 @@ export interface Visual {
   modelSource: ModelSource;
   /** nivel activo (plantas y corte); null = el primero */
   levelId: string | null;
+  /** intensidad de las lámparas (0–1), regulable; se encienden sobre todo en tarde y noche */
+  lampDimmer: number;
+  /** espacios de paso entre muebles y muros */
+  showPassages: boolean;
+  /** modo presentación: visor amplio sin controles de edición */
+  presentation: boolean;
+  /** corte longitudinal (plano vertical por el eje de la casa) en Exterior */
+  longSection: boolean;
+}
+
+/** Vista favorita guardada por el usuario. */
+export interface Favorite {
+  id: string;
+  label: string;
+  tab: ViewTab;
+  position: [number, number, number];
+  target: [number, number, number];
+  fov: number;
 }
 
 export interface ProjectDesign {
@@ -56,7 +74,7 @@ export interface CameraState {
   fov: number;
 }
 
-export type Selection = { kind: 'room' | 'opening'; id: string } | null;
+export type Selection = { kind: 'room' | 'opening' | 'furniture'; id: string } | null;
 
 export const BASE_ID = 'base';
 const KEY = 'casa-vinallop/estudio/v2';
@@ -73,7 +91,7 @@ export const defaultVisual = (): Visual => ({
   mode: 'solido',
   sectionHeight: 1.2,
   lightIntensity: 1,
-  ambience: 'neutra',
+  ambience: 'dia',
   eyeHeight: 1.6,
   interiorFov: 50,
   planLayout: '2d',
@@ -83,6 +101,10 @@ export const defaultVisual = (): Visual => ({
   helpDismissed: false,
   modelSource: 'vinallop',
   levelId: null,
+  lampDimmer: 0.8,
+  showPassages: false,
+  presentation: false,
+  longSection: false,
 });
 
 export const baseVariant = (): Variant => ({
@@ -93,6 +115,8 @@ export const baseVariant = (): Variant => ({
   roofType: null,
   finishes: { ...PRESETS[0].selection },
   presetId: PRESETS[0].id,
+  options: { ...DEFAULT_OPTIONS },
+  furnitureOverrides: {},
 });
 
 const emptyDesign = (): ProjectDesign => ({ base: baseVariant(), variants: [], activeId: BASE_ID });
@@ -116,10 +140,19 @@ interface Store {
   setOpenFraction: (id: string, f: number) => void;
   select: (s: Selection) => void;
   requestCamera: (id: string, instant?: boolean) => void;
+  /** va a una vista preparada, cambiando de modo si hace falta */
+  goView: (id: string, tab: ViewTab) => void;
   saveCamera: (tab: ViewTab, c: CameraState) => void;
   resetView: () => void;
   // diseño (con historial)
   setFinish: (slot: FinishSlot, id: string) => void;
+  setOption: <K extends keyof DesignOptions>(k: K, v: DesignOptions[K]) => void;
+  overrideFurniture: (id: string, patch: FurnitureOverride) => void;
+  clearFurnitureOverride: (id: string) => void;
+  favorites: Favorite[];
+  addFavorite: (label: string) => void;
+  removeFavorite: (id: string) => void;
+  goFavorite: (id: string) => void;
   applyPreset: (id: string) => void;
   setRoof: (t: RoofType) => void;
   overrideOpening: (openingId: string, patch: OpeningOverride) => void;
@@ -153,7 +186,7 @@ function cleanVisual(x: unknown): Visual {
     mode: pick(o.mode, ['solido', 'atenuado', 'corte'] as const, d.mode),
     sectionHeight: num(o.sectionHeight, 0.4, 2.6, d.sectionHeight),
     lightIntensity: num(o.lightIntensity, 0.35, 1.8, d.lightIntensity),
-    ambience: pick(o.ambience, ['neutra', 'calida', 'nublada'] as const, d.ambience),
+    ambience: pick(o.ambience, ['dia', 'tarde', 'noche'] as const, d.ambience),
     eyeHeight: num(o.eyeHeight, 1.2, 1.8, d.eyeHeight),
     interiorFov: num(o.interiorFov, 40, 65, d.interiorFov),
     planLayout: pick(o.planLayout, ['2d', '3d'] as const, d.planLayout),
@@ -163,7 +196,35 @@ function cleanVisual(x: unknown): Visual {
     helpDismissed: bool(o.helpDismissed, d.helpDismissed),
     modelSource: pick(o.modelSource, ['vinallop', 'actual', 'prueba'] as const, d.modelSource),
     levelId: typeof o.levelId === 'string' ? o.levelId.slice(0, 40) : null,
+    lampDimmer: num(o.lampDimmer, 0, 1, d.lampDimmer),
+    showPassages: bool(o.showPassages, d.showPassages),
+    presentation: bool(o.presentation, d.presentation),
+    longSection: bool(o.longSection, d.longSection),
   };
+}
+
+function cleanOptions(x: unknown): DesignOptions {
+  const o = (x && typeof x === 'object' ? x : {}) as Partial<DesignOptions>;
+  const d = DEFAULT_OPTIONS;
+  return {
+    celosia: pick(o.celosia, ['A', 'B'] as const, d.celosia),
+    lamparas: pick(o.lamparas, ['A', 'B'] as const, d.lamparas),
+    lamparasUbicacion: pick(o.lamparasUbicacion, ['isla', 'salon'] as const, d.lamparasUbicacion),
+    puertaEntrada: pick(o.puertaEntrada, ['verde-gris', 'tablones'] as const, d.puertaEntrada),
+    entradaSaliente: bool(o.entradaSaliente, d.entradaSaliente),
+  };
+}
+
+function cleanFurnitureOverride(x: unknown): FurnitureOverride | null {
+  if (!x || typeof x !== 'object') return null;
+  const o = x as Record<string, unknown>;
+  const out: FurnitureOverride = {};
+  if (typeof o.x === 'number') out.x = num(o.x, -20, 60, 0);
+  if (typeof o.y === 'number') out.y = num(o.y, -20, 40, 0);
+  if (typeof o.w === 'number') out.w = num(o.w, 0.1, 8, 1);
+  if (typeof o.d === 'number') out.d = num(o.d, 0.1, 8, 1);
+  if (typeof o.rot === 'number') out.rot = num(o.rot, -360, 360, 0);
+  return Object.keys(out).length ? out : null;
 }
 
 function cleanOverride(x: unknown): OpeningOverride | null {
@@ -189,6 +250,12 @@ function cleanVariant(x: unknown, fallbackId: string): Variant | null {
       const c = cleanOverride(v);
       if (c) overrides[k.slice(0, 80)] = c;
     }
+  const furn: Record<string, FurnitureOverride> = {};
+  if (o.furnitureOverrides && typeof o.furnitureOverrides === 'object')
+    for (const [k, v] of Object.entries(o.furnitureOverrides).slice(0, 200)) {
+      const c = cleanFurnitureOverride(v);
+      if (c) furn[k.slice(0, 80)] = c;
+    }
   const finishes = { ...b.finishes };
   if (o.finishes && typeof o.finishes === 'object')
     for (const k of Object.keys(finishes) as FinishSlot[]) if (typeof (o.finishes as Record<string, unknown>)[k] === 'string') finishes[k] = (o.finishes as Record<string, string>)[k];
@@ -197,9 +264,11 @@ function cleanVariant(x: unknown, fallbackId: string): Variant | null {
     name: str(o.name, 'Variante'),
     createdAt: str(o.createdAt, new Date().toISOString(), 40),
     openingOverrides: overrides,
-    roofType: o.roofType ? pick(o.roofType, ['dos-aguas', 'un-agua', 'plana'] as const, 'dos-aguas') : null,
+    roofType: o.roofType ? pick(o.roofType, ['dos-aguas', 'un-agua', 'plana', 'plana-peto'] as const, 'plana') : null,
     finishes,
     presetId: typeof o.presetId === 'string' ? o.presetId : null,
+    options: cleanOptions(o.options),
+    furnitureOverrides: furn,
   };
 }
 
@@ -213,6 +282,7 @@ function cleanDesigns(x: unknown): Designs {
     base.id = BASE_ID;
     base.name = 'Base';
     base.openingOverrides = {}; // la base nunca guarda cambios de geometría
+    base.furnitureOverrides = {};
     // la antigua combinación por defecto se sustituye por la indicada por la propiedad
     if (base.presetId === 'mediterraneo-base') {
       base.finishes = { ...PRESETS[0].selection };
@@ -238,6 +308,17 @@ function cleanCamera(x: unknown): CameraState | undefined {
   return { position: p, target: t, fov: num(o.fov, 20, 80, 35) };
 }
 
+function cleanFavorites(x: unknown): Favorite[] {
+  if (!Array.isArray(x)) return [];
+  return x.slice(0, 30).flatMap((f) => {
+    if (!f || typeof f !== 'object') return [];
+    const o = f as Partial<Favorite>;
+    const cam = cleanCamera(o);
+    if (!cam) return [];
+    return [{ id: str(o.id, `f${Math.random().toString(36).slice(2, 8)}`, 40), label: str(o.label, 'Vista', 60), tab: pick(o.tab, ['exterior', 'plantas', 'interior'] as const, 'exterior'), ...cam }];
+  });
+}
+
 function read(k: string): unknown {
   try {
     const raw = window.localStorage.getItem(`${KEY}/${k}`);
@@ -250,12 +331,13 @@ function read(k: string): unknown {
 const projectIdOf = (src: ModelSource) => (src === 'prueba' ? 'modelo-prueba' : src === 'actual' ? 'casa-vinallop-actual' : 'casa-vinallop');
 
 function load() {
-  if (typeof window === 'undefined') return { visual: defaultVisual(), designs: {}, cameras: {} };
+  if (typeof window === 'undefined') return { visual: defaultVisual(), designs: {}, cameras: {}, favorites: [] as Favorite[] };
   const cams = (read('camaras') ?? {}) as Record<string, unknown>;
   return {
     visual: cleanVisual(read('visual')),
     designs: cleanDesigns(read('diseno')),
     cameras: { exterior: cleanCamera(cams.exterior), plantas: cleanCamera(cams.plantas), interior: cleanCamera(cams.interior) },
+    favorites: cleanFavorites(read('favoritos')),
   };
 }
 
@@ -333,6 +415,10 @@ export const useStore = create<Store>((set, get) => {
         lastPreset: special ? s.lastPreset : { ...s.lastPreset, [s.tab]: id === 'inicio' ? undefined : id },
       }));
     },
+    goView: (id, tab) => {
+      if (get().tab !== tab) set({ tab });
+      get().requestCamera(id);
+    },
     saveCamera: (tab, c) => set((s) => ({ cameras: { ...s.cameras, [tab]: c } })),
     resetView: () => {
       const tab = get().tab;
@@ -346,6 +432,32 @@ export const useStore = create<Store>((set, get) => {
       if (p) patchActive(`preset-${id}-${Date.now()}`, (v) => ({ ...v, finishes: { ...p.selection }, presetId: id }));
     },
     setRoof: (t) => patchActive(`roof-${Date.now()}`, (v) => ({ ...v, roofType: t })),
+    setOption: (k, val) => patchActive(`option-${k}-${Date.now()}`, (v) => ({ ...v, options: { ...v.options, [k]: val } })),
+    overrideFurniture: (id, patch) => {
+      if (design().activeId === BASE_ID) return; // la base no se modifica: se crea una variante
+      patchActive(`furn-${id}-${Object.keys(patch).sort().join(',')}`, (v) => ({ ...v, furnitureOverrides: { ...v.furnitureOverrides, [id]: { ...(v.furnitureOverrides[id] ?? {}), ...patch } } }));
+    },
+    clearFurnitureOverride: (id) =>
+      patchActive(`furn-clear-${id}-${Date.now()}`, (v) => {
+        const o = { ...v.furnitureOverrides };
+        delete o[id];
+        return { ...v, furnitureOverrides: o };
+      }),
+    favorites: initial.favorites,
+    addFavorite: (label) => {
+      const s = get();
+      const c = s.cameras[s.tab];
+      if (!c) return;
+      const fav: Favorite = { id: `f${Date.now().toString(36)}`, label: label.trim().slice(0, 60) || `Vista ${s.favorites.length + 1}`, tab: s.tab, ...c };
+      set({ favorites: [...s.favorites, fav].slice(-30) });
+    },
+    removeFavorite: (id) => set((s) => ({ favorites: s.favorites.filter((f) => f.id !== id) })),
+    goFavorite: (id) => {
+      const f = get().favorites.find((x) => x.id === id);
+      if (!f) return;
+      set((s) => ({ tab: f.tab, cameras: { ...s.cameras, [f.tab]: { position: f.position, target: f.target, fov: f.fov } } }));
+      set({ cameraRequest: { id: 'memoria', nonce: nonce++ } });
+    },
     overrideOpening: (openingId, patch) => {
       if (design().activeId === BASE_ID) return; // la base no se modifica: se crea una variante
       const key = `op-${openingId}-${Object.keys(patch).sort().join(',')}`;
@@ -454,19 +566,32 @@ export function parseConfig(data: unknown) {
 // ---------- guardado en este dispositivo ----------
 if (typeof window !== 'undefined') {
   let t: number | undefined;
-  useStore.subscribe((s, p) => {
-    if (s.visual === p.visual && s.designs === p.designs && s.cameras === p.cameras) return;
+  let dirty = false;
+  const flush = () => {
     window.clearTimeout(t);
-    t = window.setTimeout(() => {
-      try {
-        const st = useStore.getState();
-        window.localStorage.setItem(`${KEY}/visual`, JSON.stringify(st.visual));
-        window.localStorage.setItem(`${KEY}/diseno`, JSON.stringify(st.designs));
-        window.localStorage.setItem(`${KEY}/camaras`, JSON.stringify(st.cameras));
-        useStore.setState({ storage: 'ok', savedAt: new Date().toISOString() });
-      } catch {
-        useStore.setState({ storage: 'no-disponible' });
-      }
-    }, 500);
+    if (!dirty) return;
+    dirty = false;
+    try {
+      const st = useStore.getState();
+      window.localStorage.setItem(`${KEY}/visual`, JSON.stringify(st.visual));
+      window.localStorage.setItem(`${KEY}/diseno`, JSON.stringify(st.designs));
+      window.localStorage.setItem(`${KEY}/camaras`, JSON.stringify(st.cameras));
+      window.localStorage.setItem(`${KEY}/favoritos`, JSON.stringify(st.favorites));
+      useStore.setState({ storage: 'ok', savedAt: new Date().toISOString() });
+    } catch {
+      useStore.setState({ storage: 'no-disponible' });
+    }
+  };
+  useStore.subscribe((s, p) => {
+    if (s.visual === p.visual && s.designs === p.designs && s.cameras === p.cameras && s.favorites === p.favorites) return;
+    dirty = true;
+    window.clearTimeout(t);
+    t = window.setTimeout(flush, 400);
   });
+  // al cerrar u ocultar la página se guarda en el acto (no se pierde el último cambio)
+  window.addEventListener('pagehide', flush);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
 }
+
+// diagnóstico opcional: ?diagnostico expone el estado en la consola (pruebas y capturas)
+if (typeof window !== 'undefined' && window.location.search.includes('diagnostico')) (window as unknown as Record<string, unknown>).__store = useStore;
