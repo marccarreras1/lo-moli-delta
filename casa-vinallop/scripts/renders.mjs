@@ -39,10 +39,14 @@ await page.evaluate(() => {
   s.setVisual('showDims', false);
   s.setVisual('showAreas', false);
 });
+const T = Date.now();
+const log = (m) => console.log(`[${Math.round((Date.now() - T) / 1000)} s] ${m}`);
+log('aplicación cargada');
 for (const [view, amb] of JOBS) {
   const t0 = Date.now();
   await page.evaluate((a) => window.__store.getState().setVisual('ambience', a), amb);
   await page.click(`[data-view="${view}"]`);
+  log(`vista ${view}`);
   // espera a que la cámara se detenga
   await page.waitForFunction(() => {
     const c = window.__visor.camera;
@@ -51,6 +55,7 @@ for (const [view, amb] of JOBS) {
     window.__lastCam = k;
     return same;
   }, null, { polling: 400, timeout: 20000 });
+  log('cámara quieta');
   await page.waitForTimeout(1500);
   const interior = await page.evaluate(() => window.__store.getState().tab === 'interior');
   const data = await page.evaluate(async ([n, exposure]) => {
