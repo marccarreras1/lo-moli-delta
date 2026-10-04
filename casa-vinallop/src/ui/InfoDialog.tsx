@@ -50,9 +50,28 @@ export function InfoDialog({ onClose }: { onClose: () => void }) {
           <ul className="plain">{project.discrepancies.map((d, i) => <li key={i}>{d}</li>)}</ul>
         </>
       )}
+      {project.furniture.some((f) => f.note) && (
+        <>
+          <h3>Elementos dibujados en el boceto</h3>
+          <div className="tbl-wrap">
+            <table className="tbl">
+              <thead><tr><th>Elemento</th><th>Medida</th><th>Lectura</th><th>Dato</th></tr></thead>
+              <tbody>{project.furniture.map((f) => (
+                <tr key={f.id}><td>{f.label}</td><td className="num">{fmtM(f.w)} × {fmtM(f.d)} m</td><td>{f.note ?? '—'}</td><td>{f.status ? <StatusTag status={f.status} /> : '—'}</td></tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </>
+      )}
+      {project.stairs.length > 0 && (
+        <>
+          <h3>Escalera</h3>
+          <ul className="plain">{project.stairs.map((st) => <li key={st.id}>{st.note}</li>)}</ul>
+        </>
+      )}
       {project.traces.length > 0 && (
         <>
-          <h3>Trazos sin interpretar</h3>
+          <h3>Trazos y marcas sin interpretar</h3>
           <ul className="plain">{project.traces.map((t) => <li key={t.id}><strong>{t.label}:</strong> {t.note}</li>)}</ul>
         </>
       )}

@@ -90,7 +90,7 @@ try {
     await page.screenshot({ path: `${OUT}v-05-cenital.png` });
     await page.click('[data-tab="interior"]');
     await pause(page, 900);
-    await page.selectOption('[data-control="interior-camera"]', 'int-altell');
+    await page.selectOption('[data-control="interior-camera"]', 'int-altell-izq');
     await pause(page, 1000);
     check('Vista interior del altell', (await page.locator('.view-title').innerText()).includes('Altell'));
     await page.screenshot({ path: `${OUT}v-06-interior-altell.png` });

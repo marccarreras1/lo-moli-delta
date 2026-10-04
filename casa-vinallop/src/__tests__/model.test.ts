@@ -64,14 +64,37 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(layout.stairs[0].fromLevel).toBe('pb');
     expect(layout.stairs[0].toLevel).toBe('altell');
   });
-  it('los trazos no interpretados se conservan como pendientes, no como estancias', () => {
-    expect(layout.traces.map((t) => t.id)).toContain('trazo-u');
+  it('los trazos y marcas no interpretados se conservan como pendientes, no como estancias', () => {
+    expect(layout.traces.map((t) => t.id)).toContain('trazo-circulo');
+    expect(layout.traces.filter((t) => t.cross).length).toBeGreaterThan(3);
     expect(layout.rooms.some((r) => r.id.includes('trazo'))).toBe(false);
+  });
+  it('la escalera arranca junto al pasillo y sube hacia el frontal B (indicación de la propiedad)', () => {
+    const st = layout.stairs[0];
+    expect(st.up).toBe('+y');
+    expect(st.upStatus).toBe('documentado');
+    expect(st.rect[0]).toBeGreaterThanOrEqual(6);
+  });
+  it('baño completo en el tramo de 2,5 m con su puerta desde el pasillo', () => {
+    const b = room('bano').polygon;
+    expect(Math.min(...b.map((p) => p[0]))).toBeCloseTo(3.55, 5);
+    expect(Math.max(...b.map((p) => p[0]))).toBeCloseTo(5.95, 5);
+    expect(op('puerta-bano').wallId).toBe('tab-pasillo');
+    expect(['banera', 'ducha', 'lavabo'].every((id) => layout.furniture.some((f) => f.id === id && f.roomId === 'bano'))).toBe(true);
+  });
+  it('banco corrido en L junto al frontal B y el lateral derecho', () => {
+    expect(layout.furniture.filter((f) => f.type === 'banco')).toHaveLength(2);
+  });
+  it('el hueco de 70 cm está en el baño', () => {
+    const o = op('obertura-70');
+    const x = o.offset + 0.15;
+    expect(x).toBeGreaterThanOrEqual(3.55);
+    expect(x + o.width).toBeLessThanOrEqual(5.95);
   });
   it('sin orientación definida', () => expect(layout.northDeg).toBeNull());
   it('genera vistas interiores por estancia, incluido el altell a su cota', () => {
     const cams = cameraPresets(layout);
-    const alt = cams.find((c) => c.id === 'int-altell');
+    const alt = cams.find((c) => c.id === 'int-altell-izq');
     expect(alt?.elevation).toBeCloseTo(3.3, 5);
     expect(cams.some((c) => c.id === 'fachada-A')).toBe(true);
   });

@@ -61,6 +61,10 @@ export interface Stair {
   toLevel: string;
   rect: [number, number, number, number];
   up: '+x' | '-x' | '+y' | '-y';
+  /** estado del sentido de subida */
+  upStatus?: DataStatus;
+  /** tramo final con peldaños compensados (triángulo del boceto), en metros */
+  winderEnd?: number;
   risers: number;
   status: DataStatus;
   sourceId: string;
@@ -75,6 +79,8 @@ export interface Trace {
   points?: Vec2[];
   closed?: boolean;
   circle?: { c: Vec2; r: number };
+  /** marca «×» puntual */
+  cross?: Vec2;
   sourceId: string;
   note: string;
 }
@@ -139,7 +145,7 @@ export interface Room {
 
 export type FurnitureType =
   | 'cama' | 'mesita' | 'armario' | 'sofa' | 'mesa' | 'silla' | 'mesa-centro'
-  | 'butaca' | 'alfombra' | 'encimera' | 'nevera' | 'inodoro' | 'lavabo' | 'ducha';
+  | 'butaca' | 'alfombra' | 'encimera' | 'nevera' | 'inodoro' | 'lavabo' | 'ducha' | 'banera' | 'banco';
 
 export interface Furniture {
   id: string;
@@ -153,6 +159,8 @@ export interface Furniture {
   h: number;
   /** grados; 0 = frente hacia +Y (abajo del papel) */
   rot: number;
+  status?: DataStatus;
+  note?: string;
 }
 
 export type RoofType = 'dos-aguas' | 'un-agua' | 'plana';

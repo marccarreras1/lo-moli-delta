@@ -142,6 +142,17 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
       if (f.type === 'ducha') {
         out.push(`<line x1="${n4(fp[0][0])}" y1="${n4(fp[0][1])}" x2="${n4(fp[2][0])}" y2="${n4(fp[2][1])}" stroke-width="0.008"/><line x1="${n4(fp[1][0])}" y1="${n4(fp[1][1])}" x2="${n4(fp[3][0])}" y2="${n4(fp[3][1])}" stroke-width="0.008"/>`);
       }
+      if (f.type === 'banera') {
+        out.push(`<polygon points="${pts(furnitureFootprint({ ...f, w: f.w - 0.14, d: f.d - 0.14 }))}" fill="none" stroke-width="0.01"/>`);
+      }
+      if (f.type === 'banco') {
+        // respaldo contra el muro (lado local -y)
+        const r = (f.rot * Math.PI) / 180;
+        const k = f.d / 2 - 0.12;
+        const back: Vec2 = [Math.sin(r) * k, -Math.cos(r) * k];
+        const a = furnitureFootprint({ ...f, x: f.x + back[0], y: f.y + back[1], d: 0.001 });
+        out.push(`<line x1="${n4(a[0][0])}" y1="${n4(a[0][1])}" x2="${n4(a[1][0])}" y2="${n4(a[1][1])}" stroke-width="0.01"/>`);
+      }
       if (f.type === 'inodoro' || f.type === 'lavabo') {
         const [cx, cy] = centroid(fp);
         out.push(`<circle cx="${n4(cx)}" cy="${n4(cy)}" r="${n4(Math.min(f.w, f.d) * 0.32)}" fill="none"/>`);
@@ -188,7 +199,17 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
       const a: Vec2 = [cx - dir[0] * half, cy - dir[1] * half];
       const b: Vec2 = [cx + dir[0] * half, cy + dir[1] * half];
       out.push(`<line x1="${n4(a[0])}" y1="${n4(a[1])}" x2="${n4(b[0])}" y2="${n4(b[1])}" stroke="${stc.color}" stroke-width="0.02"/><circle cx="${n4(a[0])}" cy="${n4(a[1])}" r="0.05" fill="${stc.color}"/><path d="M ${n4(b[0] - dir[0] * 0.18 - dir[1] * 0.1)} ${n4(b[1] - dir[1] * 0.18 + dir[0] * 0.1)} L ${n4(b[0])} ${n4(b[1])} L ${n4(b[0] - dir[0] * 0.18 + dir[1] * 0.1)} ${n4(b[1] - dir[1] * 0.18 - dir[0] * 0.1)}" fill="none" stroke="${stc.color}" stroke-width="0.02"/>`);
-      out.push(`<text x="${n4(cx + 0.12)}" y="${n4(cy)}" font-size="0.15" fill="${stc.color}" transform="rotate(-90 ${n4(cx + 0.12)} ${n4(cy)})" text-anchor="middle">sube${st.status === 'documentado' ? '' : ' (sentido pendiente)'}</text>`);
+      if (st.winderEnd) {
+        // tramo final con peldaños compensados (triángulo del boceto)
+        const wl = st.winderEnd;
+        const seg = st.up === '+y' ? `<line x1="${n4(ax)}" y1="${n4(by - wl)}" x2="${n4(bx)}" y2="${n4(by)}"/>`
+          : st.up === '-y' ? `<line x1="${n4(ax)}" y1="${n4(ay + wl)}" x2="${n4(bx)}" y2="${n4(ay)}"/>`
+          : st.up === '+x' ? `<line x1="${n4(bx - wl)}" y1="${n4(ay)}" x2="${n4(bx)}" y2="${n4(by)}"/>`
+          : `<line x1="${n4(ax + wl)}" y1="${n4(ay)}" x2="${n4(ax)}" y2="${n4(by)}"/>`;
+        out.push(`<g stroke="#2f3430" stroke-width="0.012">${seg}</g>`);
+      }
+      const confirmed = (st.upStatus ?? st.status) === 'documentado';
+      out.push(`<text x="${n4(cx + 0.14)}" y="${n4(cy)}" font-size="0.15" fill="${stc.color}" transform="rotate(${st.up === '+y' ? 90 : -90} ${n4(cx + 0.14)} ${n4(cy)})" text-anchor="middle">sube${confirmed ? '' : ' (sentido pendiente)'}</text>`);
     } else if (st.toLevel === level?.id) {
       out.push(`<polygon points="${pts(box)}" fill="#ecebe5" stroke="#7d8277" stroke-width="0.012" stroke-dasharray="0.1 0.06"/><line x1="${n4(ax)}" y1="${n4(ay)}" x2="${n4(bx)}" y2="${n4(by)}" stroke="#9fa39a" stroke-width="0.008"/><text x="${n4((ax + bx) / 2)}" y="${n4((ay + by) / 2)}" font-size="0.15" fill="#687066" text-anchor="middle" transform="rotate(-90 ${n4((ax + bx) / 2)} ${n4((ay + by) / 2)})">hueco de escalera</text>`);
     }
@@ -198,6 +219,12 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
   // Trazos del boceto sin interpretar
   out.push('<g class="traces" pointer-events="none">');
   for (const t of layout.traces.filter((x) => x.levelId === level?.id)) {
+    if (t.cross) {
+      const [cx, cy] = t.cross;
+      const k = 0.1;
+      out.push(`<g stroke="${AMBER}" stroke-width="0.025" data-trace="${esc(t.id)}"><line x1="${n4(cx - k)}" y1="${n4(cy - k)}" x2="${n4(cx + k)}" y2="${n4(cy + k)}"/><line x1="${n4(cx - k)}" y1="${n4(cy + k)}" x2="${n4(cx + k)}" y2="${n4(cy - k)}"/></g>`);
+      continue;
+    }
     if (t.circle) out.push(`<circle cx="${n4(t.circle.c[0])}" cy="${n4(t.circle.c[1])}" r="${n4(t.circle.r)}" fill="none" stroke="${AMBER}" stroke-width="0.025" stroke-dasharray="0.1 0.06"/>`);
     if (t.points?.length) out.push(`<${t.closed ? 'polygon' : 'polyline'} points="${pts(t.points)}" fill="none" stroke="${AMBER}" stroke-width="0.025" stroke-dasharray="0.1 0.06"/>`);
     const anchor: Vec2 = t.circle ? [t.circle.c[0], t.circle.c[1] + t.circle.r + 0.22] : t.points![Math.floor((t.points!.length - 1) / 2)];

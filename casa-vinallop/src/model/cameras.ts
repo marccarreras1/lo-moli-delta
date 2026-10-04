@@ -3,7 +3,7 @@
  * Coordenadas: [x, y_planta, altura].
  */
 import type { CameraPreset, Layout } from '../data/types';
-import { bbox, centroid, pointOnWall, wallNormal } from './geometry';
+import { bbox, centroid, doorSwing, furnitureFootprint, pointInPolygon, pointOnWall, wallNormal } from './geometry';
 
 export function cameraPresets(layout: Layout): CameraPreset[] {
   const { minX, minY, maxX, maxY } = layout.bounds;
@@ -27,7 +27,21 @@ export function cameraPresets(layout: Layout): CameraPreset[] {
     list.push({ id: `fachada-${fid}`, label: name, group: 'exterior', position: [mid[0] + n[0] * d, mid[1] + n[1] * d, 1.7], target: [mid[0], mid[1], 1.4] });
   }
   list.push({ id: 'cenital', label: 'Cenital', group: 'planta', position: [cx, cy + 0.001, R * 1.7], target: [cx, cy, 0] });
-  // interiores: desde una esquina de cada estancia mirando a la opuesta
+  // interiores: desde la esquina más despejada de cada estancia, mirando a la opuesta
+  const obstacles = [
+    ...layout.furniture.filter((f) => f.type !== 'alfombra').map((f) => furnitureFootprint(f)),
+    ...layout.openings.flatMap((o) => {
+      const w = layout.walls.find((x) => x.id === o.wallId);
+      const sw = w ? doorSwing(o, w) : null;
+      return sw ? [sw.zone] : [];
+    }),
+  ];
+  const clearance = (p: [number, number]) => {
+    if (obstacles.some((poly) => pointInPolygon(p, poly))) return -1;
+    let best = Infinity;
+    for (const poly of obstacles) for (const [x, y] of poly) best = Math.min(best, Math.hypot(x - p[0], y - p[1]));
+    return best;
+  };
   for (const r of layout.rooms) {
     const b = bbox(r.polygon);
     const c = centroid(r.polygon);
@@ -35,10 +49,15 @@ export function cameraPresets(layout: Layout): CameraPreset[] {
     const h = b.maxY - b.minY;
     if (w < 1 || h < 1) continue;
     const m = Math.min(0.45, w / 4, h / 4);
+    const corners: [number, number][] = [[b.maxX - m, b.minY + m], [b.minX + m, b.minY + m], [b.maxX - m, b.maxY - m], [b.minX + m, b.maxY - m]];
+    const inside = corners.filter((p) => pointInPolygon(p, r.polygon));
+    const pos = (inside.length ? inside : corners).reduce((a, p) => (clearance(p) > clearance(a) ? p : a));
+    const tx = c[0] + (c[0] - pos[0]) * 0.6;
+    const ty = c[1] + (c[1] - pos[1]) * 0.6;
     const elevation = layout.levels.find((l) => l.id === r.levelId)?.elevation ?? 0;
     list.push({
       id: `int-${r.id}`, label: r.name, group: 'interior', eyeLevel: true, roomId: r.id, elevation,
-      position: [b.maxX - m, b.minY + m, 1.6], target: [c[0] - w * 0.3, c[1] + h * 0.3, 1.2],
+      position: [pos[0], pos[1], 1.6], target: [tx, ty, 1.2],
     });
   }
   const glass = layout.openings.find((o) => o.kind === 'cristalera');

@@ -101,6 +101,22 @@ function Piece({ f, mats }: { f: Furniture; mats: MaterialSet }): ReactNode {
           <B y={0.9} x={-w / 4} w={0.5} h={0.02} d={0.4} m={mats.metal} />
         </>
       );
+    case 'banera':
+      return (
+        <>
+          <B w={w} h={h} d={d} m={mats.ceramic} />
+          <B y={h - 0.02} w={w - 0.16} h={0.025} d={d - 0.16} m={mats.glass} />
+        </>
+      );
+    case 'banco':
+      // banco corrido de obra: asiento con cojín y respaldo contra el muro
+      return (
+        <>
+          <B w={w} h={0.38} d={d} m={mats.interior} />
+          <B y={0.38} z={0.05} w={w - 0.04} h={0.08} d={d - 0.14} m={mats.textile} />
+          <B y={0.46} z={-d / 2 + 0.06} w={w - 0.04} h={0.36} d={0.12} m={mats.textile} />
+        </>
+      );
     case 'nevera':
       return <B w={w} h={h} d={d} m={mats.counter} />;
     case 'inodoro':

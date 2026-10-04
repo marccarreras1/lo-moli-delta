@@ -118,6 +118,16 @@ function StairMesh({ st, from, to, mat }: { st: Stair; from: number; to: number;
 
 /** Trazo del boceto sin interpretar: línea discontinua ámbar sobre el suelo. */
 function TraceLine({ t, y }: { t: Trace; y: number }) {
+  if (t.cross) {
+    const [cx, cz] = t.cross;
+    const k = 0.12;
+    return (
+      <group>
+        <Line points={[[cx - k, y, cz - k], [cx + k, y, cz + k]]} color={AMBER} lineWidth={2} />
+        <Line points={[[cx - k, y, cz + k], [cx + k, y, cz - k]]} color={AMBER} lineWidth={2} />
+      </group>
+    );
+  }
   const pts: [number, number, number][] = t.circle
     ? Array.from({ length: 41 }, (_, i) => {
         const a = (i / 40) * Math.PI * 2;
