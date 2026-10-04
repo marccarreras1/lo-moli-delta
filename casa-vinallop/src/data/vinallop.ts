@@ -89,9 +89,9 @@ const openings: Opening[] = [
     note: 'Anchura documentada (7 m). En planta empieza junto a la escalera (≈7,3 m) y en el alzado A termina a ≈1,4 m del extremo: se toma 7,40–14,40 m. Altura medida en el alzado A (≈3,15 m), en la zona de doble altura. Carpintería no definida.',
   },
   {
-    id: 'obertura-225-pb', label: 'Obertura de 2,25 m (planta baja)', wallId: 'muro-A', kind: 'cristalera', offset: onAB(1.4), width: 2.25, sill: 0, height: 2.4,
-    system: null, status: 'interpretado', sourceId: S.planta,
-    note: 'Anchura documentada (225 cm). Posición: media entre la planta, el alzado A y el altell. El alzado la dibuja de ≈3,15 m, pero queda bajo el altell (2,60 m): se limita a 2,40 m hasta confirmar.',
+    id: 'obertura-225-pb', label: 'Obertura de 2,25 m (planta baja)', wallId: 'muro-A', kind: 'cristalera', offset: onAB(1.4), width: 2.25, sill: 0, height: 3,
+    system: null, status: 'documentado', sourceId: S.prop,
+    note: 'Anchura documentada (225 cm) y altura de 3 m (propiedad). Posición: media entre la planta, el alzado A y el altell. Con el altell a 2,60 m el hueco atraviesa el forjado: se señala como conflicto.',
   },
   {
     id: 'obertura-225-altell', label: 'Obertura de 2,25 m (altell)', wallId: 'muro-A', kind: 'cristalera', offset: onAB(1.4), width: 2.25, sill: 3.7, height: 2.2,
@@ -130,8 +130,8 @@ const rooms: Room[] = [
     [ARM_X1 + TP / 2, Y_PASILLO + TP / 2], [X_ESC - TP / 2, Y_PASILLO + TP / 2], [X_ESC - TP / 2, y1], [X_DORM + TP / 2, y1], [X_DORM + TP / 2, ARM_Y1 + TP / 2], [ARM_X1 + TP / 2, ARM_Y1 + TP / 2],
   ], 'documentado', S.prop, 'Entrada desde el pasillo, junto a la escalera (propiedad). Ducha doble, inodoro y lavabo. Puerta de 70 cm al frontal B.'),
   room('armario-pasillo', 'pb', 'Armario', rect(X_DORM + TP / 2, Y_PASILLO + TP / 2, ARM_X1 - TP / 2, ARM_Y1 - TP / 2), 'documentado', S.prop, 'Armario que se abre desde el pasillo (propiedad), en el rectángulo dibujado junto a la línea del pasillo.'),
-  room('dia', 'pb', 'Cocina y estar', rect(ALT_X1, y0, x1, y1), 'documentado', S.prop, 'Doble altura (propiedad). Escalera en L, cocina junto a la escalera con isla central, sofá en L y estufa.', { openTo: ['pasillo'] }),
-  room('altell', 'altell', 'Altell', rect(x0, y0, ALT_X1, y1), 'documentado', S.prop, 'A 2,60 m sobre el dormitorio, el pasillo y el baño (propiedad). La zona de día es de doble altura. Borde hacia la doble altura en el 6,05 (barandilla no dibujada).'),
+  room('dia', 'pb', 'Cocina y estar', rect(ALT_X1, y0, x1, y1), 'documentado', S.prop, 'Doble altura (propiedad). Entrada al baño por el pasillo. Escalera en L, cocina junto a la escalera con isla central, sofá en L y estufa.', { openTo: ['pasillo'] }),
+  room('altell', 'altell', 'Altell', rect(x0, y0, ALT_X1, y1), 'documentado', S.prop, 'Zona diáfana a 2,60 m con cama de matrimonio (propiedad), sobre el dormitorio, el pasillo y el baño. La zona de día es de doble altura. Borde hacia la doble altura en el 6,05 (barandilla no dibujada).'),
 ];
 
 const f = (x: Furniture) => x;
@@ -139,6 +139,10 @@ const furniture: Furniture[] = [
   // dormitorio
   f({ id: 'armario', type: 'armario', label: 'Armario empotrado', roomId: 'dormitorio', x: 0.55, y: r2((y0 + y1) / 2), w: r2(y1 - y0), d: 0.5, h: 2.4, rot: 270, status: 'documentado', note: 'Franja del lateral izquierdo (propiedad). Fondo ≈0,5 m medido.' }),
   f({ id: 'cama', type: 'cama', label: 'Cama 160 × 200', roomId: 'dormitorio', x: 1.98, y: r2(y1 - 1.0), w: 1.6, d: 2.0, h: 0.55, rot: 180, status: 'interpretado', note: 'Dibujada de ≈1,65 × 2,05 m con dos almohadas y el embozo; cabecero contra el frontal B.' }),
+  // altell (zona diáfana)
+  f({ id: 'cama-altell', type: 'cama', label: 'Cama de matrimonio 160 × 200', roomId: 'altell', x: 2.5, y: r2(y1 - 1.0), w: 1.6, d: 2.0, h: 0.55, rot: 180, status: 'propuesto', note: 'Cama de matrimonio en el altell (propiedad). Posición propuesta: cabecero contra el frontal B, mirando a la obertura de 2,25 m.' }),
+  f({ id: 'mesita-altell-1', type: 'mesita', label: 'Mesita', roomId: 'altell', x: 1.45, y: 4.17, w: 0.45, d: 0.45, h: 0.5, rot: 180, status: 'propuesto' }),
+  f({ id: 'mesita-altell-2', type: 'mesita', label: 'Mesita', roomId: 'altell', x: 3.55, y: 4.17, w: 0.45, d: 0.45, h: 0.5, rot: 180, status: 'propuesto' }),
   // baño
   f({ id: 'armario-pasillo-mueble', type: 'armario', label: 'Armario del pasillo', roomId: 'armario-pasillo', x: 4.23, y: 1.57, w: 1.3, d: 0.6, h: 2.2, rot: 180, status: 'documentado', note: 'Rectángulo de ≈1,40 × 0,65 junto a la línea del pasillo; se abre desde el pasillo (propiedad).' }),
   f({ id: 'ducha', type: 'ducha', label: 'Ducha doble', roomId: 'bano', x: 3.93, y: 2.5, w: 1.0, d: 0.75, h: 2.0, rot: 270, status: 'documentado', note: 'Rectángulo de ≈0,75 × 1,00 con punto de agua. La propiedad indica dos duchas, una delante de la otra: se interpreta como ducha doble en este recinto.' }),
@@ -159,14 +163,15 @@ const traces: Trace[] = [
   water('x-cocina-1', 'pb', [7.57, 3.8], 'En el borde de la encimera.'),
   water('x-cocina-2', 'pb', [8.35, 3.8], 'En el borde de la encimera.'),
   water('x-altell', 'altell', [0.6, 0.6], 'Junto a la esquina del lateral izquierdo y el frontal A.', S.altell),
-  { id: 'borde-altell', levelId: 'altell', label: 'Borde sobre la doble altura', sourceId: S.prop, points: [[ALT_X1, y0], [ALT_X1, r2(y1 - 0.65)]], note: 'Borde del altell hacia la zona de día. La barandilla no está dibujada.' },
+  { id: 'doble-altura', levelId: 'altell', kind: 'nota', label: 'Doble altura (cocina y estar)', sourceId: S.prop, points: [[10.7, 2.35]], note: 'Zona de día de doble altura (propiedad).' },
+  { id: 'borde-altell', levelId: 'altell', kind: 'nota', label: 'Borde del altell · sin barandilla', sourceId: S.prop, points: [[ALT_X1, y0], [ALT_X1, r2(y1 - 0.65)]], note: 'Borde del altell hacia la zona de día. La barandilla no está dibujada.' },
 ];
 
 export const VINALLOP: ProjectData = {
   id: 'casa-vinallop',
   name: 'Casa Vinallop',
   isTest: false,
-  version: '0.7 · bocetos y respuestas del 04/10/2026',
+  version: '0.8 · bocetos y respuestas del 04/10/2026',
   levels: [
     { id: 'pb', name: 'Planta baja', elevation: 0, wallHeight: H_PB, elevationStatus: 'documentado' },
     { id: 'altell', name: 'Altell', elevation: ALTELL, wallHeight: r2(H_TOTAL - ALTELL), elevationStatus: 'documentado' },
@@ -189,7 +194,7 @@ export const VINALLOP: ProjectData = {
     {
       type: 'plana', label: 'Plana', pitchDeg: 0, overhang: 0, thickness: 0.25, parapet: 0, status: 'documentado',
       note: 'Cubierta plana (propiedad), coronada a 6,20 m como los alzados. Canto provisional.',
-      ceiling: { type: 'vuelta-catalana', spacing: 0.8, rise: 0.1, status: 'pendiente', note: 'Por dentro, vuelta catalana (propiedad). Separación de vigas (0,80 m), flecha (0,10 m) y dirección de las bovedillas: hipótesis de visualización.' },
+      ceiling: { type: 'vuelta-catalana', spacing: 0.8, rise: 0.1, status: 'documentado', note: 'Por dentro, vuelta catalana (propiedad). Despiece de vigas cada 0,80 m y flecha de 0,10 m aceptados por la propiedad.' },
     },
   ],
   measures: [
@@ -209,7 +214,7 @@ export const VINALLOP: ProjectData = {
     { id: 'obertura-225', label: 'Oberturas de 2,25 m', value: 2.25, unit: 'm', decimals: 2, sourceId: S.planta, status: 'documentado', note: '«OBERTURA: 225 CM»; «2,25 m» dos veces en el frontal A' },
     { id: 'puerta-70', label: 'Puerta del frontal B', value: 0.7, unit: 'm', decimals: 2, sourceId: S.fb, status: 'documentado', note: '«70 cm»; es una puerta (propiedad)' },
     { id: 'altura-7m', label: 'Altura de la obertura de 7 m', value: 3.15, unit: 'm', decimals: 2, sourceId: S.fa, status: 'interpretado', note: 'Medida en el alzado A.' },
-    { id: 'altura-225', label: 'Altura de la obertura de 2,25 m (planta baja)', value: 2.4, unit: 'm', decimals: 2, sourceId: S.hip, status: 'pendiente', note: 'Bajo el altell; el alzado la dibuja como la de 7 m.' },
+    { id: 'altura-225', label: 'Altura de la obertura de 2,25 m (planta baja)', value: 3, unit: 'm', decimals: 2, sourceId: S.prop, status: 'documentado', note: '«3 m» (propiedad). Supera la cota del altell (2,60 m).' },
     { id: 'pasillo', label: 'Fondo del pasillo junto al frontal A', value: 0.85, unit: 'm', decimals: 2, sourceId: S.planta, status: 'interpretado', note: 'Libre entre el frontal A y la línea del pasillo.' },
     { id: 'escalera-ancho', label: 'Ancho de la escalera', value: 1.2, unit: 'm', decimals: 1, sourceId: S.planta, status: 'interpretado' },
     { id: 'escalera-peldanos', label: 'Peldaños de la escalera', value: 14, unit: 'ud', decimals: 0, sourceId: S.planta, status: 'interpretado', note: '13 rectos dibujados + giro final.' },
@@ -240,14 +245,12 @@ export const VINALLOP: ProjectData = {
   ],
   discrepancies: [
     'Posición del hueco de 2,25 m: planta ≈1,25–3,50 m, alzado A ≈1,45–3,85 m y altell ≈1,55–3,95 m. Se usa la media (1,40–3,65 m).',
-    'El alzado A dibuja el hueco de 2,25 m de planta baja tan alto como el de 7 m (≈3,15 m), pero queda bajo el altell a 2,60 m. Se limita a 2,40 m.',
+    'La obertura de 2,25 m de planta baja mide 3 m de alto (propiedad), pero el altell está a 2,60 m y llega hasta el frontal A: el hueco atraviesa el forjado.',
     'El alzado B dibuja la puerta de 70 cm de ≈2,9 m de alto, también bajo el altell. Se toma 2,20 m.',
     'Los anchos de los huecos de los alzados no están a escala. Se usan las cotas escritas.',
   ],
   questions: [
-    '¿Qué altura tiene la obertura de 2,25 m de planta baja, bajo el altell?',
-    'Vuelta catalana: ¿en qué dirección van las vigas y cada cuánto?',
-    'Ducha: ¿las dos duchas, una delante de la otra, están en el rectángulo de ≈0,75 × 1,00 junto al tabique del dormitorio (ducha doble)?',
+    'La obertura de 2,25 m (3 m de alto) atraviesa el forjado del altell (2,60 m): ¿el altell se separa del frontal A en ese tramo, o el hueco es más bajo?',
     '¿Se añade una barandilla en el borde del altell hacia la doble altura? No está dibujada.',
   ],
   northDeg: null,

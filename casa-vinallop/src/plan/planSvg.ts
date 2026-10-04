@@ -233,13 +233,20 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
       continue;
     }
     if (t.circle) out.push(`<circle cx="${n4(t.circle.c[0])}" cy="${n4(t.circle.c[1])}" r="${n4(t.circle.r)}" fill="none" stroke="${AMBER}" stroke-width="0.025" stroke-dasharray="0.1 0.06"/>`);
-    if (t.points?.length) out.push(`<${t.closed ? 'polygon' : 'polyline'} points="${pts(t.points)}" fill="none" stroke="${AMBER}" stroke-width="0.025" stroke-dasharray="0.1 0.06"/>`);
+    if (t.points && t.points.length > 1) out.push(`<${t.closed ? 'polygon' : 'polyline'} points="${pts(t.points)}" fill="none" stroke="${t.kind === 'nota' ? '#9fa39a' : AMBER}" stroke-width="0.025" stroke-dasharray="0.1 0.06"/>`);
+    const nota = t.kind === 'nota';
+    const pts2 = t.points ?? [];
     // trazos cortos: rótulo a un lado para no tapar los nombres de las estancias
-    const short = !t.circle && t.points!.length === 2 && Math.hypot(t.points![1][0] - t.points![0][0], t.points![1][1] - t.points![0][1]) < 1.2;
+    const short = !t.circle && pts2.length === 2 && Math.hypot(pts2[1][0] - pts2[0][0], pts2[1][1] - pts2[0][1]) < 1.2;
+    const vertical2 = pts2.length === 2 && Math.abs(pts2[1][0] - pts2[0][0]) < 1e-6;
     const anchor: Vec2 = t.circle ? [t.circle.c[0], t.circle.c[1] + t.circle.r + 0.22]
-      : short ? [Math.min(t.points![0][0], t.points![1][0]) - 0.12, (t.points![0][1] + t.points![1][1]) / 2 + 0.05]
-      : t.points![Math.floor((t.points!.length - 1) / 2)];
-    if (o.showLabels) out.push(`<text x="${n4(anchor[0])}" y="${n4(anchor[1] - (t.circle || short ? 0 : 0.08))}" font-size="0.15" fill="${AMBER}" text-anchor="${short ? 'end' : 'middle'}" paint-order="stroke" stroke="#fefdfb" stroke-width="0.05">? ${esc(t.label)}${short ? "" : " · sin interpretar"}</text>`);
+      : short ? [Math.min(pts2[0][0], pts2[1][0]) - 0.12, (pts2[0][1] + pts2[1][1]) / 2 + 0.05]
+      : pts2.length === 2 ? [(pts2[0][0] + pts2[1][0]) / 2 - (vertical2 ? 0.18 : 0), (pts2[0][1] + pts2[1][1]) / 2]
+      : pts2[Math.floor((pts2.length - 1) / 2)];
+    const rot = vertical2 && !short ? ` transform="rotate(-90 ${n4(anchor[0])} ${n4(anchor[1])})"` : '';
+    const text = nota ? esc(t.label) : `? ${esc(t.label)}${short ? '' : ' · sin interpretar'}`;
+    const size = pts2.length === 1 ? 0.22 : 0.15;
+    if (o.showLabels || pts2.length === 1) out.push(`<text x="${n4(anchor[0])}" y="${n4(anchor[1])}" font-size="${size}" fill="${nota ? '#687066' : AMBER}" text-anchor="${short ? 'end' : 'middle'}" dominant-baseline="middle" paint-order="stroke" stroke="#fefdfb" stroke-width="0.05"${rot}>${text}</text>`);
   }
   out.push('</g>');
 

@@ -136,7 +136,7 @@ function TraceLine({ t, y }: { t: Trace; y: number }) {
       })
     : [...(t.points ?? []), ...(t.closed && t.points ? [t.points[0]] : [])].map(([x, z]) => [x, y, z]);
   if (pts.length < 2) return null;
-  return <Line points={pts} color={AMBER} lineWidth={2} dashed dashSize={0.15} gapSize={0.1} />;
+  return <Line points={pts} color={t.kind === 'nota' ? '#9fa39a' : AMBER} lineWidth={2} dashed dashSize={0.15} gapSize={0.1} />;
 }
 
 function RoomFloor({ poly, y, mat, onClick }: { poly: Vec2[]; y: number; mat: THREE.Material; onClick: () => void }) {

@@ -76,6 +76,8 @@ export interface Trace {
   id: string;
   levelId: string;
   label: string;
+  /** pendiente = trazo sin interpretar (por defecto) · nota = anotación ya resuelta */
+  kind?: 'pendiente' | 'nota';
   points?: Vec2[];
   closed?: boolean;
   circle?: { c: Vec2; r: number };

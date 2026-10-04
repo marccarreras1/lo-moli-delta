@@ -4,7 +4,7 @@
  */
 import type { Layout, Vec2 } from '../data/types';
 import {
-  bbox, doorSwing, fmtM, furnitureFootprint, isSelfIntersecting, overlapArea, pointInPolygon, polygonArea, wallLength,
+  bbox, doorSwing, pointOnWall, fmtM, furnitureFootprint, isSelfIntersecting, overlapArea, pointInPolygon, polygonArea, wallLength,
 } from './geometry';
 
 export type IssueLevel = 'error' | 'conflicto' | 'aviso';
@@ -73,6 +73,26 @@ export function validateLayout(layout: Layout): Issue[] {
     }
   }
 
+  // Huecos que atraviesan un forjado apoyado en su muro
+  for (const o of layout.openings) {
+    const w = wallById.get(o.wallId);
+    if (!w) continue;
+    const base = layout.levels.find((l) => l.id === w.levelId)?.elevation ?? 0;
+    const z0 = base + o.sill;
+    const z1 = z0 + o.height;
+    for (const sl of layout.slabs) {
+      const top = layout.levels.find((l) => l.id === sl.levelId)?.elevation ?? 0;
+      const bottom = top - sl.thickness;
+      if (!(z0 < top - 1e-6 && z1 > bottom + 1e-6)) continue;
+      const k = w.thickness / 2 + 0.05;
+      const touches = [0.1, 0.5, 0.9].some((t) => {
+        const s = o.offset + o.width * t;
+        return [k, -k].some((side) => pointInPolygon(pointOnWall(w, s, side), sl.polygon));
+      });
+      if (touches) add('conflicto', o.id, `${o.label} (hasta ${fmtM(z1)} m) atraviesa el forjado del ${layout.levels.find((l) => l.id === sl.levelId)?.name.toLowerCase() ?? 'nivel superior'} (${fmtM(bottom)}–${fmtM(top)} m). No se modifica nada automáticamente.`);
+    }
+  }
+
   // Huecos grandes: aviso estructural
   for (const o of layout.openings)
     if (o.width >= 3) add('aviso', o.id, `${o.label}: hueco de ${fmtM(o.width)} m. Requiere solución estructural y comprobación técnica; no está resuelta en este modelo.`);
@@ -132,6 +152,9 @@ export function validateLayout(layout: Layout): Issue[] {
       const a = layout.furniture[i];
       const b = layout.furniture[j];
       if (a.type === 'alfombra' || b.type === 'alfombra') continue;
+      const la = layout.rooms.find((r) => r.id === a.roomId)?.levelId;
+      const lb = layout.rooms.find((r) => r.id === b.roomId)?.levelId;
+      if (la !== lb) continue;
       if (a.type === 'mesa-centro' || b.type === 'mesa-centro') continue;
       const ov = overlapArea(furnitureFootprint(a), furnitureFootprint(b), 0.02);
       if (ov > 0.01) add('conflicto', a.id, `${a.label} se solapa con ${b.label}.`);

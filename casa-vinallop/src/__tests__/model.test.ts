@@ -18,10 +18,16 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
   const op = (id: string) => layout.openings.find((o) => o.id === id)!;
   const x0 = (id: string) => Math.min(...room(id).polygon.map((p) => p[0]));
 
-  it('tiene geometría y no tiene errores ni conflictos', () => {
+  it('tiene geometría y no tiene errores; el único conflicto es el hueco de 3 m contra el forjado del altell', () => {
     expect(hasGeometry(VINALLOP)).toBe(true);
     const bad = issues.filter((i) => i.level !== 'aviso');
-    expect(bad, JSON.stringify(bad, null, 2)).toEqual([]);
+    expect(bad.map((i) => i.elementId), JSON.stringify(bad, null, 2)).toEqual(['obertura-225-pb']);
+    expect(bad[0].message).toContain('forjado');
+  });
+  it('altell diáfano con cama de matrimonio', () => {
+    const camas = layout.furniture.filter((f) => f.type === 'cama' && f.roomId === 'altell');
+    expect(camas).toHaveLength(1);
+    expect(layout.walls.filter((w) => w.levelId === 'altell')).toEqual([]);
   });
   it('largo = suma de la cadena de cotas documentada (15,70 m) y altura 6,20 m', () => {
     expect(layout.bounds.maxX - layout.bounds.minX).toBeCloseTo(15.7, 5);
@@ -52,6 +58,7 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     const start = o.offset + 0.15;
     expect(start).toBeGreaterThanOrEqual(x0('dia'));
     expect(issues.some((i) => i.elementId === o.id && i.level === 'conflicto')).toBe(false);
+    expect(op('obertura-225-pb').height).toBe(3);
   });
   it('los huecos son reales en los muros (también el del altell)', () => {
     for (const o of layout.openings) {

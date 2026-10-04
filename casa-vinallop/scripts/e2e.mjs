@@ -100,7 +100,7 @@ try {
     await page.click('[data-action="more-menu"]');
     await page.getByRole('menuitem', { name: 'Medidas y documentación' }).click();
     await page.getByTestId('info-dialog').waitFor();
-    check('Preguntas abiertas visibles en «Medidas y documentación»', (await page.getByTestId('questions').innerText()).toLowerCase().includes('vuelta catalana'));
+    check('Preguntas abiertas visibles en «Medidas y documentación»', (await page.getByTestId('questions').innerText()).toLowerCase().includes('altell'));
     await page.keyboard.press('Escape');
 
     // ---------- 2. Modelo de prueba (tareas de interfaz) ----------
