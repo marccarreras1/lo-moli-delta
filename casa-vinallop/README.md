@@ -54,5 +54,5 @@ Coordenadas en metros: X hacia la derecha del papel, Y hacia abajo. La planta 2D
 
 ## Pendiente de confirmar
 
-- Altura de las barandillas de cristal del altell y de la escalera (dibujadas de 1,00 m).
-- Estado actual: espesor de los muros existentes que no son el frontal B (no son de 0,30 m) y medidas de la habitación pequeña junto al algarrobo.
+- Giro de la puerta de 70 cm, puertas del armario del pasillo y canto del forjado del altell.
+- Estado actual: situación y medidas de la habitación pequeña (dibujada en el extremo derecho, junto al algarrobo).

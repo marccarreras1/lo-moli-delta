@@ -213,6 +213,8 @@ export interface RoofSegment {
   hy0: number;
   hy1: number;
   overhang: number;
+  /** espesor de los muros que reciben los hastiales (0,30 m si no se indica) */
+  gableThickness?: number;
   material: 'fibrocemento' | 'losa';
   status: DataStatus;
   sourceId: string;

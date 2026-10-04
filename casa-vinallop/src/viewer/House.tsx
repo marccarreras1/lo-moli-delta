@@ -377,13 +377,14 @@ function RoofSegments({ segments, mats }: { segments: RoofSegment[]; mats: Mater
         const mat = sg.material === 'fibrocemento' ? fibro[i] : mats.roof;
         // los hastiales se apoyan en los muros de los extremos del faldón (eje a 0,15 m del borde exterior si es fachada)
         const isEnd = (x: number) => !segments.some((o) => o !== sg && (Math.abs(o.rect[0] - x) < 1e-6 || Math.abs(o.rect[2] - x) < 1e-6));
-        const gx = [isEnd(x0) ? x0 + 0.15 : x0, isEnd(x1) ? x1 - 0.15 : x1];
+        const gt = sg.gableThickness ?? 0.3;
+        const gx = [isEnd(x0) ? x0 + gt / 2 : x0, isEnd(x1) ? x1 - gt / 2 : x1];
         return (
           <group key={sg.id}>
             <mesh position={[(x0 + x1) / 2, (sg.hy0 + sg.hy1) / 2 + t / 2, (y0 + y1) / 2]} rotation={[p, 0, 0]} castShadow receiveShadow material={mat}>
               <boxGeometry args={[x1 - x0 + 0.1, t, len]} />
             </mesh>
-            {gx.map((x) => <SegmentGable key={x} x={x} y0={y0} y1={y1} hy0={sg.hy0} hy1={sg.hy1} mat={mats.facade} />)}
+            {gx.map((x) => <SegmentGable key={x} x={x} t={gt} y0={y0} y1={y1} hy0={sg.hy0} hy1={sg.hy1} mat={mats.facade} />)}
           </group>
         );
       })}
@@ -391,17 +392,17 @@ function RoofSegments({ segments, mats }: { segments: RoofSegment[]; mats: Mater
   );
 }
 
-function SegmentGable({ x, y0, y1, hy0, hy1, mat }: { x: number; y0: number; y1: number; hy0: number; hy1: number; mat: THREE.Material }) {
+function SegmentGable({ x, t, y0, y1, hy0, hy1, mat }: { x: number; t: number; y0: number; y1: number; hy0: number; hy1: number; mat: THREE.Material }) {
   const geo = useMemo(() => {
     const s = new THREE.Shape();
     s.moveTo(y0, hy1);
     s.lineTo(y1, hy1);
     s.lineTo(y0, hy0);
     s.closePath();
-    return new THREE.ExtrudeGeometry(s, { depth: 0.3, bevelEnabled: false });
-  }, [y0, y1, hy0, hy1]);
+    return new THREE.ExtrudeGeometry(s, { depth: t, bevelEnabled: false });
+  }, [t, y0, y1, hy0, hy1]);
   // la forma vive en (y_planta, altura); girada -90° en Y su eje X pasa a ser el eje Y de planta y se extruye hacia -x
-  return <mesh geometry={geo} position={[x + 0.15, 0, 0]} rotation={[0, -Math.PI / 2, 0]} material={mat} castShadow receiveShadow />;
+  return <mesh geometry={geo} position={[x + t / 2, 0, 0]} rotation={[0, -Math.PI / 2, 0]} material={mat} castShadow receiveShadow />;
 }
 
 /** Banda vertical a lo largo de un tramo (de a a b), con base inclinada si cambia de cota. */

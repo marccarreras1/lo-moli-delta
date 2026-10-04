@@ -104,7 +104,7 @@ try {
     await page.click('[data-action="more-menu"]');
     await page.getByRole('menuitem', { name: 'Medidas y documentación' }).click();
     await page.getByTestId('info-dialog').waitFor();
-    check('Preguntas abiertas visibles en «Medidas y documentación»', (await page.getByTestId('questions').innerText()).toLowerCase().includes('altell'));
+    check('Preguntas abiertas visibles en «Medidas y documentación»', (await page.getByTestId('questions').innerText()).toLowerCase().includes('puerta'));
     await page.keyboard.press('Escape');
 
     // Fase: estado actual (fotos antes de la reforma) con el entorno de la parcela

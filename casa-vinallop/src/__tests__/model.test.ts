@@ -234,7 +234,8 @@ describe('Casa Vinallop · estado actual (fotos antes de la reforma)', () => {
       expect(w.thickness).toBe(0.6);
       expect(w.status).toBe('documentado');
     }
-    expect(layout.measures.find((m) => m.id === 'espesor-resto')!.status).toBe('pendiente');
+    expect(layout.measures.find((m) => m.id === 'espesor-resto')!.status).toBe('documentado');
+    expect(layout.walls.filter((x) => x.facade !== 'B').every((x) => x.thickness === 0.4)).toBe(true);
     const rest = [...layout.walls.filter((x) => x.facade !== 'B'), ...layout.openings, ...layout.rooms, ...layout.roofSegments!];
     for (const x of rest) expect(['interpretado', 'pendiente']).toContain(x.status);
     expect(layout.site?.status).toBe('interpretado');

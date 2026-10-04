@@ -195,11 +195,11 @@ export const VINALLOP: ProjectData = {
   railings: [
     {
       id: 'barandilla-altell', levelId: 'altell', label: 'Barandilla del altell', points: [[ALT_X1, y0], [ALT_X1, r2(y1 - 0.65)]], height: 1.0, material: 'vidrio', spacing: 0, status: 'documentado', sourceId: S.prop,
-      note: 'Barandilla de cristal en el borde del altell hacia la doble altura (propiedad). Deja libre el desembarco de la escalera. Altura de 1,00 m provisional.',
+      note: 'Barandilla de cristal en el borde del altell hacia la doble altura (propiedad). Deja libre el desembarco de la escalera. Altura de 1,00 m (propiedad).',
     },
     {
       id: 'barandilla-escalera', levelId: 'pb', label: 'Barandilla de la escalera', points: [[ESC[2], ESC[1]], [ESC[2], ESC[3]]], rise: [0.19, ALTELL], height: 1.0, material: 'vidrio', spacing: 0, status: 'documentado', sourceId: S.prop,
-      note: 'Barandilla de cristal en el lado abierto de la escalera, hacia la zona de día (propiedad). Sigue la pendiente desde el primer peldaño hasta el altell. Altura de 1,00 m provisional.',
+      note: 'Barandilla de cristal en el lado abierto de la escalera, hacia la zona de día (propiedad). Sigue la pendiente desde el primer peldaño hasta el altell. Altura de 1,00 m (propiedad).',
     },
   ],
   roofOptions: [
@@ -265,7 +265,9 @@ export const VINALLOP: ProjectData = {
     'Los anchos de los huecos de los alzados no están a escala. Se usan las cotas escritas.',
   ],
   questions: [
-    'Barandillas de cristal del altell y de la escalera: se dibujan de 1,00 m de alto. ¿Es esa la altura, o la quieres de otra?',
+    'Puerta de 70 cm del baño (frontal B): ¿hacia qué lado abre? Ahora se dibuja cerrada, sin giro.',
+    'Puertas del armario del pasillo: ¿abatibles o correderas, y cuántas hojas? Ahora se dibujan dos hojas cerradas.',
+    'Canto del forjado del altell: se dibuja de 0,12 m provisionalmente. ¿Lo sabes?',
   ],
   northDeg: null,
   facades: { A: 'Frontal A', B: 'Frontal B', izquierdo: 'Lateral izquierdo', derecho: 'Lateral derecho' },

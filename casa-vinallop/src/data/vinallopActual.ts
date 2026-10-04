@@ -15,6 +15,7 @@
  * - Proporciones medidas en la vista cenital y escaladas al largo de 15,70 m de los
  *   bocetos; puertas situadas con una corrección de perspectiva sobre la vista oblicua.
  * - Alturas estimadas tomando una puerta como ≈2,00 m de referencia.
+ * - Espesores de la propiedad: frontal B 0,60 m y el resto 0,40 m.
  *
  * Todo es INTERPRETADO (±0,3 m en planta y ±0,2 m en altura) salvo el muro del frontal B
  * (0,60 m, propiedad) y lo que se marca como pendiente. No hay medidas escritas del estado actual.
@@ -24,7 +25,8 @@ import type { Opening, ProjectData, Room, RoofSegment, Vec2, Wall } from './type
 
 const L = 15.7;
 const W = 5;
-const T = 0.3;
+/** resto de muros existentes: 0,40 m (propiedad) */
+const T = 0.4;
 const TB = 0.6;
 const h = T / 2;
 const yB = W - TB / 2; // eje del frontal B
@@ -43,9 +45,8 @@ const H = {
 
 const F = FOTOS_PARCELA.id;
 const rect = (x0: number, y0: number, x1: number, y1: number): Vec2[] => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
-// el frontal B es de 0,60 m (propiedad); el resto de muros existentes no son de 0,30 m y su espesor está por medir:
-// se dibujan con 0,30 m de forma provisional y se marcan como pendientes
-const ext = { levelId: 'pb', thickness: T, kind: 'exterior' as const, status: 'pendiente' as const, sourceId: F };
+// espesores de la propiedad: frontal B 0,60 m y el resto 0,40 m; la posición de cada muro sale de las fotos
+const ext = { levelId: 'pb', thickness: T, kind: 'exterior' as const, status: 'interpretado' as const, sourceId: F };
 const extB = { ...ext, thickness: TB, status: 'documentado' as const, sourceId: 'indicacion-propiedad' };
 
 const walls: Wall[] = [
@@ -93,10 +94,10 @@ const rooms: Room[] = [
 ];
 
 const roofSegments: RoofSegment[] = [
-  { id: 'cub-extremo', label: 'Cubierta del volumen del extremo', rect: [0, 0, X1, W], hy0: H.extremo.a, hy1: H.extremo.b, overhang: 0.1, material: 'fibrocemento', status: 'interpretado', sourceId: F, note: 'Fibrocemento, casi plana, la más baja.' },
-  { id: 'cub-anexo', label: 'Cubierta del anexo', rect: [X1, 0, X2, W], hy0: H.anexo.a, hy1: H.anexo.b, overhang: 0.15, material: 'fibrocemento', status: 'interpretado', sourceId: F, note: 'Fibrocemento a un agua hacia el frontal B.' },
-  { id: 'cub-principal', label: 'Cubierta del volumen principal', rect: [X2, 0, X3, W], hy0: H.principal.a, hy1: H.principal.b, overhang: 0.15, material: 'fibrocemento', status: 'interpretado', sourceId: F, note: 'Fibrocemento a un agua hacia el frontal B, con chimenea; su hastial asoma sobre el anexo.' },
-  { id: 'cub-habitacion', label: 'Cubierta de la habitación pequeña', rect: [X3, 0, L, W], hy0: H.habitacion.a, hy1: H.habitacion.b, overhang: 0.1, material: 'fibrocemento', status: 'interpretado', sourceId: F, note: 'Faldón bajo de fibrocemento junto al algarrobo (vista cenital).' },
+  { id: 'cub-extremo', label: 'Cubierta del volumen del extremo', rect: [0, 0, X1, W], hy0: H.extremo.a, hy1: H.extremo.b, overhang: 0.1, gableThickness: T, material: 'fibrocemento', status: 'interpretado', sourceId: F, note: 'Fibrocemento, casi plana, la más baja.' },
+  { id: 'cub-anexo', label: 'Cubierta del anexo', rect: [X1, 0, X2, W], hy0: H.anexo.a, hy1: H.anexo.b, overhang: 0.15, gableThickness: T, material: 'fibrocemento', status: 'interpretado', sourceId: F, note: 'Fibrocemento a un agua hacia el frontal B.' },
+  { id: 'cub-principal', label: 'Cubierta del volumen principal', rect: [X2, 0, X3, W], hy0: H.principal.a, hy1: H.principal.b, overhang: 0.15, gableThickness: T, material: 'fibrocemento', status: 'interpretado', sourceId: F, note: 'Fibrocemento a un agua hacia el frontal B, con chimenea; su hastial asoma sobre el anexo.' },
+  { id: 'cub-habitacion', label: 'Cubierta de la habitación pequeña', rect: [X3, 0, L, W], hy0: H.habitacion.a, hy1: H.habitacion.b, overhang: 0.1, gableThickness: T, material: 'fibrocemento', status: 'interpretado', sourceId: F, note: 'Faldón bajo de fibrocemento junto al algarrobo (vista cenital).' },
 ];
 
 export const VINALLOP_ACTUAL: ProjectData = {
@@ -124,13 +125,13 @@ export const VINALLOP_ACTUAL: ProjectData = {
     { id: 'vol-principal', label: 'Largo del volumen principal', value: X3 - X2, unit: 'm', decimals: 1, sourceId: F, status: 'interpretado', note: 'Proporción de la vista cenital.' },
     { id: 'vol-habitacion', label: 'Largo de la habitación pequeña', value: L - X3, unit: 'm', decimals: 1, sourceId: F, status: 'interpretado', note: 'Proporción de la vista cenital.' },
     { id: 'espesor-b', label: 'Muro del frontal B (existente)', value: TB, unit: 'm', decimals: 2, sourceId: 'indicacion-propiedad', status: 'documentado', note: '«El espesor de 0,6 sí» (propiedad). Se conserva en la reforma.' },
-    { id: 'espesor-resto', label: 'Resto de muros existentes', value: null, unit: 'm', decimals: 2, sourceId: 'indicacion-propiedad', status: 'pendiente', note: 'No son de 0,30 m (propiedad). Espesor por medir: se dibujan con 0,30 m provisionalmente.' },
+    { id: 'espesor-resto', label: 'Resto de muros existentes', value: T, unit: 'm', decimals: 2, sourceId: 'indicacion-propiedad', status: 'documentado', note: '«0,40 m» (propiedad).' },
     { id: 'alero-principal', label: 'Aleros del volumen principal (A / B)', value: H.principal.a, unit: 'm', decimals: 1, sourceId: F, status: 'interpretado', note: `${H.principal.a} m en el frontal A y ${H.principal.b} m en el frontal B, estimados con una puerta como referencia.` },
   ],
   sources: [
     FOTOS_PARCELA,
     { id: 'boceto-planta-baixa', label: 'Foto del boceto «PLANTA BAIXA»', detail: 'Largo total de la casa (15,70 m).' },
-    { id: 'indicacion-propiedad', label: 'Indicaciones de la propiedad (04/10/2026)', detail: '5 m de ancho; el muro existente del frontal B es de 0,60 m; el resto no son de 0,30 m; hay una pequeña habitación junto al algarrobo.' },
+    { id: 'indicacion-propiedad', label: 'Indicaciones de la propiedad (04/10/2026)', detail: '5 m de ancho; el muro existente del frontal B es de 0,60 m y el resto de 0,40 m; hay una pequeña habitación.' },
   ],
   readings: [
     { sourceId: F, read: 'Vista cenital: tres faldones de fibrocemento escalonados y un faldón bajo bajo el algarrobo', interpreted: 'Cuatro volúmenes de una planta: el faldón bajo junto al algarrobo cubre una habitación pequeña (propiedad).' },
@@ -143,8 +144,7 @@ export const VINALLOP_ACTUAL: ProjectData = {
     'El anexo parece algo más estrecho que el volumen principal en la vista cenital; se dibuja con el mismo ancho.',
   ],
   questions: [
-    '¿Qué espesor tienen los muros existentes que no son el frontal B? Ahora se dibujan con 0,30 m provisionalmente.',
-    'Habitación pequeña: ¿ocupa todo el ancho de la casa y mide ≈1,5 m de largo? Está estimada con la vista cenital.',
+    'Habitación pequeña: se ha situado bajo el tejado bajo del extremo derecho, junto al algarrobo (≈1,5 m de largo, todo el ancho). ¿Es ahí donde está?',
   ],
   northDeg: null,
   facades: { B: 'Frontal B (puertas)', A: 'Frontal A', izquierdo: 'Lateral izquierdo', derecho: 'Lateral derecho' },
