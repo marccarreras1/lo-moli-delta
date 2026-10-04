@@ -15,6 +15,8 @@ export interface PhotoOptions {
   scale?: number;
   onProgress?: (done: number, total: number) => void;
   signal?: AbortSignal;
+  /** exposición (como en una cámara: los interiores necesitan más que el exterior) */
+  exposure?: number;
   /** usar las texturas procedurales (por defecto sí) */
   textures?: boolean;
 }
@@ -219,6 +221,8 @@ export async function renderPhoto(gl: THREE.WebGLRenderer, scene: THREE.Scene, c
     gl.setPixelRatio(o.scale);
     gl.setSize(w, h, false);
   }
+  const prevExposure = gl.toneMappingExposure;
+  if (o.exposure) gl.toneMappingExposure = o.exposure;
   const pt = new WebGLPathTracer(gl);
   let trace: ReturnType<typeof buildTraceScene> | null = null;
   const prevEnv = scene.environment;
@@ -259,6 +263,7 @@ export async function renderPhoto(gl: THREE.WebGLRenderer, scene: THREE.Scene, c
     out.getContext('2d')!.drawImage(gl.domElement, 0, 0);
     return out;
   } finally {
+    gl.toneMappingExposure = prevExposure;
     pt.dispose();
     trace?.dispose();
     sky.dispose();

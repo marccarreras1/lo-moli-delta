@@ -27,8 +27,9 @@ await new Promise((res, rej) => {
   server.stdout.on('data', (d) => { if (String(d).includes(String(PORT))) { clearTimeout(t); res(); } });
 });
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
-const page = await (await browser.newContext({ viewport: { width: 1280, height: 860 } })).newPage();
+const page = await (await browser.newContext({ viewport: { width: Number(process.env.W ?? 1100), height: Number(process.env.H ?? 760) } })).newPage();
 page.on('pageerror', (e) => console.log('error:', e.message));
+page.on('console', (m) => { if (m.text().startsWith('[render]')) console.log(m.text()); });
 await page.goto(`http://localhost:${PORT}/?diagnostico`);
 await page.waitForFunction(() => document.querySelector('canvas') && !document.querySelector('.state-center.loading'), null, { timeout: 90000 });
 await page.evaluate(() => {
@@ -51,18 +52,20 @@ for (const [view, amb] of JOBS) {
     return same;
   }, null, { polling: 400, timeout: 20000 });
   await page.waitForTimeout(1500);
-  const data = await page.evaluate(async (n) => {
+  const interior = await page.evaluate(() => window.__store.getState().tab === 'interior');
+  const data = await page.evaluate(async ([n, exposure]) => {
     const v = window.__visor;
     const mod = await window.__photoModule();
     v.setFrameloop('never');
     try {
       const amb = window.__store.getState().visual.ambience;
-      const canvas = await mod.renderPhoto(v.gl, v.scene, v.camera, { samples: n, sky: amb });
+      const t0 = performance.now();
+      const canvas = await mod.renderPhoto(v.gl, v.scene, v.camera, { samples: n, sky: amb, exposure, onProgress: (d, t) => { if (d % 4 === 0 || d === 1) console.log(`[render] ${d}/${t} · ${Math.round((performance.now() - t0) / 1000)} s`); } });
       return canvas.toDataURL('image/png');
     } finally {
       v.setFrameloop('always');
     }
-  }, samples);
+  }, [interior ? samples * 2 : samples, interior ? Number(process.env.EXP ?? 5) : 1]);
   const name = `${view}${amb === 'dia' ? '' : `-${amb}`}.png`;
   writeFileSync(OUT + name, Buffer.from(data.split(',')[1], 'base64'));
   console.log(`✔ ${name} · ${samples} muestras · ${Math.round((Date.now() - t0) / 1000)} s`);

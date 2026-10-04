@@ -48,6 +48,8 @@ export function PhotoPanel({ projectName, variantName, viewLabel, onClose }: { p
   const ambience = useStore((s) => s.visual.ambience);
   const [quality, setQuality] = useState<(typeof QUALITY)[number]['id']>('media');
   const [res, setRes] = useState<(typeof RES)[number]['id']>('1');
+  const [exposure, setExposure] = useState<string>('auto');
+  const tab = useStore((s) => s.tab);
   const [st, setSt] = useState<Status>({ k: 'idle' });
   const ctrl = useRef<AbortController | null>(null);
   const running = st.k === 'esperando' || st.k === 'preparando' || st.k === 'muestreando';
@@ -72,7 +74,7 @@ export function PhotoPanel({ projectName, variantName, viewLabel, onClose }: { p
       const q = QUALITY.find((x) => x.id === quality)!;
       const t0 = performance.now();
       const canvas = await mod.renderPhoto(gl, scene, camera, {
-        samples: q.samples, sky: ambience, scale: RES.find((x) => x.id === res)!.scale, signal: ac.signal,
+        samples: q.samples, sky: ambience, exposure: exposure === 'auto' ? (tab === 'interior' ? 5 : 1) : Number(exposure), scale: RES.find((x) => x.id === res)!.scale, signal: ac.signal,
         onProgress: (done, total) => setSt({ k: 'muestreando', done, total, t0 }),
       });
       setSt({ k: 'listo', canvas, samples: q.samples, ms: performance.now() - t0 });
@@ -111,6 +113,14 @@ export function PhotoPanel({ projectName, variantName, viewLabel, onClose }: { p
         <label>Resolución
           <select value={res} disabled={running} onChange={(e) => setRes(e.target.value as typeof res)}>
             {RES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
+          </select>
+        </label>
+      </div>
+      <div className="photo-row">
+        <label>Exposición
+          <select value={exposure} disabled={running} onChange={(e) => setExposure(e.target.value)} data-testid="photo-exposure">
+            <option value="auto">Automática ({tab === 'interior' ? 'interior ×5' : 'exterior ×1'})</option>
+            {['1', '2', '3', '5', '8'].map((x) => <option key={x} value={x}>×{x}</option>)}
           </select>
         </label>
       </div>
