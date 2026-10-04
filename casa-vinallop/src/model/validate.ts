@@ -47,10 +47,14 @@ export function validateLayout(layout: Layout): Issue[] {
   // Solapes entre huecos del mismo muro
   for (const w of layout.walls) {
     const ops = layout.openings.filter((o) => o.wallId === w.id).sort((a, b) => a.offset - b.offset);
-    for (let i = 1; i < ops.length; i++) {
-      if (ops[i].offset < ops[i - 1].offset + ops[i - 1].width - 1e-6)
-        add('conflicto', ops[i].id, `${ops[i].label} se solapa con ${ops[i - 1].label}.`);
-    }
+    for (let i = 0; i < ops.length; i++)
+      for (let j = i + 1; j < ops.length; j++) {
+        const a = ops[i];
+        const b = ops[j];
+        const vertical = b.sill < a.sill + a.height - 1e-6 && a.sill < b.sill + b.height - 1e-6;
+        if (vertical && b.offset < a.offset + a.width - 1e-6 && a.offset < b.offset + b.width - 1e-6)
+          add('conflicto', b.id, `${b.label} se solapa con ${a.label}.`);
+      }
   }
   // Huecos que cortan el encuentro de un tabique con su muro
   for (const o of layout.openings) {
@@ -90,18 +94,24 @@ export function validateLayout(layout: Layout): Issue[] {
     for (let j = i + 1; j < layout.rooms.length; j++) {
       const a = layout.rooms[i];
       const b = layout.rooms[j];
+      if (a.levelId !== b.levelId) continue;
       const ov = overlapArea(a.polygon, b.polygon);
       if (ov > 0.05) add('error', a.id, `${a.name} y ${b.name} se solapan (${fmtM(ov)} m²).`);
     }
-  // Estancias que invaden muros
+  // Estancias que invaden muros (solo muros presentes en el nivel de la estancia)
+  const elevOf = (id: string) => layout.levels.find((l) => l.id === id)?.elevation ?? 0;
+  const wallAtLevel = (w: { levelId: string; height: number }, levelId: string) => {
+    const base = elevOf(w.levelId);
+    const z = elevOf(levelId) + 0.5;
+    return base <= z && z < base + w.height;
+  };
   for (const r of layout.rooms)
-    for (const w of layout.walls) {
-        if (overlapArea(r.polygon, wallRect(w, 0, wallLength(w))) > 0.03) add('error', r.id, `${r.name} invade el muro ${w.id}.`);
-    }
+    for (const w of layout.walls)
+      if (wallAtLevel(w, r.levelId) && overlapArea(r.polygon, wallRect(w, 0, wallLength(w))) > 0.03) add('error', r.id, `${r.name} invade el muro ${w.id}.`);
 
   // Mobiliario
   const swings = layout.openings
-    .map((o) => ({ o, sw: wallById.get(o.wallId) ? doorSwing(o, wallById.get(o.wallId)!) : null }))
+    .map((o) => ({ o, w: wallById.get(o.wallId), sw: wallById.get(o.wallId) ? doorSwing(o, wallById.get(o.wallId)!) : null }))
     .filter((x) => x.sw);
   for (const f of layout.furniture) {
     const room = layout.rooms.find((r) => r.id === f.roomId);
@@ -110,8 +120,12 @@ export function validateLayout(layout: Layout): Issue[] {
     if (!room) add('error', f.id, `${f.label}: estancia ${f.roomId} inexistente.`);
     else if (!fp.every((p) => pointInPolygon(p, room.polygon, 2e-3))) add('conflicto', f.id, `${f.label} no cabe en ${room.name} (atraviesa muros o límites).`);
     if (f.type !== 'alfombra')
-      for (const { o, sw } of swings)
+      for (const { o, w, sw } of swings) {
+        const z0 = elevOf(w!.levelId) + o.sill;
+        const zr = room ? elevOf(room.levelId) + 0.3 : 0;
+        if (!(z0 <= zr && zr < z0 + o.height)) continue;
         if (overlapArea(fp, sw!.zone, 0.02) > 0.01) add('conflicto', f.id, `${f.label} bloquea el barrido de ${o.label}.`);
+      }
   }
   for (let i = 0; i < layout.furniture.length; i++)
     for (let j = i + 1; j < layout.furniture.length; j++) {

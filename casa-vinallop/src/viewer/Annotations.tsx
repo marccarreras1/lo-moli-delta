@@ -69,11 +69,12 @@ function Dim({ a, b, label, status, offsetLabel, onTop = false }: { a: [number, 
   );
 }
 
-export function Annotations({ layout, showLabels, showDims, showAreas, roomLabelsVisible, selectedOpeningId }: {
-  layout: Layout; showLabels: boolean; showDims: boolean; showAreas: boolean; roomLabelsVisible: boolean; selectedOpeningId: string | null;
+export function Annotations({ layout, showLabels, showDims, showAreas, roomLabelsVisible, selectedOpeningId, maxElev }: {
+  layout: Layout; showLabels: boolean; showDims: boolean; showAreas: boolean; roomLabelsVisible: boolean; selectedOpeningId: string | null; maxElev: number;
 }) {
   const { minX, minY, maxX, maxY } = layout.bounds;
-  const H = layout.levels[0]?.wallHeight ?? 2.5;
+  const H = layout.topHeight;
+  const elevOf = (id: string) => layout.levels.find((l) => l.id === id)?.elevation ?? 0;
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
   const measure = (id: string) => layout.measures.find((m) => m.id === id);
@@ -92,10 +93,10 @@ export function Annotations({ layout, showLabels, showDims, showAreas, roomLabel
             return <Label3D key={fid} position={[mid[0] + n[0] * sgn * 2.2, 0.35, mid[1] + n[1] * sgn * 2.2]} text={name} size={0.32} />;
           })}
           {roomLabelsVisible &&
-            layout.rooms.map((r) => {
+            layout.rooms.filter((r) => maxElev === Infinity || Math.abs(elevOf(r.levelId) - maxElev) < 1e-6).map((r) => {
               const [x, y] = centroid(r.polygon);
               return (
-                <Label3D key={r.id} position={[x, 1.2, y]} text={r.name}
+                <Label3D key={r.id} position={[x, elevOf(r.levelId) + 1.2, y]} text={r.name}
                   sub={showAreas ? `${fmtM(polygonArea(r.polygon), 1)} m² calculados` : undefined} size={0.3} />
               );
             })}
@@ -114,7 +115,7 @@ export function Annotations({ layout, showLabels, showDims, showAreas, roomLabel
         const sgn = (cx - pointOnWall(selWall, 0)[0]) * n[0] + (cy - pointOnWall(selWall, 0)[1]) * n[1] > 0 ? -1 : 1;
         const p0 = pointOnWall(selWall, sel.offset, out * sgn);
         const p1 = pointOnWall(selWall, sel.offset + sel.width, out * sgn);
-        const z = sel.sill + sel.height + 0.25;
+        const z = elevOf(selWall.levelId) + sel.sill + sel.height + 0.25;
         return <Dim a={[p0[0], z, p0[1]]} b={[p1[0], z, p1[1]]} label={`${sel.label} · ${fmtM(sel.width)} m`} status={sel.status} offsetLabel={[0, 0.25, 0]} onTop />;
       })()}
     </group>

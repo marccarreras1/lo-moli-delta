@@ -11,7 +11,7 @@ const slug = (s: string) =>
 
 export function exportName(kind: string, projectName: string, variantName: string, ext: string) {
   const date = new Date().toISOString().slice(0, 10);
-  return `${slug(projectName)}_v${slug(APP_VERSION)}_${slug(variantName)}_${kind}_${date}.${ext}`;
+  return `${slug(projectName)}_v${slug(APP_VERSION)}_${slug(variantName)}_${slug(kind)}_${date}.${ext}`;
 }
 
 export function download(name: string, data: Blob | string, type = 'application/octet-stream') {
@@ -60,9 +60,9 @@ export async function exportPng(projectName: string, variantName: string, viewLa
 export function exportSvg(layout: Layout, opts: Omit<PlanOptions, 'forExport' | 'overlay' | 'selection'>, variantName: string) {
   const svg = planSvg(layout, {
     ...opts, selection: null, overlay: null,
-    forExport: { title: `${layout.name} · Planta`, subtitle: `${variantName} · estudio v${APP_VERSION} · ${new Date().toLocaleDateString('es-ES')}` },
+    forExport: { title: `${layout.name} · ${(layout.levels.find((l) => l.id === opts.levelId) ?? layout.levels[0])?.name ?? 'Planta'}`, subtitle: `${variantName} · estudio v${APP_VERSION} · ${new Date().toLocaleDateString('es-ES')}` },
   });
-  download(exportName('planta', layout.name, variantName, 'svg'), `<?xml version="1.0" encoding="UTF-8"?>\n${svg}`, 'image/svg+xml');
+  download(exportName(`planta-${(layout.levels.find((l) => l.id === opts.levelId) ?? layout.levels[0])?.name ?? ''}`, layout.name, variantName, 'svg'), `<?xml version="1.0" encoding="UTF-8"?>\n${svg}`, 'image/svg+xml');
 }
 
 export function exportJson(config: unknown, projectName: string, variantName: string) {

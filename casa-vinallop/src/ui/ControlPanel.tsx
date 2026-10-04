@@ -138,8 +138,13 @@ function ViewSection() {
   const levels = layout.levels;
   return (
     <Section title="Vista y nivel" id="vista">
-      {/* el selector de niveles se añadirá cuando los bocetos documenten más de una planta */}
-      <p className="hint">Nivel: {levels.map((l) => l.name).join(', ')}{levels.length === 1 ? ' (único documentado)' : ''}.</p>
+      {levels.length > 1 ? (
+        <>
+          <Segmented label="Nivel" id="level" value={(levels.find((l) => l.id === v.levelId) ?? levels[0]).id} onChange={(x) => setVisual('levelId', x)}
+            options={levels.map((l) => ({ value: l.id, label: l.name }))} />
+          <p className="hint">{tab === 'interior' ? 'En Interior se muestran todos los niveles.' : 'El plano y el corte muestran el nivel activo; los superiores se ocultan.'}</p>
+        </>
+      ) : <p className="hint">Nivel: {levels[0]?.name} (único documentado).</p>}
       {tab === 'exterior' && (
         <div className="chips" role="group" aria-label="Posiciones de cámara">
           {cameras.filter((c) => c.group === 'exterior').map((c) => (
@@ -252,7 +257,7 @@ function OpeningsSection() {
               <>
                 <div className="grid2">
                   <NumberField id="op-width" label="Anchura" unit="m" value={o.width} min={0.3} max={20} onCommit={(x) => override(o.id, { width: x })} />
-                  <NumberField id="op-height" label="Altura" unit="m" value={o.height} min={0.3} max={(layout.levels[0]?.wallHeight ?? 3) - o.sill} onCommit={(x) => override(o.id, { height: x })} />
+                  <NumberField id="op-height" label="Altura" unit="m" value={o.height} min={0.3} max={(layout.walls.find((w) => w.id === o.wallId)?.height ?? 3) - o.sill} onCommit={(x) => override(o.id, { height: x })} />
                 </div>
                 <NumberField id="op-offset" label="Posición desde el extremo del muro" unit="m" value={o.offset} min={-1} max={50} onCommit={(x) => override(o.id, { offset: x })} />
                 <div className="grid2">

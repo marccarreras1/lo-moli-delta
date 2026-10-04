@@ -6,8 +6,11 @@ Herramienta para explorar la casa de Vinallop en tres modos (Exterior, Plantas, 
 
 ## Estado actual
 
-- **Casa Vinallop no tiene geometría todavía.** El visor muestra «Añade los bocetos para construir el modelo de Casa Vinallop». No hay medidas, estancias ni superficies inventadas.
-- Para probar la interfaz existe un **modelo de prueba ficticio** (menú ⋯ → «Modelo de prueba», o el enlace del estado vacío). Siempre aparece marcado como «Modelo de prueba · ficticio».
+- **Casa Vinallop** está trazada a partir de las fotos de los bocetos (planta baixa, frontal A, frontal B, altell). Dos niveles: planta baja y altell, con escalera.
+- Cada dato lleva su estado: *documentado* (cota escrita), *interpretado* (medido o deducido del dibujo), *propuesto* o *pendiente*. Los trazos que no se entienden se dibujan tal cual, en ámbar, como «sin interpretar».
+- Las preguntas abiertas están en la aplicación: menú ⋯ → «Medidas y documentación».
+- Las fotografías **no** están en el repositorio. Para superponerlas al plano, añádelas en «Referencias» (se guardan solo en el navegador).
+- Existe además un **modelo de prueba ficticio** para probar la interfaz (menú ⋯ → «Modelo de prueba»), siempre marcado como tal.
 
 ## Ejecutar
 
@@ -45,10 +48,11 @@ Coordenadas en metros: X hacia la derecha del papel, Y hacia abajo. La planta 2D
 - Fotografías: IndexedDB de este dispositivo; el archivo original no se modifica y nunca se incluye en la web compilada.
 - Exportar/importar configuración en JSON desde el menú. La importación se valida antes de sustituir nada.
 
-## Pendiente de las fotografías de los bocetos
+## Pendiente de confirmar
 
-- Contorno, muros y espesores; huecos existentes y su sistema de apertura.
-- Estancias, nombres y relaciones; niveles.
-- Fachadas identificadas (nombres) y, si se conoce, la orientación.
-- Cubierta (forma y pendiente).
-- Superficies transcritas, si aparecen en los bocetos.
+- Ancho real (sin cota; ≈5,10 m con la escala gráfica) y espesor de muros.
+- Si la cadena de cotas (15,70 m) es exterior o interior.
+- Trazo en U y círculo del tramo de 5 m; franja estrecha junto al baño; uso exacto del tramo del baño.
+- Inicio exacto de la obertura de 7 m, posición del hueco de 70 cm y si es puerta o ventana.
+- Extensión y cota del altell; sentido de subida de la escalera.
+- Cubierta, carpinterías y orientación.

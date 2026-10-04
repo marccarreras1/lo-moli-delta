@@ -4,11 +4,11 @@ import type { Furniture } from '../data/types';
 import type { MaterialSet } from './materials';
 
 /** Mobiliario a escala real (dimensiones del modelo de datos, sin deformar). */
-export function Furniture3D({ items, mats }: { items: Furniture[]; mats: MaterialSet }) {
+export function Furniture3D({ items, mats, elevationOf }: { items: Furniture[]; mats: MaterialSet; elevationOf: (f: Furniture) => number }) {
   return (
     <group>
       {items.map((f) => (
-        <group key={f.id} position={[f.x, 0, f.y]} rotation={[0, (-f.rot * Math.PI) / 180, 0]}>
+        <group key={f.id} position={[f.x, elevationOf(f), f.y]} rotation={[0, (-f.rot * Math.PI) / 180, 0]}>
           <Piece f={f} mats={mats} />
         </group>
       ))}

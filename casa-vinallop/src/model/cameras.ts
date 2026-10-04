@@ -14,7 +14,7 @@ export function cameraPresets(layout: Layout): CameraPreset[] {
   const cy = (minY + maxY) / 2;
   const R = Math.max(L, W);
   const list: CameraPreset[] = [
-    { id: 'general', label: 'Vista general', group: 'exterior', position: [cx - R * 0.8, maxY + R * 1.3, R * 0.85], target: [cx, cy, 0.9] },
+    { id: 'general', label: 'Vista general', group: 'exterior', position: [cx + R * 0.8, minY - R * 1.3, R * 0.85], target: [cx, cy, Math.min(2.5, layout.topHeight * 0.3)] },
   ];
   // una vista por cada fachada identificada (sin puntos cardinales)
   for (const [fid, name] of Object.entries(layout.facades)) {
@@ -35,8 +35,9 @@ export function cameraPresets(layout: Layout): CameraPreset[] {
     const h = b.maxY - b.minY;
     if (w < 1 || h < 1) continue;
     const m = Math.min(0.45, w / 4, h / 4);
+    const elevation = layout.levels.find((l) => l.id === r.levelId)?.elevation ?? 0;
     list.push({
-      id: `int-${r.id}`, label: r.name, group: 'interior', eyeLevel: true, roomId: r.id,
+      id: `int-${r.id}`, label: r.name, group: 'interior', eyeLevel: true, roomId: r.id, elevation,
       position: [b.maxX - m, b.minY + m, 1.6], target: [c[0] - w * 0.3, c[1] + h * 0.3, 1.2],
     });
   }

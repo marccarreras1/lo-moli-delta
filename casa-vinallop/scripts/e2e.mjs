@@ -20,6 +20,7 @@ const check = (name, ok, detail = '') => {
 };
 
 const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'pipe' });
+process.on('exit', () => server.kill());
 await new Promise((res, rej) => {
   const t = setTimeout(() => rej(new Error('preview no arrancó')), 20000);
   server.stdout.on('data', (d) => { if (String(d).includes(String(PORT))) { clearTimeout(t); res(); } });
@@ -58,21 +59,51 @@ try {
   {
     const { ctx, page } = await newPage({ width: 1440, height: 900 });
     await page.goto(BASE);
-    await page.getByTestId('empty-state').waitFor();
-    const txt = await page.getByTestId('empty-state').innerText();
-    check('Estado vacío con el mensaje solicitado', txt.includes('Añade los bocetos para construir el modelo de Casa Vinallop'));
-    check('Sin modelo no se carga el visor 3D', (await page.locator('canvas').count()) === 0);
-    const jsReqs = await page.evaluate(() => performance.getEntriesByType('resource').map((r) => r.name).filter((n) => n.includes('motor-3d')).length);
-    check('El motor 3D no se descarga sin modelo', jsReqs === 0);
-    await page.click('[data-action="export-menu"]');
-    check('Exportar PNG y SVG desactivados sin modelo', (await page.locator('[data-action="export-png"]').isDisabled()) && (await page.locator('[data-action="export-svg"]').isDisabled()));
-    check('Exportar JSON disponible sin modelo', !(await page.locator('[data-action="export-json"]').isDisabled()));
-    await page.keyboard.press('Escape');
-    await page.screenshot({ path: `${OUT}01-vacio-1440.png` });
+    await waitReady(page);
+    await pause(page, 1200);
+    check('Abre con el modelo de Casa Vinallop', (await page.getByTestId('view-status').innerText()).includes('Casa Vinallop'));
+    check('Casa Vinallop: el visor muestra contenido', await canvasVaried(page));
     check('Indicador «Guardado en este dispositivo»', (await page.getByTestId('save-status').innerText()).includes('Guardado en este dispositivo'));
+    await page.screenshot({ path: `${OUT}v-01-exterior.png` });
+    await page.click('[data-camera="fachada-A"]');
+    await pause(page, 900);
+    await page.screenshot({ path: `${OUT}v-02-frontal-a.png` });
+    await page.click('[data-tab="plantas"]');
+    await page.getByTestId('plan-svg').waitFor();
+    await pause(page, 400);
+    const planTxt = await page.getByTestId('plan-svg').innerText();
+    check('Plano de planta baja con dormitorio, baño y zona de día', ['Dormitorio', 'Baño', 'Zona de día'].every((t) => planTxt.includes(t)));
+    check('Trazos no interpretados marcados en el plano', planTxt.includes('sin interpretar'));
+    await page.screenshot({ path: `${OUT}v-03-plano-planta-baja.png` });
+    await page.locator('[data-control="level"] button', { hasText: 'Altell' }).click();
+    await pause(page, 300);
+    const altTxt = await page.getByTestId('plan-svg').innerText();
+    check('Selector de nivel: plano del altell', altTxt.includes('Altell') && altTxt.includes('hueco de escalera') && !altTxt.includes('Dormitorio'));
+    await page.screenshot({ path: `${OUT}v-04-plano-altell.png` });
+    await page.click('[data-action="export-menu"]');
+    const [svgA] = await Promise.all([page.waitForEvent('download'), page.click('[data-action="export-svg"]')]);
+    check('Exportar el plano del altell', svgA.suggestedFilename().includes('altell'), svgA.suggestedFilename());
+    await page.locator('[data-control="level"] button', { hasText: 'Planta baja' }).click();
+    await page.locator('[data-control="plan-layout"] button', { hasText: 'Cenital' }).click();
+    await waitReady(page);
+    await pause(page, 1200);
+    await page.screenshot({ path: `${OUT}v-05-cenital.png` });
+    await page.click('[data-tab="interior"]');
+    await pause(page, 900);
+    await page.selectOption('[data-control="interior-camera"]', 'int-altell');
+    await pause(page, 1000);
+    check('Vista interior del altell', (await page.locator('.view-title').innerText()).includes('Altell'));
+    await page.screenshot({ path: `${OUT}v-06-interior-altell.png` });
+    await page.click('[data-tab="exterior"]');
+    await page.click('[data-action="more-menu"]');
+    await page.getByRole('menuitem', { name: 'Medidas y documentación' }).click();
+    await page.getByTestId('info-dialog').waitFor();
+    check('Preguntas abiertas visibles en «Medidas y documentación»', (await page.getByTestId('questions').innerText()).includes('ancho real'));
+    await page.keyboard.press('Escape');
 
-    // ---------- 2. Modelo de prueba ----------
-    await page.click('[data-action="empty-test"]');
+    // ---------- 2. Modelo de prueba (tareas de interfaz) ----------
+    await page.click('[data-action="more-menu"]');
+    await page.click('[data-action="source-prueba"]');
     await waitReady(page);
     await pause(page, 1200);
     check('Modelo de prueba identificado como ficticio', (await page.getByTestId('view-status').innerText()).includes('Modelo de prueba'));
@@ -158,6 +189,7 @@ try {
 
     // plantas
     await page.click('[data-tab="plantas"]');
+    await page.locator('[data-control="plan-layout"] button', { hasText: 'Plano 2D' }).click();
     await page.getByTestId('plan-svg').waitFor();
     await pause(page, 300);
     check('Cambiar de modo conserva la variante', (await page.getByTestId('view-status').innerText()).includes('Variante:'));
@@ -255,7 +287,9 @@ try {
       return c.toDataURL('image/png').split(',')[1];
     });
     writeFileSync(`${OUT}boceto-prueba.png`, Buffer.from(png, 'base64'));
-    await page.click('[data-action="empty-add"]');
+    await waitReady(page);
+    await page.click('[data-action="more-menu"]');
+    await page.getByRole('menuitem', { name: /Referencias/ }).click();
     await page.getByTestId('refs-dialog').waitFor();
     await page.setInputFiles('[data-testid="refs-input"]', `${OUT}boceto-prueba.png`);
     await page.locator('.ref-item').first().waitFor();
@@ -275,8 +309,9 @@ try {
     await page.screenshot({ path: `${OUT}16-referencias.png` });
     await page.keyboard.press('Escape');
     await page.reload();
-    await page.getByTestId('empty-state').waitFor();
-    check('Las referencias persisten tras recargar', (await page.getByTestId('empty-state').innerText()).includes('1 imagen guardada'));
+    await waitReady(page);
+    await page.click('[data-action="more-menu"]');
+    check('Las referencias persisten tras recargar', (await page.getByRole('menuitem', { name: /Referencias/ }).innerText()).includes('(1)'));
     await ctx.close();
   }
 
@@ -314,7 +349,6 @@ try {
   for (const [wd, ht] of sizes) {
     const touch = wd < 768 || (wd === 844 && ht === 390);
     const { ctx, page } = await newPage({ width: wd, height: ht }, { touch });
-    await page.addInitScript(() => localStorage.setItem('casa-vinallop/estudio/v2/visual', JSON.stringify({ modelSource: 'prueba' })));
     await page.goto(BASE);
     await waitReady(page);
     await pause(page, 1200);

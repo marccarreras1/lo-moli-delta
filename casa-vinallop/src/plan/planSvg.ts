@@ -31,10 +31,12 @@ export interface PlanOptions {
   issues: Issue[];
   openFractions: Record<string, number>;
   overlay?: PlanOverlay | null;
+  /** nivel que se dibuja; por defecto el primero */
+  levelId?: string | null;
   forExport?: { title: string; subtitle: string };
 }
 
-const CUT = 1.0;
+const CUT_REL = 1.0; // plano de corte a 1,00 m sobre el suelo del nivel
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const n4 = (x: number) => Math.round(x * 1e4) / 1e4;
 const pts = (p: Vec2[]) => p.map(([x, y]) => `${n4(x)},${n4(y)}`).join(' ');
@@ -71,24 +73,42 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
   const conflictIds = new Set(o.issues.filter((i) => i.level !== 'aviso').map((i) => i.elementId));
   const selRoom = o.selection?.kind === 'room' ? o.selection.id : null;
   const selOpening = o.selection?.kind === 'opening' ? o.selection.id : null;
+  const level = layout.levels.find((l) => l.id === o.levelId) ?? layout.levels[0];
+  const lvlElev = level?.elevation ?? 0;
+  const CUT = lvlElev + CUT_REL;
+  const elevOf = (id: string) => layout.levels.find((l) => l.id === id)?.elevation ?? 0;
+  const rooms = layout.rooms.filter((r) => r.levelId === level?.id);
+  const roomIds = new Set(rooms.map((r) => r.id));
+  const furniture = layout.furniture.filter((f) => roomIds.has(f.roomId));
+  const walls = layout.walls.filter((w) => {
+    const b = elevOf(w.levelId);
+    return b <= CUT && CUT < b + w.height;
+  });
+  const shownWall = new Set(walls.map((w) => w.id));
+  const openings = layout.openings.filter((op) => {
+    const w = wallById.get(op.wallId);
+    if (!w || !shownWall.has(w.id)) return false;
+    const rel = CUT - elevOf(w.levelId);
+    return op.sill < rel + 0.8 && op.sill + op.height > rel;
+  });
   const out: string[] = [];
   const size = o.forExport ? `width="${n4(vb.w * 20)}mm" height="${n4(vb.h * 20)}mm"` : 'width="100%" height="100%"';
   out.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${n4(vb.x)} ${n4(vb.y)} ${n4(vb.w)} ${n4(vb.h)}" ${size} font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" preserveAspectRatio="xMidYMid meet" data-units="m">`);
-  out.push(`<title>${esc(o.forExport?.title ?? `${layout.name} · planta`)}</title>`);
+  out.push(`<title>${esc(o.forExport?.title ?? `${layout.name} · planta`)}${layout.levels.length > 1 ? ` · ${esc((layout.levels.find((l) => l.id === o.levelId) ?? layout.levels[0]).name)}` : ''}</title>`);
   out.push(`<style>.tnum{font-variant-numeric:tabular-nums}</style>`);
   out.push(`<defs><pattern id="hatch-prop" patternUnits="userSpaceOnUse" width="0.08" height="0.08" patternTransform="rotate(45)"><rect width="0.08" height="0.08" fill="#efe3c9"/><line x1="0" y1="0" x2="0" y2="0.08" stroke="${AMBER}" stroke-width="0.022"/></pattern></defs>`);
   out.push(`<rect x="${n4(vb.x)}" y="${n4(vb.y)}" width="${n4(vb.w)}" height="${n4(vb.h)}" fill="#fefdfb"/>`);
 
   // Estancias
   out.push('<g class="rooms">');
-  for (const r of layout.rooms) {
+  for (const r of rooms) {
     const sel = r.id === selRoom;
     out.push(`<polygon class="room${sel ? ' selected' : ''}" data-room="${esc(r.id)}" points="${pts(r.polygon)}" fill="${sel ? '#dfe7d8' : '#f6f4ef'}" stroke="${sel ? ACCENT : 'none'}" stroke-width="${sel ? 0.05 : 0}"/>`);
   }
-  for (const r of layout.rooms)
+  for (const r of rooms)
     for (const other of r.openTo ?? []) {
       if (other < r.id) continue;
-      const b = layout.rooms.find((x) => x.id === other);
+      const b = rooms.find((x) => x.id === other);
       if (!b) continue;
       const A = bbox(r.polygon);
       const B = bbox(b.polygon);
@@ -106,7 +126,7 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
   // Mobiliario (trazo secundario)
   if (o.showFurniture) {
     out.push('<g class="furniture" stroke="#9fa39a" stroke-width="0.012" fill="#fefdfb" pointer-events="none">');
-    for (const f of layout.furniture) {
+    for (const f of furniture) {
       const fp = furnitureFootprint(f);
       const bad = conflictIds.has(f.id) ? ' stroke="#b3261e" stroke-width="0.03"' : '';
       out.push(`<polygon points="${pts(fp)}"${f.type === 'alfombra' ? ' fill="none" stroke-dasharray="0.05 0.05"' : ''}${bad}/>`);
@@ -132,20 +152,61 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
 
   // Muros cortados a 1,00 m: exteriores con trazo grueso, tabiques propuestos con rayado
   out.push('<g class="walls">');
-  for (const w of layout.walls) {
+  for (const w of walls) {
     const all = wallPieces(w, layout.openings);
+    const cutRel = CUT - elevOf(w.levelId);
+    const relBottom = lvlElev - elevOf(w.levelId);
     const fill = w.kind === 'exterior' ? '#2f3430' : w.status === 'propuesto' ? 'url(#hatch-prop)' : '#5d625b';
     const stroke = w.kind === 'exterior' ? '#2f3430' : w.status === 'propuesto' ? AMBER : '#5d625b';
-    for (const p of all.filter((p) => p.z0 <= CUT && p.z1 > CUT))
+    for (const p of all.filter((p) => p.z0 <= cutRel && p.z1 > cutRel))
       out.push(`<polygon data-wall="${esc(w.id)}" points="${pts(wallSegmentRect(w, p.s0, p.s1))}" fill="${fill}" stroke="${stroke}" stroke-width="${w.kind === 'exterior' ? 0.012 : 0.008}"/>`);
-    for (const p of all.filter((p) => p.z1 <= CUT && p.z0 === 0))
+    for (const p of all.filter((p) => p.z1 <= cutRel && p.z1 > relBottom + 1e-6 && p.z0 <= relBottom + 1e-6))
       out.push(`<polygon points="${pts(wallSegmentRect(w, p.s0, p.s1))}" fill="#dedfd7" stroke="#2f3430" stroke-width="0.008"/>`);
   }
   out.push('</g>');
 
   // Huecos
+  // Escaleras: tramo completo en el nivel de arranque; hueco en el de llegada
+  out.push('<g class="stairs" pointer-events="none">');
+  for (const st of layout.stairs) {
+    const [ax, ay, bx, by] = st.rect;
+    const box: Vec2[] = [[ax, ay], [bx, ay], [bx, by], [ax, by]];
+    const stc = STATUS_STYLE[st.status];
+    if (st.fromLevel === level?.id) {
+      out.push(`<polygon points="${pts(box)}" fill="#fefdfb" stroke="#2f3430" stroke-width="0.014"/>`);
+      const alongX = st.up === '+x' || st.up === '-x';
+      for (let i = 1; i < st.risers; i++) {
+        const t = i / st.risers;
+        out.push(alongX
+          ? `<line x1="${n4(ax + (bx - ax) * t)}" y1="${n4(ay)}" x2="${n4(ax + (bx - ax) * t)}" y2="${n4(by)}" stroke="#7d8277" stroke-width="0.008"/>`
+          : `<line x1="${n4(ax)}" y1="${n4(ay + (by - ay) * t)}" x2="${n4(bx)}" y2="${n4(ay + (by - ay) * t)}" stroke="#7d8277" stroke-width="0.008"/>`);
+      }
+      const cx = (ax + bx) / 2;
+      const cy = (ay + by) / 2;
+      const dir: Vec2 = st.up === '+x' ? [1, 0] : st.up === '-x' ? [-1, 0] : st.up === '+y' ? [0, 1] : [0, -1];
+      const half = (alongX ? bx - ax : by - ay) * 0.38;
+      const a: Vec2 = [cx - dir[0] * half, cy - dir[1] * half];
+      const b: Vec2 = [cx + dir[0] * half, cy + dir[1] * half];
+      out.push(`<line x1="${n4(a[0])}" y1="${n4(a[1])}" x2="${n4(b[0])}" y2="${n4(b[1])}" stroke="${stc.color}" stroke-width="0.02"/><circle cx="${n4(a[0])}" cy="${n4(a[1])}" r="0.05" fill="${stc.color}"/><path d="M ${n4(b[0] - dir[0] * 0.18 - dir[1] * 0.1)} ${n4(b[1] - dir[1] * 0.18 + dir[0] * 0.1)} L ${n4(b[0])} ${n4(b[1])} L ${n4(b[0] - dir[0] * 0.18 + dir[1] * 0.1)} ${n4(b[1] - dir[1] * 0.18 - dir[0] * 0.1)}" fill="none" stroke="${stc.color}" stroke-width="0.02"/>`);
+      out.push(`<text x="${n4(cx + 0.12)}" y="${n4(cy)}" font-size="0.15" fill="${stc.color}" transform="rotate(-90 ${n4(cx + 0.12)} ${n4(cy)})" text-anchor="middle">sube${st.status === 'documentado' ? '' : ' (sentido pendiente)'}</text>`);
+    } else if (st.toLevel === level?.id) {
+      out.push(`<polygon points="${pts(box)}" fill="#ecebe5" stroke="#7d8277" stroke-width="0.012" stroke-dasharray="0.1 0.06"/><line x1="${n4(ax)}" y1="${n4(ay)}" x2="${n4(bx)}" y2="${n4(by)}" stroke="#9fa39a" stroke-width="0.008"/><text x="${n4((ax + bx) / 2)}" y="${n4((ay + by) / 2)}" font-size="0.15" fill="#687066" text-anchor="middle" transform="rotate(-90 ${n4((ax + bx) / 2)} ${n4((ay + by) / 2)})">hueco de escalera</text>`);
+    }
+  }
+  out.push('</g>');
+
+  // Trazos del boceto sin interpretar
+  out.push('<g class="traces" pointer-events="none">');
+  for (const t of layout.traces.filter((x) => x.levelId === level?.id)) {
+    if (t.circle) out.push(`<circle cx="${n4(t.circle.c[0])}" cy="${n4(t.circle.c[1])}" r="${n4(t.circle.r)}" fill="none" stroke="${AMBER}" stroke-width="0.025" stroke-dasharray="0.1 0.06"/>`);
+    if (t.points?.length) out.push(`<${t.closed ? 'polygon' : 'polyline'} points="${pts(t.points)}" fill="none" stroke="${AMBER}" stroke-width="0.025" stroke-dasharray="0.1 0.06"/>`);
+    const anchor: Vec2 = t.circle ? [t.circle.c[0], t.circle.c[1] + t.circle.r + 0.22] : t.points![Math.floor((t.points!.length - 1) / 2)];
+    if (o.showLabels) out.push(`<text x="${n4(anchor[0])}" y="${n4(anchor[1] - (t.circle ? 0 : 0.08))}" font-size="0.15" fill="${AMBER}" text-anchor="middle" paint-order="stroke" stroke="#fefdfb" stroke-width="0.05">? ${esc(t.label)} · sin interpretar</text>`);
+  }
+  out.push('</g>');
+
   out.push('<g class="openings">');
-  for (const op of layout.openings) {
+  for (const op of openings) {
     const w = wallById.get(op.wallId);
     if (!w) continue;
     const sel = op.id === selOpening;
@@ -208,7 +269,7 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
   // Rótulos
   if (o.showLabels || o.showAreas) {
     out.push('<g class="room-labels" pointer-events="none">');
-    for (const r of layout.rooms) {
+    for (const r of rooms) {
       const b = bbox(r.polygon);
       const [cx, cy] = centroid(r.polygon);
       const small = Math.min(b.maxX - b.minX, b.maxY - b.minY) < 1.8;
@@ -233,13 +294,13 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
     out.push('<g class="dims">');
     out.push(dim([minX, maxY], [maxX, maxY], 1.0, `${fmtM(L)} m`, m('largo')));
     out.push(dim([minX, minY], [minX, maxY], 0.8, `${fmtM(W)} m`, m('ancho')));
-    const rs = layout.rooms.find((r) => r.id === selRoom);
+    const rs = rooms.find((r) => r.id === selRoom);
     if (rs) {
       const b = bbox(rs.polygon);
       out.push(dim([b.maxX, minY], [b.minX, minY], 0.55, `${fmtM(b.maxX - b.minX)} m`, rs.status));
       out.push(dim([maxX, b.minY], [maxX, b.maxY], -0.55, `${fmtM(b.maxY - b.minY)} m`, rs.status));
     }
-    const os = layout.openings.find((x) => x.id === selOpening);
+    const os = openings.find((x) => x.id === selOpening);
     const ws = os && wallById.get(os.wallId);
     if (os && ws) {
       const c: Vec2 = [(minX + maxX) / 2, (minY + maxY) / 2];

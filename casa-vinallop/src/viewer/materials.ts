@@ -47,6 +47,8 @@ export interface MaterialSet {
   counter: THREE.MeshStandardMaterial;
   metal: THREE.MeshStandardMaterial;
   slab: THREE.MeshStandardMaterial;
+  floorSlab: THREE.MeshStandardMaterial;
+  stair: THREE.MeshStandardMaterial;
   poche: THREE.MeshBasicMaterial;
 }
 
@@ -85,6 +87,8 @@ export function useMaterials(sel: FinishSelection, mode: DisplayMode, sectionHei
       counter: std('#e8e2d6', 0.5),
       metal: std('#bdbab3', 0.35, { metalness: 0.6 }),
       slab: std('#cfc8bb', 1),
+      floorSlab: std('#e2ddd2', 0.95, {}, true),
+      stair: std(f('madera').color, 0.7, {}, true),
       poche: new THREE.MeshBasicMaterial({ color: '#3a3833' }),
     };
   }, [sel, mode, clip]);

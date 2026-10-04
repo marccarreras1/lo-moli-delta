@@ -37,6 +37,8 @@ export interface Visual {
   overlayOpacity: number;
   helpDismissed: boolean;
   modelSource: ModelSource;
+  /** nivel activo (plantas y corte); null = el primero */
+  levelId: string | null;
 }
 
 export interface ProjectDesign {
@@ -77,6 +79,7 @@ export const defaultVisual = (): Visual => ({
   overlayOpacity: 0.5,
   helpDismissed: false,
   modelSource: 'vinallop',
+  levelId: null,
 });
 
 export const baseVariant = (): Variant => ({
@@ -155,6 +158,7 @@ function cleanVisual(x: unknown): Visual {
     overlayOpacity: num(o.overlayOpacity, 0, 1, d.overlayOpacity),
     helpDismissed: bool(o.helpDismissed, d.helpDismissed),
     modelSource: pick(o.modelSource, ['vinallop', 'prueba'] as const, d.modelSource),
+    levelId: typeof o.levelId === 'string' ? o.levelId.slice(0, 40) : null,
   };
 }
 
@@ -299,7 +303,7 @@ export const useStore = create<Store>((set, get) => {
     setVisual: (k, v) => {
       set((s) => ({ visual: { ...s.visual, [k]: v } }));
       if (k === 'modelSource') {
-        set({ selection: null, past: [], future: [], openFractions: {}, cameras: {}, lastPreset: {} });
+        set((st) => ({ selection: null, past: [], future: [], openFractions: {}, cameras: {}, lastPreset: {}, visual: { ...st.visual, levelId: null } }));
         set({ cameraRequest: { id: 'inicio', nonce: nonce++ } });
       }
     },

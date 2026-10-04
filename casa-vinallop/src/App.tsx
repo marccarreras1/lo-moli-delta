@@ -123,7 +123,7 @@ export default function App() {
     setMenu(null);
     try {
       if (kind === 'png') await exportPng(project.name, variant.name, camLabel ? `${viewTitle} · ${camLabel}` : viewTitle);
-      else if (kind === 'svg') exportSvg(layout, { showDims: true, showAreas: true, showFurniture: visual.showFurniture, showLabels: true, issues, openFractions: {} }, variant.name);
+      else if (kind === 'svg') exportSvg(layout, { showDims: true, showAreas: true, showFurniture: visual.showFurniture, showLabels: true, issues, openFractions: {}, levelId: visual.levelId }, variant.name);
       else exportJson(serializeConfig(useStore.getState()), project.name, variant.name);
       setToast({ text: kind === 'png' ? 'Imagen exportada.' : kind === 'svg' ? 'Plano exportado.' : 'Configuración exportada.' });
     } catch (e) {

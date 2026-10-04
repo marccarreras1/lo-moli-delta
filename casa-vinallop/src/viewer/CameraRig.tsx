@@ -49,7 +49,7 @@ export function CameraRig({ presets, request, tab, eyeHeight, interiorFov, layou
 
   /** Distancia para que el edificio quepa entero en la zona visible (según el campo visual horizontal y vertical). */
   const framed = (pos: THREE.Vector3, target: THREE.Vector3, fov: number, exact = false) => {
-    const H = layout.levels[0]?.wallHeight ?? 2.5;
+    const H = layout.topHeight;
     const radius = Math.hypot(maxX - minX, maxY - minY, H + 2) / 2;
     const w = Math.max(1, size.width - insets.right);
     const h = Math.max(1, size.height - insets.bottom);
@@ -103,9 +103,9 @@ export function CameraRig({ presets, request, tab, eyeHeight, interiorFov, layou
       const r = layout.rooms.find((x) => x.id === id.slice(5));
       if (!r) return;
       const b = bbox(r.polygon);
-      const t = new THREE.Vector3((b.minX + b.maxX) / 2, 0, (b.minY + b.maxY) / 2);
-      if (tab === 'plantas') go(new THREE.Vector3(t.x, R * 0.9, t.z + 0.001), t, EXT_FOV, instant, false);
-      else go(new THREE.Vector3(t.x, 8, t.z + 7), t, EXT_FOV, instant, false);
+      const t = new THREE.Vector3((b.minX + b.maxX) / 2, layout.levels.find((l) => l.id === r.levelId)?.elevation ?? 0, (b.minY + b.maxY) / 2);
+      if (tab === 'plantas') go(new THREE.Vector3(t.x, t.y + R * 0.9, t.z + 0.001), t, EXT_FOV, instant, false);
+      else go(new THREE.Vector3(t.x, t.y + 8, t.z + 7), t, EXT_FOV, instant, false);
       return;
     }
     const p = id === 'inicio' ? defaultFor(tab, presets) : presets.find((x) => x.id === id);
@@ -113,9 +113,11 @@ export function CameraRig({ presets, request, tab, eyeHeight, interiorFov, layou
     const pos = toScene(p.position);
     const target = toScene(p.target);
     if (p.eyeLevel) {
+      // la altura de ojos se mide desde el suelo del nivel de la estancia
+      const base = p.elevation ?? 0;
       const dz = eyeHeight - pos.y;
-      pos.y = eyeHeight;
-      target.y += dz * 0.5;
+      pos.y = base + eyeHeight;
+      target.y += base + dz * 0.5;
     }
     if (p.group === 'exterior' || p.group === 'planta') pos.copy(framed(pos, target, EXT_FOV));
     if (p.roomId) {
@@ -177,7 +179,7 @@ export function CameraRig({ presets, request, tab, eyeHeight, interiorFov, layou
     const m = R * 0.6;
     c.target.x = THREE.MathUtils.clamp(c.target.x, minX - m, maxX + m);
     c.target.z = THREE.MathUtils.clamp(c.target.z, minY - m, maxY + m);
-    c.target.y = THREE.MathUtils.clamp(c.target.y, 0, 3);
+    c.target.y = THREE.MathUtils.clamp(c.target.y, 0, layout.topHeight);
   };
 
   const interior = tab === 'interior';

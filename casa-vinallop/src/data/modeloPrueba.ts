@@ -81,6 +81,7 @@ export function buildTestModel(): ProjectData {
     version: 'prueba',
     levels: [{ id: lv, name: 'Planta baja', elevation: 0, wallHeight: H }],
     walls, openings, rooms, furniture,
+    slabs: [], stairs: [], traces: [], readings: [], discrepancies: [], questions: [],
     roofOptions: [
       { type: 'dos-aguas', label: 'Dos aguas', pitchDeg: 18, overhang: 0.25, thickness: 0.18, status: 'propuesto', note: 'Alternativa del modelo de prueba.' },
       { type: 'un-agua', label: 'Un agua', pitchDeg: 8, overhang: 0.25, thickness: 0.18, status: 'propuesto', note: 'Alternativa del modelo de prueba.' },

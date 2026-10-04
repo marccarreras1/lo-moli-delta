@@ -37,8 +37,53 @@ export type FacadeId = string;
 export interface Level {
   id: string;
   name: string;
+  /** cota del suelo terminado del nivel (m) */
   elevation: number;
   wallHeight: number;
+  elevationStatus?: DataStatus;
+}
+
+/** Forjado que sostiene un nivel (se dibuja bajo su cota). */
+export interface Slab {
+  id: string;
+  levelId: string;
+  polygon: Vec2[];
+  thickness: number;
+  status: DataStatus;
+  sourceId: string;
+  note?: string;
+}
+
+/** Escalera recta entre dos niveles. `up` = sentido de subida en planta. */
+export interface Stair {
+  id: string;
+  fromLevel: string;
+  toLevel: string;
+  rect: [number, number, number, number];
+  up: '+x' | '-x' | '+y' | '-y';
+  risers: number;
+  status: DataStatus;
+  sourceId: string;
+  note?: string;
+}
+
+/** Trazo del boceto que todavía no se interpreta: se dibuja tal cual, marcado como pendiente. */
+export interface Trace {
+  id: string;
+  levelId: string;
+  label: string;
+  points?: Vec2[];
+  closed?: boolean;
+  circle?: { c: Vec2; r: number };
+  sourceId: string;
+  note: string;
+}
+
+/** Lo que se lee literalmente en una fuente y cómo se interpreta. */
+export interface Reading {
+  sourceId: string;
+  read: string;
+  interpreted: string;
 }
 
 export interface Wall {
@@ -134,6 +179,14 @@ export interface ProjectData {
   openings: Opening[];
   rooms: Room[];
   furniture: Furniture[];
+  slabs: Slab[];
+  stairs: Stair[];
+  traces: Trace[];
+  readings: Reading[];
+  /** discrepancias detectadas entre fuentes */
+  discrepancies: string[];
+  /** preguntas abiertas que pueden cambiar la geometría */
+  questions: string[];
   /** alternativas de cubierta permitidas (la primera es la base) */
   roofOptions: RoofOption[];
   measures: Measure[];
@@ -148,6 +201,8 @@ export interface ProjectData {
 /** Proyecto resuelto con una variante aplicada. */
 export interface Layout extends ProjectData {
   roof: RoofOption | null;
+  /** coronación de los muros exteriores (m) */
+  topHeight: number;
   bounds: { minX: number; minY: number; maxX: number; maxY: number };
 }
 
@@ -160,6 +215,8 @@ export interface CameraPreset {
   target: [number, number, number];
   eyeLevel?: boolean;
   roomId?: string;
+  /** cota del nivel de la estancia: la altura de ojos se suma a ella */
+  elevation?: number;
 }
 
 export interface Finish {

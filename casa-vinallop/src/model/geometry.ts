@@ -42,7 +42,8 @@ export interface WallPiece {
 
 /**
  * Descompone un muro en piezas macizas dejando los huecos reales:
- * tramos completos entre huecos, antepechos bajo ventanas y dinteles sobre huecos.
+ * tramos completos entre huecos, antepechos, dinteles y macizos entre huecos
+ * superpuestos en vertical (p. ej. un hueco de planta baja y otro del altell).
  */
 export function wallPieces(w: Wall, openings: Opening[]): WallPiece[] {
   const [e0, e1] = w.ext ?? [0, 0];
@@ -50,18 +51,30 @@ export function wallPieces(w: Wall, openings: Opening[]): WallPiece[] {
   const end = wallLength(w) + e1;
   const ops = openings
     .filter((o) => o.wallId === w.id)
-    .map((o) => ({ s0: Math.max(start, o.offset), s1: Math.min(end, o.offset + o.width), z0: o.sill, z1: Math.min(w.height, o.sill + o.height) }))
-    .filter((o) => o.s1 > o.s0)
-    .sort((a, b) => a.s0 - b.s0);
+    .map((o) => ({ s0: Math.max(start, o.offset), s1: Math.min(end, o.offset + o.width), z0: Math.max(0, o.sill), z1: Math.min(w.height, o.sill + o.height) }))
+    .filter((o) => o.s1 > o.s0 && o.z1 > o.z0);
+  const cuts = [...new Set([start, end, ...ops.flatMap((o) => [o.s0, o.s1])])].sort((a, b) => a - b);
   const pieces: WallPiece[] = [];
-  let cur = start;
-  for (const o of ops) {
-    if (o.s0 > cur) pieces.push({ s0: cur, s1: o.s0, z0: 0, z1: w.height });
-    if (o.z0 > 0) pieces.push({ s0: o.s0, s1: o.s1, z0: 0, z1: o.z0 });
-    if (o.z1 < w.height) pieces.push({ s0: o.s0, s1: o.s1, z0: o.z1, z1: w.height });
-    cur = Math.max(cur, o.s1);
+  for (let i = 0; i < cuts.length - 1; i++) {
+    const s0 = cuts[i];
+    const s1 = cuts[i + 1];
+    if (s1 - s0 < 1e-6) continue;
+    const mid = (s0 + s1) / 2;
+    const holes = ops.filter((o) => o.s0 < mid && o.s1 > mid).sort((a, b) => a.z0 - b.z0);
+    let z = 0;
+    const solids: [number, number][] = [];
+    for (const hole of holes) {
+      if (hole.z0 > z) solids.push([z, hole.z0]);
+      z = Math.max(z, hole.z1);
+    }
+    if (z < w.height) solids.push([z, w.height]);
+    for (const [z0, z1] of solids) {
+      // une con la pieza anterior si continúa a la misma altura
+      const prev = pieces.find((p) => Math.abs(p.s1 - s0) < 1e-6 && Math.abs(p.z0 - z0) < 1e-6 && Math.abs(p.z1 - z1) < 1e-6);
+      if (prev) prev.s1 = s1;
+      else pieces.push({ s0, s1, z0, z1 });
+    }
   }
-  if (end > cur) pieces.push({ s0: cur, s1: end, z0: 0, z1: w.height });
   return pieces.filter((p) => p.s1 - p.s0 > 1e-4 && p.z1 - p.z0 > 1e-4);
 }
 

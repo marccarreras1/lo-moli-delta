@@ -1,6 +1,8 @@
+import { Line } from '@react-three/drei';
 import { useMemo } from 'react';
 import * as THREE from 'three';
-import type { Layout, Vec2, Opening, Wall } from '../data/types';
+import type { Layout, Opening, Stair, Trace, Vec2, Wall } from '../data/types';
+import { AMBER } from '../ui/status';
 import { pointOnWall, wallDir, wallNormal, wallPieces } from '../model/geometry';
 import type { MaterialSet } from './materials';
 import { Opening3D } from './Opening3D';
@@ -18,20 +20,29 @@ interface HouseProps {
   selection: { kind: 'room' | 'opening'; id: string } | null;
   openFractions: Record<string, number>;
   onSelect: (s: { kind: 'room' | 'opening'; id: string }) => void;
+  /** niveles con cota superior a esta se ocultan (plantas y corte) */
+  maxElev: number;
 }
 
-export function House({ layout, mats, showRoof, showCeiling, mode, sectionHeight, selection, openFractions, onSelect }: HouseProps) {
+export function House({ layout, mats, showRoof, showCeiling, mode, sectionHeight, selection, openFractions, onSelect, maxElev }: HouseProps) {
   const b = layout.bounds;
   const center: Vec2 = [(b.minX + b.maxX) / 2, (b.minY + b.maxY) / 2];
+  const elev = (id: string) => layout.levels.find((l) => l.id === id)?.elevation ?? 0;
+  const visible = (levelId: string) => elev(levelId) <= maxElev + 1e-6;
   return (
     <group>
       <Slab layout={layout} mats={mats} />
-      {layout.rooms.map((r) => (
-        <RoomFloor key={r.id} poly={r.polygon} mat={selection?.kind === 'room' && r.id === selection.id ? mats.floorSelected : mats.floor}
+      {layout.slabs.filter((sl) => visible(sl.levelId)).map((sl) => (
+        <SlabMesh key={sl.id} poly={sl.polygon} top={elev(sl.levelId)} thickness={sl.thickness} mat={mats.floorSlab} />
+      ))}
+      {layout.rooms.filter((r) => visible(r.levelId)).map((r) => (
+        <RoomFloor key={r.id} poly={r.polygon} y={elev(r.levelId)} mat={selection?.kind === 'room' && r.id === selection.id ? mats.floorSelected : mats.floor}
           onClick={() => onSelect({ kind: 'room', id: r.id })} />
       ))}
       {layout.walls.map((w) => (
-        <WallMesh key={w.id} wall={w} openings={layout.openings} mats={mats} center={center} />
+        <group key={w.id} position={[0, elev(w.levelId), 0]}>
+          <WallMesh wall={w} openings={layout.openings} mats={mats} center={center} />
+        </group>
       ))}
       {mode === 'corte' && <SectionCaps layout={layout} mats={mats} h={sectionHeight} />}
       {layout.openings.map((o) => {
@@ -39,10 +50,16 @@ export function House({ layout, mats, showRoof, showCeiling, mode, sectionHeight
         if (!w) return null;
         const def = o.kind === 'puerta' ? 0.9 : 0;
         return (
-          <Opening3D key={o.id} o={o} w={w} mats={mats} center={center} fraction={openFractions[o.id] ?? def}
-            selected={selection?.kind === 'opening' && selection.id === o.id} onSelect={() => onSelect({ kind: 'opening', id: o.id })} />
+          <group key={o.id} position={[0, elev(w.levelId), 0]}>
+            <Opening3D o={o} w={w} mats={mats} center={center} fraction={openFractions[o.id] ?? def}
+              selected={selection?.kind === 'opening' && selection.id === o.id} onSelect={() => onSelect({ kind: 'opening', id: o.id })} />
+          </group>
         );
       })}
+      {layout.stairs.filter((st) => visible(st.fromLevel)).map((st) => (
+        <StairMesh key={st.id} st={st} from={elev(st.fromLevel)} to={elev(st.toLevel)} mat={mats.stair} />
+      ))}
+      {layout.traces.filter((t) => visible(t.levelId)).map((t) => <TraceLine key={t.id} t={t} y={elev(t.levelId) + 0.03} />)}
       {showCeiling && mode === 'solido' && <Ceiling layout={layout} mats={mats} />}
       {showRoof && mode !== 'corte' && <Roof layout={layout} mats={mats} />}
     </group>
@@ -70,10 +87,51 @@ function shapeFrom(poly: Vec2[]) {
   return s;
 }
 
-function RoomFloor({ poly, mat, onClick }: { poly: Vec2[]; mat: THREE.Material; onClick: () => void }) {
+function SlabMesh({ poly, top, thickness, mat }: { poly: Vec2[]; top: number; thickness: number; mat: THREE.Material }) {
+  const geo = useMemo(() => new THREE.ExtrudeGeometry(shapeFrom(poly), { depth: thickness, bevelEnabled: false }), [poly, thickness]);
+  return <mesh geometry={geo} rotation={[-Math.PI / 2, 0, 0]} position={[0, top - thickness, 0]} castShadow receiveShadow material={mat} />;
+}
+
+/** Escalera recta: un bloque por peldaño, de la cota de un nivel a la del otro. */
+function StairMesh({ st, from, to, mat }: { st: Stair; from: number; to: number; mat: THREE.Material }) {
+  const [ax, ay, bx, by] = st.rect;
+  const n = Math.max(1, st.risers);
+  const rise = (to - from) / n;
+  const alongX = st.up === '+x' || st.up === '-x';
+  const run = alongX ? bx - ax : by - ay;
+  const width = alongX ? by - ay : bx - ax;
+  const tread = run / n;
+  return (
+    <group>
+      {Array.from({ length: n }, (_, i) => {
+        // i = 0 es el primer peldaño (arranque)
+        const k = st.up === '+x' || st.up === '+y' ? i : n - 1 - i;
+        const s = (alongX ? ax : ay) + tread * (k + 0.5);
+        const hgt = rise * (i + 1);
+        const pos: [number, number, number] = alongX ? [s, from + hgt / 2, (ay + by) / 2] : [(ax + bx) / 2, from + hgt / 2, s];
+        const size: [number, number, number] = alongX ? [tread, hgt, width] : [width, hgt, tread];
+        return <mesh key={i} position={pos} castShadow receiveShadow material={mat}><boxGeometry args={size} /></mesh>;
+      })}
+    </group>
+  );
+}
+
+/** Trazo del boceto sin interpretar: línea discontinua ámbar sobre el suelo. */
+function TraceLine({ t, y }: { t: Trace; y: number }) {
+  const pts: [number, number, number][] = t.circle
+    ? Array.from({ length: 41 }, (_, i) => {
+        const a = (i / 40) * Math.PI * 2;
+        return [t.circle!.c[0] + Math.cos(a) * t.circle!.r, y, t.circle!.c[1] + Math.sin(a) * t.circle!.r];
+      })
+    : [...(t.points ?? []), ...(t.closed && t.points ? [t.points[0]] : [])].map(([x, z]) => [x, y, z]);
+  if (pts.length < 2) return null;
+  return <Line points={pts} color={AMBER} lineWidth={2} dashed dashSize={0.15} gapSize={0.1} />;
+}
+
+function RoomFloor({ poly, y, mat, onClick }: { poly: Vec2[]; y: number; mat: THREE.Material; onClick: () => void }) {
   const geo = useMemo(() => new THREE.ShapeGeometry(shapeFrom(poly)), [poly]);
   return (
-    <mesh geometry={geo} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]} receiveShadow
+    <mesh geometry={geo} rotation={[-Math.PI / 2, 0, 0]} position={[0, y + 0.005, 0]} receiveShadow
       onClick={(e) => { e.stopPropagation(); onClick(); }}>
       <primitive object={mat} attach="material" />
     </mesh>
@@ -110,9 +168,10 @@ function WallMesh({ wall, openings, mats, center }: { wall: Wall; openings: Open
 function SectionCaps({ layout, mats, h }: { layout: Layout; mats: MaterialSet; h: number }) {
   return (
     <group>
-      {layout.walls.flatMap((w) =>
-        wallPieces(w, layout.openings)
-          .filter((p) => p.z0 <= h && p.z1 >= h)
+      {layout.walls.flatMap((w) => {
+        const base = layout.levels.find((l) => l.id === w.levelId)?.elevation ?? 0;
+        return wallPieces(w, layout.openings)
+          .filter((p) => base + p.z0 <= h && base + p.z1 >= h)
           .map((p, i) => {
             const c = pointOnWall(w, (p.s0 + p.s1) / 2);
             return (
@@ -120,8 +179,8 @@ function SectionCaps({ layout, mats, h }: { layout: Layout; mats: MaterialSet; h
                 <boxGeometry args={[p.s1 - p.s0, 0.004, w.thickness]} />
               </mesh>
             );
-          }),
-      )}
+          });
+      })}
     </group>
   );
 }
@@ -131,7 +190,7 @@ function Ceiling({ layout, mats }: { layout: Layout; mats: MaterialSet }) {
   const L = maxX - minX;
   const W = maxY - minY;
   return (
-    <mesh position={[minX + L / 2, (layout.levels[0]?.wallHeight ?? 2.5) - 0.001, minY + W / 2]} rotation={[Math.PI / 2, 0, 0]} material={mats.ceiling}>
+    <mesh position={[minX + L / 2, layout.topHeight - 0.001, minY + W / 2]} rotation={[Math.PI / 2, 0, 0]} material={mats.ceiling}>
       <planeGeometry args={[L, W]} />
     </mesh>
   );
@@ -149,7 +208,7 @@ function Roof({ layout, mats }: { layout: Layout; mats: MaterialSet }) {
 function RoofShape({ layout, mats }: { layout: Layout; mats: MaterialSet }) {
   const L = layout.bounds.maxX - layout.bounds.minX;
   const W = layout.bounds.maxY - layout.bounds.minY;
-  const H = layout.levels[0]?.wallHeight ?? 2.5;
+  const H = layout.topHeight;
   const r = layout.roof!;
   const o = r.overhang;
   if (r.type === 'plana') {

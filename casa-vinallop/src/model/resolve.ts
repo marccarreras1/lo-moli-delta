@@ -56,7 +56,13 @@ export function resolveLayout(p: ProjectData, v: Variant | null): Layout {
   }
   for (const r of p.rooms) for (const [x, y] of r.polygon) { xs.push(x); ys.push(y); }
   const bounds = xs.length ? { minX: Math.min(...xs), minY: Math.min(...ys), maxX: Math.max(...xs), maxY: Math.max(...ys) } : { minX: 0, minY: 0, maxX: 0, maxY: 0 };
-  return { ...p, openings, roof, bounds };
+  const elev = (id: string) => p.levels.find((l) => l.id === id)?.elevation ?? 0;
+  const topHeight = p.walls.filter((w) => w.kind === 'exterior').reduce((m, w) => Math.max(m, elev(w.levelId) + w.height), 0) || 2.5;
+  return { ...p, openings, roof, bounds, topHeight };
 }
+
+/** cota de la base de un muro (cota de su nivel) */
+export const wallBase = (l: Pick<ProjectData, 'levels'>, w: { levelId: string }) => l.levels.find((x) => x.id === w.levelId)?.elevation ?? 0;
+export const levelElev = (l: Pick<ProjectData, 'levels'>, id: string) => l.levels.find((x) => x.id === id)?.elevation ?? 0;
 
 export const hasGeometry = (p: ProjectData) => p.walls.length > 0;

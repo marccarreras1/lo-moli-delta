@@ -31,7 +31,15 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
   const quality = effectiveQuality(v.quality);
   // en Plantas la vista cenital se secciona como ajuste contextual, sin cambiar las preferencias
   const mode = tab === 'plantas' ? (v.mode === 'atenuado' ? 'atenuado' : 'corte') : v.mode;
-  const mats = useMaterials(variant.finishes, mode, tab === 'plantas' ? Math.min(v.sectionHeight, 1.5) : v.sectionHeight);
+  const level = layout.levels.find((l) => l.id === v.levelId) ?? layout.levels[0];
+  const levelElev = level?.elevation ?? 0;
+  // plano de corte relativo al nivel activo; los niveles superiores se ocultan al seccionar
+  const cutAbs = levelElev + (tab === 'plantas' ? Math.min(v.sectionHeight, 1.5) : v.sectionHeight);
+  const maxElev = mode === 'corte' || tab === 'plantas' ? levelElev : Infinity;
+  const mats = useMaterials(variant.finishes, mode, cutAbs);
+  const elevOfLevel = (id: string) => layout.levels.find((l) => l.id === id)?.elevation ?? 0;
+  const roomLevel = new Map(layout.rooms.map((r) => [r.id, elevOfLevel(r.levelId)]));
+  const furniture = layout.furniture.filter((f) => (roomLevel.get(f.roomId) ?? 0) <= maxElev + 1e-6);
   const showRoof = v.showRoof && tab === 'exterior';
   const roomLabelsVisible = tab === 'plantas' || (tab === 'exterior' && (!showRoof || mode !== 'solido'));
 
@@ -60,10 +68,10 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
       <Lights layout={layout} intensity={v.lightIntensity} ambience={v.ambience} shadowSize={quality === 'alta' ? 2048 : 1024} />
       <Ground layout={layout} />
       <House layout={layout} mats={mats} showRoof={showRoof} showCeiling={tab === 'interior'} mode={mode}
-        sectionHeight={tab === 'plantas' ? Math.min(v.sectionHeight, 1.5) : v.sectionHeight} selection={selection} openFractions={openFractions} onSelect={select} />
-      {v.showFurniture && <Furniture3D items={layout.furniture} mats={mats} />}
+        sectionHeight={cutAbs} selection={selection} openFractions={openFractions} onSelect={select} maxElev={maxElev} />
+      {v.showFurniture && <Furniture3D items={furniture} mats={mats} elevationOf={(f) => roomLevel.get(f.roomId) ?? 0} />}
       <Annotations layout={layout} showLabels={v.showLabels && tab !== 'interior'} showDims={v.showDims && tab !== 'interior'} showAreas={v.showAreas}
-        roomLabelsVisible={roomLabelsVisible} selectedOpeningId={selection?.kind === 'opening' ? selection.id : null} />
+        roomLabelsVisible={roomLabelsVisible} maxElev={maxElev} selectedOpeningId={selection?.kind === 'opening' ? selection.id : null} />
       <CameraRig presets={cameras} request={cameraRequest} tab={tab} eyeHeight={v.eyeHeight} interiorFov={v.interiorFov}
         layout={layout} saved={saved} insets={insets} onSave={saveCamera} onEnterRoom={onEnterRoom} />
       <Disposer />
