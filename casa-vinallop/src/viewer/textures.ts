@@ -162,7 +162,7 @@ export function tileTex(key: string, o: { w: number; h: number; joint: number; b
 /** Ladrillo de rasilla de la volta catalana (≈28 × 14 cm a matajunta, juntas de mortero claro). */
 export const voltaTex = () => tileTex('volta', { w: 0.28, h: 0.14, joint: 0.012, bond: 0.5, jointTone: 0.86, vary: 0.24, seed: 5, size: 1.12 });
 /** Piezas estrechas verticales de terracota (≈7,5 × 30 cm) con junta clara: isla y franja del baño. */
-export const vertTileTex = () => tileTex('vert', { w: 0.075, h: 0.3, joint: 0.004, bond: 0, jointTone: 0.9, vary: 0.22, seed: 9, size: 0.6 });
+export const vertTileTex = () => tileTex('vert', { w: 0.075, h: 0.3, joint: 0.005, bond: 0, jointTone: 1.0, vary: 0.22, seed: 9, size: 0.6 });
 
 /** Madera con veta continua en V (eje vertical de la textura) y algunos nudos (tramo de 1 m). */
 export function woodTex() {

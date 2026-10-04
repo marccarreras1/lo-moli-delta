@@ -6,18 +6,20 @@ Herramienta para explorar la casa de Vinallop en tres modos (Exterior, Plantas, 
 
 ## Estado actual
 
-- **Casa Vinallop** está trazada a partir de las fotos de los bocetos (planta baixa, frontal A, frontal B, altell). Dos niveles: planta baja y altell, con escalera.
-- Cada dato lleva su estado: *documentado* (cota escrita), *interpretado* (medido o deducido del dibujo), *propuesto* o *pendiente*. Los trazos que no se entienden se dibujan tal cual, en ámbar, como «sin interpretar».
-- Las preguntas abiertas están en la aplicación: menú ⋯ → «Medidas y documentación».
-- Las fotografías **no** están en el repositorio. Para superponerlas al plano, añádelas en «Referencias» (se guardan solo en el navegador).
-- **Fases:** «Reforma» (bocetos) y «Estado actual» (la casa antes de la reforma, interpretada a partir de las fotos de la propiedad: cuatro volúmenes de una planta, con una habitación pequeña junto al algarrobo y cubiertas de fibrocemento a un agua). Se cambia en el panel; la cámara se mantiene para comparar.
-- **Entorno de la parcela** (olivar, algarrobo y solera de hormigón) aproximado a partir de las fotos; se oculta en «Visibilidad → Entorno».
-- **Vistas preparadas** (12 + detalle de celosía y volta), favoritas, **modo presentación** y propuestas comparables desde la misma cámara: celosía A/B de la ducha, lámparas A/B y su ubicación, cubierta plana o con peto, hoja de la puerta de entrada y volumen saliente.
-- **Materiales** con texturas generadas en el propio código (cal, terracota por piezas, madera con veta y nudos, textiles, fibra, hormigón, encimera mineral), luz de entorno y escenas de día, tarde y noche con lámparas regulables (≈2700 K).
-- **Mobiliario** detallado y editable por variantes; análisis de **espacios de paso** en el plano; **corte longitudinal**.
-- Exportación de imagen normal y de alta resolución, modelo **GLB** (dentro de un ZIP), plano SVG y configuración JSON. En claude.ai cada descarga pide confirmación.
-- Los enlaces de Pinterest y la web de referencia no se pueden abrir desde el entorno de desarrollo: los espacios se han modelado a partir de su descripción escrita (ver «Medidas y documentación → Referencias»).
-- Existe además un **modelo de prueba ficticio** para probar la interfaz (menú ⋯ → «Modelo de prueba»), siempre marcado como tal.
+- **Medidas del informe del arquitecto**: envolvente de 16,33 × 5,22 m (la cadena de 15,70 m del boceto pasa a ser interior). Los 79,48 m² construidos del informe no coinciden con el rectángulo (85,24 m²): contraste pendiente. Dos niveles (planta baja y altell a 2,80 m) con escalera.
+- Cada dato lleva su estado: *documentado* (cota escrita o informe), *confirmado* (decisión de la propiedad, no validación técnica), *interpretado*, *propuesto* o *pendiente*. La sección **Proyecto** los agrupa y muestra los contrastes, discrepancias y preguntas.
+- **Techo confirmado**: vigas vistas color cemento (gris natural mate) con volta catalana de terracota entre vigas.
+- **Cubierta**: plana (propiedad), plana con remate ibicenco (propuesta) e inclinada del informe, para contrastar. Ninguna validada técnicamente.
+- **Ventanal del frontal A**: 9 m por defecto (pendiente de cálculo estructural), con la variante de 7 m del boceto.
+- **Baño**: dos duchas enfrentadas en una zona húmeda común al fondo (2,40 × 1,20 m), lavabo a la izquierda, inodoro a la derecha, celosía A o B con huecos reales, vidrio fijo y cortina en carril propio. Planta acotada en el plano («Baño») y exportable en SVG.
+- **Exterior**: solera continua en L (3 m delante y 4 m en el lateral del algarrobo), juntas, canaleta propuesta, alcorque permeable; superficie sin contar dos veces la esquina. Mesa redonda Ø 1,80 de pie cilíndrico, ocho sillas plegables y lámpara de cúpula colgada del algarrobo o de un pie (anclaje sin resolver).
+- **Aberturas variantes** (no confirmadas): acceso acristalado al comedor exterior, ventana de ventilación cruzada, ventana con contraventana en el dormitorio, ventana alta del baño, ventanas del altell.
+- **Secciones**: Proyecto · Visor 3D · Referencias · Instalaciones · Decisiones · Fases de obra · Presupuesto.
+- **Visor**: vistas preparadas, favoritas, presentación, comparador de variantes (dos vistas sincronizadas), recorrido a pie con colisiones (ojos a 1,60 m, teclado y mando táctil, atajos de estancia), medición en el plano, comentarios con chincheta (plano y 3D), capas de instalaciones, modo fotografía (trazado de rayos del mismo modelo) y estudio solar preparado (se activa solo con norte, situación y fecha).
+- **Gestión**: tabla de decisiones, fases con lista y calendario (fase 1 = presupuesto PAC26-0052), control del presupuesto con exportación CSV y HTML imprimible. No hay precios inventados; lo no valorado aparece como pendiente.
+- **Logo**: el de Canva no se puede descargar desde aquí; se puede cargar el archivo en «Proyecto → Logo» (no se redibuja ni se sustituye).
+- Las imágenes de referencia, las fotos y el presupuesto **no** están en el repositorio ni en la web compilada. En «Referencias» se pueden cargar en el navegador para compararlas con las vistas.
+- Existe además un **modelo de prueba ficticio** (menú ⋯ → «Modelo de prueba»), siempre marcado como tal.
 
 ## Ejecutar
 
@@ -29,9 +31,10 @@ npm run build        # compilación estática en dist/ (rutas relativas: sirve d
 npm run preview      # sirve la compilación
 npm test             # pruebas unitarias (modelo, variantes, carpinterías, importación)
 npm run e2e          # pruebas de navegador sobre la compilación (requiere Chromium; guarda capturas en screenshots/)
+node scripts/smoke.mjs   # prueba rápida de secciones, comparador, recorrido, plano y modo fotografía
 ```
 
-No necesita backend ni servicios externos. No se ha publicado en ningún sitio.
+No necesita backend ni servicios externos. Todo se guarda en el navegador: no hay colaboración multiusuario.
 
 ## Dónde se modifica cada cosa
 
@@ -50,22 +53,34 @@ No necesita backend ni servicios externos. No se ha publicado en ningún sitio.
 | Cámaras guardadas (se calculan desde la geometría) | `src/model/cameras.ts` |
 | Movimiento de carpinterías (abatible, corredera, plegable, fijo) | `src/model/openings.ts` |
 | Comprobaciones (huecos fuera de muro, solapes, muebles que bloquean puertas…) | `src/model/validate.ts` |
+| Solera en L (cantidades) | `src/model/solera.ts` |
+| Planta acotada del baño | `src/plan/bathPlan.ts` |
+| Recorrido con colisiones | `src/model/walk.ts` |
+| Estudio solar | `src/model/solar.ts` |
+| Modo fotografía (trazado de rayos) | `src/viewer/photo.ts`, `src/ui/PhotoPanel.tsx` |
+| Comparador de variantes | `src/model/compare.ts`, `CompareViewer` en `src/viewer/Viewer.tsx` |
+| Secciones Proyecto y Referencias | `src/sections/` |
+| Decisiones, fases, presupuesto y comentarios | `src/gestion/` |
+| Instalaciones (electricidad, KNX, Ajax, audio, agua, bodega) | `src/instalaciones/` |
+| Archivo de proyecto completo (exportar/importar) | `src/state/projectFile.ts` |
 | Paleta, espaciados y radios de la interfaz | variables al principio de `src/styles.css` |
 
 Coordenadas en metros: X hacia la derecha del papel, Y hacia abajo. La planta 2D (`src/plan/planSvg.ts`) y el 3D (`src/viewer/`) se generan desde la misma definición, sin giros ni reflejos.
 
 ## Guardado
 
-- Configuración visual, cambios de diseño y cámaras: `localStorage` de este navegador (claves separadas).
-- Fotografías: IndexedDB de este dispositivo; el archivo original no se modifica y nunca se incluye en la web compilada.
-- Exportar/importar configuración en JSON desde el menú. La importación se valida antes de sustituir nada.
+- Configuración visual, cambios de diseño, cámaras, gestión e instalaciones: `localStorage` de este navegador (claves separadas, prefijo `casa-vinallop/estudio/v2/`).
+- Fotografías e imágenes de referencia: IndexedDB de este dispositivo; nunca se incluyen en la web compilada.
+- «Proyecto → Exportar proyecto completo» genera un JSON versionado (diseño, vistas, gestión e instalaciones). La importación valida las tres partes antes de aplicar nada.
 
 ## Pendiente de confirmar
 
-- Color exacto de vigas y volta catalana (referencia de Pinterest no consultable: falta la imagen).
-- Contraste de dimensiones generales (15,70 × 5,00 m frente a 17 × 4,5 × 5 m) y ventanal (7 m frente a 9 m).
-- Uso del rectángulo de ≈0,75 × 1,00 m del baño.
-- Elecciones abiertas: celosía A/B, lámparas A/B y su ubicación, peto de cubierta, volumen saliente de entrada.
-- Revisar las vistas contra las referencias de Pinterest (no se han podido abrir desde aquí).
+- Superficie construida (79,48 m² del informe frente a 85,24 m² del rectángulo).
+- Ventanal de 9 m: cálculo estructural (zuncho y machones).
+- Cubierta plana frente a la inclinada del informe; forjado del altell (vigas de madera según el presupuesto).
+- Puerta de 70 cm del frontal B: cae en la zona húmeda del baño.
+- Anclaje de la lámpara exterior; alimentación eléctrica exterior.
+- Elecciones abiertas: celosía A/B, lámparas A/B y su ubicación, remate de cubierta, volumen saliente, aberturas variantes.
+- Logo (archivo original) y datos del estudio solar (norte, situación, fecha).
 
 Capturas de revisión de todas las vistas: `npm run build && node scripts/views.mjs` (en `screenshots/vistas/`).

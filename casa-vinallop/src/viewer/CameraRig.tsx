@@ -1,12 +1,14 @@
 import { OrbitControls } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import type { CameraPreset, Layout } from '../data/types';
 import { defaultPreset } from '../model/cameras';
 import { bbox, pointInPolygon } from '../model/geometry';
 import type { CameraState, ViewTab } from '../state/store';
+import { freeSpotIn, walkObstacles, walkStep } from '../model/walk';
+import { walkInput } from './walkInput';
 
 interface Props {
   presets: CameraPreset[];
@@ -35,6 +37,7 @@ export function CameraRig({ presets, request, tab, eyeHeight, interiorFov, layou
   const size = useThree((s) => s.size);
   const anim = useRef<{ fromP: THREE.Vector3; toP: THREE.Vector3; fromT: THREE.Vector3; toT: THREE.Vector3; fromF: number; toF: number; t: number; dur: number; lookAhead: boolean } | null>(null);
   const roomRef = useRef<string | null>(null);
+  const moving = useRef(false);
   const limits = useRef({ min: 3, max: 60 });
   const { minX, minY, maxX, maxY } = layout.bounds;
   const R = Math.max(maxX - minX, maxY - minY, 4);
@@ -89,6 +92,18 @@ export function CameraRig({ presets, request, tab, eyeHeight, interiorFov, layou
       const b = bbox(room.polygon);
       const inside = pointInPolygon([next.x, next.z], room.polygon) && next.x > b.minX + 0.25 && next.x < b.maxX - 0.25 && next.z > b.minY + 0.25 && next.z < b.maxY - 0.25;
       if (inside) go(next, c.target.clone().add(dir), camera.fov, false, false);
+      return;
+    }
+    if (id.startsWith('walk:')) {
+      // atajo de habitación del recorrido: punto libre de la estancia, a la altura de los ojos
+      const r = layout.rooms.find((x) => x.id === id.slice(5));
+      const spot = r && freeSpotIn(layout, r.id);
+      if (!r || !spot) return;
+      const el = layout.levels.find((l) => l.id === r.levelId)?.elevation ?? 0;
+      const b = bbox(r.polygon);
+      const along = b.maxX - b.minX >= b.maxY - b.minY;
+      const tgt = along ? new THREE.Vector3(spot[0] < (b.minX + b.maxX) / 2 ? b.maxX : b.minX, el + eyeHeight - 0.15, spot[1]) : new THREE.Vector3(spot[0], el + eyeHeight - 0.15, spot[1] < (b.minY + b.maxY) / 2 ? b.maxY : b.minY);
+      go(new THREE.Vector3(spot[0], el + eyeHeight, spot[1]), tgt, interiorFov, instant, true);
       return;
     }
     if (id === 'encajar') {
@@ -159,9 +174,49 @@ export function CameraRig({ presets, request, tab, eyeHeight, interiorFov, layou
     onSave(tab, { position: camera.position.toArray() as [number, number, number], target: c.target.toArray() as [number, number, number], fov: camera.fov });
   };
 
+  // recorrido a pie: obstáculos del nivel en el que están los ojos
+  const levelAt = (y: number) => layout.levels.reduce((best, l) => (Math.abs(y - eyeHeight - l.elevation) < Math.abs(y - eyeHeight - best.elevation) ? l : best), layout.levels[0]);
+  const obstacles = useMemo(() => new Map(layout.levels.map((l) => [l.id, walkObstacles(layout, l.id)])), [layout]);
+  useEffect(() => {
+    if (tab !== 'interior') return;
+    const keys: Record<string, [keyof typeof walkInput, number]> = {
+      ArrowUp: ['fwd', 1], KeyW: ['fwd', 1], ArrowDown: ['fwd', -1], KeyS: ['fwd', -1],
+      KeyA: ['side', -1], KeyD: ['side', 1], ArrowLeft: ['turn', 1], ArrowRight: ['turn', -1], KeyQ: ['turn', 1], KeyE: ['turn', -1],
+    };
+    const on = (e: KeyboardEvent, down: boolean) => {
+      if ((e.target as HTMLElement)?.closest?.('input, textarea, select')) return;
+      const k = keys[e.code];
+      if (!k) return;
+      e.preventDefault();
+      walkInput[k[0]] = down ? k[1] : 0;
+    };
+    const kd = (e: KeyboardEvent) => on(e, true);
+    const ku = (e: KeyboardEvent) => on(e, false);
+    window.addEventListener('keydown', kd);
+    window.addEventListener('keyup', ku);
+    return () => { window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku); walkInput.fwd = walkInput.side = walkInput.turn = 0; };
+  }, [tab]);
+
   useFrame((_, dt) => {
     const a = anim.current;
     const c = controls.current;
+    if (!a && c && tab === 'interior' && (walkInput.fwd || walkInput.side || walkInput.turn)) {
+      const step = Math.min(dt, 0.05);
+      const lvl = levelAt(camera.position.y);
+      const look = c.target.clone().sub(camera.position);
+      if (walkInput.turn) look.applyAxisAngle(new THREE.Vector3(0, 1, 0), walkInput.turn * 1.5 * step);
+      const fwd = look.clone().setY(0).normalize();
+      const right = new THREE.Vector3(-fwd.z, 0, fwd.x);
+      const mv = fwd.multiplyScalar(walkInput.fwd).add(right.multiplyScalar(walkInput.side)).multiplyScalar(1.3 * step);
+      const o = obstacles.get(lvl.id);
+      const next = o ? walkStep([camera.position.x, camera.position.z], [mv.x, mv.z], o) : [camera.position.x + mv.x, camera.position.z + mv.z];
+      camera.position.set(next[0], lvl.elevation + eyeHeight, next[1]);
+      c.target.copy(camera.position).add(look);
+      c.update();
+      moving.current = true;
+      return;
+    }
+    if (moving.current) { moving.current = false; save(); }
     if (!a || !c) return;
     a.t = a.dur === 0 ? 1 : Math.min(1, a.t + dt / a.dur);
     const e = 1 - (1 - a.t) ** 3;

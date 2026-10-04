@@ -5,6 +5,7 @@ import { VINALLOP_ACTUAL } from '../data/vinallopActual';
 import { cameraPresets } from '../model/cameras';
 import { furnitureFootprint, pointInPolygon, polygonArea, wallPieces, wallSegmentRect } from '../model/geometry';
 import { passages } from '../model/passages';
+import { soleraQuantities } from '../model/solera';
 import { leafPose } from '../model/openings';
 import { hasGeometry, resolveLayout, type Variant } from '../model/resolve';
 import { validateLayout } from '../model/validate';
@@ -26,12 +27,21 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(bad, JSON.stringify(bad, null, 2)).toEqual([]);
     expect(layout.slabs[0].thickness).toBe(0.3);
   });
-  it('ducha doble junto a la puerta exterior de 70 cm, dentro del baño', () => {
+  it('dos duchas enfrentadas: zona húmeda común al fondo del baño, de pared a pared (2,40 × 1,20 m)', () => {
     const d = layout.furniture.find((f) => f.id === 'ducha')!;
-    const o = op('puerta-70');
-    const doorMid = o.offset + 0.15 + o.width / 2;
-    expect(Math.abs(d.x - doorMid)).toBeLessThan(0.5);
-    expect(d.y + d.w / 2).toBeCloseTo(4.4, 2);
+    const b = room('bano').polygon;
+    expect(d.status).toBe('confirmado');
+    expect(d.rot).toBe(0);
+    expect(d.w).toBeCloseTo(2.4, 5);
+    expect(d.d).toBeCloseTo(1.2, 5);
+    expect(d.x - d.w / 2).toBeCloseTo(Math.min(...b.map((p) => p[0])), 5);
+    expect(d.x + d.w / 2).toBeCloseTo(Math.max(...b.map((p) => p[0])), 5);
+    expect(d.y + d.d / 2).toBeCloseTo(Math.max(...b.map((p) => p[1])), 5);
+    // lavabo a la izquierda según se entra (lado de la escalera) e inodoro a la derecha
+    const lav = layout.furniture.find((f) => f.id === 'lavabo')!;
+    const wc = layout.furniture.find((f) => f.id === 'inodoro')!;
+    expect(lav.x).toBeGreaterThan(d.x);
+    expect(wc.x).toBeLessThan(d.x);
   });
   it('puerta de 70 cm abre hacia fuera y el armario del pasillo no tiene puertas', () => {
     expect(op('puerta-70').swing).toEqual({ hinge: 'fin', dir: 1 });
@@ -49,7 +59,7 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(e.points.every((p) => p[0] === layout.stairs[0].rect[2])).toBe(true);
     expect(e.rise![1]).toBe(2.8);
     expect(r.levelId).toBe('altell');
-    expect(r.points.every((p) => p[0] === 6.05)).toBe(true);
+    expect(r.points.every((p) => p[0] === 6.35)).toBe(true);
     expect(Math.max(...r.points.map((p) => p[1]))).toBeLessThan(layout.stairs[0].rect[3]);
   });
   it('altell diáfano con cama de matrimonio', () => {
@@ -57,8 +67,9 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(camas).toHaveLength(1);
     expect(layout.walls.filter((w) => w.levelId === 'altell')).toEqual([]);
   });
-  it('largo = suma de la cadena de cotas documentada (15,70 m) y altura 6,20 m', () => {
-    expect(layout.bounds.maxX - layout.bounds.minX).toBeCloseTo(15.7, 5);
+  it('envolvente del informe: 16,33 m de largo (la cadena de 15,70 m es interior) y altura 6,20 m', () => {
+    expect(layout.bounds.maxX - layout.bounds.minX).toBeCloseTo(16.33, 5);
+    expect(layout.measures.find((m) => m.id === 'cadena')!.value).toBe(15.7);
     expect(layout.topHeight).toBeCloseTo(6.2, 5);
   });
   it('el dormitorio está en el extremo izquierdo y la cama en la mitad inferior', () => {
@@ -69,8 +80,10 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(layout.furniture.find((f) => f.id === 'cama')!.y).toBeGreaterThan(midY);
   });
   it('las oberturas documentadas tienen su anchura y su fachada', () => {
-    expect(op('obertura-7m').width).toBe(7);
-    expect(op('obertura-7m').wallId).toBe('muro-A');
+    expect(op('obertura-9m').width).toBe(9);
+    expect(op('obertura-9m').wallId).toBe('muro-A');
+    expect(layout.openings.some((o) => o.id === 'obertura-7m')).toBe(false);
+    expect(resolveLayout(VINALLOP, variant({ options: { ...baseVariant().options, ventanal: '7' } })).openings.find((o) => o.id === 'obertura-7m')!.width).toBe(7);
     expect(op('obertura-225-pb').width).toBe(2.25);
     expect(op('obertura-225-altell').width).toBe(2.25);
     expect(op('puerta-120').width).toBe(1.2);
@@ -78,11 +91,13 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(op('puerta-70').width).toBe(0.7);
     expect(op('puerta-70').kind).toBe('puerta');
   });
-  it('la puerta de 1,20 m está donde marca la cadena (9,50–10,70 m)', () => {
-    expect(op('puerta-120').offset + 0.15).toBeCloseTo(9.5, 5);
+  it('la puerta de 1,20 m está donde marca la cadena (9,50 m desde la cara interior del lateral)', () => {
+    expect(op('puerta-120').offset + 0.15).toBeCloseTo(9.8, 5);
   });
-  it('la obertura de 7 m queda en la zona de día y no corta tabiques', () => {
-    const o = op('obertura-7m');
+  it('el ventanal de 9 m queda en la zona de día, no corta tabiques y está pendiente de cálculo', () => {
+    const o = op('obertura-9m');
+    expect(o.status).not.toBe('confirmado');
+    expect(issues.some((i) => i.elementId === o.id && i.level === 'aviso')).toBe(true);
     const start = o.offset + 0.15;
     expect(start).toBeGreaterThanOrEqual(x0('dia'));
     expect(issues.some((i) => i.elementId === o.id && i.level === 'conflicto')).toBe(false);
@@ -113,11 +128,11 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
   });
   it('entrada al baño desde el pasillo y armario al lado abierto al pasillo (propiedad)', () => {
     const b = room('bano').polygon;
-    expect(Math.max(...b.map((p) => p[0]))).toBeCloseTo(5.95, 5);
+    expect(Math.max(...b.map((p) => p[0]))).toBeCloseTo(6.25, 5);
     expect(op('puerta-bano').wallId).toBe('tab-pasillo');
     expect(op('puertas-armario').wallId).toBe('tab-pasillo');
     const arm = room('armario-pasillo').polygon;
-    expect(Math.max(...arm.map((p) => p[0]))).toBeLessThan(op('puerta-bano').offset + 3.55);
+    expect(Math.max(...arm.map((p) => p[0]))).toBeLessThan(op('puerta-bano').offset + 3.85);
     expect(['ducha', 'inodoro', 'lavabo'].every((id) => layout.furniture.some((f) => f.id === id && f.roomId === 'bano'))).toBe(true);
   });
   it('acabados de la propiedad por defecto: cal muy clara, carpintería verde-gris, microcemento terracota claro', () => {
@@ -133,8 +148,8 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(layout.furniture.some((f) => f.type === 'isla')).toBe(true);
     expect(layout.furniture.some((f) => f.id === 'encimera')).toBe(true);
   });
-  it('5 m de ancho, muro del frontal B de 0,60 m y resto de 0,30 m', () => {
-    expect(layout.bounds.maxY - layout.bounds.minY).toBeCloseTo(5, 5);
+  it('5,22 m de ancho (informe), muro del frontal B de 0,60 m y resto de 0,30 m', () => {
+    expect(layout.bounds.maxY - layout.bounds.minY).toBeCloseTo(5.22, 5);
     expect(layout.walls.find((w) => w.id === 'muro-B')!.thickness).toBe(0.6);
     expect(layout.walls.filter((w) => w.kind === 'exterior' && w.id !== 'muro-B').every((w) => w.thickness === 0.3)).toBe(true);
   });
@@ -145,12 +160,14 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     // altura libre del altell hasta la cubierta (descontando canto de cubierta y flecha de la bóveda)
     expect(layout.topHeight - (layout.roof?.thickness ?? 0) - (layout.roof?.ceiling?.rise ?? 0) - lvl.elevation).toBeGreaterThanOrEqual(2.5);
     const alt = room('altell').polygon;
-    expect(Math.max(...alt.map((p) => p[0]))).toBeLessThanOrEqual(6.05);
+    expect(Math.max(...alt.map((p) => p[0]))).toBeLessThanOrEqual(6.35);
   });
-  it('cubierta plana con vuelta catalana por dentro', () => {
-    expect(layout.roofOptions.map((r) => r.type)).toEqual(['plana', 'plana-peto']);
+  it('cubierta plana (propiedad) con vuelta catalana por dentro; remate ibicenco propuesto e inclinada del informe para contrastar', () => {
+    expect(layout.roofOptions.map((r) => r.type)).toEqual(['plana', 'plana-peto', 'un-agua']);
     expect(layout.roofOptions[0].status).toBe('confirmado');
+    expect(layout.roofOptions[0].note).toMatch(/No está validada técnicamente/);
     expect(layout.roofOptions[1].status).toBe('propuesto');
+    expect(layout.roofOptions[2].note).toMatch(/informe/);
     expect(layout.roof?.type).toBe('plana');
     expect(layout.roof?.ceiling?.type).toBe('vuelta-catalana');
     expect(layout.roof?.ceiling?.spacing).toBe(0.55);
@@ -158,8 +175,8 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
   it('la puerta de 70 cm está en el baño', () => {
     const o = op('puerta-70');
     const x = o.offset + 0.15;
-    expect(x).toBeGreaterThanOrEqual(3.55);
-    expect(x + o.width).toBeLessThanOrEqual(5.95);
+    expect(x).toBeGreaterThanOrEqual(3.85);
+    expect(x + o.width).toBeLessThanOrEqual(6.25);
   });
   it('sin orientación definida', () => expect(layout.northDeg).toBeNull());
   it('genera vistas interiores por estancia, incluido el altell a su cota', () => {
@@ -262,7 +279,11 @@ describe('Casa Vinallop · estado actual (fotos antes de la reforma)', () => {
     const rest = [...layout.walls.filter((x) => x.facade !== 'B'), ...layout.openings, ...layout.rooms, ...layout.roofSegments!];
     for (const x of rest) expect(['interpretado', 'pendiente']).toContain(x.status);
     expect(layout.site?.status).toBe('interpretado');
-    expect(VINALLOP.site).toBe(layout.site);
+    // la reforma conserva el entorno pero sustituye la solera antigua por la solera en L
+    expect(layout.site!.pavements.length).toBeGreaterThan(0);
+    const reforma = resolveLayout(VINALLOP, baseVariant());
+    expect(reforma.site!.pavements).toEqual([]);
+    expect(reforma.site!.trees[0].c).toEqual(layout.site!.trees[0].c);
     expect(layout.phase).toBe('actual');
     expect(VINALLOP.phase).toBe('reforma');
   });
@@ -270,13 +291,13 @@ describe('Casa Vinallop · estado actual (fotos antes de la reforma)', () => {
     const w = layout.walls.find((x) => x.id === 'b-principal')!;
     const o = layout.openings.find((x) => x.id === 'puerta-madera')!;
     const x0 = w.a[0] + o.offset;
-    expect(Math.abs(x0 - 9.5)).toBeLessThan(0.2);
-    expect(Math.abs(x0 + o.width - 10.7)).toBeLessThan(0.2);
+    expect(Math.abs(x0 - 9.8)).toBeLessThan(0.2);
+    expect(Math.abs(x0 + o.width - 11.0)).toBeLessThan(0.2);
   });
   it('muros de las fachadas a la altura de su volumen', () => {
     const hA = (id: string) => layout.walls.find((x) => x.id === id)!.height;
     expect(hA('a-principal')).toBeGreaterThan(hA('b-principal'));
-    expect(cameraPresets(layout).find((c) => c.id === 'fachada-B')!.target[0]).toBeCloseTo(7.85, 1);
+    expect(cameraPresets(layout).find((c) => c.id === 'fachada-B')!.target[0]).toBeCloseTo(16.33 / 2, 1);
   });
 });
 
@@ -293,7 +314,8 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
     expect(views.some((v) => v.hideRoof)).toBe(true);
   });
   it('ninguna cámara atraviesa muros ni muebles; las interiores están dentro de su estancia a ≈1,60 m', () => {
-    const fps = [...layout.furniture, ...(layout.outdoor?.furniture ?? [])].filter((f) => f.type !== 'alfombra').map((f) => furnitureFootprint(f));
+    // la zona húmeda de las duchas es transitable: no cuenta como mueble
+    const fps = [...layout.furniture, ...(layout.outdoor?.furniture ?? [])].filter((f) => f.type !== 'alfombra' && f.type !== 'ducha').map((f) => furnitureFootprint(f));
     for (const v of views) {
       const p: [number, number] = [v.position[0], v.position[1]];
       expect(inWall(p), v.id).toBe(false);
@@ -326,20 +348,36 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
     const l2 = resolveLayout(VINALLOP, v);
     const isla = l2.furniture.find((f) => f.id === 'isla')!;
     expect([isla.x, isla.w, isla.status]).toEqual([9.0, 1.8, 'propuesto']);
-    expect(layout.furniture.find((f) => f.id === 'isla')!.x).toBe(8.8);
+    expect(layout.furniture.find((f) => f.id === 'isla')!.x).toBe(9.1);
   });
-  it('comedor exterior: mesa Ø 1,80 con 8 sillas sobre solera de 4 × 4 que deja libre el tronco', () => {
+  it('solera en L confirmada: 3 m delante y 4 m en el lateral, esquina contada una vez y alcorque permeable', () => {
     const o = layout.outdoor!;
     expect(o.furniture.filter((f) => f.type === 'silla-exterior')).toHaveLength(8);
-    const sol = o.pavements.find((p) => p.id === 'solera-comedor')!;
-    expect(sol.rect[2] - sol.rect[0]).toBeCloseTo(4, 5);
-    expect(sol.permeable!.r).toBeGreaterThan(1);
-    expect(layout.site!.trees[0].c).toEqual(sol.permeable!.c);
+    const fr = o.pavements.find((p) => p.id === 'solera-l-frente')!;
+    const la = o.pavements.find((p) => p.id === 'solera-l-lateral')!;
+    expect([fr.status, la.status]).toEqual(['confirmado', 'confirmado']);
+    expect(fr.rect[3] - fr.rect[1]).toBeCloseTo(3, 5);
+    expect(la.rect[2] - la.rect[0]).toBeCloseTo(4, 5);
+    expect(la.permeable!.r).toBeGreaterThan(1);
+    expect(layout.site!.trees[0].c).toEqual(la.permeable!.c);
+    const q = soleraQuantities(layout)!;
+    expect(q.overlap).toBeCloseTo(4 * 3, 1);
+    expect(q.area).toBeCloseTo(q.grossSum - q.overlap - q.excluded, 1);
+    // mesa redonda de Ø 1,80 con pie cilíndrico y lámpara de cúpula con anclaje sin resolver
+    const mesa = o.furniture.find((f) => f.type === 'mesa-exterior')!;
+    expect(mesa.w).toBe(1.8);
+    expect(o.domeLamp!.note).toMatch(/SIN RESOLVER/);
+    expect(o.lights).toEqual([]);
+  });
+  it('sin planta decorativa en el comedor', () => {
+    expect(layout.furniture.some((f) => f.type === 'maceta')).toBe(false);
   });
   it('volta catalana confirmada en terracota con vigas cada 0,55 m; contraste de dimensiones pendiente', () => {
     expect(layout.roof!.ceiling!.status).toBe('confirmado');
     expect(baseVariant().finishes.boveda).toBe('terracota-volta');
-    expect(layout.checks!.find((c) => c.label.startsWith('Dimensiones'))!.status).toBe('pendiente');
-    expect(layout.references!.every((r) => !r.consulted)).toBe(true);
+    expect(baseVariant().finishes.vigas).toBe('cemento-gris');
+    expect(layout.checks!.find((c) => c.label.startsWith('Dimensiones'))!.status).toBe('documentado');
+    expect(layout.checks!.find((c) => c.label.startsWith('Superficie construida'))!.status).toBe('pendiente');
+    expect(layout.references!.filter((r) => !r.consulted).map((r) => r.id)).toEqual(['ref-color-techo']);
   });
 });

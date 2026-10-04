@@ -22,9 +22,9 @@ export const PARCELA: Site = {
   ground: '#b98962',
   olives: { spacing: 7, extent: 46, clear: [-4.5, -4, 21.5, 10.5], seed: 11 },
   trees: [
-    { id: 'algarrobo', label: 'Algarrobo', c: [18.4, 0.6], r: 3.8, h: 6.2, note: 'Árbol grande de hoja perenne junto al extremo derecho, hacia el frontal A (vista cenital y oblicua).' },
+    { id: 'algarrobo', label: 'Algarrobo', c: [19.0, 0.6], r: 3.8, h: 6.2, note: 'Árbol grande de hoja perenne junto al extremo derecho, hacia el frontal A (vista cenital y oblicua).' },
   ],
   pavements: [
-    { id: 'solera', label: 'Solera de hormigón', rect: [-0.3, 5, 16.8, 7.6], note: 'Franja de hormigón de ≈2,5 m a lo largo del frontal B (vista cenital).' },
+    { id: 'solera', label: 'Solera de hormigón', rect: [-0.3, 5.22, 17.2, 7.8], note: 'Franja de hormigón de ≈2,5 m a lo largo del frontal B (vista cenital).' },
   ],
 };

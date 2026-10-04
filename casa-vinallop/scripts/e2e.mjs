@@ -134,14 +134,14 @@ try {
 
     // Vistas preparadas, propuestas, mobiliario y exportaciones nuevas
     check('Vistas preparadas en el panel', (await page.locator('[data-view]').count()) >= 13);
-    await page.click('[data-view="v12b-corte"]');
+    await page.click('[data-view="v15-corte"]');
     await pause(page, 1500);
     check('Vista «Corte longitudinal» activa el corte', (await page.locator('[data-control="long-section"]').isChecked()));
     await page.screenshot({ path: `${OUT}v-10-corte-longitudinal.png` });
     await page.click('[data-view="v01-exterior"]');
     await pause(page, 1200);
     check('Las demás vistas exteriores quitan el corte', !(await page.locator('[data-control="long-section"]').isChecked()));
-    await page.click('[data-view="v10b-celosia"]');
+    await page.click('[data-view="v12c-celosia"]');
     await pause(page, 1500);
     check('Vista de la celosía en Interior', (await page.locator('.view-title').innerText()).includes('celosía'));
     await page.locator('[data-control="opt-celosia"] button', { hasText: 'Celosía B' }).click();

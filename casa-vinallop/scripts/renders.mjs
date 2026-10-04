@@ -1,0 +1,71 @@
+/**
+ * Renders fotográficos (trazado de rayos) de las vistas preparadas, sobre la compilación.
+ * Son renders del MISMO modelo del estudio: misma geometría y materiales procedurales.
+ *   npm run build && node scripts/renders.mjs [muestras=64] [filtro]
+ * Guarda PNG en ./screenshots/renders/.
+ */
+import { spawn } from 'node:child_process';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { chromium } from 'playwright-core';
+
+const PORT = 4184;
+const OUT = new URL('../screenshots/renders/', import.meta.url).pathname;
+mkdirSync(OUT, { recursive: true });
+const samples = Number(process.argv[2] ?? 64);
+const filter = process.argv[3] ?? '';
+const JOBS = [
+  ['v12-bano-entrada', 'dia'], ['v12b-bano-ducha', 'dia'], ['v12c-celosia', 'dia'],
+  ['v04-solera', 'dia'], ['v05-algarrobo', 'dia'], ['v05-algarrobo', 'tarde'],
+  ['v09-cocina-taburetes', 'dia'], ['v07-salon-ventanal', 'dia'], ['v13b-volta', 'dia'], ['v01-exterior', 'dia'],
+].filter(([v]) => v.includes(filter));
+
+const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'pipe', detached: true });
+const stop = () => { try { process.kill(-server.pid); } catch { /* ya detenido */ } };
+process.on('exit', stop);
+await new Promise((res, rej) => {
+  const t = setTimeout(() => rej(new Error('preview no arrancó')), 20000);
+  server.stdout.on('data', (d) => { if (String(d).includes(String(PORT))) { clearTimeout(t); res(); } });
+});
+const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+const page = await (await browser.newContext({ viewport: { width: 1280, height: 860 } })).newPage();
+page.on('pageerror', (e) => console.log('error:', e.message));
+await page.goto(`http://localhost:${PORT}/?diagnostico`);
+await page.waitForFunction(() => document.querySelector('canvas') && !document.querySelector('.state-center.loading'), null, { timeout: 90000 });
+await page.evaluate(() => {
+  const s = window.__store.getState();
+  s.setVisual('helpDismissed', true);
+  s.setVisual('showLabels', false);
+  s.setVisual('showDims', false);
+  s.setVisual('showAreas', false);
+});
+for (const [view, amb] of JOBS) {
+  const t0 = Date.now();
+  await page.evaluate((a) => window.__store.getState().setVisual('ambience', a), amb);
+  await page.click(`[data-view="${view}"]`);
+  // espera a que la cámara se detenga
+  await page.waitForFunction(() => {
+    const c = window.__visor.camera;
+    const k = c.matrixWorld.elements.map((x) => x.toFixed(4)).join();
+    const same = window.__lastCam === k;
+    window.__lastCam = k;
+    return same;
+  }, null, { polling: 400, timeout: 20000 });
+  await page.waitForTimeout(1500);
+  const data = await page.evaluate(async (n) => {
+    const v = window.__visor;
+    const mod = await window.__photoModule();
+    v.setFrameloop('never');
+    try {
+      const amb = window.__store.getState().visual.ambience;
+      const canvas = await mod.renderPhoto(v.gl, v.scene, v.camera, { samples: n, sky: amb });
+      return canvas.toDataURL('image/png');
+    } finally {
+      v.setFrameloop('always');
+    }
+  }, samples);
+  const name = `${view}${amb === 'dia' ? '' : `-${amb}`}.png`;
+  writeFileSync(OUT + name, Buffer.from(data.split(',')[1], 'base64'));
+  console.log(`✔ ${name} · ${samples} muestras · ${Math.round((Date.now() - t0) / 1000)} s`);
+}
+await browser.close();
+stop();

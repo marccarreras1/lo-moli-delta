@@ -28,19 +28,21 @@ type Shape = { profile: [number, number][]; tone: number };
 
 /** perfiles (radio, altura desde la boca) de cada alternativa: piezas distintas entre sí */
 const SHAPES: Record<'A' | 'B', Shape[]> = {
-  // A · siluetas variadas y tonos de barro: cúpula, campana y cono truncado
+  // A · barro (referencia 09): campana baja, calabaza de dos cuerpos y botella de cuello largo
   A: [
-    { profile: [[0.19, 0], [0.18, 0.06], [0.15, 0.15], [0.09, 0.22], [0.03, 0.25], [0.02, 0.26]], tone: 0 },
-    { profile: [[0.14, 0], [0.13, 0.04], [0.09, 0.12], [0.08, 0.24], [0.05, 0.32], [0.02, 0.33]], tone: 1 },
-    { profile: [[0.16, 0], [0.12, 0.18], [0.07, 0.3], [0.025, 0.31]], tone: 2 },
+    { profile: [[0.13, 0], [0.125, 0.04], [0.1, 0.11], [0.06, 0.17], [0.025, 0.2], [0.015, 0.21]], tone: 0 },
+    { profile: [[0.095, 0], [0.11, 0.05], [0.1, 0.11], [0.06, 0.15], [0.07, 0.19], [0.065, 0.24], [0.03, 0.28], [0.015, 0.29]], tone: 1 },
+    { profile: [[0.12, 0], [0.13, 0.06], [0.12, 0.17], [0.07, 0.24], [0.04, 0.27], [0.035, 0.36], [0.015, 0.37]], tone: 2 },
   ],
-  // B · terracota clara, formas más ligeras: gota alargada, cuenco abierto y cilindro estrecho
+  // B · terracota clara (referencia 10): campanas y embudos con cuello alargado, ligeros
   B: [
-    { profile: [[0.06, 0], [0.1, 0.06], [0.11, 0.14], [0.08, 0.26], [0.03, 0.36], [0.015, 0.37]], tone: 0 },
-    { profile: [[0.2, 0], [0.17, 0.05], [0.1, 0.1], [0.03, 0.12], [0.015, 0.125]], tone: 1 },
-    { profile: [[0.075, 0], [0.075, 0.28], [0.06, 0.3], [0.015, 0.31]], tone: 2 },
+    { profile: [[0.13, 0], [0.12, 0.05], [0.08, 0.13], [0.04, 0.18], [0.035, 0.27], [0.015, 0.28]], tone: 0 },
+    { profile: [[0.17, 0], [0.155, 0.04], [0.09, 0.1], [0.045, 0.14], [0.04, 0.2], [0.015, 0.21]], tone: 1 },
+    { profile: [[0.095, 0], [0.09, 0.12], [0.07, 0.22], [0.04, 0.27], [0.035, 0.36], [0.015, 0.37]], tone: 2 },
   ],
 };
+/** alturas escalonadas de cada pieza respecto a la cota del grupo (composición variada) */
+const DROP: Record<'A' | 'B', number[]> = { A: [0, -0.06, 0.04], B: [0.08, -0.04, 0.14] };
 const TONES: Record<'A' | 'B', string[]> = { A: ['#a3603f', '#8a5a44', '#b98466'], B: ['#d6a07f', '#e2b896', '#cf9472'] };
 
 function LampShade({ shape, mat }: { shape: Shape; mat: THREE.Material }) {
@@ -65,13 +67,13 @@ export function Pendants({ layout, mats, level, lights }: { layout: Layout; mats
         const shape = SHAPES[kind][i % 3];
         const h = shape.profile[shape.profile.length - 1][1];
         const top = ceilingAt(layout, p);
-        const bottom = group.bottom + (kind === 'B' && i === 1 ? 0.12 : i === 1 ? -0.05 : 0);
+        const bottom = group.bottom + DROP[kind][i % 3];
         const cable = Math.max(0.05, top - bottom - h);
         return (
           <group key={i} position={[p[0], 0, p[1]]}>
             {/* florón en el techo y cable textil fino */}
             <mesh position={[0, top - 0.015, 0]} material={mats.clayLight}><cylinderGeometry args={[0.05, 0.05, 0.03, 20]} /></mesh>
-            <mesh position={[0, bottom + h + cable / 2, 0]} material={mats.blackMetal}><cylinderGeometry args={[0.003, 0.003, cable, 6]} /></mesh>
+            <mesh position={[0, bottom + h + cable / 2, 0]} material={kind === 'B' ? mats.textileLight : mats.blackMetal}><cylinderGeometry args={[kind === 'B' ? 0.004 : 0.003, kind === 'B' ? 0.004 : 0.003, cable, 6]} /></mesh>
             <group position={[0, bottom, 0]}>
               <LampShade shape={shape} mat={tones[shape.tone]} />
               <mesh position={[0, 0.05, 0]} material={mats.lampGlow}><sphereGeometry args={[0.04, 14, 10]} /></mesh>

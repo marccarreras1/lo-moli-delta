@@ -151,6 +151,13 @@ export interface Opening {
   swing?: { hinge: 'inicio' | 'fin'; dir: 1 | -1 };
   /** puerta de entrada principal (admite la variante de hoja de tablones y el volumen saliente) */
   entrance?: boolean;
+  /**
+   * abertura alternativa: solo aparece si la variante la activa («ventanal-7» / «ventanal-9» según
+   * la opción de ventanal; el resto, si su clave está en las aberturas activas)
+   */
+  variantKey?: string;
+  /** contraventanas de madera por la cara exterior (abiertas contra la fachada) */
+  shutters?: boolean;
   status: DataStatus;
   sourceId: string;
   note?: string;
@@ -214,6 +221,7 @@ export interface RoofOption {
   thickness: number;
   status: DataStatus;
   note: string;
+  sourceId?: string;
   /** altura del peto perimetral (0 = sin peto) */
   parapet?: number;
   /** acabado interior bajo la cubierta */
@@ -273,6 +281,21 @@ export interface Outdoor {
   furniture: Furniture[];
   /** puntos de luz exterior (farolas con soporte propio) */
   lights: { id: string; c: Vec2; h: number; status: DataStatus; note: string }[];
+  /** lámpara de cúpula metálica oscura sobre la mesa (referencia 11) */
+  domeLamp?: {
+    c: Vec2;
+    /** cota del borde inferior de la cúpula */
+    bottom: number;
+    diameter: number;
+    /** anclaje en una rama del algarrobo (posición y cota aproximadas, sin resolver) */
+    treeAnchor: { c: Vec2; h: number };
+    /** pie independiente: posición del poste */
+    post: Vec2;
+    status: DataStatus;
+    note: string;
+  };
+  /** propuesta de evacuación: canaleta lineal (tramos) */
+  drains?: { id: string; a: Vec2; b: Vec2; status: DataStatus; note: string }[];
 }
 
 /** Grupo de lámparas colgantes en una ubicación candidata. */
@@ -304,6 +327,10 @@ export interface DesignReference {
   use: string;
   /** si se ha podido abrir desde este entorno */
   consulted: boolean;
+  /** número de la imagen aportada por la propiedad (no se publica) */
+  refNo?: string;
+  /** vistas preparadas donde se aplica */
+  views?: string[];
 }
 
 /** Definición completa de un proyecto (Casa Vinallop o modelo de prueba). */
@@ -361,9 +388,23 @@ export interface DesignOptions {
   puertaEntrada: 'verde-gris' | 'tablones';
   /** pequeño volumen saliente en la entrada (variante) */
   entradaSaliente: boolean;
+  /** ventanal del frontal A: 7 m (bocetos) o 9 m (solicitado y presupuestado, pendiente de cálculo) */
+  ventanal: '7' | '9';
+  /** aberturas adicionales activas (claves de variante) */
+  aberturas: string[];
+  /** suspensión de la lámpara del comedor exterior: colgada del algarrobo o con soporte propio */
+  lamparaExterior: 'arbol' | 'soporte';
 }
 
-export const DEFAULT_OPTIONS: DesignOptions = { celosia: 'A', lamparas: 'A', lamparasUbicacion: 'isla', puertaEntrada: 'tablones', entradaSaliente: false };
+export const EXTRA_OPENINGS: { key: string; label: string }[] = [
+  { key: 'acceso-comedor', label: 'Puerta acristalada al comedor exterior' },
+  { key: 'ventilacion-cruzada', label: 'Ventana del comedor (ventilación cruzada)' },
+  { key: 'ventana-dormitorio', label: 'Ventana y contraventana en el dormitorio' },
+  { key: 'ventana-bano', label: 'Ventana alta del baño y extracción' },
+  { key: 'ventanas-altell', label: 'Dos ventanas en el altell' },
+];
+
+export const DEFAULT_OPTIONS: DesignOptions = { celosia: 'A', lamparas: 'A', lamparasUbicacion: 'isla', puertaEntrada: 'tablones', entradaSaliente: false, ventanal: '9', aberturas: [], lamparaExterior: 'arbol' };
 
 export interface Layout extends ProjectData {
   options: DesignOptions;
@@ -401,7 +442,7 @@ export interface Finish {
   roughness: number;
 }
 
-export type FinishSlot = 'fachada' | 'paredes' | 'suelo' | 'carpinteria' | 'madera' | 'cubierta' | 'textiles' | 'boveda' | 'encimera';
+export type FinishSlot = 'fachada' | 'paredes' | 'suelo' | 'carpinteria' | 'madera' | 'cubierta' | 'textiles' | 'boveda' | 'vigas' | 'encimera';
 export type FinishSelection = Record<FinishSlot, string>;
 
 export interface FinishPreset {

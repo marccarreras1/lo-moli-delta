@@ -37,7 +37,14 @@ export interface Variant {
 
 export function resolveLayout(p: ProjectData, v: Variant | null): Layout {
   const ov = v?.openingOverrides ?? {};
-  const openings: Opening[] = p.openings.map((o) => {
+  const options = { ...DEFAULT_OPTIONS, ...(v?.options ?? {}) };
+  // aberturas alternativas: solo las que la variante activa
+  const active = (o: Opening) => {
+    if (!o.variantKey) return true;
+    if (o.variantKey.startsWith('ventanal-')) return o.variantKey === `ventanal-${options.ventanal}`;
+    return options.aberturas.includes(o.variantKey);
+  };
+  const openings: Opening[] = p.openings.filter(active).map((o) => {
     const x = ov[o.id];
     if (!x) return o;
     const system = x.system || x.leaves
@@ -79,7 +86,7 @@ export function resolveLayout(p: ProjectData, v: Variant | null): Layout {
   const bounds = xs.length ? { minX: Math.min(...xs), minY: Math.min(...ys), maxX: Math.max(...xs), maxY: Math.max(...ys) } : { minX: 0, minY: 0, maxX: 0, maxY: 0 };
   const elev = (id: string) => p.levels.find((l) => l.id === id)?.elevation ?? 0;
   const topHeight = p.walls.filter((w) => w.kind === 'exterior').reduce((m, w) => Math.max(m, elev(w.levelId) + w.height), 0) || 2.5;
-  return { ...p, openings, furniture, outdoor, roof, bounds, topHeight, options: { ...DEFAULT_OPTIONS, ...(v?.options ?? {}) } };
+  return { ...p, openings, furniture, outdoor, roof, bounds, topHeight, options };
 }
 
 /** cota de la base de un muro (cota de su nivel) */

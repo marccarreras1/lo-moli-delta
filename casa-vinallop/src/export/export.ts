@@ -1,10 +1,11 @@
 /** Exportaciones: PNG de la vista, planta SVG y configuración JSON. */
 import type { Layout } from '../data/types';
 import { planSvg, type PlanOptions } from '../plan/planSvg';
+import { bathPlanSvg } from '../plan/bathPlan';
 import { glRef } from '../viewer/support';
 
 export const AVISO = 'Modelo de estudio y visualización. No es un proyecto técnico de ejecución.';
-export const APP_VERSION = '0.2.0';
+export const APP_VERSION = '0.3.0';
 
 const slug = (s: string) =>
   s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -83,6 +84,11 @@ export async function exportPng(projectName: string, variantName: string, viewLa
     gl.setSize(size.x, size.y, false);
     gl.render(glRef.scene, glRef.camera);
   }
+  await savePngWithFooter(src, projectName, variantName, viewLabel, scale > 1 ? '-alta' : '');
+}
+
+/** Añade el pie (proyecto, vista, variante, aviso) a una imagen del visor y la descarga en PNG. */
+export async function savePngWithFooter(src: HTMLCanvasElement, projectName: string, variantName: string, viewLabel: string, suffix = '', extra = '') {
   if (src.width < 2 || src.height < 2) throw new Error('El visor no tiene tamaño visible: no se ha exportado nada.');
   const foot = Math.round(Math.max(48, src.height * 0.06));
   const c = document.createElement('canvas');
@@ -103,9 +109,9 @@ export async function exportPng(projectName: string, variantName: string, viewLa
   ctx.fillText(`${projectName} · ${viewLabel} · ${variantName}`, fs, src.height + fs * 1.3);
   ctx.fillStyle = '#687066';
   ctx.font = `400 ${Math.round(fs * 0.8)}px system-ui, -apple-system, "Segoe UI", sans-serif`;
-  ctx.fillText(`Estudio v${APP_VERSION} · ${new Date().toLocaleString('es-ES')} · ${AVISO}`, fs, src.height + fs * 2.5);
+  ctx.fillText(`${extra ? `${extra} · ` : ''}Estudio v${APP_VERSION} · ${new Date().toLocaleString('es-ES')} · ${AVISO}`, fs, src.height + fs * 2.5);
   const blob: Blob = await new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('No se pudo generar el PNG.'))), 'image/png'));
-  await download(exportName(`${slug(viewLabel)}${scale > 1 ? '-alta' : ''}`, projectName, variantName, 'png'), blob);
+  await download(exportName(`${slug(viewLabel)}${suffix}`, projectName, variantName, 'png'), blob);
 }
 
 /**
@@ -183,6 +189,12 @@ export async function exportSvg(layout: Layout, opts: Omit<PlanOptions, 'forExpo
     forExport: { title: `${layout.name} · ${(layout.levels.find((l) => l.id === opts.levelId) ?? layout.levels[0])?.name ?? 'Planta'}`, subtitle: `${variantName} · estudio v${APP_VERSION} · ${new Date().toLocaleDateString('es-ES')}` },
   });
   await download(exportName(`planta-${(layout.levels.find((l) => l.id === opts.levelId) ?? layout.levels[0])?.name ?? ''}`, layout.name, variantName, 'svg'), `<?xml version="1.0" encoding="UTF-8"?>\n${svg}`, 'image/svg+xml');
+}
+
+export async function exportBathSvg(layout: Layout, variantName: string) {
+  const svg = bathPlanSvg(layout, { forExport: true });
+  if (!svg) throw new Error('El proyecto no tiene baño.');
+  await download(exportName('bano-acotado', layout.name, variantName, 'svg'), `<?xml version="1.0" encoding="UTF-8"?>\n${svg}`, 'image/svg+xml');
 }
 
 export async function exportJson(config: unknown, projectName: string, variantName: string) {

@@ -1,7 +1,7 @@
 {
   "name": "casa-vinallop-estudio-3d",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -17,6 +17,8 @@
     "react": "~19.2.0",
     "react-dom": "~19.2.0",
     "three": "^0.180.0",
+    "three-gpu-pathtracer": "^0.0.24",
+    "three-mesh-bvh": "^0.9.1",
     "zustand": "^5.0.15"
   },
   "devDependencies": {

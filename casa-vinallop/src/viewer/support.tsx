@@ -2,9 +2,11 @@ import { Component, type ReactNode } from 'react';
 import type * as THREE from 'three';
 
 /** Referencia al renderer para exportar PNG. */
-export const glRef: { current: THREE.WebGLRenderer | null; scene: THREE.Scene | null; camera: THREE.Camera | null } = {
-  current: null, scene: null, camera: null,
-};
+export const glRef: {
+  current: THREE.WebGLRenderer | null; scene: THREE.Scene | null; camera: THREE.Camera | null;
+  /** pausa o reanuda el bucle del visor (el render fotográfico dibuja él solo) */
+  setFrameloop?: (m: 'always' | 'never') => void;
+} = { current: null, scene: null, camera: null };
 
 export function webglAvailable() {
   try {

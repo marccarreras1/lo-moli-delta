@@ -3,8 +3,10 @@
  * fotografías de la propiedad (dron y suelo, 04/10/2026).
  *
  * Mismo sistema de coordenadas que la reforma (src/data/vinallop.ts): X hacia la
- * derecha del papel, Y hacia abajo; Y = 0 frontal A, Y = 5,00 frontal B (el de las
- * puertas y la solera).
+ * derecha del papel, Y hacia abajo; Y = 0 frontal A, Y = 5,22 frontal B (el de las
+ * puertas y la solera). Envolvente de 16,33 × 5,22 m del informe del arquitecto (cifras
+ * transmitidas por la propiedad); el informe da 79,48 m² construidos, menos que el
+ * rectángulo (85,24 m²): la diferencia está pendiente de contrastar.
  *
  * LECTURA DE LAS FOTOS
  * - Casa de una planta, encalada, con tres volúmenes y cubiertas de fibrocemento a un
@@ -12,8 +14,9 @@
  * - De izquierda a derecha: volumen del extremo (bajo), anexo, volumen principal (el
  *   más alto, con hastial que asoma sobre el anexo) y habitación pequeña bajo el faldón
  *   bajo junto al algarrobo (propiedad).
- * - Proporciones medidas en la vista cenital y escaladas al largo de 15,70 m de los
- *   bocetos; puertas situadas con una corrección de perspectiva sobre la vista oblicua.
+ * - Proporciones medidas en la vista cenital y escaladas al largo de 16,33 m del informe
+ *   (antes, a los 15,70 m de los bocetos); puertas situadas con una corrección de
+ *   perspectiva sobre la vista oblicua.
  * - Alturas estimadas tomando una puerta como ≈2,00 m de referencia.
  * - Espesores de la propiedad: frontal B 0,60 m y el resto 0,40 m.
  *
@@ -23,18 +26,22 @@
 import { FOTOS_PARCELA, PARCELA } from './parcela';
 import type { Opening, ProjectData, Room, RoofSegment, Vec2, Wall } from './types';
 
-const L = 15.7;
-const W = 5;
+/** informe del arquitecto: 16,33 × 5,22 m exteriores */
+const L = 16.33;
+const W = 5.22;
+/** las posiciones leídas en las fotos se midieron sobre 15,70 m: se escalan al largo del informe */
+const K = L / 15.7;
+const k = (x: number) => Math.round(x * K * 100) / 100;
 /** resto de muros existentes: 0,40 m (propiedad) */
 const T = 0.4;
 const TB = 0.6;
 const h = T / 2;
 const yB = W - TB / 2; // eje del frontal B
 /** límites entre volúmenes (ejes de los muros transversales) */
-const X1 = 1.8;
-const X2 = 5.6;
+const X1 = k(1.8);
+const X2 = k(5.6);
 /** habitación pequeña bajo el faldón bajo junto al algarrobo (propiedad: «hay una pequeña habitación») */
-const X3 = 14.2;
+const X3 = k(14.2);
 /** aleros: alto en el frontal A, bajo en el frontal B */
 const H = {
   extremo: { a: 2.45, b: 2.3 },
@@ -72,12 +79,12 @@ const door = (id: string, label: string, wallId: string, x0: number, x1: number,
 });
 
 const openings: Opening[] = [
-  door('puerta-extremo', 'Puerta del volumen del extremo', 'b-extremo', 0.85, 1.55, h, 2.0, 1, 'Puerta metálica gris (vista oblicua).'),
-  door('puerta-anexo', 'Puerta del anexo', 'b-anexo', 3.55, 4.55, X1, 2.0, 2, 'Hueco con dos hojas abiertas hacia fuera: una metálica gris y otra de madera (vista oblicua).'),
-  door('puerta-madera', 'Puerta de madera (volumen principal)', 'b-principal', 9.4, 10.6, X2, 2.1, 2, 'Puerta de madera de dos hojas. Coincide con la posición de la puerta de entrada de 1,20 m de la reforma (9,50–10,70 m).'),
-  door('puerta-gris', 'Puerta de la habitación pequeña', 'b-habitacion', 14.55, 15.25, X3, 2.0, 1, 'Puerta metálica gris del extremo derecho (vista oblicua), en el volumen bajo de la habitación pequeña.'),
+  door('puerta-extremo', 'Puerta del volumen del extremo', 'b-extremo', k(0.85), k(1.55), h, 2.0, 1, 'Puerta metálica gris (vista oblicua).'),
+  door('puerta-anexo', 'Puerta del anexo', 'b-anexo', k(3.55), k(4.55), X1, 2.0, 2, 'Hueco con dos hojas abiertas hacia fuera: una metálica gris y otra de madera (vista oblicua).'),
+  door('puerta-madera', 'Puerta de madera (volumen principal)', 'b-principal', k(9.4), k(10.6), X2, 2.1, 2, 'Puerta de madera de dos hojas. Coincide aproximadamente con la puerta de entrada de 1,20 m de la reforma (9,80–11,00 m con las medidas del informe).'),
+  door('puerta-gris', 'Puerta de la habitación pequeña', 'b-habitacion', k(14.55), k(15.25), X3, 2.0, 1, 'Puerta metálica gris del extremo derecho (vista oblicua), en el volumen bajo de la habitación pequeña.'),
   {
-    id: 'ventana-a', label: 'Ventana del frontal A', wallId: 'a-principal', kind: 'ventana', offset: 5.4, width: 0.6, sill: 1.3, height: 0.6,
+    id: 'ventana-a', label: 'Ventana del frontal A', wallId: 'a-principal', kind: 'ventana', offset: k(5.4), width: 0.6, sill: 1.3, height: 0.6,
     system: null, status: 'pendiente', sourceId: F, note: 'Ventana pequeña vista desde el lado del frontal A; posición y tamaño sin comprobar.',
   },
 ];
@@ -105,7 +112,7 @@ export const VINALLOP_ACTUAL: ProjectData = {
   name: 'Casa Vinallop · estado actual',
   isTest: false,
   phase: 'actual',
-  version: '0.1 · fotos de la casa antes de la reforma (04/10/2026)',
+  version: '0.2 · fotos de la casa antes de la reforma y medidas del informe (16,33 × 5,22 m)',
   levels: [{ id: 'pb', name: 'Planta baja', elevation: 0, wallHeight: H.principal.b, elevationStatus: 'interpretado' }],
   walls,
   openings,
@@ -130,7 +137,7 @@ export const VINALLOP_ACTUAL: ProjectData = {
   ],
   sources: [
     FOTOS_PARCELA,
-    { id: 'boceto-planta-baixa', label: 'Foto del boceto «PLANTA BAIXA»', detail: 'Largo total de la casa (15,70 m).' },
+    { id: 'informe-arquitecto', label: 'Informe del arquitecto (cifras transmitidas)', detail: '16,33 × 5,22 m exteriores y 79,48 m² construidos; cubierta inclinada.' },
     { id: 'indicacion-propiedad', label: 'Indicaciones de la propiedad (04/10/2026)', detail: '5 m de ancho; el muro existente del frontal B es de 0,60 m y el resto de 0,40 m; hay una pequeña habitación.' },
   ],
   readings: [
@@ -139,8 +146,9 @@ export const VINALLOP_ACTUAL: ProjectData = {
     { sourceId: F, read: 'Canalón y bajante en el frontal B; hastial del volumen principal sobre el anexo', interpreted: 'Cubiertas a un agua que caen hacia el frontal B.' },
   ],
   discrepancies: [
-    'Sin corregir la perspectiva, la vista cenital da un largo de ≈12,7 m para el conjunto; se escala al largo de 15,70 m de los bocetos manteniendo las proporciones.',
-    'La habitación pequeña se incluye dentro de los 15,70 m (el volumen principal termina en 14,20 m).',
+    'Sin corregir la perspectiva, la vista cenital da un largo de ≈12,7 m para el conjunto; se escala al largo de 16,33 m del informe manteniendo las proporciones.',
+    'Superficie: 79,48 m² construidos (informe) frente a 85,24 m² del rectángulo de 16,33 × 5,22 m. Puede que algún volumen sea más estrecho: pendiente.',
+    'La habitación pequeña se incluye dentro de los 16,33 m (el volumen principal termina en ≈14,77 m).',
     'El anexo parece algo más estrecho que el volumen principal en la vista cenital; se dibuja con el mismo ancho.',
   ],
   questions: [

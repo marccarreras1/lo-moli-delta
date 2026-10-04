@@ -1,19 +1,25 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AVISO, APP_VERSION, detectExport, exportGlb, exportJson, exportPng, exportSvg, type ExportMode } from './export/export';
+import { AVISO, APP_VERSION, detectExport, exportGlb, exportJson, exportPng, exportSvg, exportBathSvg, type ExportMode } from './export/export';
 import { useRefs } from './refs/db';
 import { useModel } from './state/derived';
-import { serializeConfig, useStore, type ViewTab } from './state/store';
+import { SECTIONS, serializeConfig, useStore, type ViewTab } from './state/store';
+import { useLogo } from './ui/logo';
+import { walkInput } from './viewer/walkInput';
+import { QUICK_COMPARE } from './model/compare';
 import { defaultPreset } from './model/cameras';
 import { BottomSheet } from './ui/BottomSheet';
 import { ControlPanel } from './ui/ControlPanel';
 import { ConfirmButton } from './ui/controls';
 import { Icon } from './ui/icons';
 import { InfoDialog } from './ui/InfoDialog';
+import { PhotoPanel } from './ui/PhotoPanel';
 import { PlanView } from './ui/PlanView';
 import { ReferencesDialog } from './ui/ReferencesDialog';
 import { ViewerErrorBoundary, webglAvailable } from './viewer/support';
 
 const Viewer = lazy(() => import('./viewer/Viewer').then((m) => ({ default: m.Viewer })));
+const CompareViewer = lazy(() => import('./viewer/Viewer').then((m) => ({ default: m.CompareViewer })));
+const SectionContent = lazy(() => import('./sections/SectionContent').then((m) => ({ default: m.SectionContent })));
 
 const TABS: { id: ViewTab; label: string }[] = [
   { id: 'exterior', label: 'Exterior' },
@@ -24,7 +30,7 @@ const TABS: { id: ViewTab; label: string }[] = [
 const HELP: Record<ViewTab, { mouse: string; touch: string }> = {
   exterior: { mouse: 'Arrastra para girar · rueda para acercar · botón derecho para desplazar', touch: 'Un dedo para girar · dos dedos para acercar o desplazar' },
   plantas: { mouse: 'Arrastra para desplazar · rueda para acercar · pulsa una estancia o abertura para seleccionarla', touch: 'Un dedo para desplazar · pellizca para acercar · toca para seleccionar' },
-  interior: { mouse: 'Arrastra para mirar alrededor · usa Avanzar y Retroceder para moverte', touch: 'Desliza un dedo para mirar alrededor · Avanzar y Retroceder para moverte' },
+  interior: { mouse: 'Arrastra para mirar · flechas o WASD para andar (no se atraviesan muros) · «Ir a…» para cambiar de estancia', touch: 'Desliza para mirar · mantén ▲ ▼ para andar y ↺ ↻ para girar · «Ir a…» para cambiar de estancia' },
 };
 
 function useMedia(q: string) {
@@ -43,7 +49,7 @@ export default function App() {
   const setTab = useStore((s) => s.setTab);
   const visual = useStore((s) => s.visual);
   const setVisual = useStore((s) => s.setVisual);
-  const { project, layout, issues, variant, empty, cameras } = useModel();
+  const { project, layout, issues, variant, empty, cameras, design } = useModel();
   const mobile = useMedia('(max-width: 767px), (max-height: 500px) and (pointer: coarse)');
   const tablet = useMedia('(min-width: 768px) and (max-width: 1199px)');
   const coarse = useMedia('(pointer: coarse)');
@@ -51,6 +57,14 @@ export default function App() {
   const [sheetH, setSheetH] = useState(0);
   const [sideW, setSideW] = useState(0);
   const [dialog, setDialog] = useState<null | 'info' | 'refs' | 'refs-add'>(null);
+  const [photo, setPhoto] = useState(false);
+  const [compare, setCompare] = useState<string | null>(null);
+  const logoSrc = useLogo((x) => x.src);
+  const compareVariant = useMemo(() => {
+    if (!compare) return null;
+    if (compare.startsWith('q:')) return QUICK_COMPARE.find((q) => q.id === compare.slice(2))?.apply(variant) ?? null;
+    return [design.base, ...design.variants].find((x) => x.id === compare.slice(2)) ?? null;
+  }, [compare, variant, design]);
   const [menu, setMenu] = useState<null | 'export' | 'more'>(null);
   const [toast, setToast] = useState<{ text: string; error?: boolean } | null>(null);
   const [roomName, setRoomName] = useState<string | null>(null);
@@ -126,7 +140,7 @@ export default function App() {
   const bottomInset = mobile ? sheetH : 0;
   const insets = useMemo(() => ({ bottom: bottomInset, right: mobile ? sideW : 0 }), [bottomInset, sideW, mobile]);
 
-  const doExport = async (kind: 'png' | 'png-alta' | 'glb' | 'svg' | 'json') => {
+  const doExport = async (kind: 'png' | 'png-alta' | 'glb' | 'svg' | 'bano' | 'json') => {
     setMenu(null);
     const label = camLabel ? `${viewTitle} · ${camLabel}` : viewTitle;
     try {
@@ -136,9 +150,10 @@ export default function App() {
       } else if (kind === 'glb') {
         setToast({ text: 'Preparando el modelo 3D…' });
         await exportGlb(project.name, variant.name);
-      } else if (kind === 'svg') await exportSvg(layout, { showDims: true, showAreas: true, showFurniture: visual.showFurniture, showLabels: true, issues, openFractions: {}, levelId: visual.levelId }, variant.name);
+      } else if (kind === 'bano') await exportBathSvg(layout, variant.name);
+      else if (kind === 'svg') await exportSvg(layout, { showDims: true, showAreas: true, showFurniture: visual.showFurniture, showLabels: true, issues, openFractions: {}, levelId: visual.levelId }, variant.name);
       else await exportJson(serializeConfig(useStore.getState()), project.name, variant.name);
-      setToast({ text: kind.startsWith('png') ? 'Imagen exportada.' : kind === 'glb' ? 'Modelo 3D exportado (GLB dentro de un ZIP).' : kind === 'svg' ? 'Plano exportado.' : 'Configuración exportada.' });
+      setToast({ text: kind.startsWith('png') ? 'Imagen exportada.' : kind === 'glb' ? 'Modelo 3D exportado (GLB dentro de un ZIP).' : kind === 'svg' || kind === 'bano' ? 'Plano exportado.' : 'Configuración exportada.' });
     } catch (e) {
       setToast({ text: e instanceof Error ? e.message : 'No se pudo exportar.', error: true });
     }
@@ -159,10 +174,10 @@ export default function App() {
     <div className={`app tab-${tab}${mobile ? ' is-mobile' : ''}${tablet ? ' is-tablet' : ''}${presenting ? ' presenting' : ''}`}>
       <header className="topbar">
         <div className="brand">
-          <span className="brand-name">Casa Vinallop</span>
+          {logoSrc ? <img className="brand-logo" src={logoSrc} alt="Casa Vinallop" /> : <span className="brand-name">Casa Vinallop</span>}
           <span className="brand-meta">Estudio v{APP_VERSION}</span>
         </div>
-        <div className="tabs" role="tablist" aria-label="Modo de visualización">
+        <div className={`tabs${visual.section !== 'visor' ? ' is-hidden' : ''}`} role="tablist" aria-label="Modo de visualización">
           {TABS.map((t) => (
             <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} className={tab === t.id ? 'on' : ''} onClick={() => setTab(t.id)} data-tab={t.id}>
               {t.label}
@@ -243,7 +258,22 @@ export default function App() {
         </div>
       </header>
 
-      <div className="workspace">
+      {!presenting && (
+        <nav className="sectionbar" aria-label="Secciones">
+          {SECTIONS.map((x) => (
+            <button key={x.id} type="button" aria-current={visual.section === x.id ? 'page' : undefined} className={visual.section === x.id ? 'on' : ''} onClick={() => setVisual('section', x.id)} data-nav={x.id}>{x.label}</button>
+          ))}
+        </nav>
+      )}
+      {visual.section !== 'visor' && !presenting && (
+        <div className="workspace section-workspace">
+          <Suspense fallback={<p className="state-center">Cargando…</p>}>
+            <SectionContent section={visual.section} />
+          </Suspense>
+        </div>
+      )}
+
+      <div className="workspace" hidden={visual.section !== 'visor' && !presenting}>
         {!mobile && !presenting && (
           <aside className={`side-panel${panelOpen ? ' open' : ''}`} aria-label="Controles" data-testid="side-panel" hidden={!panelOpen}>
             <div className="side-head">
@@ -254,7 +284,7 @@ export default function App() {
           </aside>
         )}
 
-        <main ref={viewportRef} className="viewport" aria-label={`Visor · ${viewTitle}`}>
+        <main ref={viewportRef} className={`viewport${compareVariant && threeVisible ? ' comparing' : ''}`} aria-label={`Visor · ${viewTitle}`}>
           {!mobile && !panelOpen && !presenting && (
             <button type="button" className="panel-open-btn" onClick={() => setPanelOpen(true)} data-action="open-panel"><Icon name="panel" /> Controles</button>
           )}
@@ -280,7 +310,7 @@ export default function App() {
                 </div>
               )}
               {gl && (
-                <div className={`pane${threeVisible ? '' : ' is-hidden'}`}>
+                <div className={`pane pane-3d${threeVisible ? '' : ' is-hidden'}`}>
                   <ViewerErrorBoundary key={viewerKey} onError={() => setFailed(true)} fallback={() => (
                     <div className="state-center" role="alert">
                       <h2>No se ha podido iniciar el visor 3D</h2>
@@ -311,6 +341,19 @@ export default function App() {
                 </div>
               )}
 
+              {compareVariant && threeVisible && ready && (
+                <div className="pane pane-compare" data-testid="compare-pane">
+                  <Suspense fallback={null}><CompareViewer variant={compareVariant} /></Suspense>
+                  <div className="compare-bar">
+                    <span>A: {variant.name} · B:</span>
+                    <select aria-label="Qué comparar" value={compare ?? ''} onChange={(e) => setCompare(e.target.value)} data-testid="compare-select">
+                      <optgroup label="Cambio rápido sobre la variante activa">{QUICK_COMPARE.map((q) => <option key={q.id} value={`q:${q.id}`}>{q.label}</option>)}</optgroup>
+                      <optgroup label="Variantes guardadas">{[design.base, ...design.variants].filter((x) => x.id !== variant.id).map((x) => <option key={x.id} value={`v:${x.id}`}>{x.name}</option>)}</optgroup>
+                    </select>
+                    <button type="button" className="tool" aria-label="Cerrar comparador" onClick={() => setCompare(null)}><Icon name="close" size={16} /></button>
+                  </div>
+                </div>
+              )}
               <div className="overlay-tl">
                 <h1 className="view-title">{viewTitle}{camLabel && tab !== 'plantas' ? <span> · {camLabel}</span> : null}</h1>
                 <div className="view-status" data-testid="view-status">
@@ -323,6 +366,8 @@ export default function App() {
               <div className="overlay-tr" role="toolbar" aria-label="Encuadre">
                 {tab !== 'interior' && <button type="button" className="tool" onClick={() => (planVisible && tab === 'plantas' ? setFitNonce((n) => n + 1) : useStore.getState().requestCamera('encajar'))} aria-label="Encajar toda la casa" title="Encajar toda la casa" data-action="fit"><Icon name="fit" /></button>}
                 <button type="button" className="tool" onClick={() => { useStore.getState().resetView(); setFitNonce((n) => n + 1); }} aria-label="Restablecer vista" title="Restablecer vista (no borra cambios)" data-action="reset-view"><Icon name="reset" /></button>
+                {threeVisible && ready && !mobile && <button type="button" className={`tool tool-text${compare ? ' active' : ''}`} onClick={() => setCompare((c) => (c ? null : 'q:ventanal'))} aria-pressed={!!compare} title="Comparar variantes en dos vistas sincronizadas" data-action="compare">A|B</button>}
+                {threeVisible && ready && tab !== 'plantas' && <button type="button" className={`tool${photo ? ' active' : ''}`} onClick={() => setPhoto((p) => !p)} aria-label="Modo fotografía" title="Modo fotografía (trazado de rayos)" data-action="photo-mode"><Icon name="image" /></button>}
                 <button type="button" className="tool" onClick={toggleFullscreen} aria-label={fullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'} title="Pantalla completa"><Icon name={fullscreen ? 'exitFullscreen' : 'fullscreen'} /></button>
               </div>
               {tab === 'interior' && threeVisible && (
@@ -332,7 +377,9 @@ export default function App() {
                   <button type="button" className="btn" onClick={() => setTab('exterior')} data-action="back-to-overview"><Icon name="home" size={16} /> Vista general</button>
                 </div>
               )}
+              {tab === 'interior' && threeVisible && !presenting && <WalkPad rooms={layout.rooms.map((r) => ({ id: r.id, name: r.name }))} bottom={bottomInset + 12} />}
               {roomName && <div className="room-toast" role="status">{roomName}</div>}
+              {photo && threeVisible && ready && <PhotoPanel projectName={project.name} variantName={variant.name} viewLabel={camLabel || viewTitle} onClose={() => setPhoto(false)} />}
               {!visual.helpDismissed && !(mobile && (sheetH > 80 || sideW > 0)) && (
                 <div className="help" style={{ bottom: bottomInset + (mobile ? 12 : 36) }} role="note">
                   <span>{help}</span>
@@ -378,15 +425,42 @@ function EmptyState({ refsCount, onAdd, onRefs, onTest }: { refsCount: number; o
   );
 }
 
-function ExportItems({ threeReady, empty, onExport }: { threeReady: boolean; empty: boolean; onExport: (k: 'png' | 'png-alta' | 'glb' | 'svg' | 'json') => void }) {
+function ExportItems({ threeReady, empty, onExport }: { threeReady: boolean; empty: boolean; onExport: (k: 'png' | 'png-alta' | 'glb' | 'svg' | 'bano' | 'json') => void }) {
   return (
     <>
       <button type="button" role="menuitem" disabled={!threeReady} onClick={() => onExport('png')} data-action="export-png">Imagen PNG de la vista</button>
       <button type="button" role="menuitem" disabled={!threeReady} onClick={() => onExport('png-alta')} data-action="export-png-hq">Imagen de alta resolución (×3)</button>
       <button type="button" role="menuitem" disabled={!threeReady} onClick={() => onExport('glb')} data-action="export-glb">Modelo 3D GLB con materiales (ZIP)</button>
       <button type="button" role="menuitem" disabled={empty} onClick={() => onExport('svg')} data-action="export-svg">Plano SVG</button>
+      <button type="button" role="menuitem" disabled={empty} onClick={() => onExport('bano')} data-action="export-bano">Planta acotada del baño (SVG)</button>
       <button type="button" role="menuitem" onClick={() => onExport('json')} data-action="export-json">Configuración JSON</button>
     </>
+  );
+}
+
+/** Mando del recorrido a pie (táctil y ratón; también teclado: flechas/WASD) y atajos de habitación. */
+function WalkPad({ rooms, bottom }: { rooms: { id: string; name: string }[]; bottom: number }) {
+  const hold = (k: keyof typeof walkInput, v: number) => ({
+    onPointerDown: (e: React.PointerEvent) => { e.preventDefault(); (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); walkInput[k] = v; },
+    onPointerUp: () => { walkInput[k] = 0; },
+    onPointerCancel: () => { walkInput[k] = 0; },
+    onLostPointerCapture: () => { walkInput[k] = 0; },
+  });
+  return (
+    <div className="walk-pad" style={{ bottom }} role="group" aria-label="Recorrido a pie">
+      <select aria-label="Ir a una estancia" defaultValue="" onChange={(e) => { if (e.target.value) useStore.getState().requestCamera(`walk:${e.target.value}`); e.target.value = ''; }} data-action="walk-room">
+        <option value="">Ir a…</option>
+        {rooms.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+      </select>
+      <div className="walk-grid">
+        <span />
+        <button type="button" className="tool" aria-label="Andar hacia delante" {...hold('fwd', 1)} data-action="walk-fwd">▲</button>
+        <span />
+        <button type="button" className="tool" aria-label="Girar a la izquierda" {...hold('turn', 1)}>↺</button>
+        <button type="button" className="tool" aria-label="Andar hacia atrás" {...hold('fwd', -1)}>▼</button>
+        <button type="button" className="tool" aria-label="Girar a la derecha" {...hold('turn', -1)}>↻</button>
+      </div>
+    </div>
   );
 }
 

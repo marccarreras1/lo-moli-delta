@@ -9,6 +9,7 @@ import {
 } from '../model/geometry';
 import { FRAME, leafPose } from '../model/openings';
 import { passages } from '../model/passages';
+import { soleraQuantities } from '../model/solera';
 import type { Issue } from '../model/validate';
 import { ACCENT, AMBER, STATUS_STYLE } from '../ui/status';
 
@@ -37,6 +38,12 @@ export interface PlanOptions {
   forExport?: { title: string; subtitle: string };
   /** distancias libres entre muebles y muros (ver src/model/passages.ts) */
   showPassages?: boolean;
+  /** dibuja el exterior (solera en L, comedor) en la planta baja; por defecto sí */
+  showOutdoor?: boolean;
+  /** recorte de la vista (m), p. ej. la planta acotada del baño */
+  crop?: { x0: number; y0: number; x1: number; y1: number };
+  /** cotas adicionales (a, b, desplazamiento, texto, estado) */
+  extraDims?: { a: Vec2; b: Vec2; off: number; label: string; status: DataStatus }[];
 }
 
 const CUT_REL = 1.0; // plano de corte a 1,00 m sobre el suelo del nivel
@@ -65,13 +72,71 @@ function dim(a: Vec2, b: Vec2, off: number, label: string, status: DataStatus) {
   return `<g class="dim" stroke="${st.color}" fill="${st.color}" stroke-width="0.012">${ext(a, A)}${ext(b, B)}<line x1="${n4(A[0])}" y1="${n4(A[1])}" x2="${n4(B[0])}" y2="${n4(B[1])}" ${st.dash ? `stroke-dasharray="${st.dash}"` : ''}/>${tick(A)}${tick(B)}<text x="${n4(mx)}" y="${n4(my)}" font-size="0.19" text-anchor="middle" dominant-baseline="middle" stroke="none" class="tnum" transform="rotate(${n4(ang)} ${n4(mx)} ${n4(my)})">${esc(label)}</text></g>`;
 }
 
+/** Exterior en planta: grava, solera en L con juntas, alcorque, canaletas, árbol, mesa y lámpara. */
+function outdoorSvg(layout: Layout, od: NonNullable<Layout['outdoor']>, labels: boolean): string {
+  const g: string[] = ['<g class="outdoor" pointer-events="none">'];
+  const q = soleraQuantities(layout);
+  for (const p of od.pavements) {
+    const [x0, y0, x1, y1] = p.rect;
+    if (p.joints === 0) {
+      g.push(`<rect x="${n4(x0)}" y="${n4(y0)}" width="${n4(x1 - x0)}" height="${n4(y1 - y0)}" fill="#efe9de" stroke="none"/>`);
+      continue;
+    }
+    g.push(`<rect x="${n4(x0)}" y="${n4(y0)}" width="${n4(x1 - x0)}" height="${n4(y1 - y0)}" fill="#e4e1da" stroke="#a8a59d" stroke-width="0.02" data-pavement="${esc(p.id)}"/>`);
+  }
+  // juntas (sobre la unión, una sola vez en la esquina)
+  for (const p of od.pavements.filter((x) => x.joints > 0)) {
+    const [x0, y0, x1, y1] = p.rect;
+    for (let x = x0 + p.joints; x < x1 - 1e-6; x += p.joints) g.push(`<line x1="${n4(x)}" y1="${n4(y0)}" x2="${n4(x)}" y2="${n4(y1)}" stroke="#b9b5ab" stroke-width="0.012"/>`);
+    for (let y = y0 + p.joints; y < y1 - 1e-6; y += p.joints) g.push(`<line x1="${n4(x0)}" y1="${n4(y)}" x2="${n4(x1)}" y2="${n4(y)}" stroke="#b9b5ab" stroke-width="0.012"/>`);
+  }
+  for (const p of od.pavements.filter((x) => x.permeable)) {
+    const { c, r } = p.permeable!;
+    g.push(`<circle cx="${n4(c[0])}" cy="${n4(c[1])}" r="${n4(r)}" fill="#efe9de" stroke="#3a3833" stroke-width="0.02"/>`);
+    if (labels) g.push(`<text x="${n4(c[0])}" y="${n4(c[1] + r + 0.22)}" font-size="0.13" fill="#687066" text-anchor="middle">alcorque permeable Ø ${fmtM(2 * r)}</text>`);
+  }
+  for (const d of od.drains ?? []) g.push(`<line x1="${n4(d.a[0])}" y1="${n4(d.a[1])}" x2="${n4(d.b[0])}" y2="${n4(d.b[1])}" stroke="#3a3833" stroke-width="0.08" stroke-dasharray="0.04 0.02"/>`);
+  for (const t of layout.site?.trees ?? []) {
+    g.push(`<circle cx="${n4(t.c[0])}" cy="${n4(t.c[1])}" r="${n4(t.r)}" fill="none" stroke="#6f7f52" stroke-width="0.025" stroke-dasharray="0.15 0.08"/><circle cx="${n4(t.c[0])}" cy="${n4(t.c[1])}" r="0.3" fill="#8a7a64" stroke="none"/>`);
+    if (labels) g.push(`<text x="${n4(t.c[0])}" y="${n4(t.c[1] - 0.45)}" font-size="0.16" fill="#56663f" text-anchor="middle">${esc(t.label)} (posición aproximada)</text>`);
+  }
+  for (const f of od.furniture) {
+    if (f.type === 'mesa-exterior') g.push(`<circle cx="${n4(f.x)}" cy="${n4(f.y)}" r="${n4(f.w / 2)}" fill="#f4f1ea" stroke="#9fa39a" stroke-width="0.015"/>`);
+    else g.push(`<polygon points="${pts(furnitureFootprint(f))}" fill="#fefdfb" stroke="#9fa39a" stroke-width="0.012"/>`);
+  }
+  if (od.domeLamp) {
+    const l = od.domeLamp;
+    g.push(`<circle cx="${n4(l.c[0])}" cy="${n4(l.c[1])}" r="${n4(l.diameter / 2)}" fill="none" stroke="#3a3833" stroke-width="0.02" stroke-dasharray="0.06 0.04"/>`);
+    g.push(`<circle cx="${n4(l.treeAnchor.c[0])}" cy="${n4(l.treeAnchor.c[1])}" r="0.07" fill="${AMBER}" stroke="none"/><circle cx="${n4(l.post[0])}" cy="${n4(l.post[1])}" r="0.06" fill="none" stroke="${AMBER}" stroke-width="0.02"/>`);
+    if (labels) g.push(`<text x="${n4(l.c[0])}" y="${n4(l.c[1] + 1.55)}" font-size="0.13" fill="${AMBER}" text-anchor="middle">lámpara de cúpula · anclaje sin resolver</text>`);
+  }
+  // cotas de los tramos de la solera y superficie (esquina contada una vez)
+  const fr = od.pavements.find((p) => p.id === 'solera-l-frente');
+  const la = od.pavements.find((p) => p.id === 'solera-l-lateral');
+  if (fr) g.push(dim([fr.rect[0], fr.rect[1]], [fr.rect[0], fr.rect[3]], 0.5, `${fmtM(fr.rect[3] - fr.rect[1])} m`, fr.status));
+  if (la) g.push(dim([la.rect[0], la.rect[1]], [la.rect[2], la.rect[1]], -0.45, `${fmtM(la.rect[2] - la.rect[0])} m`, la.status));
+  if (q && fr && labels) g.push(`<text x="${n4((fr.rect[0] + fr.rect[2]) / 2 - 3)}" y="${n4(fr.rect[3] - 0.9)}" font-size="0.2" fill="#3d433b" text-anchor="middle">Solera en L · ${fmtM(q.area)} m² (unión, esquina una vez, sin alcorque)</text><text x="${n4((fr.rect[0] + fr.rect[2]) / 2 - 3)}" y="${n4(fr.rect[3] - 0.6)}" font-size="0.13" fill="#687066" text-anchor="middle">juntas ≈3 m / 2 m · pendiente 1,5–2 % hacia la canaleta (propuesta)</text>`);
+  g.push('</g>');
+  return g.join('');
+}
+
 export function planSvg(layout: Layout, o: PlanOptions): string {
   const { minX, minY, maxX, maxY } = layout.bounds;
   const L = maxX - minX;
   const W = maxY - minY;
   const margin = 1.8;
   const extraBottom = o.forExport ? 2.0 : 1.0;
-  const vb = { x: minX - margin, y: minY - margin, w: L + 2 * margin, h: W + 2 * margin + extraBottom };
+  const levelFirst = (layout.levels.find((l) => l.id === o.levelId) ?? layout.levels[0])?.elevation === 0;
+  const outdoor = o.showOutdoor !== false && levelFirst ? layout.outdoor : undefined;
+  const solera = outdoor?.pavements.filter((p) => p.joints > 0) ?? [];
+  // extensión del dibujo: la casa y, si se muestra, la solera exterior
+  const ex = {
+    minX: Math.min(minX, ...solera.map((p) => p.rect[0])), minY: Math.min(minY, ...solera.map((p) => p.rect[1])),
+    maxX: Math.max(maxX, ...solera.map((p) => p.rect[2])), maxY: Math.max(maxY, ...solera.map((p) => p.rect[3])),
+  };
+  const vb = o.crop
+    ? { x: o.crop.x0, y: o.crop.y0, w: o.crop.x1 - o.crop.x0, h: o.crop.y1 - o.crop.y0 }
+    : { x: ex.minX - margin, y: ex.minY - margin, w: ex.maxX - ex.minX + 2 * margin, h: ex.maxY - ex.minY + 2 * margin + extraBottom };
   const wallById = new Map(layout.walls.map((w) => [w.id, w]));
   const conflictIds = new Set(o.issues.filter((i) => i.level !== 'aviso').map((i) => i.elementId));
   const selRoom = o.selection?.kind === 'room' ? o.selection.id : null;
@@ -101,6 +166,8 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
   out.push(`<style>.tnum{font-variant-numeric:tabular-nums}</style>`);
   out.push(`<defs><pattern id="hatch-prop" patternUnits="userSpaceOnUse" width="0.08" height="0.08" patternTransform="rotate(45)"><rect width="0.08" height="0.08" fill="#efe3c9"/><line x1="0" y1="0" x2="0" y2="0.08" stroke="${AMBER}" stroke-width="0.022"/></pattern></defs>`);
   out.push(`<rect x="${n4(vb.x)}" y="${n4(vb.y)}" width="${n4(vb.w)}" height="${n4(vb.h)}" fill="#fefdfb"/>`);
+
+  if (outdoor) out.push(outdoorSvg(layout, outdoor, !!o.showLabels));
 
   // Estancias
   out.push('<g class="rooms">');
@@ -148,18 +215,29 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
       }
       if (f.type === 'ducha') {
         out.push(`<line x1="${n4(fp[0][0])}" y1="${n4(fp[0][1])}" x2="${n4(fp[2][0])}" y2="${n4(fp[2][1])}" stroke-width="0.008" pointer-events="none"/><line x1="${n4(fp[1][0])}" y1="${n4(fp[1][1])}" x2="${n4(fp[3][0])}" y2="${n4(fp[3][1])}" stroke-width="0.008" pointer-events="none"/>`);
-        // celosía (propuesta): extremo −x completo y cara +z salvo el acceso de 0,70 m, con cortina
+        // dos rociadores enfrentados (paredes ±x), celosía hacia la zona seca (−z) con acceso central de 0,90 m,
+        // vidrio fijo por la cara húmeda y cortina en carril propio
         const r = (f.rot * Math.PI) / 180;
         const P = (lx: number, lz: number): Vec2 => [f.x + lx * Math.cos(r) - lz * Math.sin(r), f.y + lx * Math.sin(r) + lz * Math.cos(r)];
-        const t = 0.05;
-        const lat = [[P(-f.w / 2 - t, -f.d / 2), P(-f.w / 2 - t, f.d / 2 + 2 * t)], [P(-f.w / 2 + 0.7, f.d / 2 + t), P(f.w / 2, f.d / 2 + t)]];
-        for (const [a, b] of lat) out.push(`<line x1="${n4(a[0])}" y1="${n4(a[1])}" x2="${n4(b[0])}" y2="${n4(b[1])}" stroke="#b5653f" stroke-width="0.09" stroke-dasharray="0.03 0.025" pointer-events="none"/>`);
-        const c0 = P(-f.w / 2, f.d / 2 + 0.11);
-        const c1 = P(-f.w / 2 + 0.7, f.d / 2 + 0.11);
-        out.push(`<line x1="${n4(c0[0])}" y1="${n4(c0[1])}" x2="${n4(c1[0])}" y2="${n4(c1[1])}" stroke="${AMBER}" stroke-width="0.012" stroke-dasharray="0.04 0.03" pointer-events="none"/>`);
+        const L = (a: Vec2, b: Vec2, attrs: string) => out.push(`<line x1="${n4(a[0])}" y1="${n4(a[1])}" x2="${n4(b[0])}" y2="${n4(b[1])}" ${attrs} pointer-events="none"/>`);
+        const acc = 0.9;
+        const zl = -f.d / 2 - 0.05;
+        for (const k of [-1, 1]) {
+          L(P(k * (acc / 2), zl), P(k * (f.w / 2), zl), 'stroke="#b5653f" stroke-width="0.09" stroke-dasharray="0.03 0.025"');
+          L(P(k * (acc / 2), -f.d / 2 + 0.015), P(k * (f.w / 2), -f.d / 2 + 0.015), 'stroke="#8fb3b5" stroke-width="0.012"');
+          const h = P(k * (f.w / 2 - 0.12), 0.05);
+          out.push(`<circle cx="${n4(h[0])}" cy="${n4(h[1])}" r="0.09" fill="#e9dfcf" stroke="#9a7a45" stroke-width="0.012" pointer-events="none"/>`);
+          L(P(k * (f.w / 2 - 0.24), 0.05), P(k * (f.w / 2 - 0.5), 0.05), 'stroke="#9a7a45" stroke-width="0.01" marker-end="none"');
+          const m = P(k * (f.w / 2 - 0.03), -0.25);
+          out.push(`<rect x="${n4(m[0] - 0.03)}" y="${n4(m[1] - 0.03)}" width="0.06" height="0.06" fill="#9a7a45" stroke="none" pointer-events="none"/>`);
+        }
+        L(P(-acc / 2, -f.d / 2 + 0.06), P(acc / 2, -f.d / 2 + 0.06), `stroke="${AMBER}" stroke-width="0.012" stroke-dasharray="0.04 0.03"`);
+        L(P(-f.w / 2 + 0.3, f.d / 2 - 0.12), P(f.w / 2 - 0.3, f.d / 2 - 0.12), 'stroke="#9a7a45" stroke-width="0.02"');
         if (o.showLabels) {
-          const lp = P(-f.w / 2 + 0.35, f.d / 2 + 0.32);
-          out.push(`<text x="${n4(lp[0])}" y="${n4(lp[1])}" font-size="0.1" fill="#687066" stroke="none" text-anchor="middle" pointer-events="none">acceso · cortina</text>`);
+          const lp = P(0, zl - 0.14);
+          out.push(`<text x="${n4(lp[0])}" y="${n4(lp[1])}" font-size="0.1" fill="#687066" stroke="none" text-anchor="middle" pointer-events="none">acceso 0,90 · cortina</text>`);
+          const lq = P(0, 0.12);
+          out.push(`<text x="${n4(lq[0])}" y="${n4(lq[1])}" font-size="0.1" fill="#687066" stroke="none" text-anchor="middle" pointer-events="none">2 duchas enfrentadas</text>`);
         }
       }
       if (f.type === 'banera') {
@@ -402,7 +480,7 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
   if (o.showDims) {
     const m = (id: string) => layout.measures.find((x) => x.id === id)?.status ?? 'interpretado';
     out.push('<g class="dims">');
-    out.push(dim([minX, maxY], [maxX, maxY], 1.0, `${fmtM(L)} m`, m('largo')));
+    out.push(outdoor ? dim([minX, minY], [maxX, minY], -1.2, `${fmtM(L)} m`, m('largo')) : dim([minX, maxY], [maxX, maxY], 1.0, `${fmtM(L)} m`, m('largo')));
     out.push(dim([minX, minY], [minX, maxY], 0.8, `${fmtM(W)} m`, m('ancho')));
     const rs = rooms.find((r) => r.id === selRoom);
     if (rs) {
@@ -429,8 +507,18 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
     out.push('</g>');
   }
 
+  if (o.extraDims?.length) {
+    out.push('<g class="extra-dims">');
+    for (const d of o.extraDims) out.push(dim(d.a, d.b, d.off, d.label, d.status));
+    out.push('</g>');
+  }
+
   // Leyenda y escala gráfica (la geometría está en metros: escala válida)
-  const ly = maxY + 1.75;
+  if (o.crop) {
+    out.push('</svg>');
+    return out.join('');
+  }
+  const ly = ex.maxY + 1.75;
   out.push(`<g class="legend" font-size="0.16" fill="#3d433b">`);
   let lx = minX;
   for (const s of ['confirmado', 'documentado', 'interpretado', 'propuesto', 'pendiente'] as DataStatus[]) {
@@ -439,14 +527,14 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
     lx += st.label.length * 0.085 + 0.8;
   }
   out.push('</g>');
-  const sx = maxX - 5;
+  const sx = ex.maxX - 5;
   out.push(`<g class="scale" font-size="0.15" fill="#2f3430">`);
   for (let i = 0; i < 5; i++) out.push(`<rect x="${n4(sx + i)}" y="${n4(ly - 0.05)}" width="1" height="0.1" fill="${i % 2 ? '#fefdfb' : '#2f3430'}" stroke="#2f3430" stroke-width="0.01"/>`);
   for (const k of [0, 1, 2, 5]) out.push(`<text x="${n4(sx + k)}" y="${n4(ly + 0.3)}" text-anchor="middle">${k}</text>`);
   out.push(`<text x="${n4(sx + 5.2)}" y="${n4(ly + 0.05)}">m</text></g>`);
 
   if (o.forExport) {
-    const ty = maxY + 2.45;
+    const ty = ex.maxY + 2.45;
     out.push(`<g fill="#252923"><text x="${n4(minX)}" y="${n4(ty)}" font-size="0.26" font-weight="650">${esc(o.forExport.title)}</text><text x="${n4(minX)}" y="${n4(ty + 0.34)}" font-size="0.17" fill="#687066">${esc(o.forExport.subtitle)}</text><text x="${n4(minX)}" y="${n4(ty + 0.62)}" font-size="0.15" fill="#687066">Escala 1:50 al imprimir a tamaño real (${n4(vb.w * 20)} × ${n4(vb.h * 20)} mm) · Planta cortada a 1,00 m · Cotas en metros · Modelo de estudio, no proyecto técnico.</text></g>`);
   }
   out.push('</svg>');

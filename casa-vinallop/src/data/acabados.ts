@@ -12,7 +12,8 @@ export const SLOT_LABEL: Record<FinishSlot, string> = {
   cubierta: 'Cubierta',
   madera: 'Madera de mobiliario',
   textiles: 'Textiles',
-  boveda: 'Volta catalana y vigas (techo)',
+  boveda: 'Volta catalana (entre vigas)',
+  vigas: 'Vigas vistas del techo',
   encimera: 'Encimeras y salpicadero',
 };
 
@@ -68,6 +69,11 @@ export const FINISHES: Record<FinishSlot, Finish[]> = {
     { id: 'terracota-clara-volta', label: 'Terracota clara', color: '#c98d6c', roughness: 0.9 },
     { id: 'terracota-encalada', label: 'Terracota encalada (no elegida)', color: '#e9ddd0', roughness: 0.95 },
   ],
+  vigas: [
+    { id: 'cemento-gris', label: 'Cemento gris natural mate (confirmado)', color: '#a7a49d', roughness: 0.93 },
+    { id: 'cemento-claro', label: 'Cemento claro', color: '#bdb9b1', roughness: 0.93 },
+    { id: 'cemento-oscuro', label: 'Cemento oscuro', color: '#8c8982', roughness: 0.93 },
+  ],
   encimera: [
     { id: 'mineral-claro-enc', label: 'Mineral claro mate (referencia de cocina)', color: '#e8e3da', roughness: 0.55 },
     { id: 'microcemento-blanco', label: 'Microcemento blanco roto', color: '#efebe4', roughness: 0.6 },
@@ -82,7 +88,7 @@ export const PRESETS: FinishPreset[] = [
     label: 'Ibicenca y griega · propiedad',
     selection: {
       fachada: 'cal-muy-clara-ext', carpinteria: 'verde-gris-claro', suelo: 'microcemento-terracota-claro',
-      paredes: 'cal-muy-clara', cubierta: 'cubierta-blanca', madera: 'madera-clara-nudos', textiles: 'lino-crudo', boveda: 'terracota-volta', encimera: 'mineral-claro-enc',
+      paredes: 'cal-muy-clara', cubierta: 'cubierta-blanca', madera: 'madera-clara-nudos', textiles: 'lino-crudo', boveda: 'terracota-volta', vigas: 'cemento-gris', encimera: 'mineral-claro-enc',
     },
   },
   {
@@ -91,7 +97,7 @@ export const PRESETS: FinishPreset[] = [
     label: 'Ibicenca cálida · referencias (propuesta)',
     selection: {
       fachada: 'cal-muy-clara-ext', carpinteria: 'verde-gris-claro', suelo: 'mineral-claro',
-      paredes: 'arena-muy-clara', cubierta: 'cubierta-blanca', madera: 'madera-clara-nudos', textiles: 'lino-crudo', boveda: 'terracota-volta', encimera: 'mineral-claro-enc',
+      paredes: 'arena-muy-clara', cubierta: 'cubierta-blanca', madera: 'madera-clara-nudos', textiles: 'lino-crudo', boveda: 'terracota-volta', vigas: 'cemento-gris', encimera: 'mineral-claro-enc',
     },
   },
   {
@@ -99,7 +105,7 @@ export const PRESETS: FinishPreset[] = [
     label: 'Mediterránea · base',
     selection: {
       fachada: 'revoco-blanco-roto', carpinteria: 'madera-natural', suelo: 'microcemento-arena',
-      paredes: 'blanco-roto', cubierta: 'teja-arabe', madera: 'madera-natural-mob', textiles: 'lino-crudo', boveda: 'terracota-volta', encimera: 'microcemento-blanco',
+      paredes: 'blanco-roto', cubierta: 'teja-arabe', madera: 'madera-natural-mob', textiles: 'lino-crudo', boveda: 'terracota-volta', vigas: 'cemento-gris', encimera: 'microcemento-blanco',
     },
   },
   {
@@ -107,7 +113,7 @@ export const PRESETS: FinishPreset[] = [
     label: 'Ibicenca · clara',
     selection: {
       fachada: 'blanco-ibicenco', carpinteria: 'roble-claro', suelo: 'piedra-caliza',
-      paredes: 'blanco-puro', cubierta: 'teja-clara', madera: 'roble-claro-mob', textiles: 'arena-calida', boveda: 'terracota-clara-volta', encimera: 'microcemento-blanco',
+      paredes: 'blanco-puro', cubierta: 'teja-clara', madera: 'roble-claro-mob', textiles: 'arena-calida', boveda: 'terracota-clara-volta', vigas: 'cemento-gris', encimera: 'microcemento-blanco',
     },
   },
   {
@@ -115,7 +121,7 @@ export const PRESETS: FinishPreset[] = [
     label: 'Tierra · cálida',
     selection: {
       fachada: 'cal-arena', carpinteria: 'aluminio-arena', suelo: 'barro-cocido',
-      paredes: 'cal-arena-int', cubierta: 'teja-arabe', madera: 'madera-natural-mob', textiles: 'terracota-suave', boveda: 'terracota-volta', encimera: 'piedra-arenisca',
+      paredes: 'cal-arena-int', cubierta: 'teja-arabe', madera: 'madera-natural-mob', textiles: 'terracota-suave', boveda: 'terracota-volta', vigas: 'cemento-gris', encimera: 'piedra-arenisca',
     },
   },
 ];

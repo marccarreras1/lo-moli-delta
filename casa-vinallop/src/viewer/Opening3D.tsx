@@ -74,6 +74,20 @@ export function Opening3D({ o, w, mats, center, fraction, selected, onSelect, pl
           <mesh material={mats.glass}><boxGeometry args={[o.width - 2 * FRAME, o.height - 2 * FRAME, 0.01]} /></mesh>
         )}
       </group>
+      {o.shutters && !isDoor && [-1, 1].map((k) => {
+        // contraventanas de lamas de madera, abiertas contra la fachada exterior
+        const out = -inward * (w.thickness / 2 + 0.025);
+        const p = pointOnWall(w, o.offset + o.width / 2 + k * (o.width * 0.75 + 0.02), out);
+        const lh = o.height - 0.04;
+        return (
+          <group key={`sh${k}`} position={[p[0], o.sill + o.height / 2, p[1]]} rotation={[0, rotWall, 0]}>
+            <mesh material={mats.carpentryWood} castShadow><boxGeometry args={[o.width / 2, lh, 0.03]} /></mesh>
+            {Array.from({ length: Math.floor(lh / 0.07) }, (_, i) => (
+              <mesh key={i} position={[0, -lh / 2 + 0.06 + i * 0.07, -inward * 0.02]} rotation={[-0.5 * inward, 0, 0]} material={mats.carpentryWood}><boxGeometry args={[o.width / 2 - 0.06, 0.05, 0.008]} /></mesh>
+            ))}
+          </group>
+        );
+      })}
       {leaves.map((leaf, i) => {
         const a = (leaf.angle * Math.PI) / 180;
         const u: Vec2 = [d[0] * Math.cos(a) + n[0] * Math.sin(a), d[1] * Math.cos(a) + n[1] * Math.sin(a)];

@@ -49,7 +49,15 @@ export interface Visual {
   presentation: boolean;
   /** corte longitudinal (plano vertical por el eje de la casa) en Exterior */
   longSection: boolean;
+  /** sección de la aplicación (menú principal) */
+  section: AppSection;
 }
+
+export type AppSection = 'proyecto' | 'visor' | 'referencias' | 'instalaciones' | 'decisiones' | 'fases' | 'presupuesto';
+export const SECTIONS: { id: AppSection; label: string }[] = [
+  { id: 'proyecto', label: 'Proyecto' }, { id: 'visor', label: 'Visor 3D' }, { id: 'referencias', label: 'Referencias' }, { id: 'instalaciones', label: 'Instalaciones' },
+  { id: 'decisiones', label: 'Decisiones' }, { id: 'fases', label: 'Fases de obra' }, { id: 'presupuesto', label: 'Presupuesto' },
+];
 
 /** Vista favorita guardada por el usuario. */
 export interface Favorite {
@@ -105,6 +113,7 @@ export const defaultVisual = (): Visual => ({
   showPassages: false,
   presentation: false,
   longSection: false,
+  section: 'visor',
 });
 
 export const baseVariant = (): Variant => ({
@@ -198,6 +207,7 @@ function cleanVisual(x: unknown): Visual {
     levelId: typeof o.levelId === 'string' ? o.levelId.slice(0, 40) : null,
     lampDimmer: num(o.lampDimmer, 0, 1, d.lampDimmer),
     showPassages: bool(o.showPassages, d.showPassages),
+    section: pick(o.section, ['proyecto', 'visor', 'referencias', 'instalaciones', 'decisiones', 'fases', 'presupuesto'] as const, d.section),
     presentation: bool(o.presentation, d.presentation),
     longSection: bool(o.longSection, d.longSection),
   };
@@ -212,6 +222,9 @@ function cleanOptions(x: unknown): DesignOptions {
     lamparasUbicacion: pick(o.lamparasUbicacion, ['isla', 'salon'] as const, d.lamparasUbicacion),
     puertaEntrada: pick(o.puertaEntrada, ['verde-gris', 'tablones'] as const, d.puertaEntrada),
     entradaSaliente: bool(o.entradaSaliente, d.entradaSaliente),
+    ventanal: pick(o.ventanal, ['7', '9'] as const, d.ventanal),
+    aberturas: Array.isArray(o.aberturas) ? [...new Set(o.aberturas.filter((k): k is string => typeof k === 'string').map((k) => k.slice(0, 40)))].slice(0, 20) : [],
+    lamparaExterior: pick(o.lamparaExterior, ['arbol', 'soporte'] as const, d.lamparaExterior),
   };
 }
 

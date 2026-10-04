@@ -271,8 +271,8 @@ function OpenCloset({ w, d, h, mats }: { w: number; d: number; h: number; mats: 
  * suelto (referencia del salón, descrita). Respaldo contra el muro (lado -z).
  */
 function MasonrySofa({ w, d, h, mats, cushions }: { w: number; d: number; h: number; mats: MaterialSet; cushions: boolean }) {
-  const baseH = 0.32;
-  const seatT = 0.12;
+  const baseH = 0.3;
+  const seatT = 0.15;
   const backD = 0.2;
   const n = Math.max(1, Math.round(w / 0.75));
   const sw = w / n;
@@ -294,6 +294,19 @@ function MasonrySofa({ w, d, h, mats, cushions }: { w: number; d: number; h: num
 }
 
 function WoodTable({ w, d, h, mats }: { w: number; d: number; h: number; mats: MaterialSet }) {
+  if (h < 0.5) {
+    // mesa baja maciza de la referencia 03: dos tablones gruesos superpuestos sobre patas cortas
+    const top = 0.09;
+    const mid = 0.07;
+    const legH = h - top - mid;
+    return (
+      <>
+        <RoundSlab y={h - top} w={w} d={d} h={top - 0.012} r={0.015} m={mats.wood} />
+        <B y={legH} w={w - 0.06} h={mid} d={d - 0.06} m={mats.wood} />
+        {[[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sz], i) => <B key={i} x={sx * (w / 2 - 0.1)} z={sz * (d / 2 - 0.1)} w={0.05} h={legH} d={0.05} m={mats.woodBeam} />)}
+      </>
+    );
+  }
   const t = 0.05;
   const leg = 0.07;
   return (
@@ -409,42 +422,46 @@ function Kitchen({ w, d, h, modules, mats }: { w: number; d: number; h: number; 
  * hacia el frontal A (−z). Revestimiento de piezas estrechas verticales de terracota con junta
  * clara; encimera mineral clara con esquinas suavizadas.
  */
+/**
+ * Isla de obra: estructura de la referencia 05 y acabado de la 06.
+ *   Cara de los taburetes (−z): hueco de 1,00 m para las piernas y, al lado, dos baldas abiertas
+ *   (hueco inferior de 0,30 m, balda de 0,10 m y hueco superior hasta la encimera).
+ *   Revestimiento de piezas verticales de terracota en junta continua con llaga blanca y
+ *   encimera clara de cantos redondeados con vuelo.
+ */
 function Island({ w, d, h, mats }: { w: number; d: number; h: number; mats: MaterialSet }) {
-  const top = 0.04;
-  const pier = 0.3;
-  const knee = 0.3;
+  const top = 0.05;
+  const wall = 0.06;
+  const recess = Math.min(1.0, w - 3 * wall - 0.3);
+  const shelfW = w - 3 * wall - recess;
+  const knee = 0.4;
   const bodyH = h - top;
-  const coreD = d - knee;
-  const inner = w - 2 * pier;
+  const x0 = -w / 2;
+  const rx0 = x0 + wall;
+  const rx1 = rx0 + recess;
+  const sx0 = rx1 + wall;
+  const sx1 = sx0 + shelfW;
+  const zOpen = -d / 2;
   return (
     <>
-      {/* apoyos macizos con estantes abiertos hacia fuera: mejillas, baldas y fondo con huecos reales */}
-      {[-1, 1].map((k) => {
-        const px = k * (w / 2 - pier / 2);
-        const cheek = 0.06;
-        const back = 0.08;
-        const inD = d - 2 * cheek;
-        const inW = pier - back;
-        const ox = px + k * (back / 2);
-        return (
-          <group key={k}>
-            {[-1, 1].map((z) => <B key={z} x={px} z={z * (d / 2 - cheek / 2)} w={pier} h={bodyH} d={cheek} m={mats.terracottaTile} />)}
-            <B x={px - k * (pier / 2 - back / 2)} w={back} h={bodyH} d={inD} m={mats.interior} />
-            <B x={ox} w={inW} h={0.1} d={inD} m={mats.terracottaTile} />
-            <B x={ox} y={0.42} w={inW} h={0.04} d={inD} m={mats.interior} />
-            <B x={ox} y={bodyH - 0.06} w={inW} h={0.06} d={inD} m={mats.terracottaTile} />
-            {/* objetos en los estantes */}
-            <Lathe x={ox} y={0.46} z={-0.15} profile={[[0, 0], [0.07, 0], [0.09, 0.05], [0.09, 0.08], [0, 0.08]]} m={mats.clayLight} />
-            <B x={ox} y={0.1} z={0.1} w={0.16} h={0.12} d={0.24} m={mats.rug} />
-          </group>
-        );
-      })}
-      {/* cuerpo central cerrado hacia la cocina */}
-      <B z={d / 2 - coreD / 2} w={inner} h={bodyH} d={coreD} m={mats.terracottaTile} />
-      {/* fondo del hueco de rodillas, retranqueado */}
-      <B z={-d / 2 + knee - 0.01} w={inner} h={bodyH - 0.02} d={0.02} m={mats.interior} />
-      {/* encimera clara con esquinas suavizadas y vuelo hacia los taburetes */}
-      <RoundSlab y={bodyH} w={w + 0.04} d={d + 0.03} h={top - 0.012} r={0.06} m={mats.counter} />
+      {/* testeros y tabique entre el hueco de piernas y las baldas */}
+      <B x={x0 + wall / 2} w={wall} h={bodyH} d={d} m={mats.terracottaTile} />
+      <B x={w / 2 - wall / 2} w={wall} h={bodyH} d={d} m={mats.terracottaTile} />
+      <B x={rx1 + wall / 2} w={wall} h={bodyH} d={d} m={mats.terracottaTile} />
+      {/* cuerpo cerrado hacia la cocina (detrás de los huecos) */}
+      <B x={(rx0 + sx1) / 2} z={zOpen + knee + (d - knee) / 2} w={sx1 - rx0} h={bodyH} d={d - knee} m={mats.terracottaTile} />
+      {/* fondo del hueco de piernas y de las baldas, en blanco de obra */}
+      <B x={(rx0 + rx1) / 2} z={zOpen + knee - 0.005} w={recess} h={bodyH} d={0.01} m={mats.interior} />
+      <B x={(sx0 + sx1) / 2} z={zOpen + knee - 0.005} w={shelfW} h={bodyH} d={0.01} m={mats.interior} />
+      {/* baldas: base, hueco de 0,30 m, balda de 0,10 m */}
+      <B x={(sx0 + sx1) / 2} z={zOpen + knee / 2} w={shelfW} h={0.04} d={knee} m={mats.interior} />
+      <B x={(sx0 + sx1) / 2} y={0.34} z={zOpen + knee / 2} w={shelfW} h={0.1} d={knee} m={mats.interior} />
+      <B x={(rx0 + rx1) / 2} y={bodyH - 0.05} z={zOpen + knee / 2} w={recess} h={0.05} d={knee} m={mats.interior} />
+      {/* objetos en las baldas */}
+      <Lathe x={(sx0 + sx1) / 2} y={0.44} z={zOpen + 0.2} profile={[[0, 0], [0.07, 0], [0.11, 0.06], [0.1, 0.11], [0.05, 0.13], [0, 0.13]]} m={mats.clay} />
+      <Lathe x={(sx0 + sx1) / 2} y={0.04} z={zOpen + 0.2} profile={[[0, 0], [0.08, 0], [0.09, 0.12], [0.06, 0.16], [0, 0.16]]} m={mats.clayLight} />
+      {/* encimera clara gruesa de cantos redondeados, con vuelo */}
+      <RoundSlab y={bodyH} w={w + 0.06} d={d + 0.06} h={top - 0.012} r={0.08} m={mats.counter} />
     </>
   );
 }
@@ -481,149 +498,156 @@ function Toilet({ w, d, mats }: { w: number; d: number; mats: MaterialSet }) {
 }
 
 /**
- * Lavabo de obra claro con cajones de madera y hueco inferior, un seno, espejo grande, franja de
- * piezas verticales de terracota y grifería de latón empotrada (referencia del baño, descrita).
+ * Lavabo de obra (referencia 04): encimera continua clara con seno integrado, dos cajones de madera,
+ * hueco inferior libre, balda abierta lateral con toallas, franja de piezas verticales de terracota,
+ * grifería mural de latón de tres piezas y espejo grande sin marco.
  */
 function MasonryVanity({ w, d, h, mats }: { w: number; d: number; h: number; mats: MaterialSet }) {
-  const slab = 0.1;
+  const slab = 0.12;
   const side = 0.08;
-  const drawerH = 0.22;
+  const shelfW = Math.min(0.3, w * 0.28);
+  const drawerH = 0.24;
   const wall = -d / 2;
+  const dw = w - 2 * side - shelfW - 0.06;
+  const dx = -w / 2 + side + dw / 2;
+  const basinW = Math.min(0.5, dw - 0.1);
   return (
     <>
-      {/* encimera y costados de obra encalados */}
-      <Soft y={h - slab} w={w} h={slab} d={d} r={0.02} m={mats.interior} />
-      {[-1, 1].map((k) => <B key={k} x={k * (w / 2 - side / 2)} w={side} h={h - slab} d={d} m={mats.interior} />)}
-      {/* cajones de madera */}
+      {/* encimera y costados de obra */}
+      <Soft y={h - slab} w={w} h={slab} d={d} r={0.025} m={mats.interior} />
+      {[-w / 2 + side / 2, w / 2 - side / 2, w / 2 - side - shelfW - 0.03].map((x, i) => <B key={i} x={x} w={i === 2 ? 0.06 : side} h={h - slab} d={d} m={mats.interior} />)}
+      {/* bandeja de obra bajo los cajones */}
+      <B x={dx} y={h - slab - drawerH - 0.06} w={dw} h={0.06} d={d - 0.02} m={mats.interior} />
+      {/* dos cajones de madera enrasados */}
       {[-1, 1].map((k) => (
         <group key={k}>
-          <B x={(k * (w - 2 * side)) / 4} y={h - slab - drawerH} z={d / 2 - 0.03} w={(w - 2 * side) / 2 - 0.006} h={drawerH - 0.006} d={0.02} m={mats.wood} />
-          <B x={(k * (w - 2 * side)) / 4} y={h - slab - drawerH} z={-0.02} w={(w - 2 * side) / 2 - 0.01} h={drawerH - 0.01} d={d - 0.08} m={mats.wood} />
-          <B x={(k * (w - 2 * side)) / 4} y={h - slab - drawerH / 2 - 0.01} z={d / 2 - 0.012} w={0.1} h={0.014} d={0.014} m={mats.brass} />
+          <B x={dx + (k * dw) / 4} y={h - slab - drawerH} z={d / 2 - 0.035} w={dw / 2 - 0.008} h={drawerH - 0.008} d={0.025} m={mats.wood} />
+          <B x={dx + (k * dw) / 4} y={h - slab - drawerH} z={-0.02} w={dw / 2 - 0.012} h={drawerH - 0.012} d={d - 0.09} m={mats.wood} />
         </group>
       ))}
-      {/* hueco inferior con balda de obra y toallas */}
-      <B y={0.14} w={w - 2 * side} h={0.05} d={d - 0.04} m={mats.interior} />
-      <Soft x={-w / 5} y={0.19} w={0.34} h={0.12} d={0.3} r={0.03} m={mats.textileLight} />
-      <Lathe x={w / 5} y={0.19} profile={[[0, 0], [0.08, 0], [0.1, 0.14], [0.06, 0.2], [0, 0.2]]} m={mats.clay} />
-      {/* seno de cerámica semiempotrado */}
-      <mesh position={[0, h - 0.035, 0.03]} scale={[1, 0.45, 0.75]} material={mats.ceramic} castShadow>
-        <sphereGeometry args={[0.22, 28, 14, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2]} />
-      </mesh>
-      <mesh position={[0, h + 0.001, 0.03]} rotation={[-Math.PI / 2, 0, 0]} scale={[1, 0.75, 1]} material={mats.ceramic}><ringGeometry args={[0.2, 0.24, 32]} /></mesh>
-      {/* grifería de latón empotrada en el muro */}
-      <group position={[0, h + 0.3, wall + 0.02]}>
-        <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.09]} material={mats.brass}><cylinderGeometry args={[0.013, 0.013, 0.18, 12]} /></mesh>
-        {[-0.12, 0.12].map((x) => <mesh key={x} position={[x, 0.02, 0.025]} rotation={[Math.PI / 2, 0, 0]} material={mats.brass}><cylinderGeometry args={[0.025, 0.025, 0.04, 16]} /></mesh>)}
+      {/* balda abierta lateral con toallas */}
+      <B x={w / 2 - side - shelfW / 2} y={h - slab - drawerH - 0.06} w={shelfW} h={0.04} d={d - 0.04} m={mats.interior} />
+      <Soft x={w / 2 - side - shelfW / 2} y={h - slab - drawerH - 0.02} w={shelfW - 0.06} h={0.1} d={d - 0.18} r={0.03} m={mats.textileLight} />
+      <Soft x={w / 2 - side - shelfW / 2} y={h - slab - drawerH + 0.08} w={shelfW - 0.08} h={0.07} d={d - 0.2} r={0.025} m={mats.textileLight} />
+      {/* seno integrado en la encimera: hueco rectangular de esquinas suaves */}
+      <B x={dx} y={h - 0.06} z={0.03} w={basinW} h={0.002} d={0.32} m={mats.ceramic} shadow={false} />
+      <B x={dx} y={h - 0.065} z={0.03} w={basinW - 0.04} h={0.062} d={0.28} m={mats.counter} shadow={false} />
+      <mesh position={[dx, h - 0.058, 0.08]} rotation={[-Math.PI / 2, 0, 0]} material={mats.brass}><circleGeometry args={[0.022, 16]} /></mesh>
+      {/* franja de piezas verticales de terracota */}
+      <B y={h} z={wall + 0.006} w={w} h={0.34} d={0.012} m={mats.terracottaTile} />
+      {/* grifería mural de latón de tres piezas sobre la franja */}
+      <group position={[dx, h + 0.2, wall + 0.012]}>
+        <mesh position={[0, 0, 0.08]} rotation={[Math.PI / 2, 0, 0]} material={mats.brass}><cylinderGeometry args={[0.011, 0.011, 0.16, 12]} /></mesh>
+        {[-0.1, 0, 0.1].map((x) => <mesh key={x} position={[x, 0, 0.012]} rotation={[Math.PI / 2, 0, 0]} material={mats.brass}><cylinderGeometry args={[0.028, 0.028, 0.012, 20]} /></mesh>)}
+        {[-0.1, 0.1].map((x) => <mesh key={x} position={[x, 0, 0.035]} rotation={[Math.PI / 2, 0, 0]} material={mats.brass}><cylinderGeometry args={[0.012, 0.012, 0.04, 10]} /></mesh>)}
       </group>
-      {/* franja de piezas verticales de terracota sobre la encimera */}
-      <B y={h} z={wall + 0.006} w={w} h={0.3} d={0.012} m={mats.terracottaTile} />
-      {/* espejo grande con marco fino de madera */}
-      <B y={h + 0.42} z={wall + 0.012} w={Math.min(1.1, w - 0.2)} h={0.9} d={0.02} m={mats.wood} />
-      <MirrorPane y={h + 0.435 + 0.435} z={wall + 0.026} w={Math.min(1.1, w - 0.2) - 0.03} h={0.87} base={mats.mirror} />
-      {/* toallero de latón en el frente, bajo la encimera */}
-      <group position={[-w / 4, h - slab - 0.04, d / 2 + 0.035]}>
-        <mesh rotation={[0, 0, Math.PI / 2]} material={mats.brass}><cylinderGeometry args={[0.009, 0.009, 0.55, 10]} /></mesh>
-        {[-0.265, 0.265].map((x) => <mesh key={x} position={[x, 0, -0.02]} rotation={[Math.PI / 2, 0, 0]} material={mats.brass}><cylinderGeometry args={[0.008, 0.008, 0.04, 8]} /></mesh>)}
-        <Soft y={-0.3} z={0.005} w={0.42} h={0.3} d={0.02} r={0.008} m={mats.textileLight} />
-      </group>
+      {/* espejo grande sin marco, de ancho casi completo */}
+      <MirrorPane y={h + 0.34 + 0.06 + 0.5} z={wall + 0.016} w={w - 0.08} h={1.0} base={mats.mirror} />
+      <B y={h + 0.34 + 0.06} z={wall + 0.004} w={w - 0.08} h={1.0} d={0.008} m={mats.blackMetal} shadow={false} />
     </>
   );
 }
 
 /**
- * Ducha doble (dos rociadores, uno delante del otro). Separación propuesta en dos alternativas de
- * celosía cerámica con huecos reales:
- *   A · patrón fino geométrico (rombos) dentro de un paño claro;
- *   B · huecos cuadrados con piezas de más presencia.
- * Por la cara de ducha, vidrio transparente para contener salpicaduras; acceso por el lado de la
- * estancia con cortina en carril independiente. Todo ello es propuesta, no decisión.
+ * Zona húmeda con DOS DUCHAS ENFRENTADAS (confirmado): un rociador en cada pared lateral (−x y +x),
+ * orientados hacia la zona común, cada uno con su mando independiente. Plato enrasado común con
+ * sumidero lineal. Hacia la zona seca (−z) la celosía cerámica (A o B, propuesta) deja un acceso
+ * central; por la cara húmeda, vidrio fijo; en el acceso, cortina en carril independiente.
  *
- * Eje local: −x = extremo hacia el pasillo, +x = frontal B (puerta exterior), +z = cara hacia el
- * baño, −z = muro de la escalera.
+ * Eje local: −x / +x = paredes laterales del baño, −z = zona seca (entrada), +z = muro del frontal B.
  */
 function Shower({ w, d, mats, lattice }: { w: number; d: number; mats: MaterialSet; lattice: 'A' | 'B' }) {
   const H = 2.1;
-  const access = 0.7;
+  const access = 0.9;
   const t = 0.1;
-  const frontLen = w - access;
+  const seg = (w - access) / 2;
+  const zl = -d / 2 - t / 2;
   return (
     <>
-      {/* plato enrasado de microcemento con sumidero lineal de latón */}
+      {/* plato enrasado de microcemento con ligera pendiente y sumidero lineal junto al muro del fondo */}
       <B w={w} h={0.012} d={d} m={mats.counter} />
-      <B x={0.2} y={0.012} z={-d / 2 + 0.06} w={w - 0.5} h={0.003} d={0.04} m={mats.brass} shadow={false} />
-      {/* celosía del extremo del pasillo (−x) */}
-      <LatticeWall x={-w / 2 - t / 2} z={0} len={d + t} H={H} t={t} ry={Math.PI / 2} kind={lattice} mats={mats} />
-      {/* celosía de la cara del baño (+z), entre el acceso y el frontal B */}
-      <LatticeWall x={w / 2 - frontLen / 2} z={d / 2 + t / 2} len={frontLen} H={H} t={t} ry={0} kind={lattice} mats={mats} />
-      {/* vidrio por la cara de la ducha */}
-      <B x={-w / 2 + 0.012} z={0} w={0.01} h={H - 0.05} d={d - 0.02} m={mats.glass} shadow={false} />
-      <B x={w / 2 - frontLen / 2} z={d / 2 - 0.012} w={frontLen - 0.02} h={H - 0.05} d={0.01} m={mats.glass} shadow={false} />
-      {/* carril independiente y cortina en el acceso */}
-      <mesh position={[-w / 2 + access / 2, H + 0.02, d / 2 + 0.06]} rotation={[0, 0, Math.PI / 2]} material={mats.brass}><cylinderGeometry args={[0.01, 0.01, access + 0.06, 10]} /></mesh>
-      <Curtain x={-w / 2 + 0.09} z={d / 2 + 0.06} width={0.18} height={H - 0.12} mats={mats} />
-      {/* dos rociadores de latón, uno delante del otro, y sus mezcladores */}
-      {[-w / 4, w / 4].map((x) => (
-        <group key={x} position={[x, 0, -d / 2]}>
-          <mesh position={[0, 2.05, 0.18]} rotation={[Math.PI / 2, 0, 0]} material={mats.brass}><cylinderGeometry args={[0.012, 0.012, 0.36, 10]} /></mesh>
-          <mesh position={[0, 2.03, 0.34]} material={mats.brass}><cylinderGeometry args={[0.11, 0.11, 0.015, 28]} /></mesh>
-          <mesh position={[0, 1.1, 0.02]} rotation={[Math.PI / 2, 0, 0]} material={mats.brass}><cylinderGeometry args={[0.035, 0.035, 0.03, 18]} /></mesh>
+      <B y={0.012} z={d / 2 - 0.12} w={w - 0.6} h={0.003} d={0.05} m={mats.brass} shadow={false} />
+      {/* celosía hacia la zona seca, a ambos lados del acceso central */}
+      {[-1, 1].map((k) => <LatticeWall key={k} x={k * (access / 2 + seg / 2)} z={zl} len={seg} H={H} t={t} ry={0} kind={lattice} mats={mats} />)}
+      {/* vidrio fijo por la cara húmeda de la celosía */}
+      {[-1, 1].map((k) => <B key={k} x={k * (access / 2 + seg / 2)} y={0.012} z={-d / 2 + 0.015} w={seg - 0.02} h={H - 0.06} d={0.01} m={mats.glass} shadow={false} />)}
+      {/* carril independiente con cortina recogida en el acceso */}
+      <mesh position={[0, H + 0.02, -d / 2 + 0.06]} rotation={[0, 0, Math.PI / 2]} material={mats.brass}><cylinderGeometry args={[0.01, 0.01, access + 0.1, 10]} /></mesh>
+      {[-1, 1].map((k) => <mesh key={k} position={[k * (access / 2 + 0.05), H + 0.02, -d / 2 + 0.03]} rotation={[Math.PI / 2, 0, 0]} material={mats.brass}><cylinderGeometry args={[0.008, 0.008, 0.07, 8]} /></mesh>)}
+      <Curtain x={-access / 2 + 0.11} z={-d / 2 + 0.06} width={0.22} height={H - 0.12} mats={mats} />
+      {/* dos rociadores enfrentados, uno en cada pared lateral, con mandos independientes */}
+      {[-1, 1].map((k) => (
+        <group key={k} position={[k * (w / 2), 0, 0.05]} rotation={[0, k < 0 ? 0 : Math.PI, 0]}>
+          <mesh position={[0.17, 2.08, 0]} rotation={[0, 0, Math.PI / 2]} material={mats.brass}><cylinderGeometry args={[0.012, 0.012, 0.34, 10]} /></mesh>
+          <mesh position={[0.02, 2.0, 0]} material={mats.brass}><cylinderGeometry args={[0.012, 0.012, 0.16, 10]} /></mesh>
+          <mesh position={[0.34, 2.06, 0]} material={mats.brass}><cylinderGeometry args={[0.1, 0.1, 0.014, 28]} /></mesh>
+          {/* mando termostático propio */}
+          <mesh position={[0.01, 1.1, 0]} rotation={[0, 0, Math.PI / 2]} material={mats.brass}><cylinderGeometry args={[0.04, 0.04, 0.02, 20]} /></mesh>
+          <mesh position={[0.035, 1.1, 0]} rotation={[0, 0, Math.PI / 2]} material={mats.brass}><cylinderGeometry args={[0.012, 0.012, 0.04, 10]} /></mesh>
         </group>
       ))}
-      {/* hornacina de obra en el muro de la escalera */}
-      <B y={1.05} z={-d / 2 + 0.05} w={0.56} h={0.45} d={0.1} m={mats.interior} />
-      <B y={1.1} z={-d / 2 + 0.06} w={0.46} h={0.32} d={0.1} m={mats.terracottaTile} />
-      <Lathe x={-0.1} y={1.1} z={-d / 2 + 0.08} profile={[[0, 0], [0.03, 0], [0.035, 0.14], [0.015, 0.18], [0, 0.18]]} m={mats.clayLight} />
+      {/* hornacinas de obra en el muro del fondo, una por ducha */}
+      {[-1, 1].map((k) => (
+        <group key={k} position={[k * (w / 2 - 0.45), 0, d / 2]}>
+          <B y={1.05} z={-0.04} w={0.5} h={0.4} d={0.08} m={mats.interior} />
+          <B y={1.1} z={-0.03} w={0.42} h={0.3} d={0.07} m={mats.terracottaTile} />
+          <Lathe x={-0.08} y={1.1} z={-0.06} profile={[[0, 0], [0.03, 0], [0.035, 0.14], [0.015, 0.18], [0, 0.18]]} m={mats.clayLight} />
+        </group>
+      ))}
     </>
   );
 }
 
-/** Paño claro de obra con una celosía cerámica de huecos reales (piezas instanciadas). */
+/** Piezas de la celosía: lista de barras en el plano local (x, y) del paño. */
+type Bar = { x: number; y: number; w: number; h: number; rz: number };
+
+/**
+ * Celosía cerámica con huecos reales (piezas instanciadas) dentro de un paño claro de obra.
+ *   A · bloques de 20 × 10 cm con marco propio y almas en zigzag que dejan triángulos (referencia 07);
+ *   B · bloques de 20 × 20 cm con un hueco cuadrado de ≈14 cm y canto completo (referencia 08).
+ */
 function LatticeWall({ x, z, len, H, t, ry, kind, mats }: { x: number; z: number; len: number; H: number; t: number; ry: number; kind: 'A' | 'B'; mats: MaterialSet }) {
-  const frame = 0.12;
+  const frame = 0.08;
   const base = 0.12;
-  const top = 0.18;
+  const top = 0.14;
   const lw = len - 2 * frame;
   const lh = H - base - top;
   const bars = useMemo(() => {
-    const list: { x: number; y: number; w: number; h: number; rz: number }[] = [];
+    const list: Bar[] = [];
     if (lw <= 0.05 || lh <= 0.05) return list;
-    if (kind === 'B') {
-      // piezas de 15 cm con huecos de 10 cm y almas de 5 cm
-      const cell = 0.15;
-      const web = 0.05;
-      const nx = Math.max(1, Math.round(lw / cell));
-      const ny = Math.max(1, Math.round(lh / cell));
-      const cx = lw / nx;
-      const cy = lh / ny;
-      for (let i = 0; i <= nx; i++) list.push({ x: -lw / 2 + i * cx, y: lh / 2, w: web, h: lh, rz: 0 });
-      for (let j = 0; j <= ny; j++) list.push({ x: 0, y: j * cy, w: lw, h: web, rz: 0 });
-    } else {
-      // rejilla fina de rombos: listones a ±45° cada 7 cm, recortados al marco
-      const step = 0.07;
-      const bw = 0.018;
-      const diag = Math.hypot(lw, lh);
-      for (const dir of [1, -1]) {
-        for (let k = -diag; k <= diag; k += step) {
-          // recta x*dir - y = k  dentro del rectángulo [-lw/2, lw/2] × [0, lh]
-          const pts: [number, number][] = [];
-          const add = (px: number, py: number) => { if (px >= -lw / 2 - 1e-6 && px <= lw / 2 + 1e-6 && py >= -1e-6 && py <= lh + 1e-6) pts.push([px, py]); };
-          add(-lw / 2, dir * -lw / 2 - k);
-          add(lw / 2, dir * lw / 2 - k);
-          add(dir * k, 0);
-          add(dir * (k + lh), lh);
-          if (pts.length < 2) continue;
-          pts.sort((p, q) => p[0] - q[0]);
-          const [p0, p1] = [pts[0], pts[pts.length - 1]];
-          const L = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]);
-          if (L < 0.02) continue;
-          list.push({ x: (p0[0] + p1[0]) / 2, y: (p0[1] + p1[1]) / 2, w: L, h: bw, rz: Math.atan2(p1[1] - p0[1], p1[0] - p0[0]) });
+    const bw = 0.2;
+    const bh = kind === 'A' ? 0.1 : 0.2;
+    const nx = Math.max(1, Math.round(lw / bw));
+    const ny = Math.max(1, Math.round(lh / bh));
+    const cw = lw / nx;
+    const ch = lh / ny;
+    const e = kind === 'A' ? 0.009 : 0.028; // espesor de las paredes del bloque
+    for (let i = 0; i < nx; i++)
+      for (let j = 0; j < ny; j++) {
+        const cx = -lw / 2 + (i + 0.5) * cw;
+        const cy = (j + 0.5) * ch;
+        const iw = cw - 0.008; // junta de 8 mm
+        const ih = ch - 0.008;
+        list.push({ x: cx, y: cy - ih / 2 + e / 2, w: iw, h: e, rz: 0 });
+        list.push({ x: cx, y: cy + ih / 2 - e / 2, w: iw, h: e, rz: 0 });
+        list.push({ x: cx - iw / 2 + e / 2, y: cy, w: e, h: ih, rz: 0 });
+        list.push({ x: cx + iw / 2 - e / 2, y: cy, w: e, h: ih, rz: 0 });
+        if (kind === 'A') {
+          // zigzag interior: tres «V» por bloque, triángulos alternos como en la referencia
+          const n = 6;
+          const sx = (iw - 2 * e) / n;
+          const hh = ih - 2 * e;
+          for (let s = 0; s < n; s++) {
+            const x0 = cx - iw / 2 + e + s * sx;
+            const up = s % 2 === 0;
+            const L = Math.hypot(sx, hh);
+            list.push({ x: x0 + sx / 2, y: cy, w: L, h: 0.007, rz: (up ? 1 : -1) * Math.atan2(hh, sx) });
+          }
         }
       }
-    }
     return list;
   }, [kind, lw, lh]);
-  const depth = kind === 'B' ? t : t * 0.6;
+  const depth = kind === 'B' ? t : t * 0.7;
   const mesh = useMemo(() => {
     const m = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, depth), mats.lattice, Math.max(1, bars.length));
     const o = new THREE.Object3D();
@@ -667,28 +691,51 @@ function Curtain({ x, z, width, height, mats }: { x: number; z: number; width: n
 
 // ---------------------------------------------------------------- exterior
 
-/** Mesa circular de tablero mineral grueso y pie central (referencia del comedor exterior, descrita). */
+/** Mesa circular de tablero mineral claro y grueso (≈10 cm, canto redondeado) sobre pie central cilíndrico (referencia 11). */
 function RoundTable({ w, h, mats }: { w: number; h: number; mats: MaterialSet }) {
   const r = w / 2;
-  const t = 0.07;
+  const t = 0.1;
+  const legR = 0.24;
   return (
     <>
-      <mesh position={[0, h - t / 2, 0]} material={mats.counter} castShadow receiveShadow><cylinderGeometry args={[r, r - 0.01, t, 64]} /></mesh>
-      <Lathe profile={[[0, 0], [0.42, 0], [0.42, 0.04], [0.2, 0.1], [0.14, 0.35], [0.16, h - t - 0.02], [0.3, h - t], [0, h - t]]} m={mats.counter} segments={48} />
+      <mesh position={[0, h - t / 2, 0]} material={mats.counter} castShadow receiveShadow><cylinderGeometry args={[r, r, t - 0.03, 72]} /></mesh>
+      <mesh position={[0, h - 0.015, 0]} rotation={[Math.PI / 2, 0, 0]} material={mats.counter} castShadow><torusGeometry args={[r - 0.015, 0.015, 8, 72]} /></mesh>
+      <mesh position={[0, h - t + 0.015, 0]} rotation={[Math.PI / 2, 0, 0]} material={mats.counter} castShadow><torusGeometry args={[r - 0.015, 0.015, 8, 72]} /></mesh>
+      <mesh position={[0, (h - t) / 2, 0]} material={mats.counter} castShadow receiveShadow><cylinderGeometry args={[legR, legR + 0.01, h - t, 40]} /></mesh>
     </>
   );
 }
 
-/** Silla ligera de exterior: estructura metálica oscura, asiento y respaldo de listones de madera. */
+/**
+ * Silla plegable de bistró (referencia 11): bastidor ligero de metal oscuro con patas en tijera,
+ * asiento de listones de madera y dos listones de respaldo.
+ */
 function OutdoorChair({ w, d, mats }: { w: number; d: number; mats: MaterialSet }) {
   const seat = 0.45;
+  const tube = 0.014;
+  const Rod = ({ a, b }: { a: [number, number, number]; b: [number, number, number] }) => {
+    const v = new THREE.Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+    const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), v.clone().normalize());
+    return <mesh position={[(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2]} quaternion={q} material={mats.blackMetal} castShadow><cylinderGeometry args={[tube / 2, tube / 2, v.length(), 6]} /></mesh>;
+  };
+  const hw = w / 2 - 0.02;
   return (
     <>
-      {[[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sz], i) => <B key={i} x={sx * (w / 2 - 0.02)} z={sz * (d / 2 - 0.03)} w={0.02} h={seat} d={0.02} m={mats.blackMetal} />)}
-      {[-1, 1].map((sx) => <B key={sx} x={sx * (w / 2 - 0.02)} y={seat} z={-d / 2 + 0.03} w={0.02} h={0.38} d={0.02} m={mats.blackMetal} />)}
-      <B y={seat - 0.02} w={w} h={0.02} d={d - 0.02} m={mats.blackMetal} />
-      {[-0.15, -0.05, 0.05, 0.15].map((k) => <B key={k} y={seat} z={k * (d / 0.5)} w={w - 0.04} h={0.018} d={0.075} m={mats.wood} />)}
-      {[0.12, 0.26].map((y) => <B key={y} y={seat + y} z={-d / 2 + 0.03} w={w - 0.04} h={0.07} d={0.016} m={mats.wood} />)}
+      {[-1, 1].map((k) => (
+        <group key={k}>
+          {/* pata trasera continua hasta el respaldo */}
+          <Rod a={[k * hw, 0, -d / 2 + 0.02]} b={[k * hw, 0.82, -d / 2 + 0.06]} />
+          {/* pata delantera en tijera, cruzando bajo el asiento */}
+          <Rod a={[k * hw, 0, d / 2 - 0.02]} b={[k * hw, seat, -d / 2 + 0.06]} />
+          <Rod a={[k * hw, seat, -d / 2 + 0.08]} b={[k * hw, seat, d / 2 - 0.04]} />
+        </group>
+      ))}
+      <Rod a={[-hw, 0.12, d / 2 - 0.09]} b={[hw, 0.12, d / 2 - 0.09]} />
+      <Rod a={[-hw, seat - 0.01, d / 2 - 0.04]} b={[hw, seat - 0.01, d / 2 - 0.04]} />
+      {/* asiento de listones de madera */}
+      {[-0.15, -0.075, 0, 0.075, 0.15].map((k) => <B key={k} y={seat} z={k * (d / 0.48)} w={w - 0.03} h={0.016} d={0.06} m={mats.wood} />)}
+      {/* listones de respaldo */}
+      {[0.22, 0.32].map((y) => <B key={y} y={seat + y} z={-d / 2 + 0.065} w={w - 0.02} h={0.065} d={0.014} m={mats.wood} />)}
     </>
   );
 }

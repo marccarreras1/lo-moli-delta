@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { FINISHES, PRESETS, SLOT_LABEL } from '../data/acabados';
 import type { FinishSlot, OpeningSystem, RoofType } from '../data/types';
+import { EXTRA_OPENINGS } from '../data/types';
+import { LAYERS, LAYER_LABEL } from '../instalaciones/types';
+import { useInstalaciones, useResolvedPoints } from '../instalaciones/store';
+import { useGestion } from '../gestion/store';
+import { CommentsPanel } from '../gestion/CommentsPanel';
 import { bbox, fmtM, polygonArea } from '../model/geometry';
 import { defaultPreset } from '../model/cameras';
 import { LEAF_OPTIONS, leafPose, SYSTEM_LABEL } from '../model/openings';
@@ -24,6 +29,8 @@ export function ControlPanel({ onOpenInfo, onOpenRefs }: { onOpenInfo: () => voi
       {!empty && <ViewSection />}
       {!empty && <VisibilitySection />}
       {!empty && <ProposalsSection />}
+      {!empty && <InstallLayersSection />}
+      {!empty && <CommentsSection />}
       {!empty && <OpeningsSection />}
       {!empty && <MaterialsSection />}
       {!empty && <LightSection />}
@@ -149,6 +156,9 @@ function ProposalsSection() {
   const hasLattice = layout.furniture.some((f) => f.type === 'ducha');
   const hasPendants = (project.pendants ?? []).length > 0;
   const hasEntrance = layout.openings.some((x) => x.entrance);
+  const hasVentanal = project.openings.some((x) => x.variantKey?.startsWith('ventanal-'));
+  const extras = EXTRA_OPENINGS.filter((e) => project.openings.some((x) => x.variantKey === e.key));
+  const hasDome = !!layout.outdoor?.domeLamp;
   if (!hasLattice && !hasPendants && !hasEntrance && layout.roofOptions.length < 2) return null;
   return (
     <Section title="Propuestas para comparar" id="propuestas">
@@ -170,7 +180,31 @@ function ProposalsSection() {
       )}
       {layout.roofOptions.length > 1 && (
         <Segmented label="Cubierta exterior" id="opt-cubierta" value={layout.roof?.type ?? layout.roofOptions[0].type} onChange={(x) => setRoof(x as RoofType)}
-          options={layout.roofOptions.map((r) => ({ value: r.type, label: r.status === 'propuesto' ? 'Con peto (propuesta)' : 'Plana (confirmada)' }))} />
+          options={layout.roofOptions.map((r) => ({ value: r.type, label: r.type === 'plana-peto' ? 'Remate ibicenco (propuesta)' : r.type === 'un-agua' ? 'Inclinada (informe)' : r.type === 'plana' ? 'Plana (propiedad)' : r.label }))} />
+      )}
+      {layout.roofOptions.length > 1 && <p className="hint">Ninguna cubierta está validada técnicamente; la plana debe contrastarse con la inclinada del informe.</p>}
+      {hasVentanal && (
+        <>
+          <Segmented label="Ventanal del frontal A" id="opt-ventanal" value={o.ventanal} onChange={(x) => setOption('ventanal', x)}
+            options={[{ value: '9', label: '9 m (solicitado)' }, { value: '7', label: '7 m (boceto)' }]} />
+          <p className="hint">El de 9 m está pendiente del cálculo estructural (zuncho y machones de ≈0,50 m).</p>
+        </>
+      )}
+      {extras.length > 0 && (
+        <fieldset className="option-group" id="opt-aberturas">
+          <legend>Aberturas variantes (no confirmadas)</legend>
+          {extras.map((e) => (
+            <Toggle key={e.key} id={`opt-ab-${e.key}`} label={e.label} checked={o.aberturas.includes(e.key)}
+              onChange={(x) => setOption('aberturas', x ? [...o.aberturas, e.key] : o.aberturas.filter((k) => k !== e.key))} />
+          ))}
+        </fieldset>
+      )}
+      {hasDome && (
+        <>
+          <Segmented label="Lámpara del comedor exterior" id="opt-lampara-ext" value={o.lamparaExterior} onChange={(x) => setOption('lamparaExterior', x)}
+            options={[{ value: 'arbol', label: 'Colgada del algarrobo' }, { value: 'soporte', label: 'Pie independiente' }]} />
+          <p className="hint">Anclaje sin resolver: hay que comprobar la rama, el viento y la alimentación exterior.</p>
+        </>
       )}
       {hasEntrance && (
         <>
@@ -180,6 +214,40 @@ function ProposalsSection() {
           <p className="hint">Los marcos verde-gris claro están confirmados por la propiedad; la hoja de tablones y el volumen saliente son propuestas de la referencia.</p>
         </>
       )}
+    </Section>
+  );
+}
+
+/** Comentarios con chincheta en el plano y en 3D (guardados en este navegador). */
+function CommentsSection() {
+  const { layout } = useModel();
+  const n = useGestion((s) => s.comentarios.filter((c) => c.estado !== 'resuelto').length);
+  const setTab = useStore((s) => s.setTab);
+  const setVisual = useStore((s) => s.setVisual);
+  return (
+    <Section title={`Comentarios${n ? ` (${n} pendientes)` : ''}`} id="comentarios" defaultOpen={false}>
+      <p className="hint">Para añadir uno: en «Plantas», botón «Nota» y pulsa en el plano.</p>
+      <CommentsPanel rooms={layout.rooms.map((r) => ({ id: r.id, name: r.name }))} levels={layout.levels.map((l) => ({ id: l.id, name: l.name }))} showSaveNote={false}
+        onLocate={(c) => { setVisual('levelId', c.nivel); setTab('plantas'); }} />
+    </Section>
+  );
+}
+
+/** Capas de instalaciones (propuestas, editables en la sección «Instalaciones»). */
+function InstallLayersSection() {
+  const { layout } = useModel();
+  const visible = useInstalaciones((s) => s.visible);
+  const toggle = useInstalaciones((s) => s.toggleLayer);
+  const selId = useInstalaciones((s) => s.selectedId);
+  const points = useResolvedPoints(layout);
+  const sel = points.find((p) => p.id === selId);
+  const setVisual = useStore((s) => s.setVisual);
+  return (
+    <Section title="Instalaciones" id="instalaciones" defaultOpen={false}>
+      <p className="hint">Puntos propuestos en planta y en 3D. Nada está validado por un instalador.</p>
+      {LAYERS.map((l) => <Toggle key={l} id={`inst-${l}`} label={LAYER_LABEL[l]} checked={visible.includes(l)} onChange={() => toggle(l)} />)}
+      {sel && <p className="hint"><strong>{sel.label}</strong> · {sel.status}</p>}
+      <button type="button" className="btn small" onClick={() => setVisual('section', 'instalaciones')}>Editar fichas de instalaciones</button>
     </Section>
   );
 }
@@ -448,7 +516,7 @@ function MaterialsSection() {
   const applyPreset = useStore((s) => s.applyPreset);
   const slots = (Object.keys(SLOT_LABEL) as FinishSlot[]).filter((s) => (
     s === 'cubierta' ? !!layout.roof
-      : s === 'boveda' ? !!layout.roof?.ceiling
+      : s === 'boveda' || s === 'vigas' ? !!layout.roof?.ceiling
         : s === 'encimera' ? layout.furniture.some((f) => f.type === 'encimera' || f.type === 'isla')
           : s === 'madera' || s === 'textiles' ? layout.furniture.length > 0 : true));
   return (

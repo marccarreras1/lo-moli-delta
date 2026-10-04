@@ -30,7 +30,7 @@ export interface MaterialSet {
   wood: THREE.MeshStandardMaterial;
   /** madera de estructura (fondos de juntas, travesaños) */
   woodBeam: THREE.MeshStandardMaterial;
-  /** vigas de la volta catalana: mismo color que la bovedilla (indicación de la propiedad) */
+  /** vigas vistas de la volta catalana: color cemento gris natural mate (confirmado por la propiedad) */
   beam: THREE.MeshStandardMaterial;
   textile: THREE.MeshStandardMaterial;
   textileLight: THREE.MeshStandardMaterial;
@@ -105,7 +105,7 @@ export function useMaterials(sel: FinishSelection, mode: DisplayMode, sectionHei
       }),
       wood: std(f('madera').color, f('madera').roughness, tex(wood, 0.004)),
       woodBeam: std('#b08a62', 0.7, tex(wood, 0.006), true),
-      beam: std(new THREE.Color(f('boveda').color).multiplyScalar(0.94).getStyle(), f('boveda').roughness, tex(plaster, 0.004), true),
+      beam: std(f('vigas').color, f('vigas').roughness, tex(concreteTex, 0.004), true),
       textile: std(f('textiles').color, 1, tex(fabricTex(), 0.002)),
       textileLight: std('#f3efe6', 1, tex(fabricTex(), 0.002)),
       rug: std('#d8c39f', 1, tex(rugTex(), 0.006)),

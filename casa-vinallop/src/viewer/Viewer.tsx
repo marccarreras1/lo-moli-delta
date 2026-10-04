@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import type { CameraPreset, Layout, Site } from '../data/types';
+import { resolveLayout, type Variant } from '../model/resolve';
 import { useModel } from '../state/derived';
 import { type Ambience, useStore } from '../state/store';
 import { Annotations } from './Annotations';
@@ -11,6 +12,10 @@ import { Furniture3D } from './Furniture3D';
 import { House } from './House';
 import { FixtureLights, Pendants } from './Lamps';
 import { Outdoor3D } from './Outdoor3D';
+import { solarDirection, useSolar } from '../model/solar';
+import { Installations3D } from '../instalaciones/Installations3D';
+import { useGestion } from '../gestion/store';
+import { useInstalaciones, useResolvedPoints, useVisibleLayers } from '../instalaciones/store';
 import { useMaterials } from './materials';
 import { effectiveQuality } from './qualityInfo';
 import { glRef } from './support';
@@ -29,6 +34,9 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
   const { layout, cameras, variant } = useModel();
   const tab = useStore((s) => s.tab);
   const v = useStore((s) => s.visual);
+  const instPoints = useResolvedPoints(layout);
+  const instLayers = useVisibleLayers();
+  const instSel = useInstalaciones((s) => s.selectedId);
   const selection = useStore((s) => s.selection);
   const select = useStore((s) => s.select);
   const openFractions = useStore((s) => s.openFractions);
@@ -73,7 +81,8 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
       dpr={quality === 'alta' ? [1, 2] : [1, 1.25]}
       camera={{ fov: 35, near: 0.05, far: 500, position: [0, 12, 28] }}
       gl={{ preserveDrawingBuffer: true, antialias: quality === 'alta' }}
-      onCreated={({ gl, scene, camera }) => {
+      onCreated={({ gl, scene, camera, setFrameloop }) => {
+        glRef.setFrameloop = setFrameloop;
         gl.localClippingEnabled = true;
         gl.toneMapping = THREE.NeutralToneMapping;
         gl.toneMappingExposure = 1.0;
@@ -81,7 +90,10 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
         glRef.scene = scene;
         glRef.camera = camera;
         // diagnóstico opcional: ?diagnostico expone el visor en la consola
-        if (location.search.includes('diagnostico')) (window as unknown as Record<string, unknown>).__visor = { gl, scene, camera };
+        if (location.search.includes('diagnostico')) {
+          (window as unknown as Record<string, unknown>).__visor = { gl, scene, camera, setFrameloop };
+          (window as unknown as Record<string, unknown>).__photoModule = () => import('./photo');
+        }
         onReady?.();
       }}
       onPointerMissed={(e) => { if (e.type === 'click') select(null); }}
@@ -100,6 +112,8 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
       )}
       {v.showFurniture && maxElev === Infinity && <Pendants layout={layout} mats={mats} level={lampLevel} lights={artificial} />}
       {v.showFurniture && artificial && <FixtureLights furniture={furniture} elevationOf={elevationOf} level={lampLevel} />}
+      <CommentPins levels={layout.levels} />
+      {instLayers.size > 0 && <group userData={{ helper: true }}><Installations3D points={instPoints} visibleLayers={instLayers} elevationOf={(id) => layout.levels.find((l) => l.id === id)?.elevation ?? 0} selectedId={instSel} onSelect={(id) => useInstalaciones.getState().select(id)} /></group>}
       <Annotations layout={layout} showLabels={v.showLabels && tab !== 'interior'} showDims={v.showDims && tab !== 'interior'} showAreas={v.showAreas}
         roomLabelsVisible={roomLabelsVisible} maxElev={maxElev} selectedOpeningId={selection?.kind === 'opening' ? selection.id : null} />
       <CameraRig presets={cameras} request={cameraRequest} tab={tab} eyeHeight={v.eyeHeight} interiorFov={v.interiorFov}
@@ -150,8 +164,12 @@ function Lights({ layout, intensity, ambience, shadowSize }: { layout: Layout; i
   const az = (a.az * Math.PI) / 180;
   const el = (a.elev * Math.PI) / 180;
   const r = 30;
-  // luz de visualización: dirección fija por ambiente, no representa el sol real
-  const pos: [number, number, number] = [cx + r * Math.cos(el) * Math.sin(az), r * Math.sin(el), cy + r * Math.cos(el) * Math.cos(az)];
+  // luz de visualización: dirección fija por ambiente, no representa el sol real…
+  // …salvo con el estudio solar activo (norte, situación y fecha indicados)
+  const solar = solarDirection(useSolar());
+  const pos: [number, number, number] = solar && solar.el > 0
+    ? [cx + r * solar.x, r * solar.y, cy + r * solar.z]
+    : [cx + r * Math.cos(el) * Math.sin(az), r * Math.sin(el), cy + r * Math.cos(el) * Math.cos(az)];
   const k = Math.max(0.35, intensity);
   return (
     <>
@@ -312,4 +330,78 @@ function Disposer() {
     glRef.camera = null;
   }, []);
   return null;
+}
+
+/** Chinchetas de los comentarios (persistidos en la gestión del proyecto). */
+function CommentPins({ levels }: { levels: Layout['levels'] }) {
+  const comments = useGestion((s) => s.comentarios);
+  return (
+    <group userData={{ helper: true }}>
+      {comments.map((c) => {
+        const el = levels.find((l) => l.id === c.nivel)?.elevation ?? 0;
+        const h = c.posicion.z ?? 1.9;
+        const col = c.estado === 'resuelto' ? '#3f7a4a' : '#b26a00';
+        return (
+          <group key={c.id} position={[c.posicion.x, el, c.posicion.y]}>
+            <mesh position={[0, h / 2, 0]}><cylinderGeometry args={[0.008, 0.008, h, 6]} /><meshBasicMaterial color={col} /></mesh>
+            <mesh position={[0, h, 0]}><sphereGeometry args={[0.05, 14, 10]} /><meshBasicMaterial color={col} /></mesh>
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+/** Sigue la cámara del visor principal en cada fotograma (vistas sincronizadas). */
+function FollowCamera() {
+  const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
+  useFrame(() => {
+    const src = glRef.camera as THREE.PerspectiveCamera | null;
+    if (!src) return;
+    camera.position.copy(src.position);
+    camera.quaternion.copy(src.quaternion);
+    if (camera.fov !== src.fov) { camera.fov = src.fov; camera.updateProjectionMatrix(); }
+  });
+  return null;
+}
+
+/**
+ * Segundo visor del comparador: muestra otra variante (o la activa con un cambio) desde la misma
+ * cámara que el visor principal. Solo se mira: la navegación se hace en el visor de la izquierda.
+ */
+export function CompareViewer({ variant }: { variant: Variant }) {
+  const { project } = useModel();
+  const layout = useMemo(() => resolveLayout(project, variant), [project, variant]);
+  const tab = useStore((s) => s.tab);
+  const v = useStore((s) => s.visual);
+  const mode = tab === 'plantas' ? (v.mode === 'atenuado' ? 'atenuado' : 'corte') : v.mode;
+  const section = v.longSection && tab === 'exterior';
+  const level = layout.levels.find((l) => l.id === v.levelId) ?? layout.levels[0];
+  const levelElev = level?.elevation ?? 0;
+  const cutAbs = levelElev + (tab === 'plantas' ? Math.min(v.sectionHeight, 1.5) : v.sectionHeight);
+  const maxElev = mode === 'corte' || tab === 'plantas' ? levelElev : Infinity;
+  const amb = AMBIENCE[v.ambience];
+  const lampLevel = amb.lamps * v.lampDimmer;
+  const mats = useMaterials(variant.finishes, mode, cutAbs, section, lampLevel);
+  const elevOfLevel = (id: string) => layout.levels.find((l) => l.id === id)?.elevation ?? 0;
+  const roomLevel = new Map(layout.rooms.map((r) => [r.id, elevOfLevel(r.levelId)]));
+  const furniture = layout.furniture.filter((f) => (roomLevel.get(f.roomId) ?? 0) <= maxElev + 1e-6);
+  const elevationOf = (f: { roomId: string }) => roomLevel.get(f.roomId) ?? 0;
+  const artificial = lampLevel > 0.05 && (tab === 'interior' || v.ambience !== 'dia');
+  return (
+    <Canvas shadows dpr={[1, 1.25]} camera={{ fov: 35, near: 0.05, far: 500, position: [0, 12, 28] }} gl={{ preserveDrawingBuffer: true }}
+      onCreated={({ gl }) => { gl.localClippingEnabled = true; gl.toneMapping = THREE.NeutralToneMapping; }} data-testid="compare-canvas">
+      <color attach="background" args={[amb.bg]} />
+      <fog attach="fog" args={[amb.bg, 60, 140]} />
+      <Environment intensity={amb.env} exposure={amb.exposure} />
+      <Lights layout={layout} intensity={v.lightIntensity} ambience={v.ambience} shadowSize={1024} />
+      {layout.site && v.showSite ? <SiteGround layout={layout} site={layout.site} lite /> : <Ground layout={layout} />}
+      <House layout={layout} mats={mats} showRoof={v.showRoof && tab === 'exterior'} showCeiling={tab === 'interior' || section} mode={mode}
+        sectionHeight={cutAbs} selection={null} openFractions={{}} onSelect={() => undefined} maxElev={maxElev} />
+      {v.showFurniture && <Furniture3D items={furniture} mats={mats} elevationOf={elevationOf} options={layout.options} />}
+      {v.showFurniture && layout.outdoor && tab !== 'plantas' && <Outdoor3D outdoor={layout.outdoor} mats={mats} options={layout.options} level={artificial ? lampLevel : 0} />}
+      {v.showFurniture && maxElev === Infinity && <Pendants layout={layout} mats={mats} level={lampLevel} lights={artificial} />}
+      <FollowCamera />
+    </Canvas>
+  );
 }
