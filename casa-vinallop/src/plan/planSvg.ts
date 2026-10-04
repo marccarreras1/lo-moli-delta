@@ -227,8 +227,12 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
     }
     if (t.circle) out.push(`<circle cx="${n4(t.circle.c[0])}" cy="${n4(t.circle.c[1])}" r="${n4(t.circle.r)}" fill="none" stroke="${AMBER}" stroke-width="0.025" stroke-dasharray="0.1 0.06"/>`);
     if (t.points?.length) out.push(`<${t.closed ? 'polygon' : 'polyline'} points="${pts(t.points)}" fill="none" stroke="${AMBER}" stroke-width="0.025" stroke-dasharray="0.1 0.06"/>`);
-    const anchor: Vec2 = t.circle ? [t.circle.c[0], t.circle.c[1] + t.circle.r + 0.22] : t.points![Math.floor((t.points!.length - 1) / 2)];
-    if (o.showLabels) out.push(`<text x="${n4(anchor[0])}" y="${n4(anchor[1] - (t.circle ? 0 : 0.08))}" font-size="0.15" fill="${AMBER}" text-anchor="middle" paint-order="stroke" stroke="#fefdfb" stroke-width="0.05">? ${esc(t.label)} · sin interpretar</text>`);
+    // trazos cortos: rótulo a un lado para no tapar los nombres de las estancias
+    const short = !t.circle && t.points!.length === 2 && Math.hypot(t.points![1][0] - t.points![0][0], t.points![1][1] - t.points![0][1]) < 1.2;
+    const anchor: Vec2 = t.circle ? [t.circle.c[0], t.circle.c[1] + t.circle.r + 0.22]
+      : short ? [Math.min(t.points![0][0], t.points![1][0]) - 0.12, (t.points![0][1] + t.points![1][1]) / 2 + 0.05]
+      : t.points![Math.floor((t.points!.length - 1) / 2)];
+    if (o.showLabels) out.push(`<text x="${n4(anchor[0])}" y="${n4(anchor[1] - (t.circle || short ? 0 : 0.08))}" font-size="0.15" fill="${AMBER}" text-anchor="${short ? 'end' : 'middle'}" paint-order="stroke" stroke="#fefdfb" stroke-width="0.05">? ${esc(t.label)}${short ? "" : " · sin interpretar"}</text>`);
   }
   out.push('</g>');
 

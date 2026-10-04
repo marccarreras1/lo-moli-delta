@@ -19,8 +19,10 @@ const check = (name, ok, detail = '') => {
   console.log(`${ok ? '✔' : '✘'} ${name}${detail ? ` — ${detail}` : ''}`);
 };
 
-const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'pipe' });
-process.on('exit', () => server.kill());
+const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'pipe', detached: true });
+// se detiene todo el grupo de procesos (npx y vite) al terminar
+const stopServer = () => { try { process.kill(-server.pid); } catch { /* ya detenido */ } };
+process.on('exit', stopServer);
 await new Promise((res, rej) => {
   const t = setTimeout(() => rej(new Error('preview no arrancó')), 20000);
   server.stdout.on('data', (d) => { if (String(d).includes(String(PORT))) { clearTimeout(t); res(); } });
@@ -402,7 +404,7 @@ try {
   check('Ejecución sin excepciones', false, e.stack || String(e));
 } finally {
   await browser.close();
-  server.kill();
+  stopServer();
 }
 
 const relevantErrors = errors.filter((e) => !/motor-3d|Failed to fetch dynamically|ERR_FAILED|net::/.test(e) && !/WebGL|webgl/.test(e));

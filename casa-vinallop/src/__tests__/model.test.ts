@@ -75,11 +75,13 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(st.upStatus).toBe('documentado');
     expect(st.rect[0]).toBeGreaterThanOrEqual(6);
   });
-  it('baño completo en el tramo de 2,5 m con su puerta desde el pasillo', () => {
+  it('baño en el tramo de 2,5 m; la puerta del pasillo es de un armario (indicación de la propiedad)', () => {
     const b = room('bano').polygon;
     expect(Math.min(...b.map((p) => p[0]))).toBeCloseTo(3.55, 5);
     expect(Math.max(...b.map((p) => p[0]))).toBeCloseTo(5.95, 5);
-    expect(op('puerta-bano').wallId).toBe('tab-pasillo');
+    expect(op('puerta-armario').wallId).toBe('tab-pasillo');
+    expect(layout.openings.some((o) => o.id === 'puerta-bano')).toBe(false);
+    expect(room('armario-pasillo').name).toBe('Armario');
     expect(['banera', 'ducha', 'lavabo'].every((id) => layout.furniture.some((f) => f.id === id && f.roomId === 'bano'))).toBe(true);
   });
   it('banco corrido en L junto al frontal B y el lateral derecho', () => {
