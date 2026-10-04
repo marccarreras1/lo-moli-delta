@@ -1,15 +1,23 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect, useMemo } from 'react';
 import type * as THREE from 'three';
 import type { Furniture } from '../data/types';
 import type { MaterialSet } from './materials';
 
 /** Mobiliario a escala real (dimensiones del modelo de datos, sin deformar). */
 export function Furniture3D({ items, mats, elevationOf }: { items: Furniture[]; mats: MaterialSet; elevationOf: (f: Furniture) => number }) {
+  // muebles con madera propia: copia del material de madera (conserva el corte y la transparencia del modo)
+  const colors = [...new Set(items.map((f) => f.color).filter((c): c is string => !!c))].join('|');
+  const woods = useMemo(() => new Map(colors ? colors.split('|').map((c) => {
+    const m = mats.wood.clone();
+    m.color.set(c);
+    return [c, m] as const;
+  }) : []), [colors, mats.wood]);
+  useEffect(() => () => woods.forEach((m) => m.dispose()), [woods]);
   return (
     <group>
       {items.map((f) => (
         <group key={f.id} position={[f.x, elevationOf(f), f.y]} rotation={[0, (-f.rot * Math.PI) / 180, 0]}>
-          <Piece f={f} mats={mats} />
+          <Piece f={f} mats={f.color && woods.get(f.color) ? { ...mats, wood: woods.get(f.color)! } : mats} />
         </group>
       ))}
     </group>
@@ -43,6 +51,21 @@ function Piece({ f, mats }: { f: Furniture; mats: MaterialSet }): ReactNode {
     case 'mesita':
       return <B w={w} h={h} d={d} m={mats.wood} />;
     case 'armario':
+      if (f.open) {
+        // abierto, sin puertas: fondo, costados, techo, suelo y baldas
+        const t = 0.025;
+        return (
+          <>
+            <B z={-d / 2 + t / 2} w={w} h={h} d={t} m={mats.wood} />
+            <B x={-w / 2 + t / 2} w={t} h={h} d={d} m={mats.wood} />
+            <B x={w / 2 - t / 2} w={t} h={h} d={d} m={mats.wood} />
+            <B w={w} h={0.08} d={d} m={mats.wood} />
+            <B y={h - t} w={w} h={t} d={d} m={mats.wood} />
+            {[0.45, 0.85, 1.25, 1.65].map((y) => <B key={y} y={y} w={w - 2 * t} h={t} d={d - t} m={mats.wood} />)}
+            <B y={1.85} z={-0.02} w={w - 0.1} h={0.02} d={0.02} m={mats.metal} />
+          </>
+        );
+      }
       return (
         <>
           <B w={w} h={h} d={d} m={mats.wood} />

@@ -41,6 +41,16 @@ export function Opening3D({ o, w, mats, center, fraction, selected, onSelect }: 
     if (sys.type === 'plegable' && inward === 1) leaves = leaves.map((l) => ({ ...l, depth: -l.depth, angle: -l.angle }));
   }
 
+  // hueco de paso: sin marco ni hojas, solo una zona invisible para poder seleccionarlo
+  if (o.kind === 'paso') {
+    return (
+      <mesh position={[mid[0], o.sill + o.height / 2, mid[1]]} rotation={[0, rotWall, 0]} onClick={(e) => { e.stopPropagation(); onSelect(); }}>
+        <boxGeometry args={[o.width, o.height, w.thickness]} />
+        <meshBasicMaterial transparent opacity={selected ? 0.18 : 0} color="#68765e" depthWrite={false} />
+      </mesh>
+    );
+  }
+
   const click = (e: { stopPropagation: () => void }) => {
     e.stopPropagation();
     onSelect();

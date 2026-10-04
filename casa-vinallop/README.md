@@ -54,5 +54,5 @@ Coordenadas en metros: X hacia la derecha del papel, Y hacia abajo. La planta 2D
 
 ## Pendiente de confirmar
 
-- Giro de la puerta de 70 cm, puertas del armario del pasillo y canto del forjado del altell.
+- La obertura de 2,25 m de planta baja (2,40 m de alto) atraviesa 0,10 m el forjado del altell de 0,30 m: falta decidir cómo se resuelve.
 - Estado actual: situación y medidas de la habitación pequeña (dibujada en el extremo derecho, junto al algarrobo).

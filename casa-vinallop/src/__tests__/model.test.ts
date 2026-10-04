@@ -19,10 +19,20 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
   const op = (id: string) => layout.openings.find((o) => o.id === id)!;
   const x0 = (id: string) => Math.min(...room(id).polygon.map((p) => p[0]));
 
-  it('tiene geometría y no tiene errores ni conflictos (la obertura de 2,40 m queda bajo el forjado del altell)', () => {
+  it('sin errores; único conflicto: la obertura de 2,40 m atraviesa el forjado de 0,30 m (cara inferior a 2,30 m)', () => {
     expect(hasGeometry(VINALLOP)).toBe(true);
     const bad = issues.filter((i) => i.level !== 'aviso');
-    expect(bad, JSON.stringify(bad, null, 2)).toEqual([]);
+    expect(bad.map((i) => i.elementId), JSON.stringify(bad, null, 2)).toEqual(['obertura-225-pb']);
+    expect(bad[0].message).toContain('forjado');
+    expect(layout.slabs[0].thickness).toBe(0.3);
+  });
+  it('puerta de 70 cm abre hacia la derecha y el armario del pasillo no tiene puertas', () => {
+    expect(op('puerta-70').swing).toEqual({ hinge: 'fin', dir: -1 });
+    expect(op('puertas-armario').kind).toBe('paso');
+    expect(op('puertas-armario').system).toBeNull();
+    const arm = layout.furniture.find((f) => f.id === 'armario-pasillo-mueble')!;
+    expect(arm.open).toBe(true);
+    expect(arm.color).toBeTruthy();
   });
   it('barandillas de cristal en el altell (libre en el desembarco) y en el lado abierto de la escalera', () => {
     const r = layout.railings!.find((x) => x.id === 'barandilla-altell')!;

@@ -35,9 +35,10 @@ const TB = 0.6;
 const TP = 0.1;
 /** Altura total de los alzados: 6,20 m (documentado). */
 const H_TOTAL = 6.2;
-/** Suelo del altell a 2,60 m (propiedad). Canto del forjado: pendiente. */
+/** Suelo del altell a 2,60 m (propiedad). */
 const ALTELL = 2.6;
-const SLAB = 0.12;
+/** Canto del forjado del altell: 0,30 m (propiedad). */
+const SLAB = 0.3;
 const H_PB = r2(ALTELL - SLAB);
 
 const h = T / 2;
@@ -92,7 +93,7 @@ const openings: Opening[] = [
   {
     id: 'obertura-225-pb', label: 'Obertura de 2,25 m (planta baja)', wallId: 'muro-A', kind: 'cristalera', offset: onAB(1.4), width: 2.25, sill: 0, height: 2.4,
     system: null, status: 'documentado', sourceId: S.prop,
-    note: 'Anchura documentada (225 cm) y altura de 2,40 m (propiedad: «es ok 2,40 m»), por debajo del forjado del altell. Posición: media entre la planta, el alzado A y el altell.',
+    note: 'Anchura documentada (225 cm) y altura de 2,40 m (propiedad: «es ok 2,40 m»). Con el forjado de 0,30 m (cara inferior a 2,30 m) el hueco lo atraviesa 0,10 m: se señala como conflicto. Posición: media entre la planta, el alzado A y el altell.',
   },
   {
     id: 'obertura-225-altell', label: 'Obertura de 2,25 m (altell)', wallId: 'muro-A', kind: 'cristalera', offset: onAB(1.4), width: 2.25, sill: 3.7, height: 2.2,
@@ -106,8 +107,8 @@ const openings: Opening[] = [
   },
   {
     id: 'puerta-70', label: 'Puerta de 70 cm (baño)', wallId: 'muro-B', kind: 'puerta', offset: onAB(5.2), width: 0.7, sill: 0, height: 2.2,
-    system: { type: 'abatible', leaves: 1, status: 'pendiente' }, status: 'documentado', sourceId: S.prop,
-    note: 'Puerta (propiedad) de 70 cm del frontal B. Posición según el alzado B y la marca «×» de la planta (5,20–5,90 m). Bajo el altell: altura 2,20 m (hipótesis). Giro no dibujado.',
+    system: { type: 'abatible', leaves: 1, status: 'documentado' }, swing: { hinge: 'fin', dir: -1 }, status: 'documentado', sourceId: S.prop,
+    note: 'Puerta (propiedad) de 70 cm del frontal B. Posición según el alzado B y la marca «×» de la planta (5,20–5,90 m). Abre hacia dentro del baño, hacia el lado derecho (propiedad): bisagra en la jamba del 5,90 y la hoja queda junto al tabique de la escalera. Bajo el altell: altura 2,20 m (hipótesis).',
   },
   {
     id: 'puerta-bano', label: 'Puerta del baño', wallId: 'tab-pasillo', kind: 'puerta', offset: r2(BANO_PUERTA_X0 - (X_DORM + TP / 2)), width: 0.9, sill: 0, height: 2.1,
@@ -115,9 +116,9 @@ const openings: Opening[] = [
     note: 'Entrada al baño desde el pasillo (propiedad). Bisagra y giro según el arco dibujado; altura estándar (hipótesis).',
   },
   {
-    id: 'puertas-armario', label: 'Puertas del armario', wallId: 'tab-pasillo', kind: 'puerta', offset: 0.05, width: r2(ARM_X1 - TP / 2 - (X_DORM + TP / 2) - 0.05), sill: 0, height: 2.1,
-    system: { type: 'abatible', leaves: 2, status: 'pendiente' }, status: 'documentado', sourceId: S.prop,
-    note: 'Armario que se abre desde el pasillo (propiedad). Tipo de puertas no indicado: dos hojas provisionales.',
+    id: 'puertas-armario', label: 'Hueco del armario (sin puertas)', wallId: 'tab-pasillo', kind: 'paso', offset: 0.05, width: r2(ARM_X1 - TP / 2 - (X_DORM + TP / 2) - 0.05), sill: 0, height: 2.1,
+    system: null, status: 'documentado', sourceId: S.prop,
+    note: 'Armario abierto al pasillo, sin puertas (propiedad).',
   },
 ];
 
@@ -145,7 +146,7 @@ const furniture: Furniture[] = [
   f({ id: 'mesita-altell-1', type: 'mesita', label: 'Mesita', roomId: 'altell', x: 1.45, y: 4.17, w: 0.45, d: 0.45, h: 0.5, rot: 180, status: 'propuesto' }),
   f({ id: 'mesita-altell-2', type: 'mesita', label: 'Mesita', roomId: 'altell', x: 3.55, y: 4.17, w: 0.45, d: 0.45, h: 0.5, rot: 180, status: 'propuesto' }),
   // baño
-  f({ id: 'armario-pasillo-mueble', type: 'armario', label: 'Armario del pasillo', roomId: 'armario-pasillo', x: 4.23, y: 1.57, w: 1.3, d: 0.6, h: 2.2, rot: 180, status: 'documentado', note: 'Rectángulo de ≈1,40 × 0,65 junto a la línea del pasillo; se abre desde el pasillo (propiedad).' }),
+  f({ id: 'armario-pasillo-mueble', type: 'armario', label: 'Armario del pasillo', roomId: 'armario-pasillo', x: 4.23, y: 1.57, w: 1.3, d: 0.6, h: 2.2, rot: 180, status: 'documentado', open: true, color: '#d9b98f', note: 'Rectángulo de ≈1,40 × 0,65 junto a la línea del pasillo; abierto al pasillo, sin puertas, en madera de haya o pino (propiedad). Tono aproximado.' }),
   f({ id: 'ducha', type: 'ducha', label: 'Ducha doble', roomId: 'bano', x: 3.93, y: 2.5, w: 1.0, d: 0.75, h: 2.0, rot: 270, status: 'documentado', note: 'Rectángulo de ≈0,75 × 1,00 con punto de agua. La propiedad confirma las dos duchas dentro de este rectángulo, una delante de la otra: ducha doble en este recinto (confirmado).' }),
   f({ id: 'inodoro', type: 'inodoro', label: 'Inodoro', roomId: 'bano', x: 3.88, y: 3.22, w: 0.38, d: 0.65, h: 0.42, rot: 270, status: 'documentado', note: 'En la marca «×» contra el tabique del dormitorio (propiedad: las «×» marcan agua, inodoro y lavabo).' }),
   f({ id: 'lavabo', type: 'lavabo', label: 'Lavabo', roomId: 'bano', x: 4.28, y: r2(y1 - 0.3), w: 1.45, d: 0.6, h: 0.85, rot: 180, status: 'documentado', note: 'Mueble dibujado contra el frontal B, con la marca «×» del lavabo.' }),
@@ -183,7 +184,7 @@ export const VINALLOP: ProjectData = {
   rooms,
   furniture,
   slabs: [
-    { id: 'forjado-altell', levelId: 'altell', thickness: SLAB, status: 'pendiente', sourceId: S.hip, polygon: rect(x0, y0, ALT_X1, y1), note: 'Suelo a 2,60 m (propiedad). Canto del forjado no indicado (0,12 m provisional).' },
+    { id: 'forjado-altell', levelId: 'altell', thickness: SLAB, status: 'documentado', sourceId: S.prop, polygon: rect(x0, y0, ALT_X1, y1), note: 'Suelo a 2,60 m y canto de 0,30 m (propiedad): la cara inferior queda a 2,30 m.' },
   ],
   stairs: [
     {
@@ -221,12 +222,12 @@ export const VINALLOP: ProjectData = {
     { id: 'espesor', label: 'Resto de muros exteriores', value: T, unit: 'm', decimals: 2, sourceId: S.prop, status: 'documentado' },
     { id: 'altura', label: 'Altura total (alzados A y B)', value: H_TOTAL, unit: 'm', decimals: 2, sourceId: S.fa, status: 'documentado', note: '«6\'20 METRES»' },
     { id: 'cota-altell', label: 'Suelo del altell', value: ALTELL, unit: 'm', decimals: 2, sourceId: S.prop, status: 'documentado', note: '«está a 260 cm de altura»' },
-    { id: 'canto-altell', label: 'Canto del forjado del altell', value: SLAB, unit: 'm', decimals: 2, sourceId: S.hip, status: 'pendiente' },
+    { id: 'canto-altell', label: 'Canto del forjado del altell', value: SLAB, unit: 'm', decimals: 2, sourceId: S.prop, status: 'documentado', note: '«Hazlo de 0,30 m» (propiedad).' },
     { id: 'obertura-7', label: 'Obertura del frontal A', value: 7, unit: 'm', decimals: 0, sourceId: S.fa, status: 'documentado', note: '«OBERTURA 7 M» (planta) y «7 metres» (frontal A)' },
     { id: 'obertura-225', label: 'Oberturas de 2,25 m', value: 2.25, unit: 'm', decimals: 2, sourceId: S.planta, status: 'documentado', note: '«OBERTURA: 225 CM»; «2,25 m» dos veces en el frontal A' },
     { id: 'puerta-70', label: 'Puerta del frontal B', value: 0.7, unit: 'm', decimals: 2, sourceId: S.fb, status: 'documentado', note: '«70 cm»; es una puerta (propiedad)' },
     { id: 'altura-7m', label: 'Altura de la obertura de 7 m', value: 3.15, unit: 'm', decimals: 2, sourceId: S.fa, status: 'interpretado', note: 'Medida en el alzado A.' },
-    { id: 'altura-225', label: 'Altura de la obertura de 2,25 m (planta baja)', value: 2.4, unit: 'm', decimals: 2, sourceId: S.prop, status: 'documentado', note: '«Es ok 2,40 m» (propiedad). Queda bajo el forjado del altell.' },
+    { id: 'altura-225', label: 'Altura de la obertura de 2,25 m (planta baja)', value: 2.4, unit: 'm', decimals: 2, sourceId: S.prop, status: 'documentado', note: '«Es ok 2,40 m» (propiedad). Con el forjado de 0,30 m su cara inferior queda a 2,30 m: el hueco lo atraviesa 0,10 m.' },
     { id: 'vigas', label: 'Separación de las vigas de la vuelta catalana', value: 0.55, unit: 'm', decimals: 2, sourceId: S.prop, status: 'documentado', note: '«Tal como las tienes y cada 55 cm» (propiedad): cruzan el ancho de la casa.' },
     { id: 'pasillo', label: 'Fondo del pasillo junto al frontal A', value: 0.85, unit: 'm', decimals: 2, sourceId: S.planta, status: 'interpretado', note: 'Libre entre el frontal A y la línea del pasillo.' },
     { id: 'escalera-ancho', label: 'Ancho de la escalera', value: 1.2, unit: 'm', decimals: 1, sourceId: S.planta, status: 'interpretado' },
@@ -260,14 +261,12 @@ export const VINALLOP: ProjectData = {
   ],
   discrepancies: [
     'Posición del hueco de 2,25 m: planta ≈1,25–3,50 m, alzado A ≈1,45–3,85 m y altell ≈1,55–3,95 m. Se usa la media (1,40–3,65 m).',
-    'Resuelta: la obertura de 2,25 m de planta baja se había indicado de 3 m, que atravesaba el forjado del altell; la propiedad la fija en 2,40 m.',
+    'La obertura de 2,25 m de planta baja se había indicado de 3 m y la propiedad la fijó en 2,40 m; con el forjado de 0,30 m (cara inferior a 2,30 m) vuelve a atravesarlo 0,10 m.',
     'El alzado B dibuja la puerta de 70 cm de ≈2,9 m de alto, también bajo el altell. Se toma 2,20 m.',
     'Los anchos de los huecos de los alzados no están a escala. Se usan las cotas escritas.',
   ],
   questions: [
-    'Puerta de 70 cm del baño (frontal B): ¿hacia qué lado abre? Ahora se dibuja cerrada, sin giro.',
-    'Puertas del armario del pasillo: ¿abatibles o correderas, y cuántas hojas? Ahora se dibujan dos hojas cerradas.',
-    'Canto del forjado del altell: se dibuja de 0,12 m provisionalmente. ¿Lo sabes?',
+    'Con el forjado de 0,30 m, su cara inferior queda a 2,30 m y la obertura de 2,25 m (2,40 m de alto) lo atraviesa 0,10 m: ¿bajamos la obertura a 2,30 m o adelgazamos el forjado en ese tramo?',
   ],
   northDeg: null,
   facades: { A: 'Frontal A', B: 'Frontal B', izquierdo: 'Lateral izquierdo', derecho: 'Lateral derecho' },

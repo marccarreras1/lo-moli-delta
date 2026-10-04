@@ -276,7 +276,14 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
     });
     out.push(`<polygon class="opening-hit" data-opening="${esc(op.id)}" points="${pts(hit)}" fill="${sel ? 'rgba(104,118,94,0.22)' : 'transparent'}" stroke="${sel ? ACCENT : 'none'}" stroke-width="0.03"/>`);
     const g: string[] = [];
-    if (op.kind === 'puerta') {
+    if (op.kind === 'paso') {
+      // hueco de paso sin puerta: solo las jambas
+      for (const s of [op.offset, op.offset + op.width]) {
+        const a = pointOnWall(w, s, -h);
+        const b = pointOnWall(w, s, h);
+        g.push(`<line x1="${n4(a[0])}" y1="${n4(a[1])}" x2="${n4(b[0])}" y2="${n4(b[1])}" stroke-width="0.012"/>`);
+      }
+    } else if (op.kind === 'puerta') {
       const sw = doorSwing(op, w);
       if (!sw) {
         // giro no definido: hoja(s) cerrada(s) en el plano del muro

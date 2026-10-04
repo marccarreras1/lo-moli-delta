@@ -127,7 +127,8 @@ export interface Wall {
   sourceId: string;
 }
 
-export type OpeningKind = 'puerta' | 'ventana' | 'cristalera';
+/** paso = hueco de paso sin puerta ni carpintería */
+export type OpeningKind = 'puerta' | 'ventana' | 'cristalera' | 'paso';
 export type OpeningSystem = 'abatible' | 'corredera' | 'plegable' | 'fijo';
 
 export interface Opening {
@@ -182,6 +183,10 @@ export interface Furniture {
   rot: number;
   status?: DataStatus;
   note?: string;
+  /** color propio (p. ej. un mueble de otra madera); si no, el acabado «madera» activo */
+  color?: string;
+  /** armario abierto, sin puertas (se ven las baldas) */
+  open?: boolean;
 }
 
 export type RoofType = 'dos-aguas' | 'un-agua' | 'plana';
