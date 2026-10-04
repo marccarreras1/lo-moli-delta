@@ -24,8 +24,13 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     const bad = issues.filter((i) => i.level !== 'aviso');
     expect(bad, JSON.stringify(bad, null, 2)).toEqual([]);
   });
-  it('barandilla en el borde del altell, libre en el desembarco de la escalera', () => {
+  it('barandillas de cristal en el altell (libre en el desembarco) y en el lado abierto de la escalera', () => {
     const r = layout.railings!.find((x) => x.id === 'barandilla-altell')!;
+    expect(r.material).toBe('vidrio');
+    const e = layout.railings!.find((x) => x.id === 'barandilla-escalera')!;
+    expect(e.material).toBe('vidrio');
+    expect(e.points.every((p) => p[0] === layout.stairs[0].rect[2])).toBe(true);
+    expect(e.rise![1]).toBe(2.6);
     expect(r.levelId).toBe('altell');
     expect(r.points.every((p) => p[0] === 6.05)).toBe(true);
     expect(Math.max(...r.points.map((p) => p[1]))).toBeLessThan(layout.stairs[0].rect[3]);
@@ -212,17 +217,26 @@ describe('Casa Vinallop · estado actual (fotos antes de la reforma)', () => {
     const ref = resolveLayout(VINALLOP, baseVariant()).bounds;
     expect(layout.bounds).toEqual(ref);
   });
-  it('tres volúmenes con cubiertas a un agua escalonadas que caen hacia el frontal B', () => {
+  it('cuatro volúmenes (con la habitación pequeña) y cubiertas a un agua escalonadas hacia el frontal B', () => {
     const segs = layout.roofSegments!;
-    expect(segs.map((s) => s.id)).toEqual(['cub-extremo', 'cub-anexo', 'cub-principal']);
+    expect(segs.map((s) => s.id)).toEqual(['cub-extremo', 'cub-anexo', 'cub-principal', 'cub-habitacion']);
+    expect(segs[3].hy0).toBeLessThan(segs[2].hy0);
+    expect(layout.rooms.map((r) => r.id)).toContain('habitacion-pequena');
+    expect(layout.openings.find((o) => o.id === 'puerta-gris')!.wallId).toBe('b-habitacion');
     for (const s of segs) expect(s.hy0).toBeGreaterThan(s.hy1);
     expect(segs[0].hy0).toBeLessThan(segs[1].hy0);
     expect(segs[1].hy0).toBeLessThan(segs[2].hy0);
     expect(layout.roof).toBeNull();
     expect(layout.levels).toHaveLength(1);
   });
-  it('todo interpretado o pendiente (no hay medidas del estado actual) y entorno de la parcela', () => {
-    for (const x of [...layout.walls, ...layout.openings, ...layout.rooms, ...layout.roofSegments!]) expect(['interpretado', 'pendiente']).toContain(x.status);
+  it('solo el frontal B (0,60 m) es documentado; el resto, interpretado o pendiente; entorno de la parcela', () => {
+    for (const w of layout.walls.filter((x) => x.facade === 'B')) {
+      expect(w.thickness).toBe(0.6);
+      expect(w.status).toBe('documentado');
+    }
+    expect(layout.measures.find((m) => m.id === 'espesor-resto')!.status).toBe('pendiente');
+    const rest = [...layout.walls.filter((x) => x.facade !== 'B'), ...layout.openings, ...layout.rooms, ...layout.roofSegments!];
+    for (const x of rest) expect(['interpretado', 'pendiente']).toContain(x.status);
     expect(layout.site?.status).toBe('interpretado');
     expect(VINALLOP.site).toBe(layout.site);
     expect(layout.phase).toBe('actual');

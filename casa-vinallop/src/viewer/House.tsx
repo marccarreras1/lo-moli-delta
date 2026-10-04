@@ -1,5 +1,5 @@
 import { Line } from '@react-three/drei';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import type { Layout, Opening, Railing, RoofSegment, Stair, Trace, Vec2, Wall } from '../data/types';
 import { AMBER } from '../ui/status';
@@ -59,7 +59,7 @@ export function House({ layout, mats, showRoof, showCeiling, mode, sectionHeight
       {layout.stairs.filter((st) => visible(st.fromLevel)).map((st) => (
         <StairMesh key={st.id} st={st} from={elev(st.fromLevel)} to={elev(st.toLevel)} mat={mats.stair} />
       ))}
-      {(layout.railings ?? []).filter((r) => visible(r.levelId)).map((r) => <RailingMesh key={r.id} r={r} y={elev(r.levelId)} mat={mats.metal} />)}
+      {(layout.railings ?? []).filter((r) => visible(r.levelId)).map((r) => <RailingMesh key={r.id} r={r} y={elev(r.levelId)} mats={mats} />)}
       {layout.traces.filter((t) => visible(t.levelId)).map((t) => <TraceLine key={t.id} t={t} y={elev(t.levelId) + 0.03} />)}
       {layout.roofSegments?.length ? (
         ((showRoof && mode !== 'corte') || (showCeiling && mode === 'solido')) && <RoofSegments segments={layout.roofSegments} mats={mats} />
@@ -404,30 +404,61 @@ function SegmentGable({ x, y0, y1, hy0, hy1, mat }: { x: number; y0: number; y1:
   return <mesh geometry={geo} position={[x + 0.15, 0, 0]} rotation={[0, -Math.PI / 2, 0]} material={mat} castShadow receiveShadow />;
 }
 
-/** Barandilla: pasamanos, zócalo inferior y barrotes verticales a lo largo de cada tramo. */
-function RailingMesh({ r, y, mat }: { r: Railing; y: number; mat: THREE.Material }) {
-  const parts: { pos: [number, number, number]; size: [number, number, number]; rotY: number }[] = [];
-  for (let i = 0; i < r.points.length - 1; i++) {
-    const [ax, ay] = r.points[i];
-    const [bx, by] = r.points[i + 1];
-    const len = Math.hypot(bx - ax, by - ay);
-    const rotY = -Math.atan2(by - ay, bx - ax);
-    const mx = (ax + bx) / 2;
-    const my = (ay + by) / 2;
-    parts.push({ pos: [mx, y + r.height - 0.02, my], size: [len, 0.04, 0.05], rotY });
-    parts.push({ pos: [mx, y + 0.06, my], size: [len, 0.03, 0.03], rotY });
-    const n = Math.max(1, Math.round(len / r.spacing));
-    for (let k = 0; k <= n; k++) {
-      const t = k / n;
-      parts.push({ pos: [ax + (bx - ax) * t, y + r.height / 2, ay + (by - ay) * t], size: [0.02, r.height, 0.02], rotY });
-    }
-  }
+/** Banda vertical a lo largo de un tramo (de a a b), con base inclinada si cambia de cota. */
+function bandGeometry(len: number, b0: number, b1: number, z0: number, z1: number, depth: number) {
+  const s = new THREE.Shape();
+  s.moveTo(0, b0 + z0);
+  s.lineTo(len, b1 + z0);
+  s.lineTo(len, b1 + z1);
+  s.lineTo(0, b0 + z1);
+  s.closePath();
+  const g = new THREE.ExtrudeGeometry(s, { depth, bevelEnabled: false });
+  g.translate(0, 0, -depth / 2);
+  return g;
+}
+
+/**
+ * Barandilla por tramos. Vidrio: paño continuo con perfil superior fino. Barrotes:
+ * pasamanos, zócalo y barrotes verticales. Si tiene `rise`, la base sigue la pendiente.
+ */
+function RailingMesh({ r, y, mats }: { r: Railing; y: number; mats: MaterialSet }) {
+  const segs = useMemo(() => {
+    const total = r.points.slice(1).reduce((acc, p, i) => acc + Math.hypot(p[0] - r.points[i][0], p[1] - r.points[i][1]), 0) || 1;
+    const [r0, r1] = r.rise ?? [0, 0];
+    let run = 0;
+    return r.points.slice(0, -1).map(([ax, ay], i) => {
+      const [bx, by] = r.points[i + 1];
+      const len = Math.hypot(bx - ax, by - ay);
+      const b0 = r0 + (r1 - r0) * (run / total);
+      run += len;
+      const b1 = r0 + (r1 - r0) * (run / total);
+      const rotY = -Math.atan2(by - ay, bx - ax);
+      const parts: { geo: THREE.BufferGeometry; mat: THREE.Material }[] = [];
+      if (r.material === 'vidrio') {
+        parts.push({ geo: bandGeometry(len, b0, b1, 0.03, r.height - 0.03, 0.02), mat: mats.glass });
+        parts.push({ geo: bandGeometry(len, b0, b1, r.height - 0.03, r.height, 0.035), mat: mats.metal });
+        parts.push({ geo: bandGeometry(len, b0, b1, 0, 0.03, 0.05), mat: mats.metal });
+      } else {
+        parts.push({ geo: bandGeometry(len, b0, b1, r.height - 0.04, r.height, 0.05), mat: mats.metal });
+        parts.push({ geo: bandGeometry(len, b0, b1, 0.04, 0.07, 0.03), mat: mats.metal });
+        const n = Math.max(1, Math.round(len / Math.max(0.05, r.spacing)));
+        for (let k = 0; k <= n; k++) {
+          const s = (len * k) / n;
+          const g = new THREE.BoxGeometry(0.02, r.height, 0.02);
+          g.translate(s, b0 + (b1 - b0) * (k / n) + r.height / 2, 0);
+          parts.push({ geo: g, mat: mats.metal });
+        }
+      }
+      return { ax, ay, rotY, parts };
+    });
+  }, [r, mats]);
+  useEffect(() => () => segs.forEach((sg) => sg.parts.forEach((p) => p.geo.dispose())), [segs]);
   return (
-    <group>
-      {parts.map((p, i) => (
-        <mesh key={i} position={p.pos} rotation={[0, p.rotY, 0]} material={mat} castShadow>
-          <boxGeometry args={p.size} />
-        </mesh>
+    <group position={[0, y, 0]}>
+      {segs.map((sg, i) => (
+        <group key={i} position={[sg.ax, 0, sg.ay]} rotation={[0, sg.rotY, 0]}>
+          {sg.parts.map((p, k) => <mesh key={k} geometry={p.geo} material={p.mat} castShadow={p.mat !== mats.glass} />)}
+        </group>
       ))}
     </group>
   );

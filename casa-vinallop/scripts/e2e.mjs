@@ -125,7 +125,7 @@ try {
     await page.getByTestId('plan-svg').waitFor();
     await page.screenshot({ path: `${OUT}v-09-estado-actual-plano.png` });
     const actTxt = await page.getByTestId('plan-svg').innerText();
-    check('Plano del estado actual con sus tres volúmenes', ['Volumen del extremo', 'Anexo', 'Volumen principal'].every((t) => actTxt.includes(t)));
+    check('Plano del estado actual con sus cuatro volúmenes', ['Volumen del extremo', 'Anexo', 'Volumen principal', 'Habitación pequeña'].every((t) => actTxt.includes(t)));
     await page.click('[data-tab="exterior"]');
     await page.locator('[data-control="phase"] button', { hasText: 'Reforma' }).click();
     await waitReady(page);

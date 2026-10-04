@@ -225,13 +225,14 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
 
   // Barandillas del nivel: doble línea continua
   for (const r of (layout.railings ?? []).filter((x) => x.levelId === level?.id)) {
-    out.push(`<g data-railing="${esc(r.id)}" pointer-events="none"><polyline points="${pts(r.points)}" fill="none" stroke="#3d4239" stroke-width="0.05"/><polyline points="${pts(r.points)}" fill="none" stroke="#fefdfb" stroke-width="0.02"/></g>`);
+    const edge = r.material === 'vidrio' ? '#6f8a94' : '#3d4239';
+    out.push(`<g data-railing="${esc(r.id)}" pointer-events="none"><polyline points="${pts(r.points)}" fill="none" stroke="${edge}" stroke-width="0.05"/><polyline points="${pts(r.points)}" fill="none" stroke="${r.material === 'vidrio' ? '#dce8ec' : '#fefdfb'}" stroke-width="0.02"/></g>`);
     if (o.showLabels && r.points.length === 2) {
       const [[ax, ay], [bx, by]] = r.points;
       const vertical = Math.abs(bx - ax) < 1e-6;
       const lx = (ax + bx) / 2 + (vertical ? 0.18 : 0);
       const ly = (ay + by) / 2 + (vertical ? 0 : 0.18);
-      out.push(`<text x="${n4(lx)}" y="${n4(ly)}" font-size="0.15" fill="#687066" text-anchor="middle" dominant-baseline="middle"${vertical ? ` transform="rotate(-90 ${n4(lx)} ${n4(ly)})"` : ''}>${esc(r.label)} · h ${fmtM(r.height)} m</text>`);
+      out.push(`<text x="${n4(lx)}" y="${n4(ly)}" font-size="0.15" fill="#687066" text-anchor="middle" dominant-baseline="middle"${vertical ? ` transform="rotate(-90 ${n4(lx)} ${n4(ly)})"` : ''}>${esc(r.label)}${r.material === 'vidrio' ? ' de cristal' : ''} · h ${fmtM(r.height)} m</text>`);
     }
   }
 

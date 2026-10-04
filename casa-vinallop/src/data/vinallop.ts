@@ -194,8 +194,12 @@ export const VINALLOP: ProjectData = {
   traces,
   railings: [
     {
-      id: 'barandilla-altell', levelId: 'altell', label: 'Barandilla del altell', points: [[ALT_X1, y0], [ALT_X1, r2(y1 - 0.65)]], height: 1.0, spacing: 0.1, status: 'propuesto', sourceId: S.prop,
-      note: 'Barandilla en el borde del altell hacia la doble altura (propiedad: «sí, una barandilla»). Deja libre el desembarco de la escalera. Altura de 1,00 m y barrotes cada 0,10 m elegidos para visualizar.',
+      id: 'barandilla-altell', levelId: 'altell', label: 'Barandilla del altell', points: [[ALT_X1, y0], [ALT_X1, r2(y1 - 0.65)]], height: 1.0, material: 'vidrio', spacing: 0, status: 'documentado', sourceId: S.prop,
+      note: 'Barandilla de cristal en el borde del altell hacia la doble altura (propiedad). Deja libre el desembarco de la escalera. Altura de 1,00 m provisional.',
+    },
+    {
+      id: 'barandilla-escalera', levelId: 'pb', label: 'Barandilla de la escalera', points: [[ESC[2], ESC[1]], [ESC[2], ESC[3]]], rise: [0.19, ALTELL], height: 1.0, material: 'vidrio', spacing: 0, status: 'documentado', sourceId: S.prop,
+      note: 'Barandilla de cristal en el lado abierto de la escalera, hacia la zona de día (propiedad). Sigue la pendiente desde el primer peldaño hasta el altell. Altura de 1,00 m provisional.',
     },
   ],
   roofOptions: [
@@ -250,6 +254,7 @@ export const VINALLOP: ProjectData = {
     { sourceId: S.planta, read: 'Rectángulo largo junto al lado inferior con dos «×» y rectángulo grande en el centro', interpreted: 'Cocina junto a la escalera con isla central (propiedad).' },
     { sourceId: S.planta, read: 'Línea en U desde la jamba de la puerta y círculo junto al lado superior', interpreted: 'Sofá en L y estufa (propiedad).' },
     { sourceId: S.fa, read: '«FRONTAL A.», «7 metres», «2,25 m» (dos), «6\'20 METRES», bordes en zigzag', interpreted: 'Altura 6,20 m; huecos alineados. El zigzag se ignora (propiedad).' },
+    { sourceId: S.prop, read: '«El espesor de 0,6 sí, el resto no»', interpreted: 'El muro de 0,60 m del frontal B es el existente y se conserva; los demás muros existentes no se conservan con 0,30 m.' },
     { sourceId: S.fb, read: '«FRONTAL B», «70 cm», «120 cm»', interpreted: 'Puerta de entrada de 1,20 m y puerta de 70 cm en el baño.' },
     { sourceId: S.altell, read: '«ALTELL», contorno, hueco superior izquierdo, escalera; marcas solo en la mitad izquierda', interpreted: 'Altell sobre dormitorio y baño; la mitad derecha es doble altura (propiedad).' },
   ],
@@ -260,8 +265,7 @@ export const VINALLOP: ProjectData = {
     'Los anchos de los huecos de los alzados no están a escala. Se usan las cotas escritas.',
   ],
   questions: [
-    'Barandilla del altell: se dibuja de 1,00 m de alto con barrotes verticales cada 0,10 m. ¿Te vale así, o la prefieres de obra, de vidrio o de otro diseño?',
-    'La escalera también tiene un lado abierto hacia la zona de día (en 7,25 m): ¿lleva barandilla?',
+    'Barandillas de cristal del altell y de la escalera: se dibujan de 1,00 m de alto. ¿Es esa la altura, o la quieres de otra?',
   ],
   northDeg: null,
   facades: { A: 'Frontal A', B: 'Frontal B', izquierdo: 'Lateral izquierdo', derecho: 'Lateral derecho' },

@@ -94,8 +94,12 @@ export interface Railing {
   label: string;
   points: Vec2[];
   height: number;
+  /** vidrio = paño de cristal continuo · barrotes = barrotes verticales cada `spacing` */
+  material: 'vidrio' | 'barrotes';
   /** separación entre barrotes */
   spacing: number;
+  /** cota de la base sobre el nivel en el primer y el último punto (barandillas inclinadas de escalera) */
+  rise?: [number, number];
   status: DataStatus;
   sourceId: string;
   note?: string;

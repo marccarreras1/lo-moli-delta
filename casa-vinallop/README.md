@@ -10,7 +10,7 @@ Herramienta para explorar la casa de Vinallop en tres modos (Exterior, Plantas, 
 - Cada dato lleva su estado: *documentado* (cota escrita), *interpretado* (medido o deducido del dibujo), *propuesto* o *pendiente*. Los trazos que no se entienden se dibujan tal cual, en ámbar, como «sin interpretar».
 - Las preguntas abiertas están en la aplicación: menú ⋯ → «Medidas y documentación».
 - Las fotografías **no** están en el repositorio. Para superponerlas al plano, añádelas en «Referencias» (se guardan solo en el navegador).
-- **Fases:** «Reforma» (bocetos) y «Estado actual» (la casa antes de la reforma, interpretada a partir de las fotos de la propiedad: tres volúmenes de una planta con cubiertas de fibrocemento a un agua). Se cambia en el panel; la cámara se mantiene para comparar.
+- **Fases:** «Reforma» (bocetos) y «Estado actual» (la casa antes de la reforma, interpretada a partir de las fotos de la propiedad: cuatro volúmenes de una planta, con una habitación pequeña junto al algarrobo y cubiertas de fibrocemento a un agua). Se cambia en el panel; la cámara se mantiene para comparar.
 - **Entorno de la parcela** (olivar, algarrobo y solera de hormigón) aproximado a partir de las fotos; se oculta en «Visibilidad → Entorno».
 - Existe además un **modelo de prueba ficticio** para probar la interfaz (menú ⋯ → «Modelo de prueba»), siempre marcado como tal.
 
@@ -54,5 +54,5 @@ Coordenadas en metros: X hacia la derecha del papel, Y hacia abajo. La planta 2D
 
 ## Pendiente de confirmar
 
-- Diseño de la barandilla del altell (dibujada de 1,00 m con barrotes) y si la escalera lleva barandilla en su lado abierto.
-- Estado actual: espesores de los muros existentes y el volumen bajo junto al algarrobo (no dibujado).
+- Altura de las barandillas de cristal del altell y de la escalera (dibujadas de 1,00 m).
+- Estado actual: espesor de los muros existentes que no son el frontal B (no son de 0,30 m) y medidas de la habitación pequeña junto al algarrobo.
