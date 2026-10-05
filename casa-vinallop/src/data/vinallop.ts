@@ -131,14 +131,14 @@ const openings: Opening[] = [
     note: 'Anchura documentada (2,25 m), alineada con la de planta baja. Antepecho a 1,10 m sobre el suelo del altell (3,90 m) y dintel a ≈5,90 m, como en el alzado A; al subir el altell a 2,80 m el hueco queda de 2,00 m de alto. Los bordes en zigzag se ignoran (propiedad).',
   },
   {
-    id: 'puerta-120', label: 'Puerta de entrada (1,20 m)', wallId: 'muro-B', kind: 'puerta', offset: onAB(X_PUERTA), width: 1.2, sill: 0, height: 3.0,
+    id: 'puerta-120', label: 'Puerta de entrada (1,20 × 2,60 m)', wallId: 'muro-B', kind: 'puerta', offset: onAB(X_PUERTA), width: 1.2, sill: 0, height: 2.6,
     system: { type: 'abatible', leaves: 1, status: 'interpretado' }, swing: { hinge: 'inicio', dir: -1 }, entrance: true, status: 'documentado', sourceId: S.planta,
-    note: 'Anchura y posición documentadas (cadena de cotas y «120 cm» del frontal B). En el muro de 0,60 m. Una hoja con bisagra en el lado del 9,50, abre hacia dentro. Altura medida en el alzado B (≈3,0 m).',
+    note: 'Anchura y posición documentadas (cadena de cotas y «120 cm» del frontal B). En el muro de 0,60 m. Una hoja con bisagra en el lado del 9,50, abre hacia dentro. Altura de 2,60 m (propiedad; el alzado B dibujaba ≈3,0 m).',
   },
   {
-    id: 'puerta-70', label: 'Puerta de 70 cm (baño)', wallId: 'muro-B', kind: 'puerta', offset: onAB(cx(5.2)), width: 0.7, sill: 0, height: 2.2,
+    id: 'puerta-70', label: 'Puerta de vidrio del baño (70 cm, desde la ducha)', wallId: 'muro-B', kind: 'puerta', offset: onAB(cx(5.2)), width: 0.7, sill: 0, height: 2.2, glazed: 'mate',
     system: { type: 'abatible', leaves: 1, status: 'documentado' }, swing: { hinge: 'fin', dir: 1 }, status: 'documentado', sourceId: S.prop,
-    note: 'Puerta (propiedad) de 70 cm del frontal B. Posición según el alzado B y la marca «×» de la planta (5,20–5,90 m). Abre hacia fuera (propiedad), con la bisagra en la jamba derecha en el plano. Bajo el altell: altura 2,20 m (hipótesis). Con la nueva distribución queda en la zona húmeda de las duchas: necesita umbral estanco o revisar su posición (pendiente).',
+    note: 'Puerta (propiedad) de 70 cm del frontal B, en la zona húmeda de las duchas. Indicación de la propiedad: «la puerta que hay debería ser de cristal y poder acceder desde la ducha». Hoja de vidrio en marco fino; vidrio mate propuesto por intimidad. Abre hacia fuera, con la bisagra en la jamba derecha en el plano. Se accede directamente desde la zona de duchas, sin celosía delante. Posición según el alzado B y la marca «×» de la planta (5,20–5,90 m). Bajo el altell: altura 2,20 m (hipótesis). Propuesta: umbral enrasado con rebaje y sumidero lineal junto a la puerta para que el agua no salga (pendiente de detalle).',
   },
   {
     id: 'puerta-bano', label: 'Puerta del baño', wallId: 'tab-pasillo', kind: 'puerta', offset: r2(BANO_PUERTA_X0 - (X_DORM + TP / 2)), width: 0.9, sill: 0, height: 2.1,
@@ -217,7 +217,7 @@ const furniture: Furniture[] = [
   // baño: dos duchas enfrentadas al fondo (propiedad), lavabo de obra a la izquierda y inodoro a la derecha
   // (izquierda y derecha según se entra desde el pasillo, mirando hacia el frontal B)
   f({ id: 'ducha', type: 'ducha', label: 'Zona húmeda · dos duchas enfrentadas', roomId: 'bano', x: r2((B_X0 + B_X1) / 2), y: r2((B_WET + YB) / 2), w: r2(B_X1 - B_X0), d: r2(YB - B_WET), h: 2.0, rot: 0, status: 'confirmado',
-    note: 'Dos duchas una frente a la otra (propiedad): rociadores en los tabiques opuestos (dormitorio y escalera), orientados hacia la zona húmeda común de 2,40 × 1,20 m, con mandos independientes. Separación con celosía cerámica (A o B), vidrio fijo por la cara húmeda y cortina en el acceso con carril propio (propuesta).' }),
+    note: 'Dos duchas una frente a la otra (propiedad): rociadores en los tabiques opuestos (dormitorio y escalera), orientados hacia la zona húmeda común de 2,40 × 1,20 m, con mandos independientes. Separación con celosía cerámica (A o B), vidrio fijo por la cara húmeda y cortina en el acceso con carril propio (propuesta). Desde la zona húmeda se sale al exterior por la puerta de vidrio de 70 cm del frontal B (propiedad).' }),
   f({ id: 'lavabo', type: 'lavabo', label: 'Lavabo de obra', roomId: 'bano', x: r2(B_X1 - 0.28), y: 2.68, w: 1.05, d: 0.55, h: 0.85, rot: 90, status: 'propuesto', note: 'Lavabo de obra con un seno, dos cajones de madera, hueco inferior y espejo grande (referencia del baño). En el lateral izquierdo según se entra, contra el tabique de la escalera.' }),
   f({ id: 'inodoro', type: 'inodoro', label: 'Inodoro', roomId: 'bano', x: r2(B_X0 + 0.325), y: 2.72, w: 0.38, d: 0.65, h: 0.42, rot: 270, status: 'propuesto', note: 'En el lateral derecho según se entra, fuera del eje de la puerta para dar privacidad. Saneamiento a comprobar (el boceto marcaba «×» de agua en este tabique).' }),
   // cocina lineal contra el frontal B (propiedad), entre la escalera y la puerta de entrada.
@@ -339,6 +339,7 @@ const views: CameraPreset[] = [
   view({ id: 'v11-dormitorio', label: '11 · Dormitorio', group: 'interior', eyeLevel: true, roomId: 'dormitorio', elevation: 0, position: [3.45, 0.7, 1.6], target: [1.8, 3.9, 0.9], fov: 60 }),
   view({ id: 'v12-bano-entrada', label: '12 · Baño desde la entrada', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [5.5, 2.05, 1.6], target: [4.7, 4.6, 1.05], fov: 72 }),
   view({ id: 'v12b-bano-ducha', label: '12b · Baño desde la ducha (duchas enfrentadas)', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [5.05, 4.25, 1.6], target: [5.05, 1.6, 1.2], fov: 66 }),
+  view({ id: 'v12d-puerta-ducha', label: '12d · Puerta de vidrio desde la ducha', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [5.2, 3.55, 1.6], target: [5.75, 5.0, 1.05], fov: 78 }),
   view({ id: 'v12c-celosia', label: '12c · Detalle de la celosía', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [4.45, 2.35, 1.6], target: [4.15, 3.6, 1.15], fov: 52 }),
   view({ id: 'v13-altell', label: '13 · Altell, vigas cemento y volta terracota', group: 'interior', eyeLevel: true, roomId: 'altell', elevation: 2.8, position: [4.9, 2.46, 1.6], target: [12, 2.46, 1.6], fov: 64 }),
   view({ id: 'v13b-volta', label: '13b · Vigas y volta desde la zona de día', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.2, 2.7, 1.6], target: [10.2, 2.46, 5.6], fov: 60 }),
@@ -503,7 +504,6 @@ const PROJECT: ProjectData = {
     'Los anchos de los huecos de los alzados no están a escala. Se usan las cotas escritas.',
   ],
   questions: [
-    'Puerta de 70 cm del frontal B: con las dos duchas enfrentadas al fondo del baño cae en la zona húmeda. ¿Se mantiene (con celosía/cortina) o se desplaza al vestíbulo seco?',
     'Superficie construida de 79,48 m²: ¿qué parte del rectángulo de 16,33 × 5,22 m excluye el informe?',
     'Ventanal de 9 m: pendiente del cálculo del arquitecto (zuncho, machones de ≈0,50 m).',
     'Logo: el enlace de Canva no es accesible desde aquí; falta el archivo (SVG o PNG) para integrarlo.',

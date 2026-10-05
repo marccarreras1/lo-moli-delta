@@ -162,6 +162,8 @@ export interface Opening {
   finishColor?: string;
   /** contraventanas de madera por la cara exterior (abiertas contra la fachada) */
   shutters?: boolean;
+  /** puerta con hoja de vidrio en marco fino (mate = translúcido, para baños) */
+  glazed?: 'transparente' | 'mate';
   status: DataStatus;
   sourceId: string;
   note?: string;

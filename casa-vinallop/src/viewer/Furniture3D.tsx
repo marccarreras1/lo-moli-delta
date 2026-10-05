@@ -605,8 +605,8 @@ function Shower({ w, d, mats, lattice }: { w: number; d: number; mats: MaterialS
           <mesh position={[0.035, 1.1, 0]} rotation={[0, 0, Math.PI / 2]} material={mats.brass}><cylinderGeometry args={[0.012, 0.012, 0.04, 10]} /></mesh>
         </group>
       ))}
-      {/* hornacinas de obra en el muro del fondo, una por ducha */}
-      {[-1, 1].map((k) => (
+      {/* hornacina de obra en el muro del fondo, en la mitad sin puerta (en la otra está la puerta de vidrio al exterior) */}
+      {[-1].map((k) => (
         <group key={k} position={[k * (w / 2 - 0.45), 0, d / 2]}>
           <B y={1.05} z={-0.04} w={0.5} h={0.4} d={0.08} m={mats.interior} />
           <B y={1.1} z={-0.03} w={0.42} h={0.3} d={0.07} m={mats.terracottaTile} />

@@ -1,5 +1,6 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import * as THREE from 'three';
 import type { Opening, Vec2, Wall } from '../data/types';
 import { pointOnWall, wallDir, wallNormal } from '../model/geometry';
 import { FRAME, LEAF_T, leafPose, type LeafPose } from '../model/openings';
@@ -30,6 +31,9 @@ export function Opening3D({ o, w, mats, center, fraction, selected, onSelect, pl
     return m;
   }, [o.finishColor, mats.carpentry]);
   useEffect(() => () => own?.dispose(), [own]);
+  // vidrio mate (translúcido) para la puerta del baño
+  const frosted = useMemo(() => (o.glazed === 'mate' ? new THREE.MeshPhysicalMaterial({ color: '#eef2f1', roughness: 0.55, metalness: 0, transmission: 0.5, transparent: true, opacity: 0.72, thickness: 0.01 }) : null), [o.glazed]);
+  useEffect(() => () => frosted?.dispose(), [frosted]);
   const d = wallDir(w);
   const n = wallNormal(w);
   const mid = pointOnWall(w, o.offset + o.width / 2);
@@ -101,7 +105,7 @@ export function Opening3D({ o, w, mats, center, fraction, selected, onSelect, pl
         const start = pointOnWall(w, o.offset + FRAME + leaf.s, leaf.depth + inset);
         const c: Vec2 = [start[0] + (u[0] * leaf.width) / 2, start[1] + (u[1] * leaf.width) / 2];
         const rot = -Math.atan2(u[1], u[0]);
-        if (isDoor) return <DoorLeaf key={i} c={c} y={zMid} rot={rot} width={leaf.width - 0.01} height={leafH} planks={planks} mats={own ? { ...mats, carpentry: own } : mats} handleLeft={leaf.angle > 90} />;
+        if (isDoor && !o.glazed) return <DoorLeaf key={i} c={c} y={zMid} rot={rot} width={leaf.width - 0.01} height={leafH} planks={planks} mats={own ? { ...mats, carpentry: own } : mats} handleLeft={leaf.angle > 90} />;
         const p = 0.035;
         return (
           <group key={i} position={[c[0], zMid, c[1]]} rotation={[0, rot, 0]}>
@@ -109,7 +113,9 @@ export function Opening3D({ o, w, mats, center, fraction, selected, onSelect, pl
             <mesh position={[0, -leafH / 2 + p / 2, 0]} material={frameMat}><boxGeometry args={[leaf.width, p, LEAF_T]} /></mesh>
             <mesh position={[-leaf.width / 2 + p / 2, 0, 0]} material={frameMat} castShadow><boxGeometry args={[p, leafH, LEAF_T]} /></mesh>
             <mesh position={[leaf.width / 2 - p / 2, 0, 0]} material={frameMat} castShadow><boxGeometry args={[p, leafH, LEAF_T]} /></mesh>
-            <mesh material={mats.glass}><boxGeometry args={[leaf.width - 2 * p, leafH - 2 * p, 0.01]} /></mesh>
+            <mesh material={frosted ?? mats.glass}><boxGeometry args={[leaf.width - 2 * p, leafH - 2 * p, 0.01]} /></mesh>
+            {/* puerta de vidrio: tirador a ambos lados */}
+            {isDoor && [-1, 1].map((k) => <mesh key={k} position={[(leaf.angle > 90 ? -1 : 1) * (leaf.width / 2 - 0.08), -leafH / 2 + 1.0, k * (LEAF_T / 2 + 0.02)]} material={mats.blackMetal}><boxGeometry args={[0.02, 0.3, 0.02]} /></mesh>)}
           </group>
         );
       })}

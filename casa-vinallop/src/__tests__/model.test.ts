@@ -87,6 +87,9 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(op('obertura-225-pb').width).toBe(2.25);
     expect(op('obertura-225-altell').width).toBe(2.25);
     expect(op('puerta-120').width).toBe(1.2);
+    expect(op('puerta-120').height).toBe(2.6);
+    // puerta del baño: de vidrio y abierta a la zona húmeda de las duchas
+    expect(op('puerta-70').glazed).toBe('mate');
     expect(op('puerta-120').wallId).toBe('muro-B');
     expect(op('puerta-70').width).toBe(0.7);
     expect(op('puerta-70').kind).toBe('puerta');
