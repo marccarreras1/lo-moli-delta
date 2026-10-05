@@ -137,7 +137,7 @@ export function ProjectPage() {
 
       <section className="sp-card">
         <h2>Logo</h2>
-        <p className="hint">El logo está en Canva y el enlace no se puede abrir ni exportar desde aquí. No se redibuja ni se sustituye: carga el archivo original (SVG o PNG) y se mostrará en la cabecera. Se guarda solo en este navegador.</p>
+        <p className="hint">El logo de Lo Molí · Delta (archivo de la propiedad) va incluido en la aplicación. Si quieres probar otra versión, cárgala aquí: se guarda solo en este navegador y sustituye al incluido en la cabecera.</p>
         <div className="sp-actions">
           <button type="button" className="btn" onClick={() => logoRef.current?.click()} data-action="logo-load">{logo.src ? 'Cambiar el archivo del logo' : 'Cargar el archivo del logo'}</button>
           {logo.src && <button type="button" className="btn" onClick={logo.clear}>Quitar</button>}

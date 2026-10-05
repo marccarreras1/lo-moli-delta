@@ -1,6 +1,6 @@
 import { OrbitControls } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import type { CameraPreset, Layout } from '../data/types';
@@ -74,15 +74,21 @@ export function CameraRig({ presets, request, tab, eyeHeight, interiorFov, layou
     anim.current = { fromP: camera.position.clone(), toP: pos, fromT: c.target.clone(), toT, fromF: camera.fov, toF: fov, t: 0, dur: instant || reduceMotion ? 0 : 0.5, lookAhead };
   };
 
+  // en interiores, la vista cenital 3D usa la órbita de exterior (desplazar y acercar) en lugar de la de a pie
+  const [overview, setOverview] = useState(false);
+  useEffect(() => { if (tab !== 'interior') setOverview(false); }, [tab]);
   useEffect(() => {
     const c = controls.current;
     if (!c || presets.length === 0) return;
     const id = request.id;
     const instant = !!request.instant;
     if (id === 'memoria' && saved) {
+      // una cámara guardada muy por encima del suelo es la vista cenital
+      setOverview(tab === 'interior' && saved.position[1] > 4.5);
       go(new THREE.Vector3(...saved.position), new THREE.Vector3(...saved.target), saved.fov, instant, false);
       return;
     }
+    if (tab === 'interior' && (id.startsWith('walk:') || id.startsWith('paso:'))) setOverview(false);
     if (id.startsWith('paso:')) {
       // desplazamiento controlado en interiores: solo si se queda dentro de la estancia
       const dir = c.target.clone().sub(camera.position).setY(0).normalize().multiplyScalar(0.5 * Number(id.slice(5)));
@@ -145,7 +151,8 @@ export function CameraRig({ presets, request, tab, eyeHeight, interiorFov, layou
       onEnterRoom(p.roomId);
     } else roomRef.current = null;
     if (id !== 'inicio' || p.fixed) onPreset?.(p);
-    go(pos, target, fov, instant, p.group === 'interior');
+    if (tab === 'interior') setOverview(!!p.topDown);
+    go(pos, target, fov, instant, p.group === 'interior' && !p.topDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [request.nonce, presets.length]);
 
@@ -236,14 +243,14 @@ export function CameraRig({ presets, request, tab, eyeHeight, interiorFov, layou
   // límites: el centro de giro no se aleja del edificio
   const clampTarget = () => {
     const c = controls.current;
-    if (!c || tab === 'interior') return;
+    if (!c || interior) return;
     const m = R * 0.6;
     c.target.x = THREE.MathUtils.clamp(c.target.x, minX - m, maxX + m);
     c.target.z = THREE.MathUtils.clamp(c.target.z, minY - m, maxY + m);
     c.target.y = THREE.MathUtils.clamp(c.target.y, 0, layout.topHeight);
   };
 
-  const interior = tab === 'interior';
+  const interior = tab === 'interior' && !overview;
   const plan = tab === 'plantas';
   limits.current = { min: interior ? 0.3 : 3, max: interior ? 1 : R * 4.5 };
   return (

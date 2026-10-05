@@ -53,11 +53,19 @@ const views = await page.evaluate(() => {
 });
 void views;
 const ids = await page.evaluate(() => [...document.querySelectorAll('[data-view]')].map((b) => [b.getAttribute('data-view'), b.getAttribute('data-view-tab')]));
+let first = true;
 for (const [id, tab] of ids) {
   if (filter && !id.includes(filter)) continue;
   await page.evaluate(({ id, tab }) => window.__store.getState().goView(id, tab), { id, tab });
-  await page.waitForTimeout(2600);
+  // la primera vista (y el cambio de modo) tarda más con el renderizado por software
+  await page.waitForTimeout(first ? 9000 : 2600);
+  first = false;
+  if (errors.length) console.log('errores en', id, errors.slice(-3).join(' | ').slice(0, 600));
+  // con el renderizado por software el bucle continuo no deja capturar: se congela el último fotograma
+  await page.evaluate(() => window.__visor?.setFrameloop?.('never'));
+  await page.waitForTimeout(800);
   await page.screenshot({ path: `${OUT}${id}${suffix ? `-${suffix}` : ''}.png` });
+  await page.evaluate(() => window.__visor?.setFrameloop?.('always'));
   console.log('✔', id);
 }
 if (errors.length) console.log('Errores:', errors.slice(0, 5).join('\n'));

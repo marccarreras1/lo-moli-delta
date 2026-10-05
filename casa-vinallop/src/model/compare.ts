@@ -12,6 +12,7 @@ export const QUICK_COMPARE: { id: string; label: string; apply: (v: Variant) => 
   { id: 'ventanas', label: 'Con la propuesta de ventanas', apply: (v) => ({ ...v, options: { ...v.options, aberturas: [...new Set([...v.options.aberturas, ...PROPUESTA_VENTANAS])] } }) },
   { id: 'chimenea', label: 'Estufa ↔ chimenea de obra', apply: (v) => ({ ...v, options: { ...v.options, chimenea: v.options.chimenea === 'obra' ? 'estufa' : 'obra' } }) },
   { id: 'mesa-comedor', label: 'Mesa de comedor rectangular ↔ redonda', apply: (v) => ({ ...v, options: { ...v.options, mesaComedor: v.options.mesaComedor === 'redonda' ? 'rectangular' : 'redonda' } }) },
+  { id: 'salon', label: 'Salón: sofá en L ↔ sofás enfrentados', apply: (v) => ({ ...v, options: { ...v.options, salon: v.options.salon === 'enfrentados' ? 'sofa-l' : 'enfrentados' } }) },
   { id: 'aberturas', label: 'Con todas las aberturas variantes', apply: (v) => ({ ...v, options: { ...v.options, aberturas: EXTRA_OPENINGS.map((e) => e.key) } }) },
   { id: 'entrada', label: 'Entrada con volumen saliente', apply: (v) => ({ ...v, options: { ...v.options, entradaSaliente: !v.options.entradaSaliente } }) },
   { id: 'lampara-ext', label: 'Lámpara exterior: árbol ↔ pie', apply: (v) => ({ ...v, options: { ...v.options, lamparaExterior: v.options.lamparaExterior === 'arbol' ? 'soporte' : 'arbol' } }) },

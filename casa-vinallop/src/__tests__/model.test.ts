@@ -324,7 +324,11 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
       const p: [number, number] = [v.position[0], v.position[1]];
       expect(inWall(p), v.id).toBe(false);
       expect(fps.some((fp) => pointInPolygon(p, fp, -1e-3)), v.id).toBe(false);
-      if (v.group === 'interior') {
+      if (v.group === 'interior' && v.topDown) {
+        // vista cenital 3D del interior: por encima de la casa, mirando a la planta
+        expect(v.position[2]).toBeGreaterThan(8);
+        expect(v.target[2]).toBe(0);
+      } else if (v.group === 'interior') {
         const room = layout.rooms.find((r) => r.id === v.roomId)!;
         expect(pointInPolygon(p, room.polygon), v.id).toBe(true);
         expect(v.position[2]).toBeCloseTo(1.6, 1);
@@ -377,6 +381,17 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
     expect(validateLayout(l2).filter((i) => ids.has(i.elementId))).toEqual([]);
     const minY = (l: typeof l2, pre: string) => Math.min(...l.furniture.filter((f) => f.id.startsWith(pre)).flatMap((f) => furnitureFootprint(f).map((p) => p[1])));
     expect(minY(l2, 'silla-redonda')).toBeGreaterThan(minY(layout, 'silla-comedor') + 0.1);
+  });
+  it('variante de salón con sofás enfrentados y comedor en el rincón de la cristalera, sin conflictos', () => {
+    const l2 = resolveLayout(VINALLOP, { ...baseVariant(), options: { ...baseVariant().options, salon: 'enfrentados' } });
+    for (const id of ['sofa-b', 'sofa-lateral', 'estufa', 'mesa-comedor', 'mesa-salon']) expect(l2.furniture.some((f) => f.id === id), id).toBe(false);
+    const [s1, s2] = ['sofa-enfrentado-1', 'sofa-enfrentado-2'].map((id) => l2.furniture.find((f) => f.id === id)!);
+    // perpendiculares a los frontales (largo según Y) y mirándose
+    expect([s1.rot, s2.rot].sort()).toEqual([270, 90].sort());
+    expect(Math.abs(s1.y - s2.y)).toBeLessThan(1e-6);
+    const ids = new Set(l2.furniture.filter((f) => f.onlyIf?.salon === 'enfrentados').map((f) => f.id));
+    expect(ids.size).toBe(8);
+    expect(validateLayout(l2).filter((i) => ids.has(i.elementId))).toEqual([]);
   });
   it('cocina también bajo la escalera (en L) y mesa de comedor para 4 sin conflictos', () => {
     const esc = layout.stairs[0];

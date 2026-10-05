@@ -218,7 +218,7 @@ export interface Furniture {
   /** cocina bajo la escalera: sin salpicadero ni balda encima */
   underStair?: boolean;
   /** solo aparece con esa opción de diseño (p. ej. estufa o chimenea de obra) */
-  onlyIf?: { chimenea?: 'estufa' | 'obra'; mesaComedor?: 'rectangular' | 'redonda' };
+  onlyIf?: { chimenea?: 'estufa' | 'obra'; mesaComedor?: 'rectangular' | 'redonda'; salon?: 'sofa-l' | 'enfrentados' };
 }
 
 export type RoofType = 'dos-aguas' | 'un-agua' | 'plana' | 'plana-peto';
@@ -423,6 +423,8 @@ export interface DesignOptions {
   chimenea: 'estufa' | 'obra';
   /** mesa de comedor interior: rectangular de 120 × 80 o redonda de Ø 0,90 (variante) */
   mesaComedor: 'rectangular' | 'redonda';
+  /** salón: sofá de obra en L (boceto) o dos sofás enfrentados en el centro con el comedor en el rincón (variante) */
+  salon: 'sofa-l' | 'enfrentados';
 }
 
 export const EXTRA_OPENINGS: { key: string; label: string }[] = [
@@ -439,7 +441,7 @@ export const EXTRA_OPENINGS: { key: string; label: string }[] = [
 /** propuesta de ventanas completa: fachada sur-suroeste, doble altura, baño, altell y vista al algarrobo */
 export const PROPUESTA_VENTANAS = ['ventilacion-cruzada', 'ventana-dormitorio', 'ventana-bano', 'ventanas-altell', 'ventana-cocina', 'ventanas-altas', 'ventana-algarrobo'];
 
-export const DEFAULT_OPTIONS: DesignOptions = { celosia: 'A', lamparas: 'A', lamparasUbicacion: 'isla', puertaEntrada: 'tablones', entradaSaliente: false, ventanal: '9', aberturas: [], lamparaExterior: 'arbol', chimenea: 'estufa', mesaComedor: 'rectangular' };
+export const DEFAULT_OPTIONS: DesignOptions = { celosia: 'A', lamparas: 'A', lamparasUbicacion: 'isla', puertaEntrada: 'tablones', entradaSaliente: false, ventanal: '9', aberturas: [], lamparaExterior: 'arbol', chimenea: 'estufa', mesaComedor: 'rectangular', salon: 'sofa-l' };
 
 export interface Layout extends ProjectData {
   options: DesignOptions;
@@ -468,6 +470,8 @@ export interface CameraPreset {
   section?: boolean;
   /** vista sin cubierta */
   hideRoof?: boolean;
+  /** interiores: vista cenital 3D de la planta cortada (sin techos), con órbita, desplazamiento y zoom */
+  topDown?: boolean;
 }
 
 export interface Finish {

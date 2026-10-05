@@ -4,6 +4,7 @@ import { useRefs } from './refs/db';
 import { useModel } from './state/derived';
 import { SECTIONS, serializeConfig, useStore, type ViewTab } from './state/store';
 import { useLogo } from './ui/logo';
+import logoLoMoli from './assets/logo-lo-moli.png';
 import { walkInput } from './viewer/walkInput';
 import { QUICK_COMPARE } from './model/compare';
 import { defaultPreset } from './model/cameras';
@@ -174,7 +175,7 @@ export default function App() {
     <div className={`app tab-${tab}${mobile ? ' is-mobile' : ''}${tablet ? ' is-tablet' : ''}${presenting ? ' presenting' : ''}`}>
       <header className="topbar">
         <div className="brand">
-          {logoSrc ? <img className="brand-logo" src={logoSrc} alt="Lo Molí · Delta" /> : <span className="brand-name">Lo Molí · Delta</span>}
+          <img className="brand-logo" src={logoSrc ?? logoLoMoli} alt="Lo Molí · Delta" />
           <span className="brand-meta">Estudio v{APP_VERSION}</span>
         </div>
         <div className={`tabs${visual.section !== 'visor' ? ' is-hidden' : ''}`} role="tablist" aria-label="Modo de visualización">

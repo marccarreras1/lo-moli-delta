@@ -1,7 +1,7 @@
 /**
- * Logo del proyecto. El original está en Canva y no se puede descargar desde aquí: no se dibuja ni
- * se sustituye por un icono. Si la propiedad aporta el archivo (SVG o PNG), se guarda solo en este
- * navegador y aparece en la cabecera; sin archivo se muestra el nombre en texto.
+ * Logo del proyecto. El de «Lo Molí · Delta» (archivo aportado por la propiedad, sin redibujar) va
+ * incluido en la aplicación; si se carga otro archivo, se guarda solo en este navegador y lo sustituye
+ * en la cabecera.
  */
 import { create } from 'zustand';
 

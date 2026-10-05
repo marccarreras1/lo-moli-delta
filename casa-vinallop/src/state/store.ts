@@ -227,6 +227,7 @@ function cleanOptions(x: unknown): DesignOptions {
     lamparaExterior: pick(o.lamparaExterior, ['arbol', 'soporte'] as const, d.lamparaExterior),
     chimenea: pick(o.chimenea, ['estufa', 'obra'] as const, d.chimenea),
     mesaComedor: pick(o.mesaComedor, ['rectangular', 'redonda'] as const, d.mesaComedor),
+    salon: pick(o.salon, ['sofa-l', 'enfrentados'] as const, d.salon),
   };
 }
 

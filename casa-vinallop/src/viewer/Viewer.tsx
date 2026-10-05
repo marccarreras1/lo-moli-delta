@@ -102,8 +102,16 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
   const setVisual = useStore((s) => s.setVisual);
   // las vistas preparadas fijan lo que necesitan ver (corte longitudinal, sin cubierta)
   const applyPreset = (p: CameraPreset) => {
-    if (p.group !== 'exterior') return;
     const st = useStore.getState().visual;
+    if (p.group === 'interior') {
+      // vista cenital 3D: planta cortada por encima de los muebles, sin techos; a pie, de nuevo maciza
+      if (p.topDown) {
+        if (st.mode !== 'corte') setVisual('mode', 'corte');
+        if (st.sectionHeight !== 2.2) setVisual('sectionHeight', 2.2);
+      } else if (st.mode === 'corte') setVisual('mode', 'solido');
+      return;
+    }
+    if (p.group !== 'exterior') return;
     if (st.longSection !== !!p.section) setVisual('longSection', !!p.section);
     if (p.fixed && st.showRoof === !!p.hideRoof) setVisual('showRoof', !p.hideRoof);
   };
@@ -139,7 +147,7 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
       <Environment intensity={amb.env * (tab === 'interior' && quality === 'alta' ? 0.7 : 1)} exposure={amb.exposure} hdri={tab === 'plantas' ? null : hdriFor(v.ambience)} turn={sun.hdriTurn} />
       <Lights layout={layout} intensity={v.lightIntensity} ambience={v.ambience} shadowSize={quality === 'alta' ? 4096 : 2048} interior={tab === 'interior' && quality === 'alta'} wide={!!layout.site && v.showSite && tab === 'exterior'} />
       {layout.site && v.showSite ? <SiteGround layout={layout} site={layout.site} lite={lite} sunAz={v.ambience === 'noche' ? null : sun.az} sunEl={sun.el} /> : <Ground layout={layout} />}
-      <House layout={layout} mats={mats} showRoof={showRoof} showCeiling={tab === 'interior' || section} mode={mode}
+      <House layout={layout} mats={mats} showRoof={showRoof} showCeiling={(tab === 'interior' && mode !== 'corte') || section} mode={mode}
         sectionHeight={cutAbs} selection={selection} openFractions={openFractions} onSelect={select} maxElev={maxElev} />
       {v.showFurniture && <Furniture3D items={furniture} mats={mats} elevationOf={elevationOf} options={layout.options} selectedId={selFurniture} onSelect={onSelectFurniture} />}
       {v.showFurniture && layout.outdoor && tab !== 'plantas' && (
@@ -526,7 +534,7 @@ export function CompareViewer({ variant }: { variant: Variant }) {
       <Environment intensity={amb.env} exposure={amb.exposure} />
       <Lights layout={layout} intensity={v.lightIntensity} ambience={v.ambience} shadowSize={1024} />
       {layout.site && v.showSite ? <SiteGround layout={layout} site={layout.site} lite /> : <Ground layout={layout} />}
-      <House layout={layout} mats={mats} showRoof={v.showRoof && tab === 'exterior'} showCeiling={tab === 'interior' || section} mode={mode}
+      <House layout={layout} mats={mats} showRoof={v.showRoof && tab === 'exterior'} showCeiling={(tab === 'interior' && mode !== 'corte') || section} mode={mode}
         sectionHeight={cutAbs} selection={null} openFractions={{}} onSelect={() => undefined} maxElev={maxElev} />
       {v.showFurniture && <Furniture3D items={furniture} mats={mats} elevationOf={elevationOf} options={layout.options} />}
       {v.showFurniture && layout.outdoor && tab !== 'plantas' && <Outdoor3D outdoor={layout.outdoor} mats={mats} options={layout.options} level={artificial ? lampLevel : 0} />}
