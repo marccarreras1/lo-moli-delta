@@ -124,11 +124,15 @@ function outdoorSvg(layout: Layout, od: NonNullable<Layout['outdoor']>, labels: 
     if (labels) g.push(`<text x="${n4((x0 + x1) / 2)}" y="${n4((wallY + fy) / 2 + 0.05)}" font-size="0.2" fill="#5e4630" text-anchor="middle">${esc(pr.label)} · cañizo sobre viguetas de madera</text>`);
   }
   // cotas de los tramos de la solera y superficie (esquina contada una vez)
-  const fr = od.pavements.find((p) => p.id === 'solera-l-frente');
+  const fa = od.pavements.find((p) => p.id === 'solera-l-frontal-a');
   const la = od.pavements.find((p) => p.id === 'solera-l-lateral');
-  if (fr) g.push(dim([fr.rect[0], fr.rect[1]], [fr.rect[0], fr.rect[3]], 0.5, `${fmtM(fr.rect[3] - fr.rect[1])} m`, fr.status));
+  if (fa) g.push(dim([fa.rect[0], fa.rect[1]], [fa.rect[0], fa.rect[3]], 0.5, `${fmtM(fa.rect[3] - fa.rect[1])} m`, fa.status));
   if (la) g.push(dim([la.rect[0], la.rect[1]], [la.rect[2], la.rect[1]], -0.45, `${fmtM(la.rect[2] - la.rect[0])} m`, la.status));
-  if (q && fr && labels) g.push(`<text x="${n4((fr.rect[0] + fr.rect[2]) / 2 - 3)}" y="${n4(fr.rect[3] - 0.9)}" font-size="0.2" fill="#3d433b" text-anchor="middle">Solera en L y porche · ${fmtM(q.area)} m² (unión, esquinas una vez, sin alcorque)</text><text x="${n4((fr.rect[0] + fr.rect[2]) / 2 - 3)}" y="${n4(fr.rect[3] - 0.6)}" font-size="0.13" fill="#687066" text-anchor="middle">juntas ≈3 m / 2 m · pendiente 1,5–2 % hacia la canaleta (propuesta)</text>`);
+  if (q && fa && labels) {
+    const tx = fa.rect[0] + Math.min(3.3, (fa.rect[2] - fa.rect[0]) / 2);
+    const ty = (fa.rect[1] + fa.rect[3]) / 2;
+    g.push(`<text x="${n4(tx)}" y="${n4(ty - 0.1)}" font-size="0.2" fill="#3d433b" text-anchor="middle">Solera en L · ${fmtM(q.area)} m²</text><text x="${n4(tx)}" y="${n4(ty + 0.2)}" font-size="0.13" fill="#687066" text-anchor="middle">unión de tramos, esquina una vez, sin alcorque</text><text x="${n4(tx)}" y="${n4(ty + 0.42)}" font-size="0.13" fill="#687066" text-anchor="middle">pendiente 1,5–2 % hacia la canaleta (propuesta)</text>`);
+  }
   g.push('</g>');
   return g.join('');
 }

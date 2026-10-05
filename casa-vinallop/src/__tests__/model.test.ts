@@ -350,18 +350,22 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
     expect([isla.x, isla.w, isla.status]).toEqual([9.0, 1.8, 'propuesto']);
     expect(layout.furniture.find((f) => f.id === 'isla')!.x).toBe(9.1);
   });
-  it('solera en L confirmada: 3 m delante y 4 m en el lateral, esquina contada una vez y alcorque permeable', () => {
+  it('solera en L confirmada: frontal A de punta a punta y 4 m en el lateral, sin solera en la entrada, esquina contada una vez y alcorque permeable', () => {
     const o = layout.outdoor!;
     expect(o.furniture.filter((f) => f.type === 'silla-exterior')).toHaveLength(8);
-    const fr = o.pavements.find((p) => p.id === 'solera-l-frente')!;
+    const fr = o.pavements.find((p) => p.id === 'solera-l-frontal-a')!;
     const la = o.pavements.find((p) => p.id === 'solera-l-lateral')!;
     expect([fr.status, la.status]).toEqual(['confirmado', 'confirmado']);
-    expect(fr.rect[3] - fr.rect[1]).toBeCloseTo(3, 5);
+    expect(fr.rect[0]).toBe(layout.bounds.minX);
+    expect(fr.rect[2]).toBe(layout.bounds.maxX);
+    expect(fr.rect[3]).toBe(layout.bounds.minY);
+    // ningún tramo de solera delante del frontal B (puerta de entrada) a lo largo de la casa
+    expect(o.pavements.filter((p) => p.joints > 0 && p.rect[3] > layout.bounds.maxY && p.rect[0] < layout.bounds.maxX)).toEqual([]);
     expect(la.rect[2] - la.rect[0]).toBeCloseTo(4, 5);
     expect(la.permeable!.r).toBeGreaterThan(1);
     expect(layout.site!.trees[0].c).toEqual(la.permeable!.c);
     const q = soleraQuantities(layout)!;
-    expect(q.overlap).toBeCloseTo(4 * 3, 1);
+    expect(q.overlap).toBeCloseTo(0, 1); // los tramos se tocan en la esquina sin solaparse
     expect(q.area).toBeCloseTo(q.grossSum - q.overlap - q.excluded, 1);
     // mesa redonda de Ø 1,80 con pie cilíndrico y lámpara de cúpula con anclaje sin resolver
     const mesa = o.furniture.find((f) => f.type === 'mesa-exterior')!;

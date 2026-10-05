@@ -1,5 +1,5 @@
 /**
- * Cantidades de la solera exterior en L (fachada delantera + lateral del algarrobo).
+ * Cantidades de la solera exterior en L (frontal A de punta a punta + lateral del algarrobo).
  * La superficie es la unión geométrica de los tramos: la esquina se cuenta una sola vez y solo se
  * descuentan las zonas que no se pavimentan (alcorque alrededor del tronco).
  */

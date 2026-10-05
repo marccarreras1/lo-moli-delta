@@ -248,28 +248,29 @@ const traces: Trace[] = [
 // ---------- exterior: solera en L y comedor bajo el algarrobo (decisiones confirmadas; medidas propuestas) ----------
 /** algarrobo: posición aproximada sobre la vista cenital (src/data/parcela.ts) */
 const ALGARROBO: Vec2 = [17.7, 2.3];
-/** solera en L: 3 m delante (frontal B) y 4 m en el lateral del algarrobo (variante editable, dentro del rango 3–4 m) */
+/**
+ * solera en L (propiedad): tramo a lo largo de todo el frontal A, el de la cristalera, de punta a punta,
+ * y tramo de 4 m en el lateral del algarrobo; sin solera en el frontal B (puerta de entrada).
+ * El lateral se prolonga SOL_FRENTE más allá del frontal B para la mesa bajo el algarrobo.
+ */
 const SOL_FRENTE = 3;
 const SOL_LATERAL = 4;
-/** solera y porche delante de la cristalera del frontal A (decisión de la propiedad; medidas propuestas) */
+/** fondo del tramo del frontal A, bajo el porche (medida propuesta) */
 const SOL_TRASERA = 3.4;
 const PORCHE_X0 = r2(ALT_X1);
 /** la mesa va en la esquina de la L, bajo el borde de la copa (el tronco está a ≈1,4 m del lateral) */
 const MESA_EXT: Vec2 = [r2(L + 2.3), r2(W + 1.5)];
 const outdoor: Outdoor = {
   pavements: [
-    { id: 'grava-comedor', label: 'Transición de grava', rect: [-0.5, r2(-SOL_TRASERA - 0.5), r2(L + SOL_LATERAL + 0.5), r2(W + SOL_FRENTE + 0.5)], joints: 0, status: 'propuesto', note: 'Borde de grava de 0,50 m entre la solera y la tierra; también junto a los frentes sin solera.' },
-    {
-      id: 'solera-l-frente', label: 'Solera en L · tramo delantero', rect: [0, W, r2(L + SOL_LATERAL), r2(W + SOL_FRENTE)], joints: 3, status: 'confirmado',
-      note: 'Solera continua en L (confirmada; anchos de la variante 3 m delante / 4 m lateral, dentro del rango 3–4 m). Tramo de 3 m de fondo a lo largo de todo el frontal B (puerta de entrada). Cemento claro mate con juntas cada ≈3 m; pendiente del 1,5–2 % hacia fuera y rigola en el borde (propuesta de evacuación, pendiente de desarrollo técnico).',
-    },
+    { id: 'grava-comedor', label: 'Transición de grava', rect: [-0.5, r2(-SOL_TRASERA - 0.5), r2(L + SOL_LATERAL + 0.5), r2(W + 0.5)], joints: 0, status: 'propuesto', note: 'Borde de grava de 0,50 m entre la solera y la tierra; también a lo largo del frontal B y la entrada, que quedan sin solera.' },
+    { id: 'grava-lateral', label: 'Transición de grava (lateral)', rect: [r2(L - 0.5), W, r2(L + SOL_LATERAL + 0.5), r2(W + SOL_FRENTE + 0.5)], joints: 0, status: 'propuesto', note: 'Borde de grava alrededor del extremo del tramo lateral (zona de la mesa).' },
     {
       id: 'solera-l-lateral', label: 'Solera en L · tramo lateral', rect: [L, r2(-SOL_TRASERA), r2(L + SOL_LATERAL), r2(W + SOL_FRENTE)], joints: 2, permeable: { c: ALGARROBO, r: 1.2 }, status: 'confirmado',
-      note: 'Tramo de 4 m junto al lateral derecho, bajo el algarrobo, continuo con el delantero y al mismo nivel. Se recorta alrededor del tronco para dejar zona permeable sobre las raíces; la posición del árbol es aproximada.',
+      note: 'Tramo de 4 m junto al lateral derecho, bajo el algarrobo, continuo con el del frontal A y al mismo nivel; se prolonga 3 m más allá del frontal B para la mesa. Se recorta alrededor del tronco para dejar zona permeable sobre las raíces; la posición del árbol es aproximada.',
     },
     {
-      id: 'solera-l-porche', label: 'Solera del porche (frontal A)', rect: [PORCHE_X0, r2(-SOL_TRASERA), L, 0], joints: 3.3, status: 'confirmado',
-      note: 'Solera delante de la cristalera, bajo el porche (indicación de la propiedad: «en la parte de la cristalera pon la solera y un porche»). Mismo cemento claro y mismo nivel que la L, con la que se une en la esquina del algarrobo. Fondo de 3,40 m propuesto; pendiente hacia fuera.',
+      id: 'solera-l-frontal-a', label: 'Solera en L · tramo del frontal A (cristalera)', rect: [0, r2(-SOL_TRASERA), L, 0], joints: 3.3, status: 'confirmado',
+      note: 'Solera a lo largo de todo el frontal A, de punta a punta de la casa, con el porche delante de la cristalera (indicaciones de la propiedad: «en la parte de la cristalera pon la solera y un porche» y «la solera de punta a punta de la casa y elimina la solera de la parte de la puerta de entrada»). Cemento claro mate, mismo nivel que el tramo lateral, con el que se une en la esquina del algarrobo. Fondo de 3,40 m propuesto; juntas cada ≈3,3 m; pendiente del 1,5–2 % hacia fuera y canaleta en el borde (propuesta de evacuación, pendiente de desarrollo técnico).',
     },
   ],
   porches: [
@@ -296,8 +297,8 @@ const outdoor: Outdoor = {
     note: 'Cúpula grande de metal oscuro centrada sobre la mesa, luz cálida regulable (referencia 11). Suspensión desde una rama del algarrobo o desde un pie independiente: el anclaje está SIN RESOLVER (resistencia de la rama, crecimiento, viento y alimentación eléctrica exterior por comprobar).',
   },
   drains: [
-    { id: 'rigola-frente', a: [0.3, r2(W + SOL_FRENTE - 0.15)], b: [r2(L + SOL_LATERAL - 0.15), r2(W + SOL_FRENTE - 0.15)], status: 'propuesto', note: 'Canaleta lineal en el borde exterior del tramo delantero; pendiente del 1,5–2 % desde la fachada.' },
-    { id: 'rigola-lateral', a: [r2(L + SOL_LATERAL - 0.15), 0.3], b: [r2(L + SOL_LATERAL - 0.15), r2(W + SOL_FRENTE - 0.15)], status: 'propuesto', note: 'Canaleta en el borde exterior del tramo lateral, hacia el terreno (lejos del alcorque).' },
+    { id: 'rigola-frontal-a', a: [0.3, r2(-SOL_TRASERA + 0.15)], b: [r2(L + SOL_LATERAL - 0.15), r2(-SOL_TRASERA + 0.15)], status: 'propuesto', note: 'Canaleta lineal en el borde exterior del tramo del frontal A; pendiente del 1,5–2 % desde la fachada.' },
+    { id: 'rigola-lateral', a: [r2(L + SOL_LATERAL - 0.15), r2(-SOL_TRASERA + 0.3)], b: [r2(L + SOL_LATERAL - 0.15), r2(W + SOL_FRENTE - 0.15)], status: 'propuesto', note: 'Canaleta en el borde exterior del tramo lateral, hacia el terreno (lejos del alcorque).' },
   ],
 };
 
@@ -316,7 +317,7 @@ const views: CameraPreset[] = [
   view({ id: 'v02-fachada-delantera', label: '2 · Fachada delantera (frontal B)', group: 'exterior', position: [8.6, 21, 2.0], target: [8.6, 5.2, 2.6], fov: 40 }),
   view({ id: 'v02b-fachada-a', label: '2b · Fachada A y ventanal', group: 'exterior', position: [11.2, -14, 2.0], target: [11, 0, 2.6], fov: 42 }),
   view({ id: 'v03-entrada', label: '3 · Entrada y puerta de madera', group: 'exterior', position: [12.9, 8.9, 1.6], target: [10.4, 5.2, 1.6], fov: 40 }),
-  view({ id: 'v04-solera', label: '4 · Solera completa en L', group: 'exterior', position: [-3.5, 14.5, 4.2], target: [11, 5.5, 0], fov: 44 }),
+  view({ id: 'v04-solera', label: '4 · Solera completa en L', group: 'exterior', position: [-3.8, -10.5, 4.4], target: [11, -0.8, 0], fov: 46 }),
   view({ id: 'v05-algarrobo', label: '5 · Mesa y lámpara bajo el algarrobo', group: 'exterior', position: [14.6, 10.6, 1.6], target: [MESA_EXT[0] + 0.6, MESA_EXT[1] - 1.2, 1.4], fov: 56 }),
   view({ id: 'v06-desde-comedor', label: '6 · La casa desde el comedor exterior', group: 'exterior', position: [20.6, 8.6, 1.6], target: [11, 5.6, 2.0], fov: 56 }),
   view({ id: 'v07-salon-ventanal', label: '7 · Salón: sofá de obra y ventanal', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.9, 1.5, 1.6], target: [15.2, 3.9, 0.7], fov: 66 }),
@@ -364,7 +365,7 @@ const PROJECT: ProjectData = {
   name: 'Casa Vinallop',
   isTest: false,
   phase: 'reforma',
-  // la solera antigua del frontal B se sustituye por la solera en L del proyecto
+  // la solera antigua del frontal B se elimina: la solera en L del proyecto va por el frontal A y el lateral
   site: { ...PARCELA, pavements: [], trees: PARCELA.trees.map((t) => (t.id === 'algarrobo' ? { ...t, c: ALGARROBO } : t)) },
   version: '1.0 · bocetos, respuestas, fotos de la parcela, informe (16,33 × 5,22 m) y referencias de diseño',
   levels: [

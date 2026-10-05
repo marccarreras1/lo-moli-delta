@@ -68,7 +68,8 @@ describe('planos', () => {
   });
   it('la planta incluye la solera en L, su superficie y no dibuja planta en el comedor', () => {
     const svg = planSvg(layout, { selection: null, showDims: true, showAreas: true, showFurniture: true, showLabels: true, issues: [], openFractions: {}, levelId: 'pb' });
-    expect(svg).toContain('data-pavement="solera-l-frente"');
+    expect(svg).toContain('data-pavement="solera-l-frontal-a"');
+    expect(svg).not.toContain('solera-l-frente');
     expect(svg).toContain('Solera en L');
     expect(svg).toContain('anclaje sin resolver');
     expect(svg).not.toContain('maceta');
