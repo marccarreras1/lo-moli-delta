@@ -25,6 +25,8 @@ import { useInstalaciones, useResolvedPoints, useVisibleLayers } from '../instal
 import { useMaterials } from './materials';
 import { effectiveQuality } from './qualityInfo';
 import { glRef } from './support';
+import { TapeMeasure } from './Tape';
+import { useTape } from './tapeStore';
 
 /**
  * Escenas de luz ambientales (no son un estudio solar: la orientación y la ubicación no están
@@ -95,7 +97,8 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
   const showRoof = v.showRoof && tab === 'exterior';
   const roomLabelsVisible = tab === 'plantas' || (tab === 'exterior' && (!showRoof || mode !== 'solido'));
   const selFurniture = selection?.kind === 'furniture' ? selection.id : null;
-  const onSelectFurniture = (id: string) => select({ kind: 'furniture', id });
+  // con la cinta métrica activa, los clics miden y no seleccionan
+  const onSelectFurniture = (id: string) => { if (!useTape.getState().on) select({ kind: 'furniture', id }); };
   // las luces artificiales solo se calculan cuando aportan (tarde, noche o interior)
   const artificial = lampLevel > 0.05 && (tab === 'interior' || v.ambience !== 'dia');
   const lite = quality !== 'alta';
@@ -138,7 +141,7 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
         }
         onReady?.();
       }}
-      onPointerMissed={(e) => { if (e.type === 'click') select(null); }}
+      onPointerMissed={(e) => { if (e.type === 'click' && !useTape.getState().on) select(null); }}
       data-testid="viewer-canvas"
     >
       <color attach="background" args={[amb.bg]} />
@@ -148,7 +151,7 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
       <Lights layout={layout} intensity={v.lightIntensity} ambience={v.ambience} shadowSize={quality === 'alta' ? 4096 : 2048} interior={tab === 'interior' && quality === 'alta'} wide={!!layout.site && v.showSite && tab === 'exterior'} />
       {layout.site && v.showSite ? <SiteGround layout={layout} site={layout.site} lite={lite} sunAz={v.ambience === 'noche' ? null : sun.az} sunEl={sun.el} /> : <Ground layout={layout} />}
       <House layout={layout} mats={mats} showRoof={showRoof} showCeiling={(tab === 'interior' && mode !== 'corte') || section} mode={mode}
-        sectionHeight={cutAbs} selection={selection} openFractions={openFractions} onSelect={select} maxElev={maxElev} />
+        sectionHeight={cutAbs} selection={selection} openFractions={openFractions} onSelect={(x) => { if (!useTape.getState().on) select(x); }} maxElev={maxElev} />
       {v.showFurniture && <Furniture3D items={furniture} mats={mats} elevationOf={elevationOf} options={layout.options} selectedId={selFurniture} onSelect={onSelectFurniture} />}
       {v.showFurniture && layout.outdoor && tab !== 'plantas' && (
         <Outdoor3D outdoor={layout.outdoor} mats={mats} options={layout.options} level={artificial ? lampLevel : 0} selectedId={selFurniture} onSelect={onSelectFurniture} />
@@ -156,6 +159,7 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
       {v.showFurniture && maxElev === Infinity && <Pendants layout={layout} mats={mats} level={lampLevel} lights={artificial} />}
       {v.showFurniture && artificial && <FixtureLights furniture={furniture} elevationOf={elevationOf} level={lampLevel} />}
       <CommentPins levels={layout.levels} />
+      <TapeMeasure />
       {instLayers.size > 0 && <group userData={{ helper: true }}><Installations3D points={instPoints} visibleLayers={instLayers} elevationOf={(id) => layout.levels.find((l) => l.id === id)?.elevation ?? 0} selectedId={instSel} onSelect={(id) => useInstalaciones.getState().select(id)} /></group>}
       <Annotations layout={layout} showLabels={v.showLabels && tab !== 'interior'} showDims={v.showDims && tab !== 'interior'} showAreas={v.showAreas}
         roomLabelsVisible={roomLabelsVisible} maxElev={maxElev} selectedOpeningId={selection?.kind === 'opening' ? selection.id : null} />

@@ -5,6 +5,7 @@ import { blocked, freeSpotIn, walkObstacles, walkStep } from '../model/walk';
 import { modelAzimuth, solarDirection, sunPosition } from '../model/solar';
 import { bathPlanData, bathPlanSvg } from '../plan/bathPlan';
 import { planSvg } from '../plan/planSvg';
+import { tapeDistance } from '../viewer/tapeStore';
 import { QUICK_COMPARE } from '../model/compare';
 import { baseVariant } from '../state/store';
 
@@ -67,6 +68,15 @@ describe('estudio solar', () => {
   });
 });
 
+describe('cinta métrica 3D', () => {
+  it('distancia total, horizontal y vertical', () => {
+    const m = tapeDistance([0, 0, 0], [3, 4, 0]);
+    expect(m.d).toBeCloseTo(5, 6);
+    expect(m.h).toBeCloseTo(3, 6);
+    expect(m.v).toBeCloseTo(4, 6);
+  });
+});
+
 describe('planos', () => {
   it('planta acotada del baño con zona húmeda, acceso y paso libre', () => {
     const d = bathPlanData(layout)!;
@@ -83,6 +93,9 @@ describe('planos', () => {
     expect(svg).not.toContain('solera-l-frente');
     expect(svg).toContain('Solera en L');
     expect(svg).toContain('anclaje sin resolver');
+    // con las cotas: medidas de los muebles y pasos libres
+    expect(svg).toContain('1,60 × 2,00');
+    expect(svg).toContain('data-passage=');
     expect(svg).not.toContain('maceta');
   });
   it('comparaciones rápidas: cada una cambia la geometría o las opciones', () => {

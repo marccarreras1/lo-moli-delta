@@ -280,10 +280,22 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
       }
     }
     out.push('</g>');
+    // medidas de cada mueble (ancho × fondo) con las cotas activadas
+    if (o.showDims) {
+      out.push('<g class="furniture-dims" pointer-events="none">');
+      for (const f of furniture) {
+        if (f.type === 'alfombra' || f.type === 'ducha' || f.type === 'jarron' || f.type === 'aplique' || Math.max(f.w, f.d) < 0.35) continue;
+        const [cx, cy] = centroid(furnitureFootprint(f));
+        const fs = Math.min(0.1, Math.max(0.06, Math.min(f.w, f.d) * 0.16));
+        const label = f.type === 'mesa-redonda' || f.type === 'mesa-exterior' || f.type === 'estufa' ? `Ø ${fmtM(f.w)}` : `${fmtM(f.w)} × ${fmtM(f.d)}`;
+        out.push(`<text x="${n4(cx)}" y="${n4(cy + fs * 0.35)}" font-size="${n4(fs)}" text-anchor="middle" fill="#2f5d6b" class="tnum" paint-order="stroke" stroke="#fefdfb" stroke-width="${n4(fs * 0.35)}">${label}</text>`);
+      }
+      out.push('</g>');
+    }
   }
 
-  // Espacios de paso entre muebles y muros
-  if (o.showPassages && o.showFurniture) {
+  // Espacios de paso entre muebles y muros (también con las cotas activadas)
+  if ((o.showPassages || o.showDims) && o.showFurniture) {
     const col = { ok: '#3f7a4a', justo: AMBER, estrecho: '#b3261e' } as const;
     out.push('<g class="passages" pointer-events="none">');
     for (const p of passages(layout).filter((x) => x.levelId === level?.id)) {

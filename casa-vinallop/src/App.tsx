@@ -4,6 +4,7 @@ import { useRefs } from './refs/db';
 import { useModel } from './state/derived';
 import { SECTIONS, serializeConfig, useStore, type ViewTab } from './state/store';
 import { useLogo } from './ui/logo';
+import { tapeDistance, useTape } from './viewer/tapeStore';
 import logoLoMoli from './assets/logo-lo-moli.png';
 import { walkInput } from './viewer/walkInput';
 import { QUICK_COMPARE } from './model/compare';
@@ -61,6 +62,7 @@ export default function App() {
   const [photo, setPhoto] = useState(false);
   const [compare, setCompare] = useState<string | null>(null);
   const logoSrc = useLogo((x) => x.src);
+  const tape = useTape();
   const compareVariant = useMemo(() => {
     if (!compare) return null;
     if (compare.startsWith('q:')) return QUICK_COMPARE.find((q) => q.id === compare.slice(2))?.apply(variant) ?? null;
@@ -368,9 +370,23 @@ export default function App() {
                 {tab !== 'interior' && <button type="button" className="tool" onClick={() => (planVisible && tab === 'plantas' ? setFitNonce((n) => n + 1) : useStore.getState().requestCamera('encajar'))} aria-label="Encajar toda la casa" title="Encajar toda la casa" data-action="fit"><Icon name="fit" /></button>}
                 <button type="button" className="tool" onClick={() => { useStore.getState().resetView(); setFitNonce((n) => n + 1); }} aria-label="Restablecer vista" title="Restablecer vista (no borra cambios)" data-action="reset-view"><Icon name="reset" /></button>
                 {threeVisible && ready && !mobile && <button type="button" className={`tool tool-text${compare ? ' active' : ''}`} onClick={() => setCompare((c) => (c ? null : 'q:ventanal'))} aria-pressed={!!compare} title="Comparar variantes en dos vistas sincronizadas" data-action="compare">A|B</button>}
+                {threeVisible && ready && <button type="button" className={`tool tool-text${tape.on ? ' active' : ''}`} onClick={tape.toggle} aria-pressed={tape.on} title="Cinta métrica: dos clics sobre el modelo" data-action="tape">Medir</button>}
                 {threeVisible && ready && tab !== 'plantas' && <button type="button" className={`tool${photo ? ' active' : ''}`} onClick={() => setPhoto((p) => !p)} aria-label="Modo fotografía" title="Modo fotografía (trazado de rayos)" data-action="photo-mode"><Icon name="image" /></button>}
                 <button type="button" className="tool" onClick={toggleFullscreen} aria-label={fullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'} title="Pantalla completa"><Icon name={fullscreen ? 'exitFullscreen' : 'fullscreen'} /></button>
               </div>
+              {tape.on && threeVisible && (
+                <div className="plan-tool-card tape-card" role="status" data-testid="tape-card" style={{ bottom: bottomInset + 64 }}>
+                  {tape.pts.length % 2 === 0
+                    ? <span>{tape.pts.length ? <>Última medida: <strong>{tapeDistance(tape.pts[tape.pts.length - 2], tape.pts[tape.pts.length - 1]).d.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m</strong>. </> : null}Pulsa un punto del modelo para empezar una medida (arrastra para girar la vista).</span>
+                    : <span>Pulsa el segundo punto. Con <kbd>Mayús</kbd> la medida sale recta según el eje dominante.</span>}
+                  <span className="hint">Medidas sobre el modelo de estudio, no verificadas en obra. <kbd>Supr</kbd> quita el último punto, <kbd>Esc</kbd> las borra.</span>
+                  <div className="sp-actions">
+                    <button type="button" className="btn" onClick={tape.undo} disabled={!tape.pts.length}>Quitar el último punto</button>
+                    <button type="button" className="btn" onClick={tape.clear} disabled={!tape.pts.length}>Borrar medidas</button>
+                    <button type="button" className="btn" onClick={tape.toggle}>Cerrar</button>
+                  </div>
+                </div>
+              )}
               {tab === 'interior' && threeVisible && (
                 <div className="overlay-br" role="toolbar" aria-label="Moverse por el interior" style={{ bottom: bottomInset + 12 }}>
                   <button type="button" className="btn" onClick={() => useStore.getState().requestCamera('paso:1')} data-action="step-forward"><Icon name="forward" size={16} /> Avanzar</button>
