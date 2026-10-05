@@ -370,6 +370,17 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
     // mesa redonda de Ø 1,80 con pie cilíndrico y lámpara de cúpula con anclaje sin resolver
     const mesa = o.furniture.find((f) => f.type === 'mesa-exterior')!;
     expect(mesa.w).toBe(1.8);
+    // mesa bajo la copa del algarrobo, sobre el tramo lateral y sin pisar el alcorque
+    const arbol = layout.site!.trees[0];
+    expect(Math.hypot(mesa.x - arbol.c[0], mesa.y - arbol.c[1])).toBeLessThan(arbol.r - 1);
+    for (const sl of o.furniture.filter((f) => f.type === 'silla-exterior')) {
+      expect(Math.hypot(sl.x - la.permeable!.c[0], sl.y - la.permeable!.c[1])).toBeGreaterThan(la.permeable!.r + 0.5);
+      expect(sl.x - 0.3).toBeGreaterThan(la.rect[0]);
+      expect(sl.x + 0.3).toBeLessThan(la.rect[2]);
+      expect(sl.y - 0.3).toBeGreaterThan(la.rect[1]);
+    }
+    // el tramo lateral termina al ras del frontal B
+    expect(la.rect[3]).toBe(layout.bounds.maxY);
     expect(o.domeLamp!.note).toMatch(/SIN RESOLVER/);
     expect(o.lights).toEqual([]);
   });

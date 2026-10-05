@@ -108,7 +108,7 @@ function outdoorSvg(layout: Layout, od: NonNullable<Layout['outdoor']>, labels: 
     const l = od.domeLamp;
     g.push(`<circle cx="${n4(l.c[0])}" cy="${n4(l.c[1])}" r="${n4(l.diameter / 2)}" fill="none" stroke="#3a3833" stroke-width="0.02" stroke-dasharray="0.06 0.04"/>`);
     g.push(`<circle cx="${n4(l.treeAnchor.c[0])}" cy="${n4(l.treeAnchor.c[1])}" r="0.07" fill="${AMBER}" stroke="none"/><circle cx="${n4(l.post[0])}" cy="${n4(l.post[1])}" r="0.06" fill="none" stroke="${AMBER}" stroke-width="0.02"/>`);
-    if (labels) g.push(`<text x="${n4(l.c[0])}" y="${n4(l.c[1] + 1.55)}" font-size="0.13" fill="${AMBER}" text-anchor="middle">lámpara de cúpula · anclaje sin resolver</text>`);
+    if (labels) g.push(`<text x="${n4(l.c[0])}" y="${n4(l.c[1] + 1.8)}" font-size="0.13" fill="${AMBER}" text-anchor="middle">lámpara de cúpula · anclaje sin resolver</text>`);
   }
   // porche: proyección de la cubierta de cañizo (discontinua), pilares de obra y fondo acotado
   for (const pr of od.porches ?? []) {

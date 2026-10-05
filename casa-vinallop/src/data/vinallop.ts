@@ -251,22 +251,19 @@ const ALGARROBO: Vec2 = [17.7, 2.3];
 /**
  * solera en L (propiedad): tramo a lo largo de todo el frontal A, el de la cristalera, de punta a punta,
  * y tramo de 4 m en el lateral del algarrobo; sin solera en el frontal B (puerta de entrada).
- * El lateral se prolonga SOL_FRENTE más allá del frontal B para la mesa bajo el algarrobo.
  */
-const SOL_FRENTE = 3;
 const SOL_LATERAL = 4;
 /** fondo del tramo del frontal A, bajo el porche (medida propuesta) */
 const SOL_TRASERA = 3.4;
 const PORCHE_X0 = r2(ALT_X1);
-/** la mesa va en la esquina de la L, bajo el borde de la copa (el tronco está a ≈1,4 m del lateral) */
-const MESA_EXT: Vec2 = [r2(L + 2.3), r2(W + 1.5)];
+/** la mesa va justo bajo el algarrobo (propiedad), entre el tronco y el tramo del frontal A: el alcorque y las sillas no se tocan */
+const MESA_EXT: Vec2 = [r2(L + 2.0), r2(ALGARROBO[1] - 3.6)];
 const outdoor: Outdoor = {
   pavements: [
     { id: 'grava-comedor', label: 'Transición de grava', rect: [-0.5, r2(-SOL_TRASERA - 0.5), r2(L + SOL_LATERAL + 0.5), r2(W + 0.5)], joints: 0, status: 'propuesto', note: 'Borde de grava de 0,50 m entre la solera y la tierra; también a lo largo del frontal B y la entrada, que quedan sin solera.' },
-    { id: 'grava-lateral', label: 'Transición de grava (lateral)', rect: [r2(L - 0.5), W, r2(L + SOL_LATERAL + 0.5), r2(W + SOL_FRENTE + 0.5)], joints: 0, status: 'propuesto', note: 'Borde de grava alrededor del extremo del tramo lateral (zona de la mesa).' },
     {
-      id: 'solera-l-lateral', label: 'Solera en L · tramo lateral', rect: [L, r2(-SOL_TRASERA), r2(L + SOL_LATERAL), r2(W + SOL_FRENTE)], joints: 2, permeable: { c: ALGARROBO, r: 1.2 }, status: 'confirmado',
-      note: 'Tramo de 4 m junto al lateral derecho, bajo el algarrobo, continuo con el del frontal A y al mismo nivel; se prolonga 3 m más allá del frontal B para la mesa. Se recorta alrededor del tronco para dejar zona permeable sobre las raíces; la posición del árbol es aproximada.',
+      id: 'solera-l-lateral', label: 'Solera en L · tramo lateral', rect: [L, r2(-SOL_TRASERA), r2(L + SOL_LATERAL), W], joints: 2, permeable: { c: ALGARROBO, r: 1.2 }, status: 'confirmado',
+      note: 'Tramo de 4 m junto al lateral derecho, bajo el algarrobo, continuo con el del frontal A y al mismo nivel; termina al ras del frontal B (la propiedad pidió quitar el trozo que sobresalía). La mesa va bajo la copa, entre el tronco y el tramo del frontal A. Se recorta alrededor del tronco para dejar zona permeable sobre las raíces; la posición del árbol es aproximada.',
     },
     {
       id: 'solera-l-frontal-a', label: 'Solera en L · tramo del frontal A (cristalera)', rect: [0, r2(-SOL_TRASERA), L, 0], joints: 3.3, status: 'confirmado',
@@ -292,13 +289,13 @@ const outdoor: Outdoor = {
   ],
   lights: [],
   domeLamp: {
-    c: MESA_EXT, bottom: 1.95, diameter: 0.6, treeAnchor: { c: [r2(MESA_EXT[0] - 0.3), r2(MESA_EXT[1] - 0.6)], h: 3.4 },
-    post: [r2(MESA_EXT[0] - 1.75), r2(MESA_EXT[1] + 0.35)], status: 'propuesto',
+    c: MESA_EXT, bottom: 1.95, diameter: 0.6, treeAnchor: { c: [r2(MESA_EXT[0] - 0.2), r2(MESA_EXT[1] + 1.0)], h: 3.4 },
+    post: [r2(MESA_EXT[0] + 1.75), r2(MESA_EXT[1] - 0.35)], status: 'propuesto',
     note: 'Cúpula grande de metal oscuro centrada sobre la mesa, luz cálida regulable (referencia 11). Suspensión desde una rama del algarrobo o desde un pie independiente: el anclaje está SIN RESOLVER (resistencia de la rama, crecimiento, viento y alimentación eléctrica exterior por comprobar).',
   },
   drains: [
     { id: 'rigola-frontal-a', a: [0.3, r2(-SOL_TRASERA + 0.15)], b: [r2(L + SOL_LATERAL - 0.15), r2(-SOL_TRASERA + 0.15)], status: 'propuesto', note: 'Canaleta lineal en el borde exterior del tramo del frontal A; pendiente del 1,5–2 % desde la fachada.' },
-    { id: 'rigola-lateral', a: [r2(L + SOL_LATERAL - 0.15), r2(-SOL_TRASERA + 0.3)], b: [r2(L + SOL_LATERAL - 0.15), r2(W + SOL_FRENTE - 0.15)], status: 'propuesto', note: 'Canaleta en el borde exterior del tramo lateral, hacia el terreno (lejos del alcorque).' },
+    { id: 'rigola-lateral', a: [r2(L + SOL_LATERAL - 0.15), r2(-SOL_TRASERA + 0.3)], b: [r2(L + SOL_LATERAL - 0.15), r2(W - 0.15)], status: 'propuesto', note: 'Canaleta en el borde exterior del tramo lateral, hacia el terreno (lejos del alcorque).' },
   ],
 };
 
@@ -318,8 +315,8 @@ const views: CameraPreset[] = [
   view({ id: 'v02b-fachada-a', label: '2b · Fachada A y ventanal', group: 'exterior', position: [11.2, -14, 2.0], target: [11, 0, 2.6], fov: 42 }),
   view({ id: 'v03-entrada', label: '3 · Entrada y puerta de madera', group: 'exterior', position: [12.9, 8.9, 1.6], target: [10.4, 5.2, 1.6], fov: 40 }),
   view({ id: 'v04-solera', label: '4 · Solera completa en L', group: 'exterior', position: [-3.8, -10.5, 4.4], target: [11, -0.8, 0], fov: 46 }),
-  view({ id: 'v05-algarrobo', label: '5 · Mesa y lámpara bajo el algarrobo', group: 'exterior', position: [14.6, 10.6, 1.6], target: [MESA_EXT[0] + 0.6, MESA_EXT[1] - 1.2, 1.4], fov: 56 }),
-  view({ id: 'v06-desde-comedor', label: '6 · La casa desde el comedor exterior', group: 'exterior', position: [20.6, 8.6, 1.6], target: [11, 5.6, 2.0], fov: 56 }),
+  view({ id: 'v05-algarrobo', label: '5 · Mesa y lámpara bajo el algarrobo', group: 'exterior', position: [14.6, -8.2, 1.6], target: [MESA_EXT[0] + 0.3, MESA_EXT[1] + 1.0, 1.5], fov: 56 }),
+  view({ id: 'v06-desde-comedor', label: '6 · La casa desde el comedor exterior', group: 'exterior', position: [21.4, -5.4, 1.6], target: [10, -0.6, 2.2], fov: 56 }),
   view({ id: 'v07-salon-ventanal', label: '7 · Salón: sofá de obra y ventanal', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.9, 1.5, 1.6], target: [15.2, 3.9, 0.7], fov: 66 }),
   view({ id: 'v08-ventanal-cocina', label: '8 · Del ventanal hacia cocina e isla', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.4, 0.8, 1.6], target: [9.2, 3.6, 1.0], fov: 60 }),
   view({ id: 'v09-cocina-taburetes', label: '9 · Cocina desde el lado de los taburetes', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.7, 0.75, 1.6], target: [8.9, 3.2, 0.75], fov: 56 }),
