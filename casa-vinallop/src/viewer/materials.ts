@@ -72,6 +72,8 @@ export function useMaterials(sel: FinishSelection, mode: DisplayMode, sectionHei
     const all: THREE.Plane[] = section ? [clipV] : [];
     const cutting = mode === 'corte' || section;
     const tex = (t: TexturePair | null, bumpScale: number) => (t ? { map: t.map, bumpMap: t.bump, bumpScale } : {});
+    // revoco de cal: relieve de llana con mapa de normales (se aprecia también a distancia y con luz rasante)
+    const plasterRelief = (t: TexturePair | null, k: number) => (t ? { map: t.map, ...(t.normal ? { normalMap: t.normal, normalScale: new THREE.Vector2(k, k) } : { bumpMap: t.bump, bumpScale: 0.01 }) } : {});
     const std = (color: string, roughness: number, opts: THREE.MeshStandardMaterialParameters = {}, isBuilding = false) =>
       new THREE.MeshStandardMaterial({
         color, roughness, metalness: 0,
@@ -88,8 +90,8 @@ export function useMaterials(sel: FinishSelection, mode: DisplayMode, sectionHei
     const counterTex = mineralTex('encimera', 1, 7);
     const concreteTex = mineralTex('solera', 1.4, 13);
     return {
-      facade: std(f('fachada').color, f('fachada').roughness, tex(plaster, 0.004), true),
-      interior: std(f('paredes').color, 0.95, tex(plaster, 0.003), true),
+      facade: std(f('fachada').color, f('fachada').roughness, plasterRelief(plaster, 1.1), true),
+      interior: std(f('paredes').color, 0.95, plasterRelief(plaster, 0.6), true),
       cut: std('#d9d3c7', 0.95, {}, true),
       floor: std(f('suelo').color, f('suelo').roughness, tex(floorTex, 0.002)),
       floorSelected: std('#cfdcc4', 0.8, { emissive: new THREE.Color('#68765e'), emissiveIntensity: 0.18 }),

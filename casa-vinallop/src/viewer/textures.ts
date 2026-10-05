@@ -12,6 +12,8 @@ import * as THREE from 'three';
 export interface TexturePair {
   map: THREE.Texture;
   bump: THREE.Texture;
+  /** mapa de normales calculado a partir del relieve (más fiable que el bump a distancia) */
+  normal?: THREE.Texture;
   /** metros que cubre una repetición */
   size: number;
 }
@@ -32,6 +34,30 @@ function canvas(px: number) {
   c.width = c.height = px;
   const ctx = c.getContext('2d');
   return ctx ? { c, ctx } : null;
+}
+
+/** Mapa de normales (tangente) a partir de un canvas de alturas en gris, con bordes periódicos. */
+function toNormal(src: HTMLCanvasElement, strength: number, size: number) {
+  const px = src.width;
+  const h = src.getContext('2d')!.getImageData(0, 0, px, px).data;
+  const out = document.createElement('canvas');
+  out.width = out.height = px;
+  const ctx = out.getContext('2d')!;
+  const img = ctx.createImageData(px, px);
+  const H = (x: number, y: number) => h[(((y + px) % px) * px + ((x + px) % px)) * 4] / 255;
+  for (let y = 0; y < px; y++)
+    for (let x = 0; x < px; x++) {
+      const dx = (H(x + 1, y) - H(x - 1, y)) * strength;
+      const dy = (H(x, y + 1) - H(x, y - 1)) * strength;
+      const l = Math.hypot(dx, dy, 1);
+      const i = (y * px + x) * 4;
+      img.data[i] = (-dx / l * 0.5 + 0.5) * 255;
+      img.data[i + 1] = (dy / l * 0.5 + 0.5) * 255;
+      img.data[i + 2] = (1 / l * 0.5 + 0.5) * 255;
+      img.data[i + 3] = 255;
+    }
+  ctx.putImageData(img, 0, 0);
+  return toTex(out, false, size);
 }
 
 function toTex(c: HTMLCanvasElement, color: boolean, size: number) {
@@ -89,21 +115,46 @@ function make(key: string, build: () => TexturePair | null): TexturePair | null 
 /** Cal / revoco mate: grano fino y nubes de tono muy suaves (tramo de 2 m). */
 export function plasterTex() {
   return make('plaster', () => {
-    const px = 512;
+    const px = 1024;
     const a = canvas(px);
     const b = canvas(px);
     if (!a || !b) return null;
     const r = rng(11);
-    a.ctx.fillStyle = '#f4f4f4';
+    // color: blanco cálido con aguas suaves (cal aplicada a mano)
+    a.ctx.fillStyle = '#f7f3ec';
     a.ctx.fillRect(0, 0, px, px);
-    smoothNoise(a.ctx, px, r, 6, 7);
-    smoothNoise(a.ctx, px, r, 24, 4);
-    grain(a.ctx, px, r, 7);
+    smoothNoise(a.ctx, px, r, 5, 9);
+    smoothNoise(a.ctx, px, r, 18, 5);
+    grain(a.ctx, px, r, 6);
+    // relieve: pasadas de llana (trazos alargados que se solapan) sobre un fondo ondulado
     b.ctx.fillStyle = '#808080';
     b.ctx.fillRect(0, 0, px, px);
-    smoothNoise(b.ctx, px, r, 40, 60);
-    grain(b.ctx, px, r, 40);
-    return { map: toTex(a.c, true, 2), bump: toTex(b.c, false, 2), size: 2 };
+    smoothNoise(b.ctx, px, r, 6, 50);
+    for (let i = 0; i < 1400; i++) {
+      const x = r() * px;
+      const y = r() * px;
+      const w = 30 + r() * 110;
+      const h = 8 + r() * 26;
+      const ang = (r() - 0.5) * 1.6;
+      const lum = r() < 0.5 ? 255 : 0;
+      for (const [dx, dy] of [[0, 0], [px, 0], [-px, 0], [0, px], [0, -px]]) {
+        const g = b.ctx.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, w / 2);
+        g.addColorStop(0, `rgba(${lum},${lum},${lum},${0.05 + r() * 0.05})`);
+        g.addColorStop(1, `rgba(${lum},${lum},${lum},0)`);
+        b.ctx.save();
+        b.ctx.translate(x + dx, y + dy);
+        b.ctx.rotate(ang);
+        b.ctx.scale(1, h / w);
+        b.ctx.translate(-(x + dx), -(y + dy));
+        b.ctx.fillStyle = g;
+        b.ctx.beginPath();
+        b.ctx.arc(x + dx, y + dy, w / 2, 0, Math.PI * 2);
+        b.ctx.fill();
+        b.ctx.restore();
+      }
+    }
+    grain(b.ctx, px, r, 30);
+    return { map: toTex(a.c, true, 2), bump: toTex(b.c, false, 2), normal: toNormal(b.c, 6, 2), size: 2 };
   });
 }
 

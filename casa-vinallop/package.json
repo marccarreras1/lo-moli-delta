@@ -12,6 +12,7 @@
     "e2e": "node scripts/e2e.mjs"
   },
   "dependencies": {
+    "@pmndrs/assets": "^1.7.0",
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.1",
     "@react-three/postprocessing": "^3.1.3",

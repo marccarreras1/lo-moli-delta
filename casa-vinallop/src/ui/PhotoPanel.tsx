@@ -73,12 +73,14 @@ export function PhotoPanel({ projectName, variantName, viewLabel, onClose }: { p
       await cameraSettled(ac.signal);
       setSt({ k: 'preparando' });
       const mod = await import('../viewer/photo');
+      // hora dorada: el cielo real del atardecer (HDRI) ilumina la escena y pone el sol
+      const hdri = ambience === 'tarde' ? await (await import('../viewer/hdri')).loadHdri('sunset') : undefined;
       glRef.setFrameloop?.('never');
       await new Promise((r) => setTimeout(r, 30));
       const q = QUALITY.find((x) => x.id === quality)!;
       const t0 = performance.now();
       const canvas = await mod.renderPhoto(gl, scene, camera, {
-        samples: q.samples, sky: ambience, denoise, studioLights: tab === 'interior' && studio ? mod.studioLights(layout) : undefined, exposure: exposure === 'auto' ? (tab === 'interior' ? 2.4 : 1) : Number(exposure), scale: RES.find((x) => x.id === res)!.scale, signal: ac.signal,
+        samples: q.samples, sky: ambience, envMap: hdri, hdriSun: !!hdri, denoise, studioLights: tab === 'interior' && studio ? mod.studioLights(layout) : undefined, exposure: exposure === 'auto' ? (tab === 'interior' ? 2.4 : 1) : Number(exposure), scale: RES.find((x) => x.id === res)!.scale, signal: ac.signal,
         onProgress: (done, total) => setSt({ k: 'muestreando', done, total, t0 }),
       });
       setSt({ k: 'listo', canvas, samples: q.samples, ms: performance.now() - t0 });

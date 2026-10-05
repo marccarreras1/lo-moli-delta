@@ -19,6 +19,9 @@ export interface PhotoOptions {
   exposure?: number;
   /** luces de estudio (posiciones en el mundo): ayuda de visualización en interiores sin ventanas */
   studioLights?: [number, number, number][];
+  /** cielo real (equirectangular) en lugar del cielo procedural; con `hdriSun` el sol lo pone el HDRI */
+  envMap?: THREE.Texture;
+  hdriSun?: boolean;
   /** filtro de ruido que conserva bordes (bilateral) aplicado al resultado */
   denoise?: boolean;
   /** usar las texturas procedurales (por defecto sí) */
@@ -153,7 +156,7 @@ export function skyTexture(kind: 'dia' | 'tarde' | 'noche') {
  * luces. El trazador guarda un material por malla; con miles de mallas el índice de material pasa a
  * 16 bits y en algunos navegadores se lee mal (colores cruzados). Fusionando quedan unas decenas.
  */
-function buildTraceScene(scene: THREE.Scene) {
+function buildTraceScene(scene: THREE.Scene, withSun = true) {
   const out = new THREE.Scene();
   out.background = scene.background;
   const byMat = new Map<THREE.Material, THREE.BufferGeometry[]>();
@@ -201,6 +204,7 @@ function buildTraceScene(scene: THREE.Scene) {
   scene.traverse((o) => {
     const l = o as THREE.Light;
     if (!l.isLight || !visible(l) || (l as THREE.AmbientLight).isAmbientLight || (l as THREE.HemisphereLight).isHemisphereLight) return;
+    if (!withSun && (l as THREE.DirectionalLight).isDirectionalLight) return;
     const c = l.clone() as THREE.Light;
     l.getWorldPosition(c.position);
     const t = (l as THREE.DirectionalLight).target;
@@ -244,14 +248,14 @@ export async function renderPhoto(gl: THREE.WebGLRenderer, scene: THREE.Scene, c
     pt.bounces = 5;
     pt.transmissiveBounces = 4;
     // la luz de entorno de la escena actúa como cielo; el fondo se conserva
-    trace = buildTraceScene(scene);
+    trace = buildTraceScene(scene, !o.hdriSun);
     for (const p of o.studioLights ?? []) {
       // plafón cálido de ≈1500 lm (≈120 cd) por estancia
       const l = new THREE.PointLight(0xffd9b0, 120, 0, 2);
       l.position.set(p[0], p[1], p[2]);
       trace.scene.add(l);
     }
-    trace.scene.environment = sky;
+    trace.scene.environment = o.envMap ?? sky;
     trace.scene.environmentIntensity = 1;
     pt.setScene(trace.scene, camera);
     // las primeras llamadas pueden no sumar muestras mientras se compilan los shaders: se cuenta

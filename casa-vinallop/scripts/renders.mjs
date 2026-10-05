@@ -17,6 +17,8 @@ const JOBS = [
   ['v12-bano-entrada', 'dia'], ['v12c-celosia', 'dia'], ['v04-solera', 'dia'], ['v05-algarrobo', 'dia'],
   ['v09-cocina-taburetes', 'dia'], ['v07-salon-ventanal', 'dia'], ['v13b-volta', 'dia'],
 ].filter(([v]) => v.includes(filter));
+// VIEWS=v02-fachada-delantera:tarde,v06-desde-comedor:tarde sustituye la lista
+if (process.env.VIEWS) JOBS.splice(0, JOBS.length, ...process.env.VIEWS.split(',').map((x) => x.split(':')));
 
 const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'pipe', detached: true });
 const stop = () => { try { process.kill(-server.pid); } catch { /* ya detenido */ } };
@@ -50,17 +52,14 @@ for (const [view, amb] of JOBS) {
     window.__store.getState().goView(id, v.group === 'interior' ? 'interior' : 'exterior');
   }, view);
   log(`vista ${view}`);
-  // espera a que la cámara llegue a la posición de la vista y se detenga
+  // espera a que la cámara llegue a la posición de la vista (las transiciones son animadas)
   await page.waitForFunction((id) => {
     const v = window.__layout.views.find((x) => x.id === id);
     const c = window.__visor.camera.position;
     const [x, y, h] = v.position;
-    const d = Math.hypot(c.x - x, c.z - y);
-    const k = c.toArray().map((n) => n.toFixed(3)).join();
-    const same = window.__lastCam === k;
-    window.__lastCam = k;
-    return same && (v.group === 'interior' ? d < 0.3 : true);
-  }, view, { polling: 500, timeout: 60000 });
+    return Math.hypot(c.x - x, c.z - y, v.group === 'interior' ? 0 : c.y - h) < 0.5;
+  }, view, { polling: 1000, timeout: 180000 });
+  await page.waitForTimeout(4000);
   log('cámara quieta');
   await page.waitForTimeout(1500);
   const interior = await page.evaluate(() => window.__store.getState().tab === 'interior');
@@ -70,8 +69,9 @@ for (const [view, amb] of JOBS) {
     v.setFrameloop('never');
     try {
       const amb = window.__store.getState().visual.ambience;
+      const hdri = amb === 'tarde' ? await (await window.__hdriModule()).loadHdri('sunset') : undefined;
       const t0 = performance.now();
-      const canvas = await mod.renderPhoto(v.gl, v.scene, v.camera, { samples: n, sky: amb, exposure, denoise: true, studioLights: exposure > 1 ? mod.studioLights(window.__layout) : undefined, onProgress: (d, t) => { if (d % 4 === 0 || d === 1 || d === t) console.log(`[render] ${d}/${t} · ${Math.round((performance.now() - t0) / 1000)} s`); } });
+      const canvas = await mod.renderPhoto(v.gl, v.scene, v.camera, { samples: n, sky: amb, envMap: hdri, hdriSun: !!hdri, exposure, denoise: true, studioLights: exposure > 1 ? mod.studioLights(window.__layout) : undefined, onProgress: (d, t) => { if (d % 4 === 0 || d === 1 || d === t) console.log(`[render] ${d}/${t} · ${Math.round((performance.now() - t0) / 1000)} s`); } });
       return canvas.toDataURL('image/png');
     } finally {
       v.setFrameloop('always');

@@ -266,6 +266,9 @@ const outdoor: Outdoor = {
     },
   ],
   furniture: [
+    // decoración de la entrada (propuesta, como en la referencia de calidad): no es una decisión del proyecto
+    ...[r2(X_PUERTA - 0.5), r2(X_PUERTA + 1.2 + 0.5)].map((x, i) => f({ id: `maceta-entrada-${i + 1}`, type: 'maceta', label: 'Tinaja de barro con olivo (decoración propuesta)', roomId: 'exterior', x, y: r2(W + 0.45), w: 0.62, d: 0.62, h: 1.55, rot: 0, status: 'propuesto', note: 'Decoración propuesta junto a la puerta de entrada; se puede quitar.' })),
+    ...[r2(X_PUERTA - 0.3), r2(X_PUERTA + 1.2 + 0.3)].map((x, i) => f({ id: `aplique-entrada-${i + 1}`, type: 'aplique', label: 'Aplique exterior (propuesta)', roomId: 'exterior', x, y: r2(W + 0.07), w: 0.14, d: 0.14, h: 2.25, rot: 0, status: 'propuesto', note: 'Luz cálida a ambos lados de la entrada (propuesta; ubicación y modelo por decidir).' })),
     f({ id: 'mesa-exterior', type: 'mesa-exterior', label: 'Mesa redonda Ø 1,80', roomId: 'exterior', x: MESA_EXT[0], y: MESA_EXT[1], w: 1.8, d: 1.8, h: 0.75, rot: 0, status: 'propuesto', note: 'Mesa circular de tablero mineral claro grueso (≈10 cm) sobre pie central cilíndrico (referencia 11). Ocho plazas; diámetro orientativo.' }),
     ...Array.from({ length: 8 }, (_, i) => {
       const a = (i / 8) * Math.PI * 2 + Math.PI / 8;

@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import type { CameraPreset, Layout, Site } from '../data/types';
@@ -13,9 +13,11 @@ import { House } from './House';
 import { FixtureLights, Pendants } from './Lamps';
 import { Outdoor3D } from './Outdoor3D';
 import { Landscape } from './Landscape';
+import { hdriFor, loadHdri, type HdriName } from './hdri';
 import { Effects } from './Effects';
 import { Sky, SoftShadows } from '@react-three/drei';
-import { barkMaterial, blobTexture, buildTree, discAlphaTexture, leafMaterial, litterTexture, soilTexture } from './Trees';
+import { barkMaterial, blobTexture, buildTree, discAlphaTexture, grassTexture, leafMaterial, litterTexture, rockGeometry, soilTexture } from './Trees';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { solarDirection, useSolar } from '../model/solar';
 import { Installations3D } from '../instalaciones/Installations3D';
 import { useGestion } from '../gestion/store';
@@ -31,7 +33,8 @@ import { glRef } from './support';
 const AMBIENCE: Record<Ambience, { bg: string; sky: string; ground: string; sun: string; sunK: number; hemiK: number; elev: number; az: number; env: number; exposure: number; lamps: number }> = {
   // día como en las fotos de dron: sol duro, sombras marcadas y bruma clara en el horizonte
   dia: { bg: '#dde3e8', sky: '#dbe4ec', ground: '#b89a80', sun: '#fff1de', sunK: 2.7, hemiK: 0.36, elev: 50, az: 68, env: 0.48, exposure: 1.0, lamps: 0.12 },
-  tarde: { bg: '#f1e1cc', sky: '#f4dcc0', ground: '#c09474', sun: '#ffbe85', sunK: 2.3, hemiK: 0.55, elev: 15, az: 295, env: 0.5, exposure: 1.05, lamps: 0.6 },
+  // hora dorada: sol bajo y cálido en la dirección del sol del HDRI «sunset»
+  tarde: { bg: '#e4dbd0', sky: '#e8d8c4', ground: '#b49478', sun: '#ffc68f', sunK: 3.1, hemiK: 0.3, elev: 11, az: 54, env: 0.42, exposure: 1.05, lamps: 0.6 },
   noche: { bg: '#161b24', sky: '#27324a', ground: '#141110', sun: '#9fb2d6', sunK: 0.18, hemiK: 0.16, elev: 55, az: 140, env: 0.05, exposure: 1.15, lamps: 1 },
 };
 
@@ -99,6 +102,7 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
         if (location.search.includes('diagnostico')) {
           (window as unknown as Record<string, unknown>).__visor = { gl, scene, camera, setFrameloop };
           (window as unknown as Record<string, unknown>).__photoModule = () => import('./photo');
+          (window as unknown as Record<string, unknown>).__hdriModule = () => import('./hdri');
         }
         onReady?.();
       }}
@@ -108,7 +112,7 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
       <color attach="background" args={[amb.bg]} />
       <fog attach="fog" args={[amb.bg, layout.site && v.showSite ? 90 : 60, layout.site && v.showSite ? 420 : 140]} />
       {v.ambience !== 'noche' && tab !== 'plantas' && <SkyDome ambience={v.ambience} />}
-      <Environment intensity={amb.env * (tab === 'interior' && quality === 'alta' ? 0.7 : 1)} exposure={amb.exposure} />
+      <Environment intensity={amb.env * (tab === 'interior' && quality === 'alta' ? 0.7 : 1)} exposure={amb.exposure} hdri={tab === 'plantas' ? null : hdriFor(v.ambience)} />
       <Lights layout={layout} intensity={v.lightIntensity} ambience={v.ambience} shadowSize={quality === 'alta' ? 4096 : 2048} interior={tab === 'interior' && quality === 'alta'} wide={!!layout.site && v.showSite && tab === 'exterior'} />
       {layout.site && v.showSite ? <SiteGround layout={layout} site={layout.site} lite={lite} sunAz={v.ambience === 'noche' ? null : AMBIENCE[v.ambience].az} sunEl={AMBIENCE[v.ambience].elev} /> : <Ground layout={layout} />}
       <House layout={layout} mats={mats} showRoof={showRoof} showCeiling={tab === 'interior' || section} mode={mode}
@@ -133,28 +137,43 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
 }
 
 /** Luz de entorno sin descargas: «RoomEnvironment» de Three.js filtrado con PMREM. */
-function Environment({ intensity, exposure }: { intensity: number; exposure: number }) {
+function Environment({ intensity, exposure, hdri = null }: { intensity: number; exposure: number; hdri?: HdriName | null }) {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
-  const env = useMemo(() => {
+  const room = useMemo(() => {
     const pm = new THREE.PMREMGenerator(gl);
-    const room = new RoomEnvironment();
-    const t = pm.fromScene(room, 0.04).texture;
-    room.dispose();
+    const r = new RoomEnvironment();
+    const t = pm.fromScene(r, 0.04).texture;
+    r.dispose();
     pm.dispose();
     return t;
   }, [gl]);
+  // cielo real (HDRI) para la luz de entorno y los reflejos; mientras carga, el entorno neutro
+  const [sky, setSky] = useState<THREE.Texture | null>(null);
+  useEffect(() => {
+    if (!hdri) { setSky(null); return; }
+    let alive = true;
+    let made: THREE.Texture | null = null;
+    loadHdri(hdri).then((eq) => {
+      if (!alive) return;
+      const pm = new THREE.PMREMGenerator(gl);
+      made = pm.fromEquirectangular(eq).texture;
+      pm.dispose();
+      setSky(made);
+    }).catch(() => setSky(null));
+    return () => { alive = false; made?.dispose(); };
+  }, [gl, hdri]);
+  const env = sky ?? room;
   useEffect(() => {
     scene.environment = env;
-    return () => {
-      scene.environment = null;
-      env.dispose();
-    };
+    return () => { scene.environment = null; };
   }, [scene, env]);
+  useEffect(() => () => room.dispose(), [room]);
   useEffect(() => {
-    scene.environmentIntensity = intensity;
+    // el HDRI es más oscuro de media que el entorno neutro: se compensa
+    scene.environmentIntensity = intensity * (sky ? 1.7 : 1);
     gl.toneMappingExposure = exposure;
-  }, [scene, gl, intensity, exposure]);
+  }, [scene, gl, intensity, exposure, sky]);
   return null;
 }
 
@@ -243,6 +262,8 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
         if (Math.hypot(gx, gy) > extent) continue;
         if (x > clear[0] && x < clear[2] && y > clear[1] && y < clear[3]) continue;
         if (site.trees.some((t) => Math.hypot(t.c[0] - x, t.c[1] - y) < t.r + 1.2)) continue;
+        // ni encima de las cámaras de las vistas preparadas a pie
+        if ((layout.views ?? []).some((v) => v.group === 'exterior' && v.position[2] < 10 && Math.hypot(v.position[0] - x, v.position[1] - y) < 4.2)) continue;
         // ni sobre la solera actual ni sobre la solera del proyecto
         const inRect = (rc: [number, number, number, number], m: number) => x > rc[0] - m && x < rc[2] + m && y > rc[1] - m && y < rc[3] + m;
         if (site.pavements.some((p) => inRect(p.rect, 0.8))) continue;
@@ -383,6 +404,7 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
       ))}
       {oliveSets.map((s, i) => <group key={i}><primitive object={s.wood} /><primitive object={s.leaves} /></group>)}
       {blobs && <group userData={{ helper: true }}><primitive object={blobs} /></group>}
+      {!lite && <GroundDetail layout={layout} site={site} cx={cx} cy={cy} />}
       {site.trees.map((t, i) => (
         <group key={t.id} position={[t.c[0], -0.12, t.c[1]]}>
           <mesh geometry={carobs[i].wood} material={carobs[i].barkMat} castShadow receiveShadow />
@@ -487,4 +509,72 @@ function SkyDome({ ambience }: { ambience: Ambience }) {
   const el = (a.elev * Math.PI) / 180;
   const sun: [number, number, number] = [Math.cos(el) * Math.sin(az), Math.sin(el), Math.cos(el) * Math.cos(az)];
   return <group userData={{ helper: true }}><Sky distance={1100} sunPosition={sun} turbidity={ambience === 'tarde' ? 7 : 4} rayleigh={ambience === 'tarde' ? 2.2 : 0.9} mieCoefficient={0.004} mieDirectionalG={0.85} /></group>;
+}
+
+/**
+ * Detalle del suelo cerca de la casa: piedras calizas y matas de hierba seca (como en las fotos y
+ * en el primer plano de los renders de referencia). Evita la casa, las soleras y los troncos.
+ */
+function GroundDetail({ layout, site, cx, cy }: { layout: Layout; site: Site; cx: number; cy: number }) {
+  const { rocks, tufts } = useMemo(() => {
+    const r = rng(77);
+    const { minX, minY, maxX, maxY } = layout.bounds;
+    const rects: [number, number, number, number][] = [
+      [minX - 0.4, minY - 0.4, maxX + 0.4, maxY + 0.4],
+      ...site.pavements.map((p) => p.rect),
+      ...(layout.outdoor?.pavements ?? []).filter((p) => p.joints > 0).map((p) => p.rect),
+    ];
+    const free = (x: number, y: number, m: number) => !rects.some((rc) => x > rc[0] - m && x < rc[2] + m && y > rc[1] - m && y < rc[3] + m)
+      && !site.trees.some((t) => Math.hypot(t.c[0] - x, t.c[1] - y) < 1.2);
+    const pick = (n: number, R: number, m: number) => {
+      const out: { x: number; y: number; s: number; rot: number }[] = [];
+      for (let i = 0; i < n * 3 && out.length < n; i++) {
+        const a = r() * Math.PI * 2;
+        const d = 2 + Math.sqrt(r()) * R;
+        const x = cx + Math.cos(a) * d;
+        const y = cy + Math.sin(a) * d * 0.8;
+        if (free(x, y, m)) out.push({ x, y, s: r(), rot: r() * Math.PI * 2 });
+      }
+      return out;
+    };
+    // piedras: muchas pequeñas y alguna mayor
+    const rockGeo = rockGeometry(5);
+    const rocksPts = pick(520, 30, 0.2);
+    const rocks = new THREE.InstancedMesh(rockGeo, new THREE.MeshStandardMaterial({ color: '#d6cbbb', roughness: 0.95, flatShading: true }), rocksPts.length);
+    const o = new THREE.Object3D();
+    const col = new THREE.Color();
+    rocksPts.forEach((p, i) => {
+      const sz = p.s < 0.9 ? 0.04 + p.s * 0.1 : 0.18 + (p.s - 0.9) * 2.5;
+      o.position.set(p.x, -0.12 + sz * 0.15, p.y);
+      o.rotation.set(0, p.rot, 0);
+      o.scale.set(sz, sz, sz * (0.7 + p.s * 0.6));
+      o.updateMatrix();
+      rocks.setMatrixAt(i, o.matrix);
+      rocks.setColorAt(i, col.set('#d8cdbd').multiplyScalar(0.8 + p.s * 0.3));
+    });
+    rocks.castShadow = rocks.receiveShadow = true;
+    // matas de hierba seca: tres tarjetas cruzadas
+    const blade = new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0);
+    const cross = mergeGeometries([0, 1, 2].map((k) => blade.clone().rotateY((k * Math.PI) / 3)))!;
+    const tuftPts = pick(260, 32, 0.35);
+    const tufts = new THREE.InstancedMesh(cross, new THREE.MeshStandardMaterial({ map: grassTexture(), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 1, color: '#d9d2c2' }), tuftPts.length);
+    tuftPts.forEach((p, i) => {
+      const h = 0.14 + p.s * 0.26;
+      o.position.set(p.x, -0.13, p.y);
+      o.rotation.set(0, p.rot, 0);
+      o.scale.set(h * 1.4, h, h * 1.4);
+      o.updateMatrix();
+      tufts.setMatrixAt(i, o.matrix);
+    });
+    tufts.castShadow = true;
+    rocks.frustumCulled = tufts.frustumCulled = false;
+    return { rocks, tufts };
+  }, [layout, site, cx, cy]);
+  useEffect(() => () => { for (const m of [rocks, tufts]) { m.geometry.dispose(); (m.material as THREE.Material).dispose(); } }, [rocks, tufts]);
+  return (
+    <group>
+      <primitive object={rocks} />
+      <primitive object={tufts} />
+    </group>
+  );
 }

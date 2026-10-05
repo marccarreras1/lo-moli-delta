@@ -6,6 +6,8 @@
  *
  * Eje local: +x a lo largo del mueble, +z = frente (lado inferior del papel con rot 0), y = altura.
  */
+import { leafMaterial } from './Trees';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { CubeCamera, RoundedBox } from '@react-three/drei';
 import { type ReactNode, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
@@ -318,17 +320,32 @@ function WoodTable({ w, d, h, mats }: { w: number; d: number; h: number; mats: M
   );
 }
 
+/** Tinaja de barro con un olivo joven (hojas en tarjetas recortadas, como los olivos del entorno). */
 function Planter({ w, h, mats }: { w: number; h: number; mats: MaterialSet }) {
   const r = w / 2;
-  const potH = Math.min(0.55, h * 0.45);
+  const potH = Math.min(0.62, h * 0.4);
+  const leaf = useMemo(() => leafMaterial('olivo'), []);
+  const crown = useMemo(() => {
+    const parts: THREE.BufferGeometry[] = [];
+    const rr = (i: number) => Math.abs(Math.sin(i * 12.9898) * 43758.5453) % 1;
+    for (let i = 0; i < 14; i++) {
+      const p = new THREE.PlaneGeometry(0.42, 0.36);
+      p.rotateY(rr(i) * Math.PI);
+      p.rotateX((rr(i + 7) - 0.5) * 1.1);
+      const a = rr(i + 3) * Math.PI * 2;
+      const d = rr(i + 5) * 0.22;
+      p.translate(Math.cos(a) * d, (h - potH) * (0.55 + rr(i + 9) * 0.4), Math.sin(a) * d);
+      parts.push(p);
+    }
+    return mergeGeometries(parts.map((g) => g.toNonIndexed()), false)!;
+  }, [h, potH]);
+  useEffect(() => () => { leaf.dispose(); crown.dispose(); }, [leaf, crown]);
   return (
     <>
-      <Lathe profile={[[0, 0.01], [r * 0.7, 0], [r * 0.95, potH * 0.85], [r, potH], [r * 0.9, potH], [r * 0.86, potH * 0.9], [0, potH * 0.9]]} m={mats.clay} />
-      {/* olivo / planta mediterránea: tronco fino y copa de hojas en grupos */}
-      <mesh position={[0, potH + (h - potH) * 0.3, 0]} material={mats.woodBeam}><cylinderGeometry args={[0.015, 0.025, (h - potH) * 0.6, 6]} /></mesh>
-      {[[0, 0.75, 0, 0.22], [0.1, 0.68, 0.06, 0.16], [-0.1, 0.7, -0.05, 0.17], [0.03, 0.88, -0.04, 0.15]].map(([x, fy, z, s], i) => (
-        <mesh key={i} position={[x, potH + (h - potH) * fy, z]} scale={[s, s * 0.8, s]} material={mats.plant} castShadow><icosahedronGeometry args={[1, 0]} /></mesh>
-      ))}
+      {/* tinaja panzuda de barro con labio */}
+      <Lathe profile={[[0, 0.01], [r * 0.55, 0], [r * 0.85, potH * 0.25], [r, potH * 0.6], [r * 0.82, potH * 0.92], [r * 0.7, potH], [r * 0.74, potH * 1.02], [r * 0.66, potH * 1.02], [0, potH * 0.95]]} m={mats.clay} segments={40} />
+      <mesh position={[0, potH + (h - potH) * 0.3, 0]} material={mats.woodBeam} castShadow><cylinderGeometry args={[0.018, 0.03, (h - potH) * 0.6, 7]} /></mesh>
+      <mesh geometry={crown} material={leaf} position={[0, potH, 0]} castShadow />
     </>
   );
 }

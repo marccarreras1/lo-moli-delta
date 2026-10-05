@@ -411,3 +411,45 @@ export function discAlphaTexture(): THREE.Texture {
   texCache.set('disco', t);
   return t;
 }
+
+/** Mata de hierba seca: hojas finas amarillentas con algo de verde, fondo transparente. */
+export function grassTexture(): THREE.Texture {
+  const hit = texCache.get('hierba');
+  if (hit) return hit;
+  const W = 256;
+  const H = 256;
+  const c = document.createElement('canvas');
+  c.width = W;
+  c.height = H;
+  const g = c.getContext('2d')!;
+  const r = rng(61);
+  for (let i = 0; i < 70; i++) {
+    const x0 = W / 2 + (r() - 0.5) * W * 0.35;
+    const len = H * (0.35 + r() * 0.6);
+    const bend = (r() - 0.5) * W * 0.5;
+    const v = r();
+    g.strokeStyle = v < 0.15 ? `rgba(120,128,88,0.95)` : `rgba(${175 + r() * 35},${162 + r() * 30},${125 + r() * 25},0.95)`;
+    g.lineWidth = 0.8 + r() * 1.1;
+    g.beginPath();
+    g.moveTo(x0, H);
+    g.quadraticCurveTo(x0 + bend * 0.3, H - len * 0.6, x0 + bend, H - len);
+    g.stroke();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  texCache.set('hierba', t);
+  return t;
+}
+
+/** Piedra caliza baja: icosaedro deformado y aplastado. */
+export function rockGeometry(seed: number) {
+  const r = rng(seed);
+  const g = new THREE.IcosahedronGeometry(1, 1);
+  const p = g.attributes.position as THREE.BufferAttribute;
+  for (let i = 0; i < p.count; i++) {
+    const k = 0.75 + r() * 0.5;
+    p.setXYZ(i, p.getX(i) * k, Math.max(-0.2, p.getY(i) * k * 0.55), p.getZ(i) * k);
+  }
+  g.computeVertexNormals();
+  return g;
+}

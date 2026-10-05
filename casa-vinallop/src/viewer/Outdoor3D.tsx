@@ -197,6 +197,9 @@ export function Outdoor3D({ outdoor, mats, options, level, selectedId, onSelect 
       {(outdoor.drains ?? []).map((d) => <Drain key={d.id} a={d.a} b={d.b} mats={mats} />)}
       {outdoor.domeLamp && <DomeLamp lamp={outdoor.domeLamp} mode={options.lamparaExterior} mats={mats} level={level} />}
       <Furniture3D items={outdoor.furniture} mats={mats} elevationOf={elevationOf} options={options} selectedId={selectedId} onSelect={onSelect} />
+      {level > 0.05 && outdoor.furniture.filter((f) => f.type === 'aplique').map((f) => (
+        <pointLight key={`l-${f.id}`} position={[f.x, TOP + f.h + 0.05, f.y + 0.12]} color={WARM} intensity={level * 1.6} distance={6} decay={2} />
+      ))}
     </group>
   );
 }
