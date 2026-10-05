@@ -119,7 +119,8 @@ export function skyTexture(kind: 'dia' | 'tarde' | 'noche') {
   const H = 128;
   const data = new Float32Array(W * H * 4);
   const pal = {
-    dia: { zen: [0.42, 0.62, 0.95], hor: [0.95, 0.96, 0.98], gnd: [0.42, 0.33, 0.25], k: 1.1 },
+    // cielo de día poco saturado: ilumina sin teñir de azul las sombras
+    dia: { zen: [0.7, 0.76, 0.86], hor: [0.98, 0.96, 0.92], gnd: [0.45, 0.36, 0.27], k: 1.1 },
     tarde: { zen: [0.42, 0.5, 0.78], hor: [1.0, 0.78, 0.55], gnd: [0.38, 0.27, 0.2], k: 0.8 },
     noche: { zen: [0.02, 0.03, 0.07], hor: [0.06, 0.07, 0.11], gnd: [0.02, 0.02, 0.02], k: 0.4 },
   }[kind];

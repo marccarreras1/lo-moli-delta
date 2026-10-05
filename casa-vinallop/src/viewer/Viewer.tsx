@@ -33,7 +33,8 @@ import { glRef } from './support';
 const AMBIENCE: Record<Ambience, { bg: string; sky: string; ground: string; sun: string; sunK: number; hemiK: number; elev: number; az: number; geoAz: number; env: number; exposure: number; lamps: number }> = {
   // día como en las fotos de dron: sol duro, sombras marcadas y bruma clara en el horizonte
   // (con el norte conocido: sol del sur-suroeste a primera hora de la tarde)
-  dia: { bg: '#dde3e8', sky: '#dbe4ec', ground: '#b89a80', sun: '#fff1de', sunK: 2.7, hemiK: 0.36, elev: 52, az: 68, geoAz: 200, env: 0.48, exposure: 1.0, lamps: 0.12 },
+  // luz de sol «normal» (propiedad): sol blanco cálido, relleno de cielo casi neutro y bruma sin tinte azul
+  dia: { bg: '#e6e3dc', sky: '#ebe7df', ground: '#c4a386', sun: '#fff3e2', sunK: 3.0, hemiK: 0.34, elev: 52, az: 68, geoAz: 200, env: 0.62, exposure: 1.0, lamps: 0.12 },
   // hora dorada: sol bajo y cálido; `az` es la dirección del sol del HDRI «sunset» sin girar
   // (con el norte conocido: sol de poniente, y el HDRI se gira para que coincida)
   tarde: { bg: '#e4dbd0', sky: '#e8d8c4', ground: '#b49478', sun: '#ffc68f', sunK: 3.1, hemiK: 0.3, elev: 11, az: 54, geoAz: 262, env: 0.42, exposure: 1.05, lamps: 0.6 },

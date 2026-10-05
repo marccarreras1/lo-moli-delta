@@ -2,7 +2,7 @@
  * Cielos reales (HDRI) para la luz de entorno y el modo fotografía. Vienen del paquete
  * @pmndrs/assets (CC0, procedentes de Poly Haven), a 512 × 256 px: bastan para iluminar y reflejar.
  *   tarde → «sunset» (sol a ≈3° sobre el horizonte, luz dorada)
- *   dia   → «park» (cielo despejado)
+ *   dia   → ninguno: entorno neutro, para que la luz no tire a azul («park» queda disponible)
  * Se cargan bajo demanda (≈200 KB cada uno) y se guardan en memoria.
  */
 import * as THREE from 'three';
@@ -40,4 +40,5 @@ export function loadHdri(name: HdriName): Promise<THREE.DataTexture> {
   return p;
 }
 
-export const hdriFor = (ambience: 'dia' | 'tarde' | 'noche'): HdriName | null => (ambience === 'tarde' ? 'sunset' : ambience === 'dia' ? 'park' : null);
+// de día, entorno neutro: el cielo azul del HDRI teñía de azul las sombras y las paredes blancas
+export const hdriFor = (ambience: 'dia' | 'tarde' | 'noche'): HdriName | null => (ambience === 'tarde' ? 'sunset' : null);
