@@ -5,7 +5,7 @@
  */
 import type { DataStatus, Layout, Vec2 } from '../data/types';
 import {
-  bbox, centroid, doorSwing, fmtM, furnitureFootprint, pointOnWall, polygonArea, wallDir, wallNormal, wallPieces, wallSegmentRect,
+  bbox, centroid, doorSwing, fmtM, furnitureFootprint, pointOnWall, polygonArea, wallDir, wallLength, wallNormal, wallPieces, wallSegmentRect,
 } from '../model/geometry';
 import { FRAME, leafPose } from '../model/openings';
 import { passages } from '../model/passages';
@@ -508,6 +508,54 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
     out.push('<g class="dims">');
     out.push(outdoor ? dim([minX, minY], [maxX, minY], -1.2 - (minY - ex.minY), `${fmtM(L)} m`, m('largo')) : dim([minX, maxY], [maxX, maxY], 1.0, `${fmtM(L)} m`, m('largo')));
     out.push(dim([minX, minY], [minX, maxY], 0.8, `${fmtM(W)} m`, m('ancho')));
+    // cadenas de cotas por fachada: esquinas exteriores y bordes de cada hueco de este nivel
+    const lvlTop = lvlElev + (level?.wallHeight ?? 2.5) + 0.3;
+    const center: Vec2 = [(minX + maxX) / 2, (minY + maxY) / 2];
+    for (const w of walls.filter((x) => x.kind === 'exterior')) {
+      const base = elevOf(w.levelId);
+      const ops = layout.openings.filter((x) => x.wallId === w.id && x.kind !== 'paso' && base + x.sill >= lvlElev - 1e-6 && base + x.sill < lvlTop);
+      const wm = pointOnWall(w, wallLength(w) / 2);
+      const n = wallNormal(w);
+      const outward = (center[0] - wm[0]) * n[0] + (center[1] - wm[1]) * n[1] > 0 ? -1 : 1;
+      const [e0, e1] = w.ext ?? [0, 0];
+      const ss = [...new Set([-e0, wallLength(w) + e1, ...ops.flatMap((x) => [x.offset, x.offset + x.width])].map((v) => Math.round(v * 1000) / 1000))].sort((p, q) => p - q);
+      const dd = wallDir(w);
+      const sign = ((-dd[1]) * n[0] + dd[0] * n[1]) * outward > 0 ? 1 : -1;
+      const fo = (outward * w.thickness) / 2;
+      if (ops.length) for (let i = 0; i < ss.length - 1; i++) {
+        const a = pointOnWall(w, ss[i], fo);
+        const b = pointOnWall(w, ss[i + 1], fo);
+        const isOp = ops.some((x) => Math.abs(x.offset - ss[i]) < 1e-3 && Math.abs(x.offset + x.width - ss[i + 1]) < 1e-3);
+        out.push(dim(a, b, sign * 0.5, fmtM(ss[i + 1] - ss[i]), isOp ? 'documentado' : 'interpretado'));
+      }
+      // alto y antepecho de cada hueco, por la cara interior
+      for (const x of ops) {
+        const c = pointOnWall(w, x.offset + x.width / 2, -outward * (w.thickness / 2 + 0.16));
+        out.push(`<text x="${n4(c[0])}" y="${n4(c[1])}" font-size="0.11" text-anchor="middle" dominant-baseline="middle" fill="#55605a" class="tnum" paint-order="stroke" stroke="#fefdfb" stroke-width="0.04">h ${fmtM(x.height)}${x.sill > 0.01 ? ` · ant. ${fmtM(x.sill - (lvlElev - elevOf(w.levelId)))}` : ''}</text>`);
+      }
+    }
+    // espesores de los muros y fondo interior (lateral izquierdo)
+    {
+      const tA = Math.min(...walls.filter((x) => x.kind === 'exterior' && Math.abs(x.a[1] - x.b[1]) < 1e-6 && x.a[1] < (minY + maxY) / 2).map((x) => x.thickness), 0.3);
+      const tB = Math.max(...walls.filter((x) => x.kind === 'exterior' && Math.abs(x.a[1] - x.b[1]) < 1e-6 && x.a[1] > (minY + maxY) / 2).map((x) => x.thickness), 0.3);
+      const ys = [minY, minY + tA, maxY - tB, maxY];
+      for (let i = 0; i < 3; i++) out.push(dim([minX, ys[i]], [minX, ys[i + 1]], 1.45, fmtM(ys[i + 1] - ys[i]), 'documentado'));
+    }
+    // medidas interiores de cada estancia (ancho × fondo por las caras de los muros)
+    for (const r of rooms) {
+      const b = bbox(r.polygon);
+      const [cx, cy] = centroid(r.polygon);
+      const small = Math.min(b.maxX - b.minX, b.maxY - b.minY) < 1.8;
+      const fs = small ? 0.12 : 0.15;
+      const yy = cy + (small ? 0.3 : 0.48);
+      out.push(`<text x="${n4(cx)}" y="${n4(yy)}" font-size="${fs}" text-anchor="middle" fill="#2f5d6b" class="tnum" paint-order="stroke" stroke="#fefdfb" stroke-width="0.05">${fmtM(b.maxX - b.minX)} × ${fmtM(b.maxY - b.minY)} m</text>`);
+    }
+    // escalera: ancho y largo en planta
+    for (const st of layout.stairs.filter((x) => x.fromLevel === level?.id)) {
+      const [ax, ay, bx, by] = st.rect;
+      out.push(dim([ax, ay], [bx, ay], 0.22, fmtM(bx - ax), st.status));
+      out.push(dim([bx, ay], [bx, by], 0.22, fmtM(by - ay), st.status));
+    }
     const rs = rooms.find((r) => r.id === selRoom);
     if (rs) {
       const b = bbox(rs.polygon);

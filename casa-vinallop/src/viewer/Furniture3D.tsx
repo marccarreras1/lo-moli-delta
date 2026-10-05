@@ -190,6 +190,7 @@ function Piece({ f, mats, options }: { f: Furniture; mats: MaterialSet; options:
         </group>
       );
     case 'mesa-exterior': return <RoundTable w={w} h={h} mats={mats} />;
+    case 'mesa-redonda': return <RoundTable w={w} h={h} mats={mats} wood />;
     case 'silla-exterior': return <OutdoorChair w={w} d={d} mats={mats} />;
     default:
       return <B w={w} h={h} d={d} m={mats.wood} />;
@@ -783,8 +784,17 @@ function Curtain({ x, z, width, height, mats }: { x: number; z: number; width: n
 // ---------------------------------------------------------------- exterior
 
 /** Mesa circular de tablero mineral claro y grueso (≈10 cm, canto redondeado) sobre pie central cilíndrico (referencia 11). */
-function RoundTable({ w, h, mats }: { w: number; h: number; mats: MaterialSet }) {
+function RoundTable({ w, h, mats, wood = false }: { w: number; h: number; mats: MaterialSet; wood?: boolean }) {
   const r = w / 2;
+  if (wood)
+    // mesa de comedor de madera maciza: tablero de 4 cm, pie torneado y base en cruz
+    return (
+      <>
+        <mesh position={[0, h - 0.02, 0]} material={mats.wood} castShadow receiveShadow><cylinderGeometry args={[r, r - 0.01, 0.04, 64]} /></mesh>
+        <mesh position={[0, (h - 0.04) / 2 + 0.03, 0]} material={mats.wood} castShadow><cylinderGeometry args={[0.07, 0.09, h - 0.07, 24]} /></mesh>
+        {[0, Math.PI / 2].map((ry) => <B key={ry} y={0} ry={ry} w={r * 1.3} h={0.06} d={0.08} m={mats.wood} />)}
+      </>
+    );
   const t = 0.1;
   const legR = 0.24;
   return (

@@ -368,6 +368,16 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
     expect(ch.y + ch.w / 2).toBeLessThanOrEqual(sofa.y - sofa.w / 2 + 1e-6);
     expect(validateLayout(l2).filter((i) => i.elementId === 'chimenea-obra')).toEqual([]);
   });
+  it('variante de mesa redonda: sustituye a la rectangular, cuatro sillas y más paso hasta el ventanal', () => {
+    const l2 = resolveLayout(VINALLOP, { ...baseVariant(), options: { ...baseVariant().options, mesaComedor: 'redonda' } });
+    expect(l2.furniture.some((f) => f.id === 'mesa-comedor')).toBe(false);
+    expect(l2.furniture.filter((f) => f.id.startsWith('silla-redonda'))).toHaveLength(4);
+    expect(l2.furniture.filter((f) => f.id.startsWith('silla-comedor'))).toHaveLength(0);
+    const ids = new Set(l2.furniture.filter((f) => f.onlyIf?.mesaComedor === 'redonda').map((f) => f.id));
+    expect(validateLayout(l2).filter((i) => ids.has(i.elementId))).toEqual([]);
+    const minY = (l: typeof l2, pre: string) => Math.min(...l.furniture.filter((f) => f.id.startsWith(pre)).flatMap((f) => furnitureFootprint(f).map((p) => p[1])));
+    expect(minY(l2, 'silla-redonda')).toBeGreaterThan(minY(layout, 'silla-comedor') + 0.1);
+  });
   it('cocina también bajo la escalera (en L) y mesa de comedor para 4 sin conflictos', () => {
     const esc = layout.stairs[0];
     const bajo = layout.furniture.find((f) => f.id === 'encimera-escalera')!;

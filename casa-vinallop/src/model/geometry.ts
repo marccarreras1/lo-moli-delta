@@ -182,7 +182,10 @@ export function furnitureFootprint(f: Furniture): Vec2[] {
   const s = Math.sin(r);
   const hw = f.w / 2;
   const hd = f.d / 2;
-  const local: Vec2[] = [[-hw, -hd], [hw, -hd], [hw, hd], [-hw, hd]];
+  // mesa redonda de comedor: polígono de 24 lados (las sillas en diagonal entran bajo el tablero)
+  const local: Vec2[] = f.type === 'mesa-redonda'
+    ? Array.from({ length: 24 }, (_, i) => [hw * Math.cos((i / 24) * Math.PI * 2), hd * Math.sin((i / 24) * Math.PI * 2)] as Vec2)
+    : [[-hw, -hd], [hw, -hd], [hw, hd], [-hw, hd]];
   return local.map(([lx, ly]) => [round(f.x + lx * c - ly * s, 4), round(f.y + lx * s + ly * c, 4)] as Vec2);
 }
 

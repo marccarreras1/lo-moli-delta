@@ -200,6 +200,10 @@ function ProposalsSection() {
           ))}
         </fieldset>
       )}
+      {project.furniture.some((f) => f.onlyIf?.mesaComedor) && (
+        <Segmented label="Mesa de comedor" id="opt-mesa-comedor" value={o.mesaComedor} onChange={(x) => setOption('mesaComedor', x)}
+          options={[{ value: 'rectangular', label: 'Rectangular 120 × 80' }, { value: 'redonda', label: 'Redonda Ø 0,90' }]} />
+      )}
       {project.furniture.some((f) => f.onlyIf?.chimenea) && (
         <>
           <Segmented label="Fuego del salón" id="opt-chimenea" value={o.chimenea} onChange={(x) => setOption('chimenea', x)}

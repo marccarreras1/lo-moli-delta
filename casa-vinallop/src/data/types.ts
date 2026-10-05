@@ -186,7 +186,7 @@ export interface Room {
 export type FurnitureType =
   | 'cama' | 'mesita' | 'armario' | 'sofa' | 'mesa' | 'silla' | 'mesa-centro'
   | 'butaca' | 'alfombra' | 'encimera' | 'nevera' | 'inodoro' | 'lavabo' | 'ducha' | 'banera' | 'banco'
-  | 'sofa-l' | 'isla' | 'estufa' | 'chimenea-obra'
+  | 'sofa-l' | 'isla' | 'estufa' | 'chimenea-obra' | 'mesa-redonda'
   | 'taburete' | 'mesa-exterior' | 'silla-exterior' | 'maceta' | 'farola' | 'aplique' | 'jarron' | 'balda';
 
 /** Módulo de una cocina lineal (de izquierda a derecha según el eje del mueble). */
@@ -218,7 +218,7 @@ export interface Furniture {
   /** cocina bajo la escalera: sin salpicadero ni balda encima */
   underStair?: boolean;
   /** solo aparece con esa opción de diseño (p. ej. estufa o chimenea de obra) */
-  onlyIf?: { chimenea: 'estufa' | 'obra' };
+  onlyIf?: { chimenea?: 'estufa' | 'obra'; mesaComedor?: 'rectangular' | 'redonda' };
 }
 
 export type RoofType = 'dos-aguas' | 'un-agua' | 'plana' | 'plana-peto';
@@ -421,6 +421,8 @@ export interface DesignOptions {
   lamparaExterior: 'arbol' | 'soporte';
   /** fuego del salón: estufa redonda del boceto o chimenea de obra contra el lateral (variante) */
   chimenea: 'estufa' | 'obra';
+  /** mesa de comedor interior: rectangular de 120 × 80 o redonda de Ø 0,90 (variante) */
+  mesaComedor: 'rectangular' | 'redonda';
 }
 
 export const EXTRA_OPENINGS: { key: string; label: string }[] = [
@@ -437,7 +439,7 @@ export const EXTRA_OPENINGS: { key: string; label: string }[] = [
 /** propuesta de ventanas completa: fachada sur-suroeste, doble altura, baño, altell y vista al algarrobo */
 export const PROPUESTA_VENTANAS = ['ventilacion-cruzada', 'ventana-dormitorio', 'ventana-bano', 'ventanas-altell', 'ventana-cocina', 'ventanas-altas', 'ventana-algarrobo'];
 
-export const DEFAULT_OPTIONS: DesignOptions = { celosia: 'A', lamparas: 'A', lamparasUbicacion: 'isla', puertaEntrada: 'tablones', entradaSaliente: false, ventanal: '9', aberturas: [], lamparaExterior: 'arbol', chimenea: 'estufa' };
+export const DEFAULT_OPTIONS: DesignOptions = { celosia: 'A', lamparas: 'A', lamparasUbicacion: 'isla', puertaEntrada: 'tablones', entradaSaliente: false, ventanal: '9', aberturas: [], lamparaExterior: 'arbol', chimenea: 'estufa', mesaComedor: 'rectangular' };
 
 export interface Layout extends ProjectData {
   options: DesignOptions;
