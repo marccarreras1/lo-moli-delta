@@ -32,7 +32,6 @@ describe('recorrido con colisiones', () => {
   it('los atajos de estancia dan un punto libre dentro de cada estancia', () => {
     for (const r of layout.rooms) {
       const p = freeSpotIn(layout, r.id);
-      if (r.id === 'armario-pasillo') continue;
       expect(p, r.id).not.toBeNull();
     }
   });
