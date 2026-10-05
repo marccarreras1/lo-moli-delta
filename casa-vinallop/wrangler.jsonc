@@ -1,0 +1,7 @@
+// Publicación como Worker de Cloudflare con archivos estáticos (alternativa a Cloudflare Pages).
+// El nombre debe coincidir con el «Project name» del Worker en el panel de Cloudflare.
+{
+  "name": "lo-moli",
+  "compatibility_date": "2026-10-01",
+  "assets": { "directory": "./dist" }
+}
