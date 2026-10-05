@@ -225,6 +225,7 @@ function cleanOptions(x: unknown): DesignOptions {
     ventanal: pick(o.ventanal, ['7', '9'] as const, d.ventanal),
     aberturas: Array.isArray(o.aberturas) ? [...new Set(o.aberturas.filter((k): k is string => typeof k === 'string').map((k) => k.slice(0, 40)))].slice(0, 20) : [],
     lamparaExterior: pick(o.lamparaExterior, ['arbol', 'soporte'] as const, d.lamparaExterior),
+    chimenea: pick(o.chimenea, ['estufa', 'obra'] as const, d.chimenea),
   };
 }
 

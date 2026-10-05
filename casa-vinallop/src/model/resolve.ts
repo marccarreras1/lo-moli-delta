@@ -70,7 +70,7 @@ export function resolveLayout(p: ProjectData, v: Variant | null): Layout {
     const x = fo[f.id];
     return x ? { ...f, ...x, status: 'propuesto' } : f;
   };
-  const furniture = p.furniture.map(applyF);
+  const furniture = p.furniture.filter((f) => !f.onlyIf || f.onlyIf.chimenea === options.chimenea).map(applyF);
   const outdoor = p.outdoor ? { ...p.outdoor, furniture: p.outdoor.furniture.map(applyF) } : undefined;
   const roof = p.roofOptions.length ? p.roofOptions.find((r) => r.type === v?.roofType) ?? p.roofOptions[0] : null;
   const xs: number[] = [];

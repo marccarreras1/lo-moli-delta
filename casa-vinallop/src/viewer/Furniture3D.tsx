@@ -162,6 +162,7 @@ function Piece({ f, mats, options }: { f: Furniture; mats: MaterialSet; options:
           <Soft y={0.46} z={-d / 2 + 0.06} w={w - 0.04} h={0.36} d={0.12} m={mats.textile} />
         </>
       );
+    case 'chimenea-obra': return <MasonryFireplace w={w} d={d} h={h} mats={mats} />;
     case 'estufa':
       // estufa de leña redonda con salida de humos hasta la cubierta (salida supuesta)
       return (
@@ -613,6 +614,77 @@ function Shower({ w, d, mats, lattice }: { w: number; d: number; mats: MaterialS
           <Lathe x={-0.08} y={1.1} z={-0.06} profile={[[0, 0], [0.03, 0], [0.035, 0.14], [0.015, 0.18], [0, 0.18]]} m={mats.clayLight} />
         </group>
       ))}
+    </>
+  );
+}
+
+/**
+ * Chimenea de obra (variante, imagen de referencia): banco de obra con remate oscuro delante del
+ * fuego, volumen encalado hasta la cubierta con hogar acristalado y leñero vertical empotrado.
+ * Eje local: −z = muro, +z = estancia.
+ */
+function MasonryFireplace({ w, d, h, mats }: { w: number; d: number; h: number; mats: MaterialSet }) {
+  const m = useMemo(() => ({
+    stone: new THREE.MeshStandardMaterial({ color: '#2c2a27', roughness: 0.55 }),
+    fire: new THREE.MeshStandardMaterial({ color: '#ff8a3a', emissive: '#ff6a14', emissiveIntensity: 2.4, roughness: 1, transparent: true, opacity: 0.9 }),
+    flame: new THREE.MeshStandardMaterial({ color: '#ffd27a', emissive: '#ffb340', emissiveIntensity: 2.6, roughness: 1, transparent: true, opacity: 0.85 }),
+    ember: new THREE.MeshStandardMaterial({ color: '#4a1a0a', emissive: '#ff4a10', emissiveIntensity: 1.2, roughness: 1 }),
+    end: new THREE.MeshStandardMaterial({ color: '#c79260', roughness: 0.9 }),
+    bark: new THREE.MeshStandardMaterial({ color: '#5a4230', roughness: 1 }),
+  }), []);
+  useEffect(() => () => Object.values(m).forEach((x) => x.dispose()), [m]);
+  const bench = 0.42;
+  const top = 0.04;
+  const y0 = bench + top;
+  const bd = Math.min(0.5, d - 0.1); // fondo del volumen de obra
+  const zb = -d / 2;
+  const zf = zb + bd;
+  const P = (x0: number, x1: number, ya: number, yb: number, depth = bd) => <B x={(x0 + x1) / 2} y={ya} z={zb + depth / 2} w={x1 - x0} h={yb - ya} d={depth} m={mats.interior} />;
+  // leñero a la izquierda, hogar en el resto
+  const n0 = -w / 2 + 0.12, n1 = n0 + 0.32, nTop = 2.3, nDepth = 0.35;
+  const fw = 0.75, fh = 0.65, fDepth = 0.4;
+  const fc = (n1 + 0.12 + w / 2) / 2;
+  const f0 = fc - fw / 2, f1 = fc + fw / 2, fTop = y0 + fh;
+  const logs = useMemo(() => {
+    const out: { x: number; y: number; r: number; rot: number }[] = [];
+    let s = 3;
+    const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+    for (let y = y0 + 0.06; y < nTop - 0.08; y += 0.1)
+      for (let x = n0 + 0.06 + (Math.round((y - y0) / 0.1) % 2) * 0.04; x < n1 - 0.04; x += 0.1) out.push({ x: x + (rnd() - 0.5) * 0.02, y: y + (rnd() - 0.5) * 0.02, r: 0.04 + rnd() * 0.02, rot: rnd() * 6 });
+    return out;
+  }, [n0, n1, y0]);
+  return (
+    <>
+      {/* banco de obra y remate oscuro delante del fuego */}
+      <B y={0} w={w} h={bench} d={d} m={mats.interior} />
+      <B y={bench} z={0.01} w={w + 0.02} h={top} d={d + 0.02} m={m.stone} />
+      {/* volumen encalado con los dos huecos */}
+      {P(-w / 2, n0, y0, h)}
+      {P(n0, n1, nTop, h)}
+      {P(n0, n1, y0, nTop, bd - nDepth)}
+      {P(n1, f0, y0, h)}
+      {P(f0, f1, fTop, h)}
+      {P(f0, f1, y0, fTop, bd - fDepth)}
+      {P(f1, w / 2, y0, h)}
+      {/* leños apilados en el leñero, con la testa hacia la estancia */}
+      {logs.map((l, i) => (
+        <mesh key={i} position={[l.x, l.y, zf - nDepth / 2]} rotation={[Math.PI / 2, l.rot, 0]} material={[m.bark, m.end, m.end]} castShadow>
+          <cylinderGeometry args={[l.r, l.r * 1.05, nDepth - 0.02, 7]} />
+        </mesh>
+      ))}
+      {/* hogar: interior oscuro, brasas y llama, marco negro y vidrio */}
+      <B x={fc} y={y0} z={zf - fDepth + 0.02} w={fw} h={fh} d={0.02} m={mats.blackMetal} shadow={false} />
+      <B x={fc} y={y0} z={zf - fDepth / 2} w={fw} h={0.02} d={fDepth} m={mats.blackMetal} shadow={false} />
+      {/* llamas: conos emisivos sobre un lecho de brasas */}
+      <mesh position={[fc, y0 + 0.035, zf - fDepth / 2]} material={m.ember}><boxGeometry args={[fw * 0.62, 0.03, 0.16]} /></mesh>
+      {[[-0.16, 0.2, 0.05], [-0.05, 0.3, 0.065], [0.06, 0.26, 0.06], [0.17, 0.18, 0.045]].map(([dx, hh, r], i) => (
+        <mesh key={i} position={[fc + dx, y0 + 0.06 + hh / 2, zf - fDepth / 2 + (i % 2) * 0.03]} material={i % 2 ? m.flame : m.fire}><coneGeometry args={[r, hh, 10]} /></mesh>
+      ))}
+      <mesh position={[fc, y0 + 0.08, zf - fDepth / 2 + 0.05]} rotation={[0, 0, Math.PI / 2]} material={m.bark}><cylinderGeometry args={[0.05, 0.05, fw * 0.6, 8]} /></mesh>
+      <B x={fc} y={y0 + fh - 0.03} z={zf - 0.02} w={fw} h={0.03} d={0.04} m={mats.blackMetal} />
+      <B x={fc} y={y0} z={zf - 0.02} w={fw} h={0.03} d={0.04} m={mats.blackMetal} />
+      <B x={fc} y={y0 + 0.02} z={zf - 0.01} w={fw - 0.04} h={fh - 0.04} d={0.008} m={mats.glass} shadow={false} />
+      <pointLight position={[fc, y0 + 0.3, zf + 0.25]} color="#ff9a4a" intensity={0.9} distance={4} decay={2} />
     </>
   );
 }

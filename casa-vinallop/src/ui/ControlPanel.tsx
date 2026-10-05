@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FINISHES, PRESETS, SLOT_LABEL } from '../data/acabados';
 import type { FinishSlot, OpeningSystem, RoofType } from '../data/types';
-import { EXTRA_OPENINGS } from '../data/types';
+import { EXTRA_OPENINGS, PROPUESTA_VENTANAS } from '../data/types';
 import { LAYERS, LAYER_LABEL } from '../instalaciones/types';
 import { useInstalaciones, useResolvedPoints } from '../instalaciones/store';
 import { useGestion } from '../gestion/store';
@@ -193,11 +193,19 @@ function ProposalsSection() {
       {extras.length > 0 && (
         <fieldset className="option-group" id="opt-aberturas">
           <legend>Aberturas variantes (no confirmadas)</legend>
+          <button type="button" className="btn" data-action="propuesta-ventanas" onClick={() => setOption('aberturas', [...new Set([...o.aberturas, ...PROPUESTA_VENTANAS.filter((k) => extras.some((e) => e.key === k))])])}>Activar la propuesta de ventanas</button>
           {extras.map((e) => (
             <Toggle key={e.key} id={`opt-ab-${e.key}`} label={e.label} checked={o.aberturas.includes(e.key)}
               onChange={(x) => setOption('aberturas', x ? [...o.aberturas, e.key] : o.aberturas.filter((k) => k !== e.key))} />
           ))}
         </fieldset>
+      )}
+      {project.furniture.some((f) => f.onlyIf?.chimenea) && (
+        <>
+          <Segmented label="Fuego del salón" id="opt-chimenea" value={o.chimenea} onChange={(x) => setOption('chimenea', x)}
+            options={[{ value: 'estufa', label: 'Estufa (boceto)' }, { value: 'obra', label: 'Chimenea de obra' }]} />
+          <p className="hint">La chimenea de obra es una variante según la imagen de referencia: hogar, salida de humos y distancias de seguridad sin definir.</p>
+        </>
       )}
       {hasDome && (
         <>

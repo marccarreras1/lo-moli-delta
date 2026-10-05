@@ -10,6 +10,7 @@ import { leafPose } from '../model/openings';
 import { hasGeometry, resolveLayout, type Variant } from '../model/resolve';
 import { validateLayout } from '../model/validate';
 import { baseVariant } from '../state/store';
+import { PROPUESTA_VENTANAS } from '../data/types';
 
 const test = buildTestModel();
 const variant = (o: Partial<Variant> = {}): Variant => ({ ...baseVariant(), id: 'v1', name: 'V1', ...o });
@@ -345,6 +346,27 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
     expect(p!.width).toBeGreaterThanOrEqual(0.9);
     const mesa = layout.furniture.find((f) => f.id === 'mesa-salon')!;
     expect([mesa.w, mesa.d]).toEqual([1.1, 0.8]);
+  });
+  it('propuesta de ventanas: todas en su muro, sin conflictos y con el sol del sur-suroeste', () => {
+    const v = { ...baseVariant(), options: { ...baseVariant().options, aberturas: PROPUESTA_VENTANAS } };
+    const l2 = resolveLayout(VINALLOP, v);
+    const nuevas = l2.openings.filter((o) => o.variantKey && PROPUESTA_VENTANAS.includes(o.variantKey));
+    expect(nuevas.length).toBeGreaterThanOrEqual(9);
+    expect(nuevas.every((o) => o.status === 'propuesto')).toBe(true);
+    const ids = new Set(nuevas.map((o) => o.id));
+    expect(validateLayout(l2).filter((i) => ids.has(i.elementId) && i.level !== 'aviso')).toEqual([]);
+    // las ventanas altas quedan por debajo de la coronación del muro
+    for (const o of nuevas) expect(o.sill + o.height).toBeLessThanOrEqual(l2.walls.find((w) => w.id === o.wallId)!.height);
+  });
+  it('variante de chimenea de obra: sustituye a la estufa y continúa el sofá de obra del lateral', () => {
+    expect(layout.furniture.some((f) => f.id === 'estufa')).toBe(true);
+    expect(layout.furniture.some((f) => f.id === 'chimenea-obra')).toBe(false);
+    const l2 = resolveLayout(VINALLOP, { ...baseVariant(), options: { ...baseVariant().options, chimenea: 'obra' } });
+    expect(l2.furniture.some((f) => f.id === 'estufa')).toBe(false);
+    const ch = l2.furniture.find((f) => f.id === 'chimenea-obra')!;
+    const sofa = l2.furniture.find((f) => f.id === 'sofa-lateral')!;
+    expect(ch.y + ch.w / 2).toBeLessThanOrEqual(sofa.y - sofa.w / 2 + 1e-6);
+    expect(validateLayout(l2).filter((i) => i.elementId === 'chimenea-obra')).toEqual([]);
   });
   it('cocina también bajo la escalera (en L) y mesa de comedor para 4 sin conflictos', () => {
     const esc = layout.stairs[0];

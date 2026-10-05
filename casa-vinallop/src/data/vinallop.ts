@@ -153,7 +153,7 @@ const openings: Opening[] = [
   },
   {
     id: 'var-ventana-comedor', label: 'Ventana del comedor · ventilación cruzada (variante)', wallId: 'muro-B', kind: 'ventana', offset: onAB(rx(13.0)), width: 1.2, sill: 1.1, height: 1.0,
-    system: { type: 'abatible', leaves: 2, status: 'propuesto' }, status: 'propuesto', sourceId: S.prop, variantKey: 'ventilacion-cruzada',
+    system: { type: 'abatible', leaves: 2, status: 'propuesto' }, status: 'propuesto', sourceId: S.prop, variantKey: 'ventilacion-cruzada', shutters: true,
     note: 'Ventana practicable en el frontal B, opuesta al ventanal, sobre el respaldo del sofá (antepecho 1,10 m). El presupuesto PAC26-0052 incluye «una ventana más en el comedor». Posición propuesta.',
   },
   {
@@ -175,6 +175,27 @@ const openings: Opening[] = [
     id: 'var-ventana-altell-2', label: 'Ventana del altell 2 (variante)', wallId: 'muro-B', kind: 'ventana', offset: onAB(cx(3.55)), width: 0.6, sill: r2(ALTELL + 0.9), height: 1.2,
     system: { type: 'abatible', leaves: 1, status: 'propuesto' }, status: 'propuesto', sourceId: S.prop, variantKey: 'ventanas-altell',
     note: 'Segunda ventana del altell (presupuesto). Posición propuesta.',
+  },
+  // ---- propuesta de ventanas al sur-suroeste (frontal B) y al algarrobo: la fachada soleada casi no tenía huecos ----
+  {
+    id: 'var-ventana-cocina', label: 'Ventana alta sobre la cocina (propuesta)', wallId: 'muro-B', kind: 'ventana', offset: onAB(8.1), width: 1.2, sill: 1.6, height: 0.9,
+    system: { type: 'abatible', leaves: 2, status: 'propuesto' }, status: 'propuesto', sourceId: S.prop, variantKey: 'ventana-cocina',
+    note: 'Propuesta: ventana apaisada justo encima de la balda de la cocina (antepecho 1,60 m), al sur-suroeste. Luz sobre la encimera y salida del aire caliente de la cocina. El muro de 0,60 m hace de parasol: en verano (sol a ≈75° al mediodía) el hueco queda a la sombra y en invierno (≈28°) entra el sol.',
+  },
+  {
+    id: 'var-ventana-alta-1', label: 'Ventana alta en la doble altura 1 (propuesta)', wallId: 'muro-B', kind: 'ventana', offset: onAB(8.1), width: 1.2, sill: 4.2, height: 1.2,
+    system: { type: 'abatible', leaves: 1, status: 'propuesto' }, status: 'propuesto', sourceId: S.prop, variantKey: 'ventanas-altas',
+    note: 'Propuesta: ventana alta en la doble altura (antepecho 4,20 m), alineada con la de la cocina. En invierno el sol bajo entra hasta el fondo del estar; con la cristalera del frontal A forma ventilación cruzada y por efecto chimenea saca el aire caliente en verano. Apertura motorizada o con varilla.',
+  },
+  {
+    id: 'var-ventana-alta-2', label: 'Ventana alta en la doble altura 2 (propuesta)', wallId: 'muro-B', kind: 'ventana', offset: onAB(rx(12.4)), width: 1.2, sill: 4.2, height: 1.2,
+    system: { type: 'abatible', leaves: 1, status: 'propuesto' }, status: 'propuesto', sourceId: S.prop, variantKey: 'ventanas-altas',
+    note: 'Segunda ventana alta, sobre el sofá y alineada con la del comedor. Mismo criterio que la primera.',
+  },
+  {
+    id: 'var-ventana-algarrobo', label: 'Ventana al algarrobo en el lateral derecho (propuesta)', wallId: 'muro-derecho', kind: 'ventana', offset: 2.35, width: 1.4, sill: 1.0, height: 1.2,
+    system: { type: 'abatible', leaves: 2, status: 'propuesto' }, status: 'propuesto', sourceId: S.prop, variantKey: 'ventana-algarrobo', shutters: true,
+    note: 'Propuesta: ventana sobre el respaldo del sofá lateral, mirando al tronco del algarrobo y al comedor exterior (este-sureste: sol de la mañana). Con contraventanas de madera. Lateral portante: hueco pendiente de cálculo.',
   },
   {
     id: 'puertas-armario', label: 'Hueco del armario (sin puertas)', wallId: 'tab-pasillo', kind: 'paso', offset: 0.05, width: r2(ARM_X1 - TP / 2 - (X_DORM + TP / 2) - 0.05), sill: 0, height: 2.1,
@@ -240,7 +261,10 @@ const furniture: Furniture[] = [
   ...[[-0.3, -1], [0.3, -1], [-0.3, 1], [0.3, 1]].map(([dx, side], i) => f({ id: `silla-comedor-${i + 1}`, type: 'silla', label: 'Silla de comedor', roomId: 'dia', x: r2(MESA_COM[0] + dx), y: r2(MESA_COM[1] + side * 0.6), w: 0.44, d: 0.44, h: 0.82, rot: side < 0 ? 0 : 180, status: 'propuesto' })),
   f({ id: 'sofa-b', type: 'sofa-l', label: 'Sofá en L (frontal B)', roomId: 'dia', x: rx(12.75), y: r2(YB - 0.43), w: 4.0, d: 0.85, h: 0.8, rot: 180, status: 'documentado', note: 'Sofá (propiedad): tramo desde la jamba de la puerta, fondo ≈0,85 m. Colchonetas gruesas y cojines blancos y crudos (referencia 03).' }),
   f({ id: 'sofa-lateral', type: 'sofa-l', label: 'Sofá en L (lateral derecho)', roomId: 'dia', x: r2(x1 - 0.33), y: r2(YB - 1.4), w: 2.8, d: 0.65, h: 0.8, rot: 90, status: 'documentado', note: 'Segundo tramo del sofá contra el lateral derecho; fondo dibujado ≈0,65 m.' }),
-  f({ id: 'estufa', type: 'estufa', label: 'Estufa', roomId: 'dia', x: rx(14.43), y: 0.9, w: 0.8, d: 0.8, h: 1.0, rot: 0, status: 'documentado', note: 'El círculo del boceto (propiedad), junto al frontal A al final de la obertura. Dibujado de ≈1 m de diámetro; salida de humos supuesta. Con el ventanal de 9 m queda delante del vidrio.' }),
+  f({ id: 'estufa', type: 'estufa', label: 'Estufa', roomId: 'dia', x: rx(14.43), y: 0.9, w: 0.8, d: 0.8, h: 1.0, rot: 0, onlyIf: { chimenea: 'estufa' }, status: 'documentado', note: 'El círculo del boceto (propiedad), junto al frontal A al final de la obertura. Dibujado de ≈1 m de diámetro; salida de humos supuesta. Con el ventanal de 9 m queda delante del vidrio.' }),
+  // variante: chimenea de obra contra el lateral derecho, a continuación del sofá de obra (referencia de la propiedad)
+  f({ id: 'chimenea-obra', type: 'chimenea-obra', label: 'Chimenea de obra (variante)', roomId: 'dia', x: r2(x1 - 0.33), y: r2(y0 + 0.75), w: 1.5, d: 0.65, h: 6.2, rot: 90, status: 'propuesto', onlyIf: { chimenea: 'obra' },
+    note: 'Variante (imagen de referencia de la propiedad): volumen de obra encalado de 1,50 m pegado al lateral derecho y hasta la cubierta, con hogar cerrado acristalado de ≈75 × 65 cm, leñero vertical empotrado y banco de obra de 0,42 m con remate oscuro delante del fuego, que continúa en el sofá de obra del lateral. Sustituye a la estufa redonda. Salida de humos por dentro del volumen hasta la cubierta. Pendiente: modelo de hogar, salida de humos, distancias a materiales combustibles y aire de combustión. Incompatible con la variante de puerta al comedor exterior en este mismo lateral.' }),
   f({ id: 'alfombra-salon', type: 'alfombra', label: 'Alfombra de yute', roomId: 'dia', x: rx(12.85), y: r2(YB - 0.85 - 0.8), w: 2.4, d: 1.7, h: 0.012, rot: 0, status: 'propuesto', note: 'Alfombra de fibra natural con dibujo (referencia 03).' }),
   f({ id: 'mesa-salon', type: 'mesa-centro', label: 'Mesa de madera 110 × 80', roomId: 'dia', x: rx(12.85), y: r2(YB - 0.85 - 0.8), w: 1.1, d: 0.8, h: 0.42, rot: 0, status: 'propuesto', color: '#8d5c3c', note: 'Mesa de madera maciza de ≈110 × 80 cm (indicación de la propiedad), baja como en la referencia 03, a 0,40 m del sofá.' }),
   f({ id: 'jarron-salon', type: 'jarron', label: 'Cuenco de barro', roomId: 'dia', x: rx(13.15), y: r2(YB - 0.85 - 0.85), w: 0.22, d: 0.22, h: 0.42, rot: 0, status: 'propuesto' }),
@@ -331,6 +355,7 @@ const views: CameraPreset[] = [
   view({ id: 'v05-algarrobo', label: '5 · Mesa y lámpara bajo el algarrobo', group: 'exterior', position: [14.6, -8.2, 1.6], target: [MESA_EXT[0] + 0.3, MESA_EXT[1] + 1.0, 1.5], fov: 56 }),
   view({ id: 'v06-desde-comedor', label: '6 · La casa desde el comedor exterior', group: 'exterior', position: [21.4, -5.4, 1.6], target: [10, -0.6, 2.2], fov: 56 }),
   view({ id: 'v07-salon-ventanal', label: '7 · Salón: sofá de obra y ventanal', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.3, 1.2, 1.6], target: [15.4, 3.9, 0.7], fov: 66 }),
+  view({ id: 'v07b-fuego', label: '7b · Rincón del fuego (estufa o chimenea de obra)', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.7, 2.15, 1.6], target: [16.0, 1.15, 1.25], fov: 62 }),
   view({ id: 'v08-ventanal-cocina', label: '8 · Del ventanal hacia cocina e isla', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.4, 0.8, 1.6], target: [9.2, 3.6, 1.0], fov: 60 }),
   view({ id: 'v09-cocina-taburetes', label: '9 · Cocina desde el lado de los taburetes', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.3, 0.7, 1.6], target: [8.9, 3.2, 0.75], fov: 56 }),
   view({ id: 'v10-cocina-encimera', label: '10 · Isla desde la cocina', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.35, 3.75, 1.6], target: [8.7, 1.4, 0.7], fov: 58 }),

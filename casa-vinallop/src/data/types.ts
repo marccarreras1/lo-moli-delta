@@ -186,7 +186,7 @@ export interface Room {
 export type FurnitureType =
   | 'cama' | 'mesita' | 'armario' | 'sofa' | 'mesa' | 'silla' | 'mesa-centro'
   | 'butaca' | 'alfombra' | 'encimera' | 'nevera' | 'inodoro' | 'lavabo' | 'ducha' | 'banera' | 'banco'
-  | 'sofa-l' | 'isla' | 'estufa'
+  | 'sofa-l' | 'isla' | 'estufa' | 'chimenea-obra'
   | 'taburete' | 'mesa-exterior' | 'silla-exterior' | 'maceta' | 'farola' | 'aplique' | 'jarron' | 'balda';
 
 /** Módulo de una cocina lineal (de izquierda a derecha según el eje del mueble). */
@@ -217,6 +217,8 @@ export interface Furniture {
   modules?: KitchenModule[];
   /** cocina bajo la escalera: sin salpicadero ni balda encima */
   underStair?: boolean;
+  /** solo aparece con esa opción de diseño (p. ej. estufa o chimenea de obra) */
+  onlyIf?: { chimenea: 'estufa' | 'obra' };
 }
 
 export type RoofType = 'dos-aguas' | 'un-agua' | 'plana' | 'plana-peto';
@@ -417,6 +419,8 @@ export interface DesignOptions {
   aberturas: string[];
   /** suspensión de la lámpara del comedor exterior: colgada del algarrobo o con soporte propio */
   lamparaExterior: 'arbol' | 'soporte';
+  /** fuego del salón: estufa redonda del boceto o chimenea de obra contra el lateral (variante) */
+  chimenea: 'estufa' | 'obra';
 }
 
 export const EXTRA_OPENINGS: { key: string; label: string }[] = [
@@ -425,9 +429,15 @@ export const EXTRA_OPENINGS: { key: string; label: string }[] = [
   { key: 'ventana-dormitorio', label: 'Ventana y contraventana en el dormitorio' },
   { key: 'ventana-bano', label: 'Ventana alta del baño y extracción' },
   { key: 'ventanas-altell', label: 'Dos ventanas en el altell' },
+  { key: 'ventana-cocina', label: 'Ventana alta sobre la cocina' },
+  { key: 'ventanas-altas', label: 'Ventanas altas en la doble altura' },
+  { key: 'ventana-algarrobo', label: 'Ventana al algarrobo (lateral derecho)' },
 ];
 
-export const DEFAULT_OPTIONS: DesignOptions = { celosia: 'A', lamparas: 'A', lamparasUbicacion: 'isla', puertaEntrada: 'tablones', entradaSaliente: false, ventanal: '9', aberturas: [], lamparaExterior: 'arbol' };
+/** propuesta de ventanas completa: fachada sur-suroeste, doble altura, baño, altell y vista al algarrobo */
+export const PROPUESTA_VENTANAS = ['ventilacion-cruzada', 'ventana-dormitorio', 'ventana-bano', 'ventanas-altell', 'ventana-cocina', 'ventanas-altas', 'ventana-algarrobo'];
+
+export const DEFAULT_OPTIONS: DesignOptions = { celosia: 'A', lamparas: 'A', lamparasUbicacion: 'isla', puertaEntrada: 'tablones', entradaSaliente: false, ventanal: '9', aberturas: [], lamparaExterior: 'arbol', chimenea: 'estufa' };
 
 export interface Layout extends ProjectData {
   options: DesignOptions;
