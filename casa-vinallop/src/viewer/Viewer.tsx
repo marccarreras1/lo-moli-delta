@@ -284,10 +284,19 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
     wood.receiveShadow = leaves.receiveShadow = true;
     return { wood, leaves };
   }), [olives, VARIANTS]);
+  // volúmenes de la casa (cubiertas por tramos o caja completa hasta el peto) que la copa no debe atravesar
+  const houseBoxes = useMemo(() => {
+    const segs = layout.roofSegments ?? [];
+    if (segs.length) return segs.map((g) => [g.rect[0] - g.overhang, g.rect[1] - g.overhang, g.rect[2] + g.overhang, g.rect[3] + g.overhang, Math.max(g.hy0, g.hy1) + 0.2] as [number, number, number, number, number]);
+    const top = Math.max(...layout.walls.filter((w) => w.kind === 'exterior').map((w) => (layout.levels.find((l) => l.id === w.levelId)?.elevation ?? 0) + w.height)) + 0.6;
+    return [[minX, minY, maxX, maxY, top] as [number, number, number, number, number]];
+  }, [layout.roofSegments, layout.walls, layout.levels, minX, minY, maxX, maxY]);
   const carobs = useMemo(() => site.trees.map((t, i) => {
-    const g = buildTree('algarrobo', 7 + i * 13, t.r * 2, t.h);
+    // el grupo del árbol está en (c.x, -0.12, c.y)
+    const obstacles = houseBoxes.map(([x0, y0, x1, y1, top]) => [x0 - t.c[0], y0 - t.c[1], x1 - t.c[0], y1 - t.c[1], top + 0.12] as [number, number, number, number, number]);
+    const g = buildTree('algarrobo', 7 + i * 13, t.r * 2, t.h, obstacles);
     return { ...g, leafMat: Object.assign(leafMaterial('algarrobo'), { userData: { fade: true } }), barkMat: barkMaterial('algarrobo') };
-  }), [site.trees]);
+  }), [site.trees, houseBoxes]);
   // sombras lejanas: manchas suaves bajo los olivos que quedan fuera del mapa de sombras
   const blobs = useMemo(() => {
     if (sunAz === null) return null;

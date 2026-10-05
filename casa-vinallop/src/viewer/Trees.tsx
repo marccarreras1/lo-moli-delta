@@ -235,8 +235,13 @@ function cluster(c: THREE.Vector3, size: number, r: () => number, out: THREE.Buf
  * Árbol procedural en coordenadas locales (base en el origen). Devuelve la madera y las hojas por
  * separado (dos materiales). `width` y `height` son el diámetro y la altura aproximados de la copa.
  */
-export function buildTree(kind: TreeKind, seed: number, width: number, height: number) {
+/** caja de un volumen de la casa en coordenadas del árbol: [x0, z0, x1, z1, cota superior] */
+export type TreeObstacle = [number, number, number, number, number];
+
+export function buildTree(kind: TreeKind, seed: number, width: number, height: number, obstacles: TreeObstacle[] = []) {
   const r = rng(seed);
+  // ramas y hojas no pueden entrar en la casa: lo que caería dentro se poda (como se haría en la obra)
+  const inside = (p: THREE.Vector3, m: number) => obstacles.some(([x0, z0, x1, z1, top]) => p.x > x0 - m && p.x < x1 + m && p.z > z0 - m && p.z < z1 + m && p.y < top + m);
   const wood: THREE.BufferGeometry[] = [];
   const leaves: THREE.BufferGeometry[] = [];
   const olive = kind === 'olivo';
@@ -281,12 +286,15 @@ export function buildTree(kind: TreeKind, seed: number, width: number, height: n
     const to = from.clone().add(dir.clone().multiplyScalar(len));
     // la copa no pasa del contorno previsto
     to.y = Math.min(to.y, height - leafSize * 0.4);
+    if (inside(to, 0.25) || inside(from.clone().lerp(to, 0.5), 0.2)) return;
     wood.push(limb(from, to, rad, rad * 0.7, depth > 1 ? 7 : 5));
     if (depth === 0) {
       const n = olive ? 4 : 5;
       for (let i = 0; i < n; i++) {
         const off = new THREE.Vector3((r() - 0.5) * 1.2, (r() - 0.2) * 0.7, (r() - 0.5) * 1.2);
-        cluster(to.clone().add(off), leafSize * (0.8 + r() * 0.5), r, leaves);
+        const c = to.clone().add(off);
+        const size = leafSize * (0.8 + r() * 0.5);
+        if (!inside(c, size)) cluster(c, size, r, leaves);
       }
       return;
     }
@@ -313,7 +321,8 @@ export function buildTree(kind: TreeKind, seed: number, width: number, height: n
     const droop = olive ? 0 : u * u * 1.6;
     const p = new THREE.Vector3(Math.cos(a) * u * canopyR * 0.95, cy + (r() - 0.5) * 2 * ry * (1 - u * 0.5) - droop, Math.sin(a) * u * canopyR * 0.95);
     p.y = Math.max(p.y, olive ? 1.75 : 1.7);
-    cluster(p, leafSize * (0.9 + r() * 0.5), r, leaves);
+    const size = leafSize * (0.9 + r() * 0.5);
+    if (!inside(p, size)) cluster(p, size, r, leaves);
   }
   const w = mergeGeometries(wood.map((g) => g.toNonIndexed()), false)!;
   const l = mergeGeometries(leaves.map((g) => g.toNonIndexed()), false)!;
