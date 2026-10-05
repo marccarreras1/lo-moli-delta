@@ -144,7 +144,7 @@ function Piece({ f, mats, options }: { f: Furniture; mats: MaterialSet; options:
           <B y={0.0} w={w + 0.03} h={0.008} d={d + 0.03} m={mats.textileLight} />
         </>
       );
-    case 'encimera': return <Kitchen w={w} d={d} h={h} modules={f.modules ?? []} mats={mats} />;
+    case 'encimera': return <Kitchen w={w} d={d} h={h} modules={f.modules ?? []} mats={mats} underStair={f.underStair} />;
     case 'isla': return <Island w={w} d={d} h={h} mats={mats} />;
     case 'taburete': return <Stool h={h} mats={mats} />;
     case 'banera':
@@ -357,7 +357,7 @@ function Planter({ w, h, mats }: { w: number; h: number; mats: MaterialSet }) {
  * mineral, salpicadero mineral, balda corrida de madera con tira de luz, fregadero bajo encimera
  * con grifo negro mate, placa de inducción con horno debajo, lavavajillas y frigorífico integrados.
  */
-function Kitchen({ w, d, h, modules, mats }: { w: number; d: number; h: number; modules: KitchenModule[]; mats: MaterialSet }) {
+function Kitchen({ w, d, h, modules, mats, underStair }: { w: number; d: number; h: number; modules: KitchenModule[]; mats: MaterialSet; underStair?: boolean }) {
   const plinth = 0.1;
   const top = 0.03;
   const bodyH = h - top;
@@ -369,7 +369,8 @@ function Kitchen({ w, d, h, modules, mats }: { w: number; d: number; h: number; 
       <B y={plinth} z={-0.01} w={w} h={bodyH - plinth} d={d - 0.04} m={mats.wood} />
       <B z={-0.04} w={w - 0.02} h={plinth} d={d - 0.12} m={mats.poche} shadow={false} />
       <B y={bodyH} w={w + 0.01} h={top} d={d + 0.01} m={mats.counter} />
-      {/* salpicadero y balda corrida contra el muro */}
+      {/* salpicadero y balda corrida contra el muro (no bajo la escalera: encima vuelan los peldaños) */}
+      {!underStair && <>
       <B y={h} z={-d / 2 + 0.01} w={w} h={0.62} d={0.02} m={mats.counter} />
       <B y={h + 0.62} z={-d / 2 + 0.13} w={w} h={0.04} d={0.26} m={mats.wood} />
       <B y={h + 0.6} z={-d / 2 + 0.22} w={w - 0.1} h={0.012} d={0.02} m={mats.lampGlow} shadow={false} />
@@ -377,6 +378,7 @@ function Kitchen({ w, d, h, modules, mats }: { w: number; d: number; h: number; 
       <Lathe x={-w / 2 + 0.3} y={h + 0.66} z={-d / 2 + 0.12} profile={[[0, 0], [0.05, 0], [0.08, 0.06], [0.08, 0.09], [0, 0.09]]} m={mats.clayLight} />
       <Lathe x={-w / 2 + 0.55} y={h + 0.66} z={-d / 2 + 0.12} profile={[[0, 0], [0.04, 0], [0.05, 0.18], [0.035, 0.22], [0, 0.22]]} m={mats.clay} />
       <Lathe x={w / 2 - 0.4} y={h + 0.66} z={-d / 2 + 0.12} profile={[[0, 0], [0.09, 0], [0.11, 0.05], [0.12, 0.06], [0, 0.06]]} m={mats.ceramic} />
+      </>}
       {mods.map((mod, i) => {
         const x0 = cursor;
         cursor += mod.w;

@@ -351,6 +351,15 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
     }
   }
   out.push('</g>');
+  // muebles bajo la escalera: contorno discontinuo por encima del dibujo de los peldaños
+  if (o.showFurniture) for (const f of furniture.filter((x) => x.underStair)) {
+    const fp = furnitureFootprint(f);
+    out.push(`<polygon points="${pts(fp)}" fill="#fefdfb" fill-opacity="0.7" stroke="#2f3430" stroke-width="0.014" stroke-dasharray="0.08 0.05" pointer-events="none"/>`);
+    if (o.showLabels) {
+      const c = fp.reduce<Vec2>((m, p) => [m[0] + p[0] / fp.length, m[1] + p[1] / fp.length], [0, 0]);
+      out.push(`<text x="${n4(c[0])}" y="${n4(c[1])}" font-size="0.12" fill="#3d433b" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 ${n4(c[0])} ${n4(c[1])})" pointer-events="none">cocina bajo la escalera</text>`);
+    }
+  }
 
   // Barandillas del nivel: doble línea continua
   for (const r of (layout.railings ?? []).filter((x) => x.levelId === level?.id)) {

@@ -125,8 +125,13 @@ function StairMesh({ st, from, to, mats }: { st: Stair; from: number; to: number
         const dirSign = st.up === '+x' || st.up === '+y' ? -1 : 1;
         const sMid = (alongX ? ax : ay) + tread * (k + 0.5);
         const top = rise * (i + 1);
-        const body = top - cap;
-        const pos: [number, number, number] = alongX ? [sMid, from + body / 2, (ay + by) / 2] : [(ax + bx) / 2, from + body / 2, sMid];
+        // bajo el tramo hueco el peldaño cuelga de una losa escalonada de ≈0,18 m
+        const sStart = (alongX ? ax : ay) + tread * k;
+        const sEnd = sStart + tread;
+        const hollow = st.openUnderFrom !== undefined && (dirSign < 0 ? sStart >= st.openUnderFrom - 1e-6 : sEnd <= st.openUnderFrom + 1e-6);
+        const body = hollow ? Math.min(top - cap, rise + 0.18) : top - cap;
+        const yMid = from + top - cap - body / 2;
+        const pos: [number, number, number] = alongX ? [sMid, yMid, (ay + by) / 2] : [(ax + bx) / 2, yMid, sMid];
         const capPos: [number, number, number] = alongX ? [sMid + (dirSign * nose) / 2, from + top - cap / 2, (ay + by) / 2] : [(ax + bx) / 2, from + top - cap / 2, sMid + (dirSign * nose) / 2];
         return (
           <group key={i}>

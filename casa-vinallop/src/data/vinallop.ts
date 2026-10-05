@@ -69,6 +69,10 @@ const ARM_Y1 = 1.95; // eje del fondo del armario
 const BANO_PUERTA_X0 = cx(5.05);
 const ALT_X1 = r2(X_ESC + TP / 2); // 6,35 borde del altell
 const ESC: [number, number, number, number] = [ALT_X1, r2(Y_PASILLO + TP / 2), cx(7.25), y1];
+/** cocina bajo la escalera: desde el 8.º peldaño la cara inferior queda por encima de la encimera (0,90 m) */
+const ESC_HUECO = r2(ESC[1] + ((ESC[3] - ESC[1]) * 7) / 15);
+/** mesa de comedor entre la isla y el salón */
+const MESA_COM: Vec2 = [11.45, 1.7];
 /** baño: zona húmeda de 1,20 m al fondo (contra el frontal B), con las dos duchas enfrentadas */
 const B_X0 = r2(X_DORM + TP / 2); // 3,85 cara del tabique del dormitorio
 const B_X1 = r2(X_ESC - TP / 2); // 6,25 cara del tabique de la escalera
@@ -222,9 +226,18 @@ const furniture: Furniture[] = [
     modules: [{ kind: 'frigorifico', w: 0.55 }, { kind: 'placa-horno', w: 0.6 }, { kind: 'lavavajillas', w: 0.45 }, { kind: 'fregadero', w: 0.6 }],
     note: 'Cocina junto a la escalera (propiedad), contra el frontal B. Módulos propuestos sobre los dos puntos de agua del boceto: fregadero y lavavajillas; placa con horno debajo y frigorífico integrado bajo encimera (no cabe una columna: al lado está la puerta de entrada). Frentes de roble con nudos dentro de una envolvente mineral clara, encimera y salpicadero coordinados, balda corrida gruesa y grifo extraíble negro mate (referencia 01).' }),
   // isla de obra: estructura de la referencia 05 y acabado de la 06; deja 1,00 m de paso hasta la cocina
-  f({ id: 'isla', type: 'isla', label: 'Isla de obra', roomId: 'dia', x: cx(8.8), y: r2(YB - 0.6 - 1.0 - 0.475), w: 1.6, d: 0.95, h: 0.9, rot: 0, status: 'propuesto',
-    note: 'Isla central (propiedad). Estructura de la referencia 05: hueco de 1,00 m para tres taburetes y dos estantes abiertos de 0,30 m en el mismo frente (hacia el frontal A), apoyos macizos. Acabado de la referencia 06: piezas verticales de terracota a junta corrida con juntas claras y encimera clara de esquinas suavizadas. 1,60 × 0,95 m, altura 0,90 m: deja 1,00 m de paso hasta la cocina y ≈1,3 m detrás de los taburetes. El boceto dibuja ≈1,55 × 1,65 m (se conserva como trazo).' }),
-  ...[8.15, 8.55, 8.95].map((x, i) => f({ id: `taburete-${i + 1}`, type: 'taburete', label: 'Taburete', roomId: 'dia', x: cx(x), y: r2(YB - 0.6 - 1.0 - 0.95 - 0.2), w: 0.38, d: 0.38, h: 0.65, rot: 0, status: 'propuesto' })),
+  f({ id: 'isla', type: 'isla', label: 'Isla de obra', roomId: 'dia', x: cx(9.05), y: r2(YB - 0.6 - 1.0 - 0.475), w: 1.6, d: 0.95, h: 0.9, rot: 0, status: 'propuesto',
+    note: 'Isla central (propiedad). Estructura de la referencia 05: hueco de 1,00 m para tres taburetes y dos estantes abiertos de 0,30 m en el mismo frente (hacia el frontal A), apoyos macizos. Acabado de la referencia 06: piezas verticales de terracota a junta corrida con juntas claras y encimera clara de esquinas suavizadas. 1,60 × 0,95 m, altura 0,90 m: deja 1,00 m de paso hasta la cocina (también hasta el tramo bajo la escalera) y ≈1,3 m detrás de los taburetes. El boceto dibuja ≈1,55 × 1,65 m (se conserva como trazo).' }),
+  ...[8.4, 8.8, 9.2].map((x, i) => f({ id: `taburete-${i + 1}`, type: 'taburete', label: 'Taburete', roomId: 'dia', x: cx(x), y: r2(YB - 0.6 - 1.0 - 0.95 - 0.2), w: 0.38, d: 0.38, h: 0.65, rot: 0, status: 'propuesto' })),
+  // cocina también bajo la escalera (propiedad): tramo de encimera en el lado abierto de la escalera, donde los peldaños
+  // ya vuelan por encima de la encimera; forma una L con la cocina del frontal B
+  f({ id: 'encimera-escalera', type: 'encimera', label: 'Cocina bajo la escalera', roomId: 'dia', x: r2(ESC[2] - 0.3), y: r2((ESC_HUECO + y1) / 2), w: r2(y1 - ESC_HUECO), d: 0.6, h: 0.9, rot: 270, underStair: true, status: 'propuesto',
+    modules: [{ kind: 'cajones', w: 0.6 }, { kind: 'puertas', w: r2(y1 - ESC_HUECO - 1.2) }, { kind: 'cajones', w: 0.6 }],
+    note: 'Indicación de la propiedad: «debajo la escalera pon cocina también». Encimera de 0,60 m en el lado abierto de la escalera, desde donde los peldaños quedan por encima de 0,90 m hasta el frontal B, unida en L con la cocina existente. Bajo la escalera, la escalera pasa a ser una losa escalonada. Cajones y puertas propuestos (mismos frentes de roble y encimera); detrás queda un hueco de ≈0,60 m bajo los peldaños para almacenaje. Sin salpicadero ni baldas altas: encima vuelan los peldaños. La altura libre sobre la encimera va de ≈0,20 m en el arranque a más de 1 m junto al frontal B.' }),
+  // mesa de comedor para 4 (propiedad) entre la isla y el salón, junto al ventanal
+  f({ id: 'mesa-comedor', type: 'mesa', label: 'Mesa de comedor (4 plazas)', roomId: 'dia', x: MESA_COM[0], y: MESA_COM[1], w: 1.2, d: 0.8, h: 0.75, rot: 0, status: 'propuesto', color: '#8d5c3c',
+    note: 'Mesa de comedor para cuatro (indicación de la propiedad): madera maciza de 120 × 80 cm, como la mesa del salón, con dos sillas a cada lado. Entre la isla y el sofá, cerca del ventanal; medidas y modelo propuestos.' }),
+  ...[[-0.3, -1], [0.3, -1], [-0.3, 1], [0.3, 1]].map(([dx, side], i) => f({ id: `silla-comedor-${i + 1}`, type: 'silla', label: 'Silla de comedor', roomId: 'dia', x: r2(MESA_COM[0] + dx), y: r2(MESA_COM[1] + side * 0.6), w: 0.44, d: 0.44, h: 0.82, rot: side < 0 ? 0 : 180, status: 'propuesto' })),
   f({ id: 'sofa-b', type: 'sofa-l', label: 'Sofá en L (frontal B)', roomId: 'dia', x: rx(12.75), y: r2(YB - 0.43), w: 4.0, d: 0.85, h: 0.8, rot: 180, status: 'documentado', note: 'Sofá (propiedad): tramo desde la jamba de la puerta, fondo ≈0,85 m. Colchonetas gruesas y cojines blancos y crudos (referencia 03).' }),
   f({ id: 'sofa-lateral', type: 'sofa-l', label: 'Sofá en L (lateral derecho)', roomId: 'dia', x: r2(x1 - 0.33), y: r2(YB - 1.4), w: 2.8, d: 0.65, h: 0.8, rot: 90, status: 'documentado', note: 'Segundo tramo del sofá contra el lateral derecho; fondo dibujado ≈0,65 m.' }),
   f({ id: 'estufa', type: 'estufa', label: 'Estufa', roomId: 'dia', x: rx(14.43), y: 0.9, w: 0.8, d: 0.8, h: 1.0, rot: 0, status: 'documentado', note: 'El círculo del boceto (propiedad), junto al frontal A al final de la obertura. Dibujado de ≈1 m de diámetro; salida de humos supuesta. Con el ventanal de 9 m queda delante del vidrio.' }),
@@ -317,10 +330,12 @@ const views: CameraPreset[] = [
   view({ id: 'v04-solera', label: '4 · Solera completa en L', group: 'exterior', position: [-3.8, -10.5, 4.4], target: [11, -0.8, 0], fov: 46 }),
   view({ id: 'v05-algarrobo', label: '5 · Mesa y lámpara bajo el algarrobo', group: 'exterior', position: [14.6, -8.2, 1.6], target: [MESA_EXT[0] + 0.3, MESA_EXT[1] + 1.0, 1.5], fov: 56 }),
   view({ id: 'v06-desde-comedor', label: '6 · La casa desde el comedor exterior', group: 'exterior', position: [21.4, -5.4, 1.6], target: [10, -0.6, 2.2], fov: 56 }),
-  view({ id: 'v07-salon-ventanal', label: '7 · Salón: sofá de obra y ventanal', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.9, 1.5, 1.6], target: [15.2, 3.9, 0.7], fov: 66 }),
+  view({ id: 'v07-salon-ventanal', label: '7 · Salón: sofá de obra y ventanal', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.3, 1.2, 1.6], target: [15.4, 3.9, 0.7], fov: 66 }),
   view({ id: 'v08-ventanal-cocina', label: '8 · Del ventanal hacia cocina e isla', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.4, 0.8, 1.6], target: [9.2, 3.6, 1.0], fov: 60 }),
-  view({ id: 'v09-cocina-taburetes', label: '9 · Cocina desde el lado de los taburetes', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.7, 0.75, 1.6], target: [8.9, 3.2, 0.75], fov: 56 }),
+  view({ id: 'v09-cocina-taburetes', label: '9 · Cocina desde el lado de los taburetes', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.3, 0.7, 1.6], target: [8.9, 3.2, 0.75], fov: 56 }),
   view({ id: 'v10-cocina-encimera', label: '10 · Isla desde la cocina', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.35, 3.75, 1.6], target: [8.7, 1.4, 0.7], fov: 58 }),
+  view({ id: 'v10b-cocina-escalera', label: '10b · Cocina bajo la escalera', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.2, 3.5, 1.6], target: [7.2, 3.6, 0.8], fov: 64 }),
+  view({ id: 'v10c-comedor', label: '10c · Mesa de comedor para 4', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [13.9, 1.0, 1.6], target: [11.1, 1.9, 0.75], fov: 60 }),
   view({ id: 'v11-dormitorio', label: '11 · Dormitorio', group: 'interior', eyeLevel: true, roomId: 'dormitorio', elevation: 0, position: [3.45, 0.7, 1.6], target: [1.8, 3.9, 0.9], fov: 60 }),
   view({ id: 'v12-bano-entrada', label: '12 · Baño desde la entrada', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [5.5, 2.05, 1.6], target: [4.7, 4.6, 1.05], fov: 72 }),
   view({ id: 'v12b-bano-ducha', label: '12b · Baño desde la ducha (duchas enfrentadas)', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [5.05, 4.25, 1.6], target: [5.05, 1.6, 1.2], fov: 66 }),
@@ -335,7 +350,7 @@ const views: CameraPreset[] = [
 
 // ---------- referencias de diseño (fotos adjuntadas por la propiedad; los enlaces solo indican la procedencia) ----------
 const REF_META: Record<string, [string | undefined, string[]]> = {
-  'ref-cocina': ['01', ['v09-cocina-taburetes', 'v10-cocina-encimera']], 'ref-puerta': ['02', ['v03-entrada', 'v02-fachada-delantera']], 'ref-salon': ['03', ['v07-salon-ventanal']],
+  'ref-cocina': ['01', ['v09-cocina-taburetes', 'v10-cocina-encimera', 'v10b-cocina-escalera']], 'ref-puerta': ['02', ['v03-entrada', 'v02-fachada-delantera']], 'ref-salon': ['03', ['v07-salon-ventanal']],
   'ref-bano': ['04', ['v12-bano-entrada', 'v12b-bano-ducha']], 'ref-isla-estructura': ['05', ['v09-cocina-taburetes']], 'ref-isla-acabado': ['06', ['v10-cocina-encimera']],
   'ref-celosia-a': ['07', ['v12c-celosia']], 'ref-celosia-b': ['08', ['v12c-celosia']], 'ref-lamparas-a': ['09', ['v09-cocina-taburetes']], 'ref-lamparas-b': ['10', ['v08-ventanal-cocina']],
   'ref-color-techo': [undefined, ['v13b-volta']], 'ref-comedor-exterior': ['11', ['v05-algarrobo', 'v04-solera']],
@@ -378,7 +393,7 @@ const PROJECT: ProjectData = {
   ],
   stairs: [
     {
-      id: 'escalera', fromLevel: 'pb', toLevel: 'altell', rect: ESC, up: '+y', upStatus: 'documentado', winderEnd: 0.65, risers: 15, status: 'interpretado', sourceId: S.planta,
+      id: 'escalera', fromLevel: 'pb', toLevel: 'altell', rect: ESC, up: '+y', upStatus: 'documentado', winderEnd: 0.65, openUnderFrom: ESC_HUECO, risers: 15, status: 'interpretado', sourceId: S.planta,
       note: 'Escalera en L: arranca junto al pasillo (lado del frontal A), sube hacia el frontal B y en el tramo final gira con peldaños compensados para desembarcar en el altell. Sentido indicado por la propiedad; ancho ≈1,20 m y 15 tabicas de ≈0,187 m hasta 2,80 m. Huellas sobre la línea de huella: 10 rectas de 0,25 m en el tramo recto (2,50 m) y 4 compensadas en el giro, de ≈0,25 m a 0,50 m del borde interior; cumple tabica ≤ 0,20 m y huella ≥ 0,22 m sin alargar la escalera. Los peldaños compensados son estrechos junto al eje: lo revisará el arquitecto.',
     },
   ],

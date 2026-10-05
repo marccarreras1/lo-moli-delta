@@ -69,6 +69,8 @@ export interface Stair {
   upStatus?: DataStatus;
   /** tramo final con peldaños compensados (triángulo del boceto), en metros */
   winderEnd?: number;
+  /** a partir de esta coordenada del tramo los peldaños vuelan sobre una losa escalonada y queda hueco debajo (p. ej. cocina bajo la escalera) */
+  openUnderFrom?: number;
   risers: number;
   status: DataStatus;
   sourceId: string;
@@ -211,6 +213,8 @@ export interface Furniture {
   open?: boolean;
   /** cocina lineal: módulos bajo encimera */
   modules?: KitchenModule[];
+  /** cocina bajo la escalera: sin salpicadero ni balda encima */
+  underStair?: boolean;
 }
 
 export type RoofType = 'dos-aguas' | 'un-agua' | 'plana' | 'plana-peto';

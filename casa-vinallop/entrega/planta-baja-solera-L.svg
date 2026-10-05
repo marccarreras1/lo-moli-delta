@@ -45,11 +45,17 @@
 <polygon points="3.855,2.91 3.855,2.53 4.505,2.53 4.505,2.91"/>
 <circle cx="4.18" cy="2.72" r="0.1216" fill="none"/>
 <polygon points="9.75,4.62 7.55,4.62 7.55,4.02 9.75,4.02"/>
-<polygon points="8.3,2.075 9.9,2.075 9.9,3.025 8.3,3.025"/>
-<polygon points="8.34,2.115 9.86,2.115 9.86,2.985 8.34,2.985" fill="none" stroke-width="0.008"/>
-<circle cx="8.45" cy="1.87" r="0.19"/>
-<circle cx="8.85" cy="1.87" r="0.19"/>
-<circle cx="9.25" cy="1.87" r="0.19"/>
+<polygon points="8.55,2.075 10.15,2.075 10.15,3.025 8.55,3.025"/>
+<polygon points="8.59,2.115 10.11,2.115 10.11,2.985 8.59,2.985" fill="none" stroke-width="0.008"/>
+<circle cx="8.7" cy="1.87" r="0.19"/>
+<circle cx="9.1" cy="1.87" r="0.19"/>
+<circle cx="9.5" cy="1.87" r="0.19"/>
+<polygon points="6.95,4.62 6.95,2.82 7.55,2.82 7.55,4.62"/>
+<polygon points="10.85,1.3 12.05,1.3 12.05,2.1 10.85,2.1"/>
+<polygon points="10.93,0.88 11.37,0.88 11.37,1.32 10.93,1.32"/>
+<polygon points="11.53,0.88 11.97,0.88 11.97,1.32 11.53,1.32"/>
+<polygon points="11.37,2.52 10.93,2.52 10.93,2.08 11.37,2.08"/>
+<polygon points="11.97,2.52 11.53,2.52 11.53,2.08 11.97,2.08"/>
 <polygon points="15.08,4.615 11.08,4.615 11.08,3.765 15.08,3.765"/>
 <line x1="15.08" y1="4.4955" x2="11.08" y2="4.4955" stroke-width="0.01"/>
 <polygon points="16.025,1.82 16.025,4.62 15.375,4.62 15.375,1.82"/>
@@ -97,6 +103,8 @@
 <g stroke="#2f3430" stroke-width="0.012"><line x1="6.35" y1="3.97" x2="7.55" y2="4.62"/></g>
 <text x="7.09" y="2.935" font-size="0.15" fill="#4f6a7a" transform="rotate(90 7.09 2.935)" text-anchor="middle">sube</text>
 </g>
+<polygon points="6.95,4.62 6.95,2.82 7.55,2.82 7.55,4.62" fill="#fefdfb" fill-opacity="0.7" stroke="#2f3430" stroke-width="0.014" stroke-dasharray="0.08 0.05" pointer-events="none"/>
+<text x="7.25" y="3.72" font-size="0.12" fill="#3d433b" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 7.25 3.72)" pointer-events="none">cocina bajo la escalera</text>
 <g data-railing="barandilla-escalera" pointer-events="none"><polyline points="7.55,1.25 7.55,4.62" fill="none" stroke="#6f8a94" stroke-width="0.05"/><polyline points="7.55,1.25 7.55,4.62" fill="none" stroke="#dce8ec" stroke-width="0.02"/></g>
 <text x="7.73" y="2.935" font-size="0.15" fill="#687066" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 7.73 2.935)">Barandilla de la escalera de cristal · h 1,00 m</text>
 <g class="traces" pointer-events="none">

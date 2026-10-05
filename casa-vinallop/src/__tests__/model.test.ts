@@ -343,12 +343,30 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
     const mesa = layout.furniture.find((f) => f.id === 'mesa-salon')!;
     expect([mesa.w, mesa.d]).toEqual([1.1, 0.8]);
   });
+  it('cocina también bajo la escalera (en L) y mesa de comedor para 4 sin conflictos', () => {
+    const esc = layout.stairs[0];
+    const bajo = layout.furniture.find((f) => f.id === 'encimera-escalera')!;
+    expect(bajo.underStair).toBe(true);
+    // dentro de la huella de la escalera y solo donde la cara inferior de los peldaños supera la encimera
+    expect(bajo.x - bajo.d / 2).toBeGreaterThanOrEqual(esc.rect[0]);
+    expect(bajo.x + bajo.d / 2).toBeCloseTo(esc.rect[2], 5);
+    expect(bajo.y - bajo.w / 2).toBeGreaterThanOrEqual(esc.openUnderFrom! - 1e-6);
+    const rise = 2.8 / esc.risers;
+    const tread = (esc.rect[3] - esc.rect[1]) / esc.risers;
+    const k = Math.round((esc.openUnderFrom! - esc.rect[1]) / tread);
+    expect(rise * k - 0.21).toBeGreaterThan(bajo.h);
+    const isla = layout.furniture.find((f) => f.id === 'isla')!;
+    expect(isla.x - isla.w / 2 - (bajo.x + bajo.d / 2)).toBeGreaterThanOrEqual(0.9);
+    expect(layout.furniture.filter((f) => f.id.startsWith('silla-comedor'))).toHaveLength(4);
+    const ids = new Set(['mesa-comedor', 'encimera-escalera', ...[1, 2, 3, 4].map((i) => `silla-comedor-${i}`)]);
+    expect(validateLayout(layout).filter((i) => ids.has(i.elementId))).toEqual([]);
+  });
   it('editar un mueble en una variante lo marca como propuesto sin tocar la base', () => {
     const v = { ...baseVariant(), id: 'v', name: 'V', furnitureOverrides: { isla: { x: 9.0, w: 1.8 } } };
     const l2 = resolveLayout(VINALLOP, v);
     const isla = l2.furniture.find((f) => f.id === 'isla')!;
     expect([isla.x, isla.w, isla.status]).toEqual([9.0, 1.8, 'propuesto']);
-    expect(layout.furniture.find((f) => f.id === 'isla')!.x).toBe(9.1);
+    expect(layout.furniture.find((f) => f.id === 'isla')!.x).toBe(9.35);
   });
   it('solera en L confirmada: frontal A de punta a punta y 4 m en el lateral, sin solera en la entrada, esquina contada una vez y alcorque permeable', () => {
     const o = layout.outdoor!;
