@@ -1,0 +1,5 @@
+# Cloudflare Pages / Netlify: los archivos de assets llevan huella en el nombre y se pueden cachear mucho tiempo
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+/index.html
+  Cache-Control: no-cache
