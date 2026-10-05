@@ -319,6 +319,35 @@ function Annex({ a, mats }: { a: NonNullable<Outdoor['annexes']>[number]; mats: 
       {B((x0 + x1) / 2, (y0 + y1) / 2, x1 - x0 - 0.02, y1 - y0 - 0.02, 0.02, 0, mats.concrete)}
       {pieces}
       {B((x0 + x1) / 2 - 0.05, (y0 + y1) / 2, x1 - x0 + 0.1, y1 - y0 + 0.16, 0.2, wallH)}
+      {a.terrace && (() => {
+        // terraza transitable: pavimento de terracota y peto encalado de 0,15 m con albardilla (no contra la casa)
+        const pt = 0.15;
+        const top = a.height;
+        const ph = a.terrace.parapet;
+        const gap = a.terrace.gap;
+        const ex0 = x0 - 0.1;
+        const ey0 = y0 - 0.08;
+        const ey1 = y1 + 0.08;
+        const parts: ReactElement[] = [];
+        const wall = (k: string, cx: number, cz: number, w: number, d: number) => {
+          parts.push(<group key={k}>{B(cx, cz, w, d, ph, top)}{B(cx, cz, w + 0.04, d + 0.04, 0.05, top + ph)}</group>);
+        };
+        wall('py0', (ex0 + x1) / 2, ey0 + pt / 2, x1 - ex0, pt);
+        wall('py1', (ex0 + x1) / 2, ey1 - pt / 2, x1 - ex0, pt);
+        const xs = ex0 + pt / 2;
+        const za = ey0 + pt;
+        const zb = ey1 - pt;
+        if (gap) {
+          wall('px0a', xs, (za + gap[0]) / 2, pt, gap[0] - za);
+          wall('px0b', xs, (gap[1] + zb) / 2, pt, zb - gap[1]);
+        } else wall('px0', xs, (za + zb) / 2, pt, zb - za);
+        return (
+          <group>
+            {B((ex0 + pt + x1) / 2, (y0 + y1) / 2, x1 - ex0 - pt, ey1 - ey0 - 2 * pt, 0.03, top, mats.terracottaTile)}
+            {parts}
+          </group>
+        );
+      })()}
       {/* puerta metálica gris con rejilla de ventilación baja */}
       <group position={doorPos} rotation={[0, doorRot, 0]}>
         <mesh material={mats.metal} castShadow><boxGeometry args={[d.width - 0.04, d.height - 0.02, 0.05]} /></mesh>

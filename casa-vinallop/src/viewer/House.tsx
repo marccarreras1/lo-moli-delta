@@ -2,6 +2,7 @@ import { Line } from '@react-three/drei';
 import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import type { Layout, Opening, Railing, RoofSegment, Stair, Trace, Vec2, Wall } from '../data/types';
+import { uStairPieces } from '../model/stairU';
 import { AMBER } from '../ui/status';
 import { pointOnWall, wallDir, wallNormal, wallPieces } from '../model/geometry';
 import type { MaterialSet } from './materials';
@@ -108,6 +109,7 @@ function SlabMesh({ poly, top, thickness, mat }: { poly: Vec2[]; top: number; th
  * peldaño desde el suelo, de la cota de un nivel a la del otro.
  */
 function StairMesh({ st, from, to, mats }: { st: Stair; from: number; to: number; mats: MaterialSet }) {
+  if (st.u) return <UStairMesh st={st} from={from} to={to} mats={mats} />;
   const [ax, ay, bx, by] = st.rect;
   const n = Math.max(1, st.risers);
   const rise = (to - from) / n;
@@ -137,6 +139,34 @@ function StairMesh({ st, from, to, mats }: { st: Stair; from: number; to: number
           <group key={i}>
             <mesh position={pos} castShadow receiveShadow material={mats.stair} geometry={alongX ? uvBox(tread, body, width) : uvBox(width, body, tread)} />
             <mesh position={capPos} castShadow receiveShadow material={mats.terracottaTile} geometry={alongX ? uvBox(tread + nose, cap, width) : uvBox(width, cap, tread + nose)} />
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+/** Escalera en U: peldaños y rellano macizos desde el suelo; la meseta de llegada es una losa de 0,30 m. */
+function UStairMesh({ st, from, to, mats }: { st: Stair; from: number; to: number; mats: MaterialSet }) {
+  const pieces = useMemo(() => uStairPieces(st, to - from), [st, from, to]);
+  const cap = 0.03;
+  const nose = 0.02;
+  return (
+    <group>
+      {pieces.map((p, i) => {
+        const [x0, y0, x1, y1] = p.rect;
+        const w = x1 - x0;
+        const d = y1 - y0;
+        const body = p.kind === 'meseta' ? 0.3 - cap : p.top - cap;
+        const cx = (x0 + x1) / 2;
+        const cz = (y0 + y1) / 2;
+        // el canto vuela hacia el lado de bajada
+        const nz = p.kind === 'peldaño' ? (-p.dir * nose) / 2 : 0;
+        const dn = p.kind === 'peldaño' ? nose : 0;
+        return (
+          <group key={i}>
+            <mesh position={[cx, from + p.top - cap - body / 2, cz]} castShadow receiveShadow material={mats.stair} geometry={uvBox(w, body, d)} />
+            <mesh position={[cx, from + p.top - cap / 2, cz + nz]} castShadow receiveShadow material={mats.terracottaTile} geometry={uvBox(w, cap, d + dn)} />
           </group>
         );
       })}

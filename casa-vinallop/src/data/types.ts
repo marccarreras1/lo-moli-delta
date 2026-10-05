@@ -71,6 +71,8 @@ export interface Stair {
   winderEnd?: number;
   /** a partir de esta coordenada del tramo los peldaños vuelan sobre una losa escalonada y queda hueco debajo (p. ej. cocina bajo la escalera) */
   openUnderFrom?: number;
+  /** escalera en U: rellano al fondo (todo el ancho), primer tramo por la mitad `firstSide` y vuelta por la otra hasta una meseta */
+  u?: { landing: number; firstRisers: number; tread: number; firstSide: 'x0' | 'x1' };
   risers: number;
   status: DataStatus;
   sourceId: string;
@@ -327,6 +329,8 @@ export interface Outdoor {
     wall: number;
     /** puerta exterior: fachada ('y0' | 'y1' | 'x0' | 'x1'), centro sobre esa fachada y medidas */
     door: { side: 'y0' | 'y1' | 'x0' | 'x1'; at: number; width: number; height: number };
+    /** cubierta transitable: peto perimetral (no contra la casa) con un hueco opcional en la cara x0 (llegada de los escalones) */
+    terrace?: { parapet: number; gap?: [number, number]; label: string; status: DataStatus };
     status: DataStatus;
     note: string;
   }[];

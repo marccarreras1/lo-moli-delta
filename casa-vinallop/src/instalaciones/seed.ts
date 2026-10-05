@@ -10,6 +10,7 @@
 import type { Furniture, Layout, Opening, Room, Vec2, Wall } from '../data/types';
 import { bbox, centroid, distPointSegment, furnitureFootprint, pointInPolygon, pointOnWall, polygonArea, wallDir, wallLength, wallNormal } from '../model/geometry';
 import type { InstallKind, InstallPoint, Layer } from './types';
+import { uStairPieces } from '../model/stairU';
 
 const r2 = (x: number) => Math.round(x * 100) / 100;
 const PROPUESTA = 'Propuesta pendiente de validación por el instalador; no es un dispositivo contratado.';
@@ -427,7 +428,8 @@ export function proposedPoints(layout: Layout): InstallPoint[] {
       const st = l.stairs.find((s) => s.toLevel === room.levelId);
       if (st) {
         const [x0, y0, x1, y1] = st.rect;
-        const top: Vec2 = st.up === '+y' ? [(x0 + x1) / 2, y1] : st.up === '-y' ? [(x0 + x1) / 2, y0] : st.up === '+x' ? [x1, (y0 + y1) / 2] : [x0, (y0 + y1) / 2];
+        const meseta = st.u ? uStairPieces(st, 1).find((pc) => pc.kind === 'meseta') : undefined;
+        const top: Vec2 = meseta ? [meseta.rect[0], (meseta.rect[1] + meseta.rect[3]) / 2] : st.up === '+y' ? [(x0 + x1) / 2, y1] : st.up === '-y' ? [(x0 + x1) / 2, y0] : st.up === '+x' ? [x1, (y0 + y1) / 2] : [x0, (y0 + y1) / 2];
         const v = [...room.polygon].sort((a, b) => Math.hypot(a[0] - top[0], a[1] - top[1]) - Math.hypot(b[0] - top[0], b[1] - top[1]))[0];
         p = spotNearVertex(room, v, valid);
         if (p) why = 'Junto a la llegada de la escalera.';

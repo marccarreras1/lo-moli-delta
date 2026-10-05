@@ -39,6 +39,7 @@ describe('recorrido con colisiones', () => {
   it('en el altell no se puede pisar el hueco de la escalera ni cruzar la barandilla', () => {
     const oa = walkObstacles(layout, 'altell');
     expect(blocked([6.35, 2.0], oa)).toBe(true);
+    expect(blocked([6.35, 3.2], oa)).toBe(true);
   });
 });
 

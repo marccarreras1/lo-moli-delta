@@ -11,6 +11,7 @@ import { FRAME, leafPose } from '../model/openings';
 import { passages } from '../model/passages';
 import { soleraQuantities } from '../model/solera';
 import { gardenPlants, pathSlabs } from '../model/garden';
+import { uStairPieces } from '../model/stairU';
 import type { Issue } from '../model/validate';
 import { ACCENT, AMBER, STATUS_STYLE } from '../ui/status';
 
@@ -128,6 +129,15 @@ function outdoorSvg(layout: Layout, od: NonNullable<Layout['outdoor']>, labels: 
       g.push(`<text x="${n4(cxA)}" y="${n4(cyA - 0.2)}" font-size="0.17" font-weight="600" text-anchor="middle" fill="#252923" transform="rotate(-90 ${n4(cxA)} ${n4(cyA - 0.2)})">${esc(an.label)}</text>`);
       g.push(`<text x="${n4(cxA + 0.28)}" y="${n4(cyA)}" font-size="0.12" text-anchor="middle" fill="#2f5d6b" class="tnum" transform="rotate(-90 ${n4(cxA + 0.28)} ${n4(cyA)})">${fmtM(ax1 - ax0 - t)} × ${fmtM(ay1 - ay0 - 2 * t)} m · h ${fmtM(an.height)} · acceso exterior</text>`);
     }
+    if (an.terrace) {
+      // cubierta transitable: línea del peto (discontinua: está por encima del corte) y rótulo
+      const pt = 0.15;
+      const e0 = ax0 - 0.1 + pt;
+      const gp = an.terrace.gap;
+      const peto = `M ${n4(ax1)} ${n4(ay0 - 0.08 + pt)} L ${n4(e0)} ${n4(ay0 - 0.08 + pt)} L ${n4(e0)} ${n4(gp ? gp[0] : ay1 + 0.08 - pt)}${gp ? ` M ${n4(e0)} ${n4(gp[1])}` : ''} L ${n4(e0)} ${n4(ay1 + 0.08 - pt)} L ${n4(ax1)} ${n4(ay1 + 0.08 - pt)}`;
+      g.push(`<path d="${peto}" fill="none" stroke="#b5654a" stroke-width="0.02" stroke-dasharray="0.12 0.06"/>`);
+      if (labels) g.push(`<text x="${n4(cxA - 0.3)}" y="${n4(cyA)}" font-size="0.12" text-anchor="middle" fill="#b5654a" transform="rotate(-90 ${n4(cxA - 0.3)} ${n4(cyA)})">cubierta: ${esc(an.terrace.label.toLowerCase())} · peto ${fmtM(an.terrace.parapet)} m</text>`);
+    }
     g.push(dim([ax0, ay0], [ax1, ay0], -0.45, `${fmtM(ax1 - ax0)} m`, an.status));
   }
   // escalones volados en zigzag (en planta: las piezas que salen de la fachada)
@@ -202,7 +212,10 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
   const extraBottom = o.forExport ? 2.0 : 1.0;
   const levelFirst = (layout.levels.find((l) => l.id === o.levelId) ?? layout.levels[0])?.elevation === 0;
   const outdoor = o.showOutdoor !== false && levelFirst ? layout.outdoor : undefined;
-  const solera = [...(outdoor?.pavements.filter((p) => p.joints > 0) ?? []), ...(outdoor?.garden ? [{ rect: outdoor.garden.rect }] : []), ...(outdoor?.annexes ?? [])];
+  // en una planta alta: cubiertas transitables de los anexos a la altura del nivel (terraza del altell)
+  const lvElev = (layout.levels.find((l) => l.id === o.levelId) ?? layout.levels[0])?.elevation ?? 0;
+  const terraces = !levelFirst && o.showOutdoor !== false ? (layout.outdoor?.annexes ?? []).filter((a) => a.terrace && Math.abs(a.height - lvElev) < 0.6) : [];
+  const solera = [...(outdoor?.pavements.filter((p) => p.joints > 0) ?? []), ...(outdoor?.garden ? [{ rect: outdoor.garden.rect }] : []), ...(outdoor?.annexes ?? []), ...terraces];
   // extensión del dibujo: la casa y, si se muestra, la solera exterior
   const ex = {
     minX: Math.min(minX, ...solera.map((p) => p.rect[0])), minY: Math.min(minY, ...solera.map((p) => p.rect[1])),
@@ -242,6 +255,32 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
   out.push(`<rect x="${n4(vb.x)}" y="${n4(vb.y)}" width="${n4(vb.w)}" height="${n4(vb.h)}" fill="#fefdfb"/>`);
 
   if (outdoor) out.push(outdoorSvg(layout, outdoor, !!o.showLabels));
+  for (const an of terraces) {
+    const [ax0, ay0, ax1, ay1] = an.rect;
+    const tr = an.terrace!;
+    const pt = 0.15;
+    const e0 = ax0 - 0.1;
+    const f0 = ay0 - 0.08;
+    const f1 = ay1 + 0.08;
+    out.push(`<g data-terrace="${esc(an.id)}" pointer-events="none">`);
+    out.push(`<rect x="${n4(e0)}" y="${n4(f0)}" width="${n4(ax1 - e0)}" height="${n4(f1 - f0)}" fill="#f1dccd" stroke="#b5654a" stroke-width="0.01"/>`);
+    // retícula del pavimento de terracota (piezas de 0,30 m)
+    for (let x = e0 + pt + 0.3; x < ax1 - 0.05; x += 0.3) out.push(`<line x1="${n4(x)}" y1="${n4(f0 + pt)}" x2="${n4(x)}" y2="${n4(f1 - pt)}" stroke="#d9b39c" stroke-width="0.006"/>`);
+    for (let y = f0 + pt + 0.3; y < f1 - pt - 0.05; y += 0.3) out.push(`<line x1="${n4(e0 + pt)}" y1="${n4(y)}" x2="${n4(ax1)}" y2="${n4(y)}" stroke="#d9b39c" stroke-width="0.006"/>`);
+    // peto encalado (cortado): tres lados, con el hueco de la llegada de los escalones
+    const segs: [number, number, number, number][] = [[e0, f0, ax1, f0 + pt], [e0, f1 - pt, ax1, f1]];
+    if (tr.gap) segs.push([e0, f0 + pt, e0 + pt, tr.gap[0]], [e0, tr.gap[1], e0 + pt, f1 - pt]);
+    else segs.push([e0, f0 + pt, e0 + pt, f1 - pt]);
+    for (const [a, b, c, d] of segs) out.push(`<rect x="${n4(a)}" y="${n4(b)}" width="${n4(c - a)}" height="${n4(d - b)}" fill="#2f3430"/>`);
+    if (o.showLabels) {
+      const cx = (e0 + ax1) / 2;
+      const cy = (ay0 + ay1) / 2;
+      out.push(`<text x="${n4(cx)}" y="${n4(cy)}" font-size="0.18" font-weight="600" text-anchor="middle" fill="#7a3f2c" transform="rotate(-90 ${n4(cx)} ${n4(cy)})">${esc(tr.label)}</text>`);
+      out.push(`<text x="${n4(cx + 0.3)}" y="${n4(cy)}" font-size="0.12" text-anchor="middle" fill="#7a3f2c" class="tnum" transform="rotate(-90 ${n4(cx + 0.3)} ${n4(cy)})">+${fmtM(an.height + 0.03)} · ${fmtM(ax1 - e0 - pt)} × ${fmtM(f1 - f0 - 2 * pt)} m · peto ${fmtM(tr.parapet)} m · sobre el cuarto técnico</text>`);
+      if (tr.gap) out.push(`<text x="${n4(e0 - 0.15)}" y="${n4((tr.gap[0] + tr.gap[1]) / 2)}" font-size="0.11" text-anchor="middle" fill="#687066" transform="rotate(-90 ${n4(e0 - 0.15)} ${n4((tr.gap[0] + tr.gap[1]) / 2)})">escalones</text>`);
+    }
+    out.push('</g>');
+  }
 
   // Estancias
   out.push('<g class="rooms">');
@@ -388,7 +427,32 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
     const [ax, ay, bx, by] = st.rect;
     const box: Vec2[] = [[ax, ay], [bx, ay], [bx, by], [ax, by]];
     const stc = STATUS_STYLE[st.status];
-    if (st.fromLevel === level?.id) {
+    if (st.fromLevel === level?.id && st.u) {
+      // escalera en U: peldaños, rellano y meseta, con la línea de huella por los dos tramos
+      out.push(`<polygon points="${pts(box)}" fill="#fefdfb" stroke="#2f3430" stroke-width="0.014"/>`);
+      const pcs = uStairPieces(st, elevOf(st.toLevel) - elevOf(st.fromLevel));
+      for (const pc of pcs) {
+        const [x0, y0, x1, y1] = pc.rect;
+        out.push(`<polygon points="${pts([[x0, y0], [x1, y0], [x1, y1], [x0, y1]])}" fill="${pc.kind === 'peldaño' ? 'none' : '#f4f2ec'}" stroke="${pc.kind === 'peldaño' ? '#7d8277' : '#2f3430'}" stroke-width="${pc.kind === 'peldaño' ? 0.008 : 0.012}"/>`);
+      }
+      const f1 = pcs.filter((p) => p.flight === 1 && p.kind === 'peldaño');
+      const f2 = pcs.filter((p) => p.flight === 2 && p.kind === 'peldaño');
+      const land = pcs.find((p) => p.kind === 'rellano')!;
+      const mes = pcs.find((p) => p.kind === 'meseta')!;
+      const xc = (r: [number, number, number, number]) => (r[0] + r[2]) / 2;
+      const yc = (r: [number, number, number, number]) => (r[1] + r[3]) / 2;
+      const d = f1[0].dir;
+      const start: Vec2 = [xc(f1[0].rect), d > 0 ? f1[0].rect[1] + 0.08 : f1[0].rect[3] - 0.08];
+      const end: Vec2 = [xc(mes.rect), d > 0 ? mes.rect[3] - 0.12 : mes.rect[1] + 0.12];
+      const walk: Vec2[] = [start, [xc(f1[0].rect), yc(land.rect)], [xc(f2[0].rect), yc(land.rect)], end];
+      out.push(`<polyline points="${pts(walk)}" fill="none" stroke="${stc.color}" stroke-width="0.02"/><circle cx="${n4(start[0])}" cy="${n4(start[1])}" r="0.05" fill="${stc.color}"/>`);
+      const ad = -d;
+      out.push(`<path d="M ${n4(end[0] - 0.1)} ${n4(end[1] - ad * 0.18)} L ${n4(end[0])} ${n4(end[1])} L ${n4(end[0] + 0.1)} ${n4(end[1] - ad * 0.18)}" fill="none" stroke="${stc.color}" stroke-width="0.02"/>`);
+      const tx = xc(f1[0].rect) + 0.16;
+      const ty = (f1[0].rect[1] + f1[f1.length - 1].rect[3]) / 2;
+      out.push(`<text x="${n4(tx)}" y="${n4(ty)}" font-size="0.15" fill="${stc.color}" transform="rotate(${d > 0 ? 90 : -90} ${n4(tx)} ${n4(ty)})" text-anchor="middle">sube</text>`);
+      out.push(`<text x="${n4(xc(land.rect))}" y="${n4(yc(land.rect) + 0.2)}" font-size="0.11" fill="#687066" text-anchor="middle">rellano +${fmtM(land.top)} m</text>`);
+    } else if (st.fromLevel === level?.id) {
       out.push(`<polygon points="${pts(box)}" fill="#fefdfb" stroke="#2f3430" stroke-width="0.014"/>`);
       const alongX = st.up === '+x' || st.up === '-x';
       for (let i = 1; i < st.risers; i++) {
@@ -434,7 +498,7 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
   for (const r of (layout.railings ?? []).filter((x) => x.levelId === level?.id)) {
     const edge = r.material === 'vidrio' ? '#6f8a94' : '#3d4239';
     out.push(`<g data-railing="${esc(r.id)}" pointer-events="none"><polyline points="${pts(r.points)}" fill="none" stroke="${edge}" stroke-width="0.05"/><polyline points="${pts(r.points)}" fill="none" stroke="${r.material === 'vidrio' ? '#dce8ec' : '#fefdfb'}" stroke-width="0.02"/></g>`);
-    if (o.showLabels && r.points.length === 2) {
+    if (o.showLabels && r.points.length === 2 && Math.hypot(r.points[1][0] - r.points[0][0], r.points[1][1] - r.points[0][1]) >= 2.4) {
       const [[ax, ay], [bx, by]] = r.points;
       const vertical = Math.abs(bx - ax) < 1e-6;
       const lx = (ax + bx) / 2 + (vertical ? 0.18 : 0);
@@ -577,7 +641,7 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
     out.push('<g class="dims">');
     out.push(outdoor ? dim([minX, minY], [maxX, minY], -1.2 - (minY - ex.minY), `${fmtM(L)} m`, m('largo')) : dim([minX, maxY], [maxX, maxY], 1.0, `${fmtM(L)} m`, m('largo')));
     // si hay un anexo pegado al lateral izquierdo, las cotas verticales se apartan por fuera de él
-    const leftExtra = Math.max(0, ...(outdoor?.annexes ?? []).filter((x) => x.rect[2] <= minX + 0.01).map((x) => minX - x.rect[0]));
+    const leftExtra = Math.max(0, ...[...(outdoor?.annexes ?? []), ...terraces].filter((x) => x.rect[2] <= minX + 0.01).map((x) => minX - x.rect[0]));
     out.push(dim([minX, minY], [minX, maxY], 0.8 + leftExtra, `${fmtM(W)} m`, m('ancho')));
     // cadenas de cotas por fachada: esquinas exteriores y bordes de cada hueco de este nivel
     const lvlTop = lvlElev + (level?.wallHeight ?? 2.5) + 0.3;

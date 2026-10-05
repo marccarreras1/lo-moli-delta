@@ -145,7 +145,7 @@ function Piece({ f, mats, options }: { f: Furniture; mats: MaterialSet; options:
         </>
       );
     case 'encimera': return <Kitchen w={w} d={d} h={h} modules={f.modules ?? []} mats={mats} underStair={f.underStair} />;
-    case 'isla': return <Island w={w} d={d} h={h} mats={mats} />;
+    case 'isla': return <Island w={w} d={d} h={h} mats={mats} modules={f.modules} />;
     case 'taburete': return <Stool h={h} mats={mats} />;
     case 'banera':
       return (
@@ -450,7 +450,7 @@ function Kitchen({ w, d, h, modules, mats, underStair }: { w: number; d: number;
  *   Revestimiento de piezas verticales de terracota en junta continua con llaga blanca y
  *   encimera clara de cantos redondeados con vuelo.
  */
-function Island({ w, d, h, mats }: { w: number; d: number; h: number; mats: MaterialSet }) {
+function Island({ w, d, h, mats, modules }: { w: number; d: number; h: number; mats: MaterialSet; modules?: KitchenModule[] }) {
   const top = 0.05;
   const wall = 0.06;
   const recess = Math.min(1.0, w - 3 * wall - 0.3);
@@ -481,6 +481,27 @@ function Island({ w, d, h, mats }: { w: number; d: number; h: number; mats: Mate
       {/* objetos en las baldas */}
       <Lathe x={(sx0 + sx1) / 2} y={0.44} z={zOpen + 0.2} profile={[[0, 0], [0.07, 0], [0.11, 0.06], [0.1, 0.11], [0.05, 0.13], [0, 0.13]]} m={mats.clay} />
       <Lathe x={(sx0 + sx1) / 2} y={0.04} z={zOpen + 0.2} profile={[[0, 0], [0.08, 0], [0.09, 0.12], [0.06, 0.16], [0, 0.16]]} m={mats.clayLight} />
+      {/* electrodomésticos integrados en la cara de la cocina (+z), centrados: frentes de roble */}
+      {(() => {
+        const mods = modules ?? [];
+        const total = mods.reduce((a, m) => a + m.w, 0);
+        let c = -total / 2;
+        return mods.map((m, k) => {
+          const x = c + m.w / 2;
+          c += m.w;
+          const rows = m.kind === 'frigorifico' ? [0.5, bodyH - 0.12 - 0.5] : [bodyH - 0.12];
+          let y = 0.1;
+          return (
+            <group key={k}>
+              {rows.map((rh, r) => {
+                const el = <B key={r} x={x} y={y + 0.0015} z={d / 2 + 0.009} w={m.w - 0.003} h={rh - 0.003} d={0.018} m={mats.wood} />;
+                y += rh;
+                return el;
+              })}
+            </group>
+          );
+        });
+      })()}
       {/* encimera clara gruesa de cantos redondeados, con vuelo */}
       <RoundSlab y={bodyH} w={w + 0.06} d={d + 0.06} h={top - 0.012} r={0.08} m={mats.counter} />
     </>

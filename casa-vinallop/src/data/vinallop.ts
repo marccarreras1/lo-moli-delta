@@ -68,11 +68,23 @@ const ARM_Y1 = 1.95; // eje del fondo del armario
 /** Puerta del baño: el arco dibujado en la línea del pasillo, junto a la escalera (propiedad). */
 const BANO_PUERTA_X0 = cx(5.05);
 const ALT_X1 = r2(X_ESC + TP / 2); // 6,35 borde del altell
-const ESC: [number, number, number, number] = [ALT_X1, r2(Y_PASILLO + TP / 2), cx(7.25), y1];
-/** cocina bajo la escalera: desde el 8.º peldaño la cara inferior queda por encima de la encimera (0,90 m) */
-const ESC_HUECO = r2(ESC[1] + ((ESC[3] - ESC[1]) * 7) / 15);
+/**
+ * Escalera en U con rellano (propiedad): 2,00 m de ancho (dos tramos de 1,00 m) contra el frontal B.
+ * Primer tramo por el lado de la cocina (8 tabicas) hasta el rellano de 1,00 m del fondo; vuelta por
+ * el lado del altell (7 tabicas) hasta la meseta de llegada a 2,80 m. Huella de 0,25 m.
+ */
+const ESC_U = { landing: 1.0, firstRisers: 8, tread: 0.25, firstSide: 'x1' as const };
+const ESC_X1 = r2(ALT_X1 + 2.0); // 8,35
+const ESC: [number, number, number, number] = [ALT_X1, r2(y1 - ESC_U.landing - (15 - ESC_U.firstRisers - 1) * ESC_U.tread - 0.5), ESC_X1, y1];
+/** arranque del primer tramo y llegada del segundo (meseta de 0,50 m) */
+const ESC_ARRANQUE = r2(y1 - ESC_U.landing - (ESC_U.firstRisers - 1) * ESC_U.tread);
+const ESC_MESETA = r2(ESC[1] + 0.5);
+const ESC_XM = r2((ESC[0] + ESC[2]) / 2);
 /** mesa de comedor entre la isla y el salón */
-const MESA_COM: Vec2 = [11.45, 1.7];
+const MESA_COM: Vec2 = [12.0, 1.7];
+/** isla: 1,00 m de paso hasta la cocina y ≈0,95 m hasta el primer tramo de la escalera */
+const ISLA_X = r2(ESC_X1 + 0.95 + 0.75);
+const ISLA_Y = r2(y1 - 0.6 - 1.0 - 0.5);
 /** baño: zona húmeda de 1,20 m al fondo (contra el frontal B), con las dos duchas enfrentadas */
 const B_X0 = r2(X_DORM + TP / 2); // 3,85 cara del tabique del dormitorio
 const B_X1 = r2(X_ESC - TP / 2); // 6,25 cara del tabique de la escalera
@@ -134,6 +146,11 @@ const openings: Opening[] = [
     id: 'puerta-120', label: 'Puerta de entrada (1,20 × 2,60 m)', wallId: 'muro-B', kind: 'puerta', offset: onAB(X_PUERTA), width: 1.2, sill: 0, height: 2.6,
     system: { type: 'abatible', leaves: 1, status: 'interpretado' }, swing: { hinge: 'inicio', dir: -1 }, entrance: true, status: 'documentado', sourceId: S.planta,
     note: 'Anchura y posición documentadas (cadena de cotas y «120 cm» del frontal B). En el muro de 0,60 m. Una hoja con bisagra en el lado del 9,50, abre hacia dentro. Altura de 2,60 m (propiedad; el alzado B dibujaba ≈3,0 m).',
+  },
+  {
+    id: 'puerta-terraza', label: 'Puerta del altell a la terraza (lateral izquierdo)', wallId: 'muro-izquierdo', kind: 'puerta', offset: 0.6, width: 0.9, sill: 3.03, height: 2.1, glazed: 'transparente',
+    system: { type: 'abatible', leaves: 1, status: 'propuesto' }, swing: { hinge: 'inicio', dir: -1 }, status: 'propuesto', sourceId: S.prop,
+    note: 'Propuesta de la propiedad: terraza para el altell encima del cuarto técnico, con acceso desde el lateral. Puerta de vidrio de 0,90 m en el lateral izquierdo, en la parte del altell junto al frontal A (lejos de la cama). Abre hacia dentro. La terraza queda a +3,03 (cubierta del cuarto de 3,00 m más el pavimento) y el altell a +2,80: hace falta un escalón interior de ≈0,23 m. Alternativa recomendable: bajar el cuarto técnico a ≈2,75 m para que la terraza quede enrasada con el altell (con umbral y pendiente hacia fuera). Pendiente: impermeabilización de la cubierta del cuarto, desagüe, carga de uso y cálculo del arquitecto.',
   },
   {
     id: 'puerta-70', label: 'Puerta de vidrio del baño (70 cm, desde la ducha)', wallId: 'muro-B', kind: 'puerta', offset: onAB(cx(5.2)), width: 0.7, sill: 0, height: 2.2, glazed: 'mate',
@@ -214,7 +231,7 @@ const rooms: Room[] = [
     [ARM_X1 + TP / 2, Y_PASILLO + TP / 2], [X_ESC - TP / 2, Y_PASILLO + TP / 2], [X_ESC - TP / 2, y1], [X_DORM + TP / 2, y1], [X_DORM + TP / 2, ARM_Y1 + TP / 2], [ARM_X1 + TP / 2, ARM_Y1 + TP / 2],
   ], 'documentado', S.prop, 'Entrada desde el pasillo, junto a la escalera (propiedad). Al fondo, zona húmeda común de 2,40 × 1,20 m con dos duchas enfrentadas (confirmado); lavabo a la izquierda e inodoro a la derecha según se entra (propuesta). La puerta exterior de 70 cm cae en la zona húmeda: pendiente.'),
   room('armario-pasillo', 'pb', 'Armario', rect(X_DORM + TP / 2, Y_PASILLO + TP / 2, ARM_X1 - TP / 2, ARM_Y1 - TP / 2), 'documentado', S.prop, 'Armario que se abre desde el pasillo (propiedad), en el rectángulo dibujado junto a la línea del pasillo.'),
-  room('dia', 'pb', 'Cocina y estar', rect(ALT_X1, y0, x1, y1), 'documentado', S.prop, 'Doble altura (propiedad). Entrada al baño por el pasillo. Escalera en L, cocina junto a la escalera con isla central, sofá en L y estufa.', { openTo: ['pasillo'] }),
+  room('dia', 'pb', 'Cocina y estar', rect(ALT_X1, y0, x1, y1), 'documentado', S.prop, 'Doble altura (propiedad). Entrada al baño por el pasillo. Escalera en U con rellano, cocina junto a la escalera con isla central, sofá en L y estufa.', { openTo: ['pasillo'] }),
   room('altell', 'altell', 'Altell', rect(x0, y0, ALT_X1, y1), 'documentado', S.prop, 'Zona diáfana a 2,80 m con cama de matrimonio (propiedad), sobre el dormitorio, el pasillo y el baño. La zona de día es de doble altura. Borde hacia la doble altura en el 6,05, con barandilla.'),
 ];
 
@@ -246,18 +263,15 @@ const furniture: Furniture[] = [
   f({ id: 'inodoro', type: 'inodoro', label: 'Inodoro', roomId: 'bano', x: r2(B_X0 + 0.325), y: 2.42, w: 0.38, d: 0.65, h: 0.42, rot: 270, status: 'propuesto', note: 'En el lateral derecho según se entra, fuera del eje de la puerta para dar privacidad. Saneamiento a comprobar (el boceto marcaba «×» de agua en este tabique).' }),
   // cocina lineal contra el frontal B (propiedad), entre la escalera y la puerta de entrada.
   // Con rot 180 el eje local va de la puerta hacia la escalera: frigorífico, placa y horno, lavavajillas, fregadero.
-  f({ id: 'encimera', type: 'encimera', label: 'Cocina', roomId: 'dia', x: cx(8.35), y: r2(YB - 0.3), w: 2.2, d: 0.6, h: 0.9, rot: 180, status: 'confirmado',
-    modules: [{ kind: 'frigorifico', w: 0.55 }, { kind: 'placa-horno', w: 0.6 }, { kind: 'lavavajillas', w: 0.45 }, { kind: 'fregadero', w: 0.6 }],
-    note: 'Cocina junto a la escalera (propiedad), contra el frontal B. Módulos propuestos sobre los dos puntos de agua del boceto: fregadero y lavavajillas; placa con horno debajo y frigorífico integrado bajo encimera (no cabe una columna: al lado está la puerta de entrada). Frentes de roble con nudos dentro de una envolvente mineral clara, encimera y salpicadero coordinados, balda corrida gruesa y grifo extraíble negro mate (referencia 01).' }),
-  // isla de obra: estructura de la referencia 05 y acabado de la 06; deja 1,00 m de paso hasta la cocina
-  f({ id: 'isla', type: 'isla', label: 'Isla de obra', roomId: 'dia', x: cx(9.05), y: r2(YB - 0.6 - 1.0 - 0.475), w: 1.6, d: 0.95, h: 0.9, rot: 0, status: 'propuesto',
-    note: 'Isla central (propiedad). Estructura de la referencia 05: hueco de 1,00 m para tres taburetes y dos estantes abiertos de 0,30 m en el mismo frente (hacia el frontal A), apoyos macizos. Acabado de la referencia 06: piezas verticales de terracota a junta corrida con juntas claras y encimera clara de esquinas suavizadas. 1,60 × 0,95 m, altura 0,90 m: deja 1,00 m de paso hasta la cocina (también hasta el tramo bajo la escalera) y ≈1,3 m detrás de los taburetes. El boceto dibuja ≈1,55 × 1,65 m (se conserva como trazo).' }),
-  ...[8.4, 8.8, 9.2].map((x, i) => f({ id: `taburete-${i + 1}`, type: 'taburete', label: 'Taburete', roomId: 'dia', x: cx(x), y: r2(YB - 0.6 - 1.0 - 0.95 - 0.2), w: 0.38, d: 0.38, h: 0.65, rot: 0, status: 'propuesto' })),
-  // cocina también bajo la escalera (propiedad): tramo de encimera en el lado abierto de la escalera, donde los peldaños
-  // ya vuelan por encima de la encimera; forma una L con la cocina del frontal B
-  f({ id: 'encimera-escalera', type: 'encimera', label: 'Cocina bajo la escalera', roomId: 'dia', x: r2(ESC[2] - 0.3), y: r2((ESC_HUECO + y1) / 2), w: r2(y1 - ESC_HUECO), d: 0.6, h: 0.9, rot: 270, underStair: true, status: 'propuesto',
-    modules: [{ kind: 'cajones', w: 0.6 }, { kind: 'puertas', w: r2(y1 - ESC_HUECO - 1.2) }, { kind: 'cajones', w: 0.6 }],
-    note: 'Indicación de la propiedad: «debajo la escalera pon cocina también». Encimera de 0,60 m en el lado abierto de la escalera, desde donde los peldaños quedan por encima de 0,90 m hasta el frontal B, unida en L con la cocina existente. Bajo la escalera, la escalera pasa a ser una losa escalonada. Cajones y puertas propuestos (mismos frentes de roble y encimera); detrás queda un hueco de ≈0,60 m bajo los peldaños para almacenaje. Sin salpicadero ni baldas altas: encima vuelan los peldaños. La altura libre sobre la encimera va de ≈0,20 m en el arranque a más de 1 m junto al frontal B.' }),
+  f({ id: 'encimera', type: 'encimera', label: 'Cocina', roomId: 'dia', x: r2((ESC_X1 + 9.75) / 2), y: r2(YB - 0.3), w: r2(9.75 - ESC_X1), d: 0.6, h: 0.9, rot: 180, status: 'confirmado',
+    modules: [{ kind: 'cajones', w: 0.2 }, { kind: 'placa-horno', w: 0.6 }, { kind: 'fregadero', w: 0.6 }],
+    note: 'Cocina junto a la escalera (propiedad), contra el frontal B, entre la escalera en U y la puerta de entrada: 1,40 m. Fregadero junto a la escalera (sobre el punto de agua del boceto), placa con horno debajo y cajonera estrecha. La escalera en U ocupa 0,80 m de la cocina anterior: el frigorífico y el lavavajillas pasan a la isla, en la cara de la cocina. Frentes de roble con nudos dentro de una envolvente mineral clara, encimera y salpicadero coordinados, balda corrida gruesa y grifo extraíble negro mate (referencia 01).' }),
+  // isla de obra: estructura de la referencia 05 y acabado de la 06; deja 1,00 m de paso hasta la cocina y ≈0,95 m hasta la escalera
+  f({ id: 'isla', type: 'isla', label: 'Isla de obra', roomId: 'dia', x: ISLA_X, y: ISLA_Y, w: 1.5, d: 1.0, h: 0.9, rot: 0, status: 'propuesto',
+    modules: [{ kind: 'frigorifico', w: 0.6 }, { kind: 'lavavajillas', w: 0.6 }],
+    note: 'Isla central (propiedad). Estructura de la referencia 05: hueco para tres taburetes y estantes abiertos en el frente del frontal A, apoyos macizos. Acabado de la referencia 06: piezas verticales de terracota a junta corrida con juntas claras y encimera clara de esquinas suavizadas. 1,50 × 1,00 m, altura 0,90 m. Con la escalera en U, en la cara de la cocina lleva el frigorífico bajo encimera y el lavavajillas (frentes de roble, a 1,00 m del fregadero); hay que llevar agua, desagüe y electricidad por el suelo. Deja 1,00 m de paso hasta la cocina y ≈0,95 m hasta el primer tramo de la escalera. El boceto dibuja ≈1,55 × 1,65 m (se conserva como trazo).' }),
+  // taburetes centrados en el hueco de piernas (1,00 m, en el lado de la escalera)
+  ...[-0.4, 0, 0.4].map((dx, i) => f({ id: `taburete-${i + 1}`, type: 'taburete', label: 'Taburete', roomId: 'dia', x: r2(ISLA_X - 0.19 + dx), y: r2(ISLA_Y - 0.5 - 0.2), w: 0.38, d: 0.38, h: 0.65, rot: 0, status: 'propuesto' })),
   // mesa de comedor para 4 (propiedad) entre la isla y el salón, junto al ventanal
   f({ id: 'mesa-comedor', type: 'mesa', onlyIf: { salon: 'sofa-l', mesaComedor: 'rectangular' }, label: 'Mesa de comedor (4 plazas)', roomId: 'dia', x: MESA_COM[0], y: MESA_COM[1], w: 1.2, d: 0.8, h: 0.75, rot: 0, status: 'propuesto', color: '#8d5c3c',
     note: 'Mesa de comedor para cuatro (indicación de la propiedad): madera maciza de 120 × 80 cm, como la mesa del salón, con dos sillas a cada lado. Entre la isla y el sofá, cerca del ventanal; medidas y modelo propuestos.' }),
@@ -280,11 +294,11 @@ const furniture: Furniture[] = [
     note: 'Variante (imagen de referencia de la propiedad): volumen de obra encalado de 1,50 m pegado al lateral derecho y hasta la cubierta, con hogar cerrado acristalado de ≈75 × 65 cm, leñero vertical empotrado y banco de obra de 0,42 m con remate oscuro delante del fuego, que continúa en el sofá de obra del lateral. Sustituye a la estufa redonda. Salida de humos por dentro del volumen hasta la cubierta. Pendiente: modelo de hogar, salida de humos, distancias a materiales combustibles y aire de combustión. Incompatible con la variante de puerta al comedor exterior en este mismo lateral.' }),
   // variante de salón (propiedad): dos sofás enfrentados en el centro, perpendiculares a los frontales A y B, y la mesa
   // de comedor rectangular en el rincón de la cristalera (donde va la variante de chimenea), con banco de obra
-  f({ id: 'sofa-enfrentado-1', type: 'sofa', label: 'Sofá enfrentado 1 (variante)', roomId: 'dia', x: 11.5, y: 2.9, w: 2.0, d: 0.9, h: 0.8, rot: 270, status: 'propuesto', onlyIf: { salon: 'enfrentados' },
-    note: 'Variante: dos sofás de 2,00 × 0,90 m en el centro del estar, perpendiculares a los frontales A y B y mirándose, con la mesa baja entre ellos. Deja ≈0,90 m hasta la isla, ≈0,70 m hasta el frontal B, libre el barrido de la puerta de entrada y ≈1,4 m de paso junto al ventanal.' }),
-  f({ id: 'sofa-enfrentado-2', type: 'sofa', label: 'Sofá enfrentado 2 (variante)', roomId: 'dia', x: 14.0, y: 2.9, w: 2.0, d: 0.9, h: 0.8, rot: 90, status: 'propuesto', onlyIf: { salon: 'enfrentados' } }),
-  f({ id: 'alfombra-enfrentados', type: 'alfombra', label: 'Alfombra de yute', roomId: 'dia', x: 12.75, y: 2.9, w: 2.4, d: 1.7, h: 0.012, rot: 90, status: 'propuesto', onlyIf: { salon: 'enfrentados' } }),
-  f({ id: 'mesa-baja-enfrentados', type: 'mesa-centro', label: 'Mesa baja de madera 110 × 80', roomId: 'dia', x: 12.75, y: 2.9, w: 1.1, d: 0.6, h: 0.42, rot: 90, status: 'propuesto', color: '#8d5c3c', onlyIf: { salon: 'enfrentados' } }),
+  f({ id: 'sofa-enfrentado-1', type: 'sofa', label: 'Sofá enfrentado 1 (variante)', roomId: 'dia', x: 12.0, y: 2.9, w: 2.0, d: 0.9, h: 0.8, rot: 270, status: 'propuesto', onlyIf: { salon: 'enfrentados' },
+    note: 'Variante: dos sofás de 2,00 × 0,90 m en el centro del estar, perpendiculares a los frontales A y B y mirándose, con la mesa baja entre ellos. Deja ≈0,75 m hasta la isla, ≈0,70 m hasta el frontal B, libre el barrido de la puerta de entrada y ≈1,4 m de paso junto al ventanal.' }),
+  f({ id: 'sofa-enfrentado-2', type: 'sofa', label: 'Sofá enfrentado 2 (variante)', roomId: 'dia', x: 14.5, y: 2.9, w: 2.0, d: 0.9, h: 0.8, rot: 90, status: 'propuesto', onlyIf: { salon: 'enfrentados' } }),
+  f({ id: 'alfombra-enfrentados', type: 'alfombra', label: 'Alfombra de yute', roomId: 'dia', x: 13.25, y: 2.9, w: 2.4, d: 1.7, h: 0.012, rot: 90, status: 'propuesto', onlyIf: { salon: 'enfrentados' } }),
+  f({ id: 'mesa-baja-enfrentados', type: 'mesa-centro', label: 'Mesa baja de madera 110 × 80', roomId: 'dia', x: 13.25, y: 2.9, w: 1.1, d: 0.6, h: 0.42, rot: 90, status: 'propuesto', color: '#8d5c3c', onlyIf: { salon: 'enfrentados' } }),
   f({ id: 'mesa-comedor-rincon', type: 'mesa', label: 'Mesa de comedor rectangular (rincón de la cristalera)', roomId: 'dia', x: 15.15, y: 1.2, w: 1.2, d: 0.8, h: 0.75, rot: 90, status: 'propuesto', color: '#8d5c3c', onlyIf: { salon: 'enfrentados' },
     note: 'Variante: mesa de comedor de 120 × 80 cm en el rincón del lateral derecho junto a la cristalera (sitio de la variante de chimenea), con banco de obra contra el lateral y dos sillas. En esta variante no hay estufa: el fuego tendría que ir a otro sitio (p. ej. al fondo, contra el frontal B entre los sofás).' }),
   f({ id: 'banco-comedor-rincon', type: 'banco', label: 'Banco de obra del comedor', roomId: 'dia', x: r2(x1 - 0.23), y: 1.2, w: 1.5, d: 0.45, h: 0.8, rot: 90, status: 'propuesto', onlyIf: { salon: 'enfrentados' } }),
@@ -335,6 +349,7 @@ const outdoor: Outdoor = {
     {
       id: 'cuarto-tecnico', label: 'Cuarto técnico y lavadero', rect: [-2.5, 0, 0, W], height: 3.0, wall: 0.3,
       door: { side: 'y1', at: -1.3, width: 0.9, height: 2.1 }, status: 'confirmado',
+      terrace: { parapet: 1.0, gap: [2.35, 3.05], label: 'Terraza del altell', status: 'propuesto' },
       note: 'Previsto por la propiedad: 2,50 m de fondo por el ancho total de la casa (5,22 m) y 3,00 m de alto, con acceso por el exterior. Colocado en el lateral izquierdo (el derecho lo ocupan el algarrobo y el comedor): posición a confirmar. Interior ≈2,20 × 4,62 m para lavadora, termo o aerotermia, cuadro eléctrico y almacén. Puerta exterior de 0,90 m hacia el lado de la entrada (posición propuesta).',
     },
   ],
@@ -343,7 +358,7 @@ const outdoor: Outdoor = {
     {
       id: 'escalones-volados', label: 'Escalones volados de sabina', face: { axis: 'x', at: -2.5, outward: -1 }, start: r2(W - 0.55), dir: -1,
       top: 3.0, steps: 12, run: 0.16, projection: 0.6, width: 0.2, thickness: 0.09, status: 'propuesto',
-      note: 'Escalera de pasos alternos con piezas de madera de sabina (o piedra) empotradas en el lateral del cuarto técnico, en zigzag, al estilo ibicenco de la referencia de la propiedad. Sube a la cubierta del cuarto técnico (3,00 m) en 12 pisadas de 0,25 m, alternando pie izquierdo y derecho. Pendiente de cálculo: empotramiento de las piezas (≥ 0,30 m en el muro), barandilla o asidero y peto en la cubierta si se usa como mirador.',
+      note: 'Escalera de pasos alternos con piezas de madera de sabina (o piedra) empotradas en el lateral del cuarto técnico, en zigzag, al estilo ibicenco de la referencia de la propiedad. Sube a la cubierta del cuarto técnico (3,00 m) en 12 pisadas de 0,25 m, alternando pie izquierdo y derecho. Ahora llegan también a la terraza del altell (hueco en el peto). Pendiente de cálculo: empotramiento de las piezas (≥ 0,30 m en el muro) y barandilla o asidero.',
     },
   ],
   // jardín seco delante de la fachada de la entrada, hasta los primeros olivos (propiedad; referencia «11 plantes qui
@@ -394,10 +409,9 @@ const outdoor: Outdoor = {
 };
 
 // ---------- lámparas colgantes interiores (alternativas A y B; ubicación sin elegir) ----------
-const ISLA_Y = r2(YB - 0.6 - 1.0 - 0.475);
 const MESA_Y = r2(YB - 0.85 - 0.8);
 const pendants: PendantGroup[] = [
-  { id: 'lamparas-isla', location: 'isla', label: 'Sobre la isla', points: [[cx(8.3), ISLA_Y], [cx(8.8), ISLA_Y], [cx(9.3), ISLA_Y]], bottom: 1.65, status: 'propuesto', note: 'Tres piezas a 0,50 m sobre la isla de 1,60 m; parte baja a ≈0,75 m de la encimera.' },
+  { id: 'lamparas-isla', location: 'isla', label: 'Sobre la isla', points: [[r2(ISLA_X - 0.45), ISLA_Y], [ISLA_X, ISLA_Y], [r2(ISLA_X + 0.45), ISLA_Y]], bottom: 1.65, status: 'propuesto', note: 'Tres piezas a 0,45 m sobre la isla de 1,50 m; parte baja a ≈0,75 m de la encimera.' },
   { id: 'lamparas-salon', location: 'salon', label: 'Sobre la mesa', points: [[rx(12.45), MESA_Y], [rx(12.85), MESA_Y], [rx(13.25), MESA_Y]], bottom: 2.0, status: 'propuesto', note: 'Tres piezas sobre la mesa de 110 × 80 cm. Con mesa baja se cuelgan a 2,00 m para no estorbar al pasar.' },
 ];
 
@@ -412,12 +426,12 @@ const views: CameraPreset[] = [
   view({ id: 'v05-algarrobo', label: '5 · Mesa y lámpara bajo el algarrobo', group: 'exterior', position: [14.6, -8.2, 1.6], target: [MESA_EXT[0] + 0.3, MESA_EXT[1] + 1.0, 1.5], fov: 56 }),
   view({ id: 'v06-desde-comedor', label: '6 · La casa desde el comedor exterior', group: 'exterior', position: [21.4, -5.4, 1.6], target: [10, -0.6, 2.2], fov: 56 }),
   view({ id: 'v00-interior-cenital', label: 'Interior · vista cenital 3D', group: 'interior', topDown: true, position: [8.2, 5.6, 19.5], target: [8.2, 2.5, 0], fov: 44 }),
-  view({ id: 'v07-salon-ventanal', label: '7 · Salón: sofá de obra y ventanal', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.3, 1.2, 1.6], target: [15.4, 3.9, 0.7], fov: 66 }),
+  view({ id: 'v07-salon-ventanal', label: '7 · Salón: sofá de obra y ventanal', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.95, 0.85, 1.6], target: [15.4, 3.9, 0.7], fov: 66 }),
   view({ id: 'v07b-fuego', label: '7b · Rincón de la cristalera (estufa, chimenea o comedor)', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.7, 2.15, 1.6], target: [16.0, 1.15, 1.25], fov: 62 }),
   view({ id: 'v08-ventanal-cocina', label: '8 · Del ventanal hacia cocina e isla', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.4, 0.8, 1.6], target: [9.2, 3.6, 1.0], fov: 60 }),
   view({ id: 'v09-cocina-taburetes', label: '9 · Cocina desde el lado de los taburetes', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.3, 0.7, 1.6], target: [8.9, 3.2, 0.75], fov: 56 }),
   view({ id: 'v10-cocina-encimera', label: '10 · Isla desde la cocina', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.35, 3.75, 1.6], target: [8.7, 1.4, 0.7], fov: 58 }),
-  view({ id: 'v10b-cocina-escalera', label: '10b · Cocina bajo la escalera', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.2, 3.5, 1.6], target: [7.2, 3.6, 0.8], fov: 64 }),
+  view({ id: 'v10b-cocina-escalera', label: '10b · Escalera en U y cocina', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [11.4, 0.9, 1.6], target: [7.4, 3.4, 1.3], fov: 64 }),
   view({ id: 'v10c-comedor', label: '10c · Mesa de comedor para 4', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [13.9, 1.0, 1.6], target: [11.1, 1.9, 0.75], fov: 60 }),
   view({ id: 'v11-dormitorio', label: '11 · Dormitorio', group: 'interior', eyeLevel: true, roomId: 'dormitorio', elevation: 0, position: [3.45, 0.7, 1.6], target: [1.8, 3.9, 0.9], fov: 60 }),
   view({ id: 'v12-bano-entrada', label: '12 · Baño desde la entrada', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [5.5, 2.05, 1.6], target: [4.7, 4.6, 1.05], fov: 72 }),
@@ -427,6 +441,7 @@ const views: CameraPreset[] = [
   view({ id: 'v13-altell', label: '13 · Altell, vigas cemento y volta terracota', group: 'interior', eyeLevel: true, roomId: 'altell', elevation: 2.8, position: [4.9, 2.46, 1.6], target: [12, 2.46, 1.6], fov: 64 }),
   view({ id: 'v13b-volta', label: '13b · Vigas y volta desde la zona de día', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.2, 2.7, 1.6], target: [10.2, 2.46, 5.6], fov: 60 }),
   view({ id: 'v14-sin-cubierta', label: '14 · Vista sin cubierta', group: 'exterior', hideRoof: true, position: [9.2, 12, 25], target: [9.2, 3.2, 0], fov: 40 }),
+  view({ id: 'v18-terraza-altell', label: '18 · Terraza del altell sobre el cuarto técnico', group: 'exterior', position: [-5.6, -2.6, 8.2], target: [-0.6, 2.6, 3.2], fov: 52 }),
   view({ id: 'v17-cuarto-tecnico', label: '17 · Cuarto técnico y escalones volados', group: 'exterior', position: [-8.2, 8.6, 1.7], target: [-2.4, 3.0, 1.7], fov: 50 }),
   view({ id: 'v16-porche', label: '16 · Porche y solera de la cristalera', group: 'exterior', position: [4.4, -7.2, 1.6], target: [12.5, -1.0, 2.0], fov: 58 }),
   view({ id: 'v15-corte', label: '15 · Corte longitudinal', group: 'exterior', position: [8.9, -22, 3.4], target: [8.9, 2.46, 3.1], fov: 34, section: true }),
@@ -478,8 +493,8 @@ const PROJECT: ProjectData = {
   ],
   stairs: [
     {
-      id: 'escalera', fromLevel: 'pb', toLevel: 'altell', rect: ESC, up: '+y', upStatus: 'documentado', winderEnd: 0.65, openUnderFrom: ESC_HUECO, risers: 15, status: 'interpretado', sourceId: S.planta,
-      note: 'Escalera en L: arranca junto al pasillo (lado del frontal A), sube hacia el frontal B y en el tramo final gira con peldaños compensados para desembarcar en el altell. Sentido indicado por la propiedad; ancho ≈1,20 m y 15 tabicas de ≈0,187 m hasta 2,80 m. Huellas sobre la línea de huella: 10 rectas de 0,25 m en el tramo recto (2,50 m) y 4 compensadas en el giro, de ≈0,25 m a 0,50 m del borde interior; cumple tabica ≤ 0,20 m y huella ≥ 0,22 m sin alargar la escalera. Los peldaños compensados son estrechos junto al eje: lo revisará el arquitecto.',
+      id: 'escalera', fromLevel: 'pb', toLevel: 'altell', rect: ESC, up: '+y', upStatus: 'documentado', u: ESC_U, risers: 15, status: 'propuesto', sourceId: S.prop,
+      note: 'Escalera en U con rellano (decisión de la propiedad, sustituye a la escalera en L con peldaños compensados). 2,00 × 3,00 m contra el frontal B, entre el baño y la cocina. Primer tramo de 1,00 m de ancho por el lado de la cocina: arranca en el pasillo y sube hacia el frontal B con 8 tabicas hasta el rellano de 1,00 × 2,00 m a 1,49 m. Segundo tramo por el lado del altell: vuelve hacia el frontal A con 7 tabicas hasta una meseta de 1,00 × 0,50 m a 2,80 m, unida al altell. 15 tabicas de ≈0,187 m y huellas de 0,25 m (13 huellas en los tramos); cumple tabica ≤ 0,20 m y huella ≥ 0,22 m sin peldaños compensados. Ancho de tramo de 1,00 m (estricto: lo revisará el arquitecto). Ocupa 0,80 m de la cocina anterior y la cocina bajo la escalera desaparece: el frigorífico y el lavavajillas pasan a la isla. Bajo el segundo tramo y la meseta queda un volumen cerrado aprovechable como armario.',
     },
   ],
   traces,
@@ -496,12 +511,24 @@ const PROJECT: ProjectData = {
   ],
   railings: [
     {
-      id: 'barandilla-altell', levelId: 'altell', label: 'Barandilla del altell', points: [[ALT_X1, y0], [ALT_X1, r2(y1 - 0.65)]], height: 1.0, material: 'vidrio', spacing: 0, status: 'documentado', sourceId: S.prop,
-      note: 'Barandilla de cristal en el borde del altell hacia la doble altura (propiedad). Deja libre el desembarco de la escalera. Altura de 1,00 m (propiedad).',
+      id: 'barandilla-altell', levelId: 'altell', label: 'Barandilla del altell y de la meseta', points: [[ALT_X1, y0], [ALT_X1, ESC[1]], [ESC_XM, ESC[1]], [ESC_XM, ESC_MESETA]], height: 1.0, material: 'vidrio', spacing: 0, status: 'documentado', sourceId: S.prop,
+      note: 'Barandilla de cristal en el borde del altell hacia la doble altura (propiedad) y alrededor de la meseta de llegada de la escalera en U. Altura de 1,00 m (propiedad).',
     },
     {
-      id: 'barandilla-escalera', levelId: 'pb', label: 'Barandilla de la escalera', points: [[ESC[2], ESC[1]], [ESC[2], ESC[3]]], rise: [0.19, ALTELL], height: 1.0, material: 'vidrio', spacing: 0, status: 'documentado', sourceId: S.prop,
-      note: 'Barandilla de cristal en el lado abierto de la escalera, hacia la zona de día (propiedad). Sigue la pendiente desde el primer peldaño hasta el altell. Altura de 1,00 m (propiedad).',
+      id: 'barandilla-altell-escalera', levelId: 'altell', label: 'Barandilla del altell', points: [[ALT_X1, ESC_MESETA], [ALT_X1, y1]], height: 1.0, material: 'vidrio', spacing: 0, status: 'propuesto', sourceId: S.prop,
+      note: 'Borde del altell junto al segundo tramo y el rellano, que quedan por debajo: barandilla de cristal de 1,00 m.',
+    },
+    {
+      id: 'barandilla-escalera', levelId: 'pb', label: 'Barandilla del primer tramo', points: [[ESC[2], ESC_ARRANQUE], [ESC[2], r2(y1 - ESC_U.landing)]], rise: [r2(2.8 / 15), r2((2.8 * 8) / 15)], height: 1.0, material: 'vidrio', spacing: 0, status: 'documentado', sourceId: S.prop,
+      note: 'Barandilla de cristal en el lado abierto del primer tramo, hacia la cocina (propiedad). Sigue la pendiente desde el primer peldaño hasta el rellano. Altura de 1,00 m (propiedad).',
+    },
+    {
+      id: 'barandilla-rellano', levelId: 'pb', label: 'Barandilla del rellano', points: [[ESC[2], r2(y1 - ESC_U.landing)], [ESC[2], y1]], rise: [r2((2.8 * 8) / 15), r2((2.8 * 8) / 15)], height: 1.0, material: 'vidrio', spacing: 0, status: 'propuesto', sourceId: S.prop,
+      note: 'Lado del rellano hacia la cocina.',
+    },
+    {
+      id: 'barandilla-ojo', levelId: 'pb', label: 'Barandilla entre tramos', points: [[ESC_XM, r2(y1 - ESC_U.landing)], [ESC_XM, ESC_MESETA]], rise: [r2((2.8 * 8) / 15), 2.8], height: 1.0, material: 'vidrio', spacing: 0, status: 'propuesto', sourceId: S.prop,
+      note: 'Entre los dos tramos, sobre el macizo del segundo tramo: protege la diferencia de altura con el primer tramo.',
     },
   ],
   roofOptions: [
