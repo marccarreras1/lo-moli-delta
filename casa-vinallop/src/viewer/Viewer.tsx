@@ -18,7 +18,7 @@ import { Effects } from './Effects';
 import { Sky, SoftShadows } from '@react-three/drei';
 import { barkMaterial, blobTexture, buildTree, discAlphaTexture, grassTexture, leafMaterial, litterTexture, rockGeometry, soilTexture } from './Trees';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { solarDirection, useSolar } from '../model/solar';
+import { modelAzimuth, solarDirection, useSolar } from '../model/solar';
 import { Installations3D } from '../instalaciones/Installations3D';
 import { useGestion } from '../gestion/store';
 import { useInstalaciones, useResolvedPoints, useVisibleLayers } from '../instalaciones/store';
@@ -30,13 +30,35 @@ import { glRef } from './support';
  * Escenas de luz ambientales (no son un estudio solar: la orientación y la ubicación no están
  * confirmadas). Día, tarde cálida y noche con las lámparas encendidas.
  */
-const AMBIENCE: Record<Ambience, { bg: string; sky: string; ground: string; sun: string; sunK: number; hemiK: number; elev: number; az: number; env: number; exposure: number; lamps: number }> = {
+const AMBIENCE: Record<Ambience, { bg: string; sky: string; ground: string; sun: string; sunK: number; hemiK: number; elev: number; az: number; geoAz: number; env: number; exposure: number; lamps: number }> = {
   // día como en las fotos de dron: sol duro, sombras marcadas y bruma clara en el horizonte
-  dia: { bg: '#dde3e8', sky: '#dbe4ec', ground: '#b89a80', sun: '#fff1de', sunK: 2.7, hemiK: 0.36, elev: 50, az: 68, env: 0.48, exposure: 1.0, lamps: 0.12 },
-  // hora dorada: sol bajo y cálido en la dirección del sol del HDRI «sunset»
-  tarde: { bg: '#e4dbd0', sky: '#e8d8c4', ground: '#b49478', sun: '#ffc68f', sunK: 3.1, hemiK: 0.3, elev: 11, az: 54, env: 0.42, exposure: 1.05, lamps: 0.6 },
-  noche: { bg: '#161b24', sky: '#27324a', ground: '#141110', sun: '#9fb2d6', sunK: 0.18, hemiK: 0.16, elev: 55, az: 140, env: 0.05, exposure: 1.15, lamps: 1 },
+  // (con el norte conocido: sol del sur-suroeste a primera hora de la tarde)
+  dia: { bg: '#dde3e8', sky: '#dbe4ec', ground: '#b89a80', sun: '#fff1de', sunK: 2.7, hemiK: 0.36, elev: 52, az: 68, geoAz: 200, env: 0.48, exposure: 1.0, lamps: 0.12 },
+  // hora dorada: sol bajo y cálido; `az` es la dirección del sol del HDRI «sunset» sin girar
+  // (con el norte conocido: sol de poniente, y el HDRI se gira para que coincida)
+  tarde: { bg: '#e4dbd0', sky: '#e8d8c4', ground: '#b49478', sun: '#ffc68f', sunK: 3.1, hemiK: 0.3, elev: 11, az: 54, geoAz: 262, env: 0.42, exposure: 1.05, lamps: 0.6 },
+  noche: { bg: '#161b24', sky: '#27324a', ground: '#141110', sun: '#9fb2d6', sunK: 0.18, hemiK: 0.16, elev: 55, az: 140, geoAz: 160, env: 0.05, exposure: 1.15, lamps: 1 },
 };
+
+/**
+ * Dirección del sol del visor (acimut del modelo y elevación, en grados): el estudio solar si está
+ * activo; si no, la del ambiente, orientada con el norte del proyecto cuando se conoce.
+ */
+export function useSun(ambience: Ambience): { az: number; el: number; hdriTurn: number } {
+  const { project } = useModel();
+  const s = useSolar();
+  const a = AMBIENCE[ambience];
+  const d = solarDirection(s, project.northDeg);
+  const north = s.northDeg ?? project.northDeg;
+  let az = north === null ? a.az : modelAzimuth(a.geoAz, north);
+  let el = a.elev;
+  if (d && d.el > 0) {
+    az = ((Math.atan2(d.x, d.z) * 180) / Math.PI + 360) % 360;
+    el = d.el;
+  }
+  // giro del HDRI para que su sol caiga en la dirección del sol del visor
+  return { az, el, hdriTurn: az - a.az };
+}
 
 export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void; insets: { bottom: number; right: number }; onEnterRoom: (id: string) => void }) {
   const { layout, cameras, variant } = useModel();
@@ -62,6 +84,7 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
   const cutAbs = levelElev + (tab === 'plantas' ? Math.min(v.sectionHeight, 1.5) : v.sectionHeight);
   const maxElev = mode === 'corte' || tab === 'plantas' ? levelElev : Infinity;
   const amb = AMBIENCE[v.ambience];
+  const sun = useSun(v.ambience);
   const lampLevel = amb.lamps * v.lampDimmer;
   const mats = useMaterials(variant.finishes, mode, cutAbs, section, lampLevel);
   const elevOfLevel = (id: string) => layout.levels.find((l) => l.id === id)?.elevation ?? 0;
@@ -112,9 +135,9 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
       <color attach="background" args={[amb.bg]} />
       <fog attach="fog" args={[amb.bg, layout.site && v.showSite ? 90 : 60, layout.site && v.showSite ? 420 : 140]} />
       {v.ambience !== 'noche' && tab !== 'plantas' && <SkyDome ambience={v.ambience} />}
-      <Environment intensity={amb.env * (tab === 'interior' && quality === 'alta' ? 0.7 : 1)} exposure={amb.exposure} hdri={tab === 'plantas' ? null : hdriFor(v.ambience)} />
+      <Environment intensity={amb.env * (tab === 'interior' && quality === 'alta' ? 0.7 : 1)} exposure={amb.exposure} hdri={tab === 'plantas' ? null : hdriFor(v.ambience)} turn={sun.hdriTurn} />
       <Lights layout={layout} intensity={v.lightIntensity} ambience={v.ambience} shadowSize={quality === 'alta' ? 4096 : 2048} interior={tab === 'interior' && quality === 'alta'} wide={!!layout.site && v.showSite && tab === 'exterior'} />
-      {layout.site && v.showSite ? <SiteGround layout={layout} site={layout.site} lite={lite} sunAz={v.ambience === 'noche' ? null : AMBIENCE[v.ambience].az} sunEl={AMBIENCE[v.ambience].elev} /> : <Ground layout={layout} />}
+      {layout.site && v.showSite ? <SiteGround layout={layout} site={layout.site} lite={lite} sunAz={v.ambience === 'noche' ? null : sun.az} sunEl={sun.el} /> : <Ground layout={layout} />}
       <House layout={layout} mats={mats} showRoof={showRoof} showCeiling={tab === 'interior' || section} mode={mode}
         sectionHeight={cutAbs} selection={selection} openFractions={openFractions} onSelect={select} maxElev={maxElev} />
       {v.showFurniture && <Furniture3D items={furniture} mats={mats} elevationOf={elevationOf} options={layout.options} selectedId={selFurniture} onSelect={onSelectFurniture} />}
@@ -137,7 +160,7 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
 }
 
 /** Luz de entorno sin descargas: «RoomEnvironment» de Three.js filtrado con PMREM. */
-function Environment({ intensity, exposure, hdri = null }: { intensity: number; exposure: number; hdri?: HdriName | null }) {
+function Environment({ intensity, exposure, hdri = null, turn = 0 }: { intensity: number; exposure: number; hdri?: HdriName | null; turn?: number }) {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
   const room = useMemo(() => {
@@ -168,6 +191,9 @@ function Environment({ intensity, exposure, hdri = null }: { intensity: number; 
     scene.environment = env;
     return () => { scene.environment = null; };
   }, [scene, env]);
+  useEffect(() => {
+    scene.environmentRotation.set(0, (turn * Math.PI) / 180, 0);
+  }, [scene, turn]);
   useEffect(() => () => room.dispose(), [room]);
   useEffect(() => {
     // el HDRI es más oscuro de media que el entorno neutro: se compensa
@@ -185,20 +211,18 @@ function Lights({ layout, intensity, ambience, shadowSize, interior = false, wid
   // con el olivar a la vista, la sombra cubre también los árboles cercanos (como en las fotos de dron)
   const R = Math.max(Math.max(maxX - minX, maxY - minY, 6) * (layout.outdoor ? 0.75 : 0.6), wide ? 30 : 0);
   const a = AMBIENCE[ambience];
+  const sun = useSun(ambience);
   const target = useMemo(() => {
     const o = new THREE.Object3D();
     o.position.set(cx, 0, cy);
     return o;
   }, [cx, cy]);
-  const az = (a.az * Math.PI) / 180;
-  const el = (a.elev * Math.PI) / 180;
+  const az = (sun.az * Math.PI) / 180;
+  const el = (sun.el * Math.PI) / 180;
   const r = wide ? 70 : 30;
-  // luz de visualización: dirección fija por ambiente, no representa el sol real…
-  // …salvo con el estudio solar activo (norte, situación y fecha indicados)
-  const solar = solarDirection(useSolar());
-  const pos: [number, number, number] = solar && solar.el > 0
-    ? [cx + r * solar.x, r * solar.y, cy + r * solar.z]
-    : [cx + r * Math.cos(el) * Math.sin(az), r * Math.sin(el), cy + r * Math.cos(el) * Math.cos(az)];
+  // luz de visualización por ambiente, orientada con el norte si se conoce; el estudio solar activo
+  // (norte, situación y fecha) pone el sol real
+  const pos: [number, number, number] = [cx + r * Math.cos(el) * Math.sin(az), r * Math.sin(el), cy + r * Math.cos(el) * Math.cos(az)];
   const k = Math.max(0.35, intensity);
   return (
     <>
@@ -513,9 +537,9 @@ export function CompareViewer({ variant }: { variant: Variant }) {
 
 /** Cielo de dispersión atmosférica (día y tarde), coherente con la dirección de la luz. */
 function SkyDome({ ambience }: { ambience: Ambience }) {
-  const a = AMBIENCE[ambience];
-  const az = (a.az * Math.PI) / 180;
-  const el = (a.elev * Math.PI) / 180;
+  const s = useSun(ambience);
+  const az = (s.az * Math.PI) / 180;
+  const el = (s.el * Math.PI) / 180;
   const sun: [number, number, number] = [Math.cos(el) * Math.sin(az), Math.sin(el), Math.cos(el) * Math.cos(az)];
   return <group userData={{ helper: true }}><Sky distance={1100} sunPosition={sun} turbidity={ambience === 'tarde' ? 7 : 4} rayleigh={ambience === 'tarde' ? 2.2 : 0.9} mieCoefficient={0.004} mieDirectionalG={0.85} /></group>;
 }

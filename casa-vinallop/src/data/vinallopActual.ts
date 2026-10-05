@@ -159,7 +159,8 @@ export const VINALLOP_ACTUAL: ProjectData = {
   questions: [
     'Habitación pequeña: se ha situado bajo el tejado bajo del extremo derecho, junto al algarrobo (≈1,5 m de largo, todo el ancho). ¿Es ahí donde está?',
   ],
-  northDeg: null,
+  // norte a ≈22° en sentido horario desde el frontal A: brújula de la captura de Mapas de Apple de la propiedad
+  northDeg: 22,
   facades: { B: 'Frontal B (puertas)', A: 'Frontal A', izquierdo: 'Lateral izquierdo', derecho: 'Lateral derecho' },
   notices: ['Estado actual interpretado a partir de fotografías: sin medidas tomadas en obra. Para comparar con la reforma, cambia de fase.'],
 };

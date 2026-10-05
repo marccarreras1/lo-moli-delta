@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { VINALLOP } from '../data/vinallop';
 import { resolveLayout } from '../model/resolve';
 import { blocked, freeSpotIn, walkObstacles, walkStep } from '../model/walk';
-import { solarDirection, sunPosition } from '../model/solar';
+import { modelAzimuth, solarDirection, sunPosition } from '../model/solar';
 import { bathPlanData, bathPlanSvg } from '../plan/bathPlan';
 import { planSvg } from '../plan/planSvg';
 import { QUICK_COMPARE } from '../model/compare';
@@ -53,6 +53,17 @@ describe('estudio solar', () => {
     expect(solarDirection({ northDeg: 0, lat: 40, lon: 0, datetime: '2026-06-21T12:00', active: false })).toBeNull();
     const d = solarDirection({ northDeg: 0, lat: 40, lon: 0, datetime: '2026-06-21T12:00', active: true })!;
     expect(d.y).toBeGreaterThan(0.8);
+  });
+  it('orienta el sol con el norte: al mediodía viene del sur (lado del frontal B, girado con el norte)', () => {
+    // norte del proyecto (22°) si el usuario no ha puesto otro
+    const d = solarDirection({ northDeg: null, lat: 38.5, lon: -0.8, datetime: '2026-03-20T12:10:00Z', active: true }, 22)!;
+    const az = (Math.atan2(d.x, d.z) * 180) / Math.PI;
+    // sur geográfico = 202° desde el «arriba» de la planta → hacia +Y (frontal B) y un poco hacia −X
+    expect(d.z).toBeGreaterThan(0.5);
+    expect(d.x).toBeLessThan(0);
+    expect(az).toBeCloseTo(modelAzimuth(d.az, 22) - 360, 0);
+    expect(modelAzimuth(180, 0)).toBe(0);
+    expect(modelAzimuth(90, 0)).toBe(90); // con el norte arriba, el este es +X
   });
 });
 

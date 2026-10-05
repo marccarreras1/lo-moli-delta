@@ -52,7 +52,13 @@ function load(): SolarSettings {
   }
 }
 
-export const solarReady = (s: SolarSettings) => s.northDeg !== null && s.lat !== null && s.lon !== null && s.datetime !== null;
+export const solarReady = (s: SolarSettings, projectNorth: number | null = null) => (s.northDeg ?? projectNorth) !== null && s.lat !== null && s.lon !== null && s.datetime !== null;
+
+/**
+ * Acimut «del modelo» de una luz dada por su acimut geográfico (desde el norte, horario), con el
+ * convenio de las luces del visor: dirección (sen a, cos a) en (X, Y) de la planta.
+ */
+export const modelAzimuth = (geoAz: number, north: number) => (((180 - (geoAz + north)) % 360) + 360) % 360;
 
 export const useSolar = create<SolarSettings & { set: (p: Partial<SolarSettings>) => void }>((set, get) => ({
   ...load(),
@@ -68,10 +74,12 @@ export const useSolar = create<SolarSettings & { set: (p: Partial<SolarSettings>
  * Dirección del sol en coordenadas del modelo (x = X de la planta, z = Y de la planta) o null si el
  * estudio no está activo. La planta tiene Y hacia abajo: «arriba» (−Y) es el frontal A.
  */
-export function solarDirection(s: SolarSettings): { x: number; y: number; z: number; el: number; az: number } | null {
-  if (!s.active || !solarReady(s)) return null;
-  const { az, el } = sunPosition(new Date(s.datetime!), s.lat!, s.lon!);
-  const th = (az - s.northDeg!) * rad;
+export function solarDirection(s: SolarSettings, projectNorth: number | null = null): { x: number; y: number; z: number; el: number; az: number } | null {
+  const north = s.northDeg ?? projectNorth;
+  if (!s.active || north === null || s.lat === null || s.lon === null || s.datetime === null) return null;
+  const { az, el } = sunPosition(new Date(s.datetime), s.lat, s.lon);
+  // el norte está girado `north` grados en sentido horario desde el «arriba» de la planta; el este, 90° más
+  const th = (az + north) * rad;
   const ce = Math.cos(el * rad);
   return { x: ce * Math.sin(th), y: Math.sin(el * rad), z: -ce * Math.cos(th), el, az };
 }

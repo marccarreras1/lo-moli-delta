@@ -50,7 +50,9 @@ export function ProjectPage() {
   const bath = bathPlanData(layout);
   const bathSvg = useMemo(() => bathPlanSvg(layout, { showLabels: true }), [layout]);
   const builtModel = (layout.bounds.maxX - layout.bounds.minX) * (layout.bounds.maxY - layout.bounds.minY);
-  const solarPos = solarReady(solar) ? sunPosition(new Date(solar.datetime!), solar.lat!, solar.lon!) : null;
+  const north = solar.northDeg ?? project.northDeg;
+  const ready = solarReady(solar, project.northDeg);
+  const solarPos = ready ? sunPosition(new Date(solar.datetime!), solar.lat!, solar.lon!) : null;
 
   const exportAll = async () => {
     try {
@@ -145,16 +147,16 @@ export function ProjectPage() {
       </section>
 
       <section className="sp-card" data-testid="solar">
-        <h2>Estudio solar <span className={`flag${solar.active && solarReady(solar) ? '' : ' flag-phase'}`}>{solar.active && solarReady(solar) ? 'activo' : 'preparado · inactivo'}</span></h2>
-        <p className="hint">Se activa solo con la orientación del norte, la situación y la fecha. Sin esos datos el visor usa una luz de visualización que no representa el sol real. No se ha inventado ninguno de los tres.</p>
+        <h2>Estudio solar <span className={`flag${solar.active && ready ? '' : ' flag-phase'}`}>{solar.active && ready ? 'activo' : 'preparado · inactivo'}</span></h2>
+        <p className="hint">Norte: {project.northDeg !== null ? `${project.northDeg}° en sentido horario desde el frontal A, medido en la captura de Mapas de Apple de la propiedad (brújula del mapa; precisión ≈±5°). Con él, las luces de día y tarde del visor salen de la orientación real (sol del sur-suroeste a primera hora de la tarde y de poniente al atardecer), aunque sin fecha no reproducen un día concreto.` : 'sin establecer.'} Para el sol exacto de un día y una hora faltan la situación y la fecha: no se han inventado.</p>
         <div className="sp-form">
-          <label>Norte (° en sentido horario desde el frontal A)<input type="number" min={0} max={360} step={1} value={solar.northDeg ?? ''} onChange={(e) => solar.set({ northDeg: e.target.value === '' ? null : Math.max(0, Math.min(360, Number(e.target.value))) })} /></label>
+          <label>Norte (° en sentido horario desde el frontal A)<input type="number" min={0} max={360} step={1} value={north ?? ''} onChange={(e) => solar.set({ northDeg: e.target.value === '' ? null : Math.max(0, Math.min(360, Number(e.target.value))) })} /></label>
           <label>Latitud<input type="number" min={-90} max={90} step={0.0001} value={solar.lat ?? ''} onChange={(e) => solar.set({ lat: e.target.value === '' ? null : Math.max(-90, Math.min(90, Number(e.target.value))) })} /></label>
           <label>Longitud<input type="number" min={-180} max={180} step={0.0001} value={solar.lon ?? ''} onChange={(e) => solar.set({ lon: e.target.value === '' ? null : Math.max(-180, Math.min(180, Number(e.target.value))) })} /></label>
           <label>Fecha y hora<input type="datetime-local" value={solar.datetime ?? ''} onChange={(e) => solar.set({ datetime: e.target.value || null })} /></label>
         </div>
         {solarPos && <p>Sol: acimut {fmt(solarPos.az, 0)}°, elevación {fmt(solarPos.el, 0)}°{solarPos.el <= 0 ? ' (bajo el horizonte)' : ''}.</p>}
-        <label className="toggle-line"><input type="checkbox" disabled={!solarReady(solar)} checked={solar.active && solarReady(solar)} onChange={(e) => solar.set({ active: e.target.checked })} /> Usar el sol real en el visor</label>
+        <label className="toggle-line"><input type="checkbox" disabled={!ready} checked={solar.active && ready} onChange={(e) => solar.set({ active: e.target.checked })} /> Usar el sol real en el visor</label>
       </section>
 
       <section className="sp-card">

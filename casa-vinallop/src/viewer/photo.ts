@@ -256,6 +256,8 @@ export async function renderPhoto(gl: THREE.WebGLRenderer, scene: THREE.Scene, c
       trace.scene.add(l);
     }
     trace.scene.environment = o.envMap ?? sky;
+    // mismo giro del cielo que en el visor (el sol del HDRI orientado con el norte)
+    trace.scene.environmentRotation.copy(scene.environmentRotation);
     trace.scene.environmentIntensity = 1;
     pt.setScene(trace.scene, camera);
     // las primeras llamadas pueden no sumar muestras mientras se compilan los shaders: se cuenta

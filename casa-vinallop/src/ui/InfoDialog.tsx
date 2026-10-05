@@ -22,7 +22,7 @@ export function InfoDialog({ onClose }: { onClose: () => void }) {
         <li>{project.isTest ? 'Se muestra el modelo de prueba.' : empty ? 'Casa Vinallop: sin geometría.' : `Casa Vinallop: geometría interpretada de los bocetos fotografiados (versión ${project.version}). Orientación de los textos del boceto: el dormitorio queda a la izquierda.`}</li>
         <li>Las fotografías no se guardan en la web. Para superponerlas al plano, añádelas en «Referencias» (se guardan en este dispositivo).</li>
         <li>Referencias guardadas en este dispositivo: {refs.length} ({refs.filter((r) => r.kind === 'boceto').length} de bocetos, {refs.filter((r) => r.calibration).length} calibradas).</li>
-        <li>Orientación: {project.northDeg === null ? 'no establecida. No se muestran puntos cardinales ni estudio solar.' : `${project.northDeg}°`}</li>
+        <li>Orientación: {project.northDeg === null ? 'no establecida. No se muestran puntos cardinales ni estudio solar.' : `norte a ${project.northDeg}° en sentido horario desde el frontal A (captura de Mapas de Apple): frontal A al nor-noreste, frontal B al sur-suroeste. Las luces de día y tarde se orientan con él.`}</li>
         <li>Niveles documentados: {project.levels.length ? project.levels.map((l) => l.name).join(', ') : 'ninguno'}.</li>
         <li>La web de referencia (casa.backtesting.ai) y los enlaces de Pinterest no se han podido abrir desde el entorno de desarrollo (red bloqueada). La interfaz y los espacios siguen las descripciones escritas de la propiedad; no se ha copiado ni descargado ninguna imagen.</li>
         <li>Texturas y modelos: generados en el propio código (texturas procedurales y piezas hechas por revolución o extrusión), sin imágenes ni modelos de terceros.</li>

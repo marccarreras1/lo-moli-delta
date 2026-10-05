@@ -178,7 +178,7 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(x).toBeGreaterThanOrEqual(3.85);
     expect(x + o.width).toBeLessThanOrEqual(6.25);
   });
-  it('sin orientación definida', () => expect(layout.northDeg).toBeNull());
+  it('norte a ≈22° en sentido horario desde el frontal A (captura de Mapas de Apple)', () => expect(layout.northDeg).toBe(22));
   it('genera vistas interiores por estancia, incluido el altell a su cota', () => {
     const cams = cameraPresets(layout);
     const alt = cams.find((c) => c.id === 'int-altell');

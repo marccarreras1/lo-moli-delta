@@ -287,7 +287,7 @@ const outdoor: Outdoor = {
     {
       id: 'porche-cristalera', label: 'Porche de la cristalera', rect: [PORCHE_X0, r2(-SOL_TRASERA + 0.2), L, 0], wallSide: 'y1', hWall: 3.45, hFront: 3.2,
       posts: [6.6, 9.85, 13.1, 16.1].map((x) => [x, r2(-SOL_TRASERA + 0.4)] as Vec2), postSize: 0.4, status: 'confirmado',
-      note: 'Porche mediterráneo a lo largo del ventanal (indicación de la propiedad): pilares de obra encalados de 40 × 40 cm, viga de madera en el frente y durmiente en la fachada por encima del dintel del ventanal (3,15 m), viguetas cada ≈0,6 m y cubierta de cañizo. Medidas, sección de las vigas y anclaje a la fachada propuestos: pendientes de cálculo. Da sombra a la cristalera, que mira al frontal A (orientación sin confirmar).',
+      note: 'Porche mediterráneo a lo largo del ventanal (indicación de la propiedad): pilares de obra encalados de 40 × 40 cm, viga de madera en el frente y durmiente en la fachada por encima del dintel del ventanal (3,15 m), viguetas cada ≈0,6 m y cubierta de cañizo. Medidas, sección de las vigas y anclaje a la fachada propuestos: pendientes de cálculo. Con el norte de la captura de Mapas de Apple (≈22° desde el frontal A), la cristalera mira al nor-noreste: le da el sol de primera hora en verano y casi nada el resto del día, así que el porche sirve sobre todo de estancia exterior a la sombra en las tardes; la entrada (frontal B) mira al sur-suroeste.',
     },
   ],
   furniture: [
@@ -508,7 +508,8 @@ const PROJECT: ProjectData = {
     'Ventanal de 9 m: pendiente del cálculo del arquitecto (zuncho, machones de ≈0,50 m).',
     'Logo: el enlace de Canva no es accesible desde aquí; falta el archivo (SVG o PNG) para integrarlo.',
   ],
-  northDeg: null,
+  // norte a ≈22° en sentido horario desde el frontal A: brújula de la captura de Mapas de Apple de la propiedad
+  northDeg: 22,
   facades: { A: 'Frontal A', B: 'Frontal B', izquierdo: 'Lateral izquierdo', derecho: 'Lateral derecho' },
   notices: ['Geometría de los bocetos fotografiados y de las respuestas de la propiedad. Revisa las preguntas en «Medidas y documentación».'],
 };
