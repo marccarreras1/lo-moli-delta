@@ -12,7 +12,6 @@ import { hasGeometry, resolveLayout, type Variant } from '../model/resolve';
 import { validateLayout } from '../model/validate';
 import { baseVariant } from '../state/store';
 import { PROPUESTA_VENTANAS } from '../data/types';
-import { uStairPieces } from '../model/stairU';
 
 const test = buildTestModel();
 const variant = (o: Partial<Variant> = {}): Variant => ({ ...baseVariant(), id: 'v1', name: 'V1', ...o });
@@ -54,23 +53,17 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(arm.open).toBe(true);
     expect(arm.color).toBeTruthy();
   });
-  it('barandillas de cristal en el altell (libre en la meseta de llegada) y en el lado abierto de la escalera', () => {
+  it('barandillas de cristal en el altell (libre en la llegada) y en el lado abierto de la escalera', () => {
     const st = layout.stairs[0];
-    const meseta = uStairPieces(st, 2.8).find((p) => p.kind === 'meseta')!;
-    const rail = (id: string) => layout.railings!.find((x) => x.id === id)!;
-    expect(layout.railings!.every((r) => r.material === 'vidrio')).toBe(true);
-    // primer tramo: lado de la cocina, sube del primer peldaño al rellano
-    const e = rail('barandilla-escalera');
-    expect(e.points.every((p) => p[0] === st.rect[2])).toBe(true);
-    expect(e.rise![1]).toBeCloseTo((2.8 * 8) / 15, 2);
-    // el borde del altell queda abierto solo frente a la meseta
-    const a = rail('barandilla-altell');
-    const b = rail('barandilla-altell-escalera');
-    expect([a.levelId, b.levelId]).toEqual(['altell', 'altell']);
-    const onEdge = [...a.points, ...b.points].filter((p) => p[0] === 6.35).map((p) => p[1]).sort((x, y) => x - y);
-    expect(onEdge).toEqual([0.3, meseta.rect[1], meseta.rect[3], 4.62]);
-    // entre tramos: sube del rellano a la meseta
-    expect(rail('barandilla-ojo').rise![1]).toBe(2.8);
+    const r = layout.railings!.find((x) => x.id === 'barandilla-altell')!;
+    const e = layout.railings!.find((x) => x.id === 'barandilla-escalera')!;
+    expect([r.material, e.material]).toEqual(['vidrio', 'vidrio']);
+    expect(e.points.every((p) => p[1] === st.rect[1])).toBe(true);
+    expect(e.rise![1]).toBe(2.8);
+    expect(r.levelId).toBe('altell');
+    expect(r.points.every((p) => p[0] === 6.35)).toBe(true);
+    // el borde del altell queda abierto justo en la llegada de la escalera
+    expect(Math.max(...r.points.map((p) => p[1]))).toBeCloseTo(st.rect[1], 5);
   });
   it('altell diáfano con cama de matrimonio', () => {
     const camas = layout.furniture.filter((f) => f.type === 'cama' && f.roomId === 'altell');
@@ -137,10 +130,10 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(layout.traces.filter((t) => t.cross).length).toBeGreaterThan(3);
     expect(layout.rooms.some((r) => r.id.includes('trazo'))).toBe(false);
   });
-  it('la escalera arranca junto al pasillo y sube hacia el frontal B (indicación de la propiedad)', () => {
+  it('la escalera arranca junto a la puerta y sube hacia el altell (propuesta que sustituye al sentido inicial)', () => {
     const st = layout.stairs[0];
-    expect(st.up).toBe('+y');
-    expect(st.upStatus).toBe('confirmado');
+    expect(st.up).toBe('-x');
+    expect(st.upStatus).toBe('propuesto');
     expect(st.rect[0]).toBeGreaterThanOrEqual(6);
   });
   it('entrada al baño desde el pasillo y armario al lado abierto al pasillo (propiedad)', () => {
@@ -440,77 +433,64 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
     const r = layout.outdoor!.pavements.find((p) => p.permeable)!.permeable!.r;
     expect(r * 2).toBeGreaterThan(2.4);
     expect(r * 2).toBeLessThan(4);
-    // cuarto técnico de 2,50 × ancho de la casa × 3,00 con acceso exterior
+    // cuarto técnico de 2,50 × ancho de la casa, bajado a 2,75 m (terraza enrasada con el altell), con acceso exterior
     const ct = layout.outdoor!.annexes![0];
     expect(ct.rect[2] - ct.rect[0]).toBeCloseTo(2.5, 5);
     expect(ct.rect[3] - ct.rect[1]).toBeCloseTo(layout.bounds.maxY - layout.bounds.minY, 5);
-    expect(ct.height).toBe(3);
+    expect(ct.height).toBe(2.75);
     // cristalera de 7 m por defecto
     expect(layout.options.ventanal).toBe('7');
   });
-  it('escalera en U con rellano: 15 tabicas ≤ 0,20 m, huellas de 0,25 m, sin compensados; cocina y comedor sin conflictos', () => {
+  it('escalera recta contra el frontal B que desembarca en el altell: 15 tabicas ≤ 0,20 m, 14 huellas ≥ 0,24 m, sin compensados; cocina e isla sin conflictos', () => {
     const esc = layout.stairs[0];
-    expect(esc.u).toBeTruthy();
+    expect(esc.up).toBe('-x');
     expect(esc.winderEnd).toBeUndefined();
-    const pcs = uStairPieces(esc, 2.8);
-    const steps = pcs.filter((p) => p.kind === 'peldaño');
-    expect(steps).toHaveLength(13);
+    expect(esc.topFlush).toBe(true);
     expect(2.8 / esc.risers).toBeLessThanOrEqual(0.2);
-    for (const p of steps) {
-      expect(p.rect[3] - p.rect[1]).toBeCloseTo(0.25, 5);
-      expect(p.rect[2] - p.rect[0]).toBeCloseTo(1.0, 5);
-    }
-    // todo dentro de la huella; rellano al fondo a 8 tabicas y meseta a 2,80 m contigua al altell
-    for (const p of pcs) {
-      expect(p.rect[0]).toBeGreaterThanOrEqual(esc.rect[0] - 1e-9);
-      expect(p.rect[2]).toBeLessThanOrEqual(esc.rect[2] + 1e-9);
-      expect(p.rect[1]).toBeGreaterThanOrEqual(esc.rect[1] - 1e-9);
-      expect(p.rect[3]).toBeLessThanOrEqual(esc.rect[3] + 1e-9);
-    }
-    const land = pcs.find((p) => p.kind === 'rellano')!;
-    expect(land.rect[3]).toBeCloseTo(esc.rect[3], 5);
-    expect(land.top).toBeCloseTo((2.8 * 8) / 15, 5);
-    const mes = pcs.find((p) => p.kind === 'meseta')!;
-    expect(mes.top).toBe(2.8);
-    expect(mes.rect[0]).toBe(6.35);
-    // peldaños consecutivos sin solaparse y subiendo una tabica cada vez
-    const tops = pcs.map((p) => p.top);
-    tops.slice(1).forEach((t, i) => expect(t - tops[i]).toBeCloseTo(2.8 / 15, 5));
-    // la cocina queda fuera de la escalera; isla a ≥ 0,90 m del primer tramo y 1,00 m de la cocina
-    expect(layout.furniture.some((f) => f.underStair)).toBe(false);
+    const tread = (esc.rect[2] - esc.rect[0]) / (esc.risers - 1);
+    expect(tread).toBeGreaterThanOrEqual(0.24);
+    // llega al borde del altell, contra el frontal B, y no invade el barrido de la puerta de entrada
+    expect(esc.rect[0]).toBe(6.35);
+    expect(esc.rect[3]).toBeCloseTo(4.62, 5);
+    expect(esc.rect[3] - esc.rect[1]).toBeGreaterThanOrEqual(0.9 - 1e-9);
+    const door = layout.openings.find((o) => o.id === 'puerta-120')!;
+    expect(esc.rect[2]).toBeLessThanOrEqual(0.15 + door.offset);
+    expect(door.swing!.hinge).toBe('fin');
+    // cocina contra el tabique del baño, entre el pasillo y la escalera; isla a 1,00 m
     const enc = layout.furniture.find((f) => f.id === 'encimera')!;
-    expect(enc.x - enc.w / 2).toBeGreaterThanOrEqual(esc.rect[2] - 1e-6);
-    const isla = layout.furniture.find((f) => f.id === 'isla')!;
-    expect(isla.x - isla.w / 2 - esc.rect[2]).toBeGreaterThanOrEqual(0.9);
-    expect(enc.y - enc.d / 2 - (isla.y + isla.d / 2)).toBeGreaterThanOrEqual(1.0 - 1e-6);
-    expect(isla.modules!.map((m) => m.kind)).toEqual(['frigorifico', 'lavavajillas']);
+    const fe = furnitureFootprint(enc);
+    expect(Math.min(...fe.map((p) => p[0]))).toBeCloseTo(6.35, 5);
+    expect(Math.max(...fe.map((p) => p[1]))).toBeLessThanOrEqual(esc.rect[1] + 1e-6);
+    expect(Math.min(...fe.map((p) => p[1]))).toBeGreaterThanOrEqual(1.25);
+    const isla = furnitureFootprint(layout.furniture.find((f) => f.id === 'isla')!);
+    expect(Math.min(...isla.map((p) => p[0])) - Math.max(...fe.map((p) => p[0]))).toBeGreaterThanOrEqual(1.0 - 1e-6);
+    expect(esc.rect[1] - Math.max(...isla.map((p) => p[1]))).toBeGreaterThanOrEqual(0.7);
+    expect(layout.furniture.some((f) => f.underStair)).toBe(false);
     expect(layout.furniture.filter((f) => f.id.startsWith('silla-comedor'))).toHaveLength(4);
     const ids = new Set(['mesa-comedor', 'encimera', 'isla', ...[1, 2, 3].map((i) => `taburete-${i}`), ...[1, 2, 3, 4].map((i) => `silla-comedor-${i}`)]);
     expect(validateLayout(layout).filter((i) => ids.has(i.elementId))).toEqual([]);
   });
-  it('terraza del altell sobre el cuarto técnico, con puerta en el lateral izquierdo a la altura de la terraza', () => {
+  it('terraza del altell sobre el cuarto técnico bajado, enrasada con el altell, con puerta en el lateral izquierdo y sin escalones exteriores', () => {
     const ct = layout.outdoor!.annexes![0];
+    expect(ct.height).toBe(2.75);
     expect(ct.terrace!.parapet).toBeGreaterThanOrEqual(1.0);
+    expect(ct.terrace!.gap).toBeUndefined();
+    expect(layout.outdoor!.wallSteps ?? []).toEqual([]);
     const door = layout.openings.find((o) => o.id === 'puerta-terraza')!;
     expect(door.wallId).toBe('muro-izquierdo');
-    // en la zona del altell, a la cota de la terraza y por encima del suelo del altell
-    expect(door.sill).toBeGreaterThanOrEqual(ct.height);
-    expect(door.sill).toBeGreaterThan(2.8);
+    // la terraza (cubierta + pavimento) queda a menos de 5 cm del suelo del altell
+    expect(Math.abs(ct.height + 0.03 - 2.8)).toBeLessThan(0.05);
+    expect(door.sill).toBe(2.8);
     expect(door.sill + door.height).toBeLessThan(6.2 - 0.3);
     const cama = layout.furniture.find((f) => f.id === 'cama-altell')!;
     expect(0.15 + door.offset + door.width).toBeLessThan(cama.y - cama.d / 2);
-    // el hueco del peto coincide con la llegada de los escalones volados
-    const ws = layout.outdoor!.wallSteps![0];
-    const last = ws.start + ws.dir * ((ws.steps - 1) * ws.run + 0.13);
-    expect(last).toBeGreaterThan(ct.terrace!.gap![0]);
-    expect(last).toBeLessThan(ct.terrace!.gap![1]);
   });
   it('editar un mueble en una variante lo marca como propuesto sin tocar la base', () => {
     const v = { ...baseVariant(), id: 'v', name: 'V', furnitureOverrides: { isla: { x: 9.0, w: 1.8 } } };
     const l2 = resolveLayout(VINALLOP, v);
     const isla = l2.furniture.find((f) => f.id === 'isla')!;
     expect([isla.x, isla.w, isla.status]).toEqual([9.0, 1.8, 'propuesto']);
-    expect(layout.furniture.find((f) => f.id === 'isla')!.x).toBe(10.05);
+    expect(layout.furniture.find((f) => f.id === 'isla')!.x).toBe(8.45);
   });
   it('solera en L confirmada: frontal A de punta a punta y 4 m en el lateral, sin solera en la entrada, esquina contada una vez y alcorque permeable', () => {
     const o = layout.outdoor!;

@@ -71,8 +71,8 @@ export interface Stair {
   winderEnd?: number;
   /** a partir de esta coordenada del tramo los peldaños vuelan sobre una losa escalonada y queda hueco debajo (p. ej. cocina bajo la escalera) */
   openUnderFrom?: number;
-  /** escalera en U: rellano al fondo (todo el ancho), primer tramo por la mitad `firstSide` y vuelta por la otra hasta una meseta */
-  u?: { landing: number; firstRisers: number; tread: number; firstSide: 'x0' | 'x1' };
+  /** el último peldaño desembarca a ras del forjado de llegada: dentro de la huella hay `risers − 1` huellas */
+  topFlush?: boolean;
   risers: number;
   status: DataStatus;
   sourceId: string;

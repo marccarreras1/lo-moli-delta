@@ -11,7 +11,6 @@ import { FRAME, leafPose } from '../model/openings';
 import { passages } from '../model/passages';
 import { soleraQuantities } from '../model/solera';
 import { gardenPlants, pathSlabs } from '../model/garden';
-import { uStairPieces } from '../model/stairU';
 import type { Issue } from '../model/validate';
 import { ACCENT, AMBER, STATUS_STYLE } from '../ui/status';
 
@@ -427,36 +426,12 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
     const [ax, ay, bx, by] = st.rect;
     const box: Vec2[] = [[ax, ay], [bx, ay], [bx, by], [ax, by]];
     const stc = STATUS_STYLE[st.status];
-    if (st.fromLevel === level?.id && st.u) {
-      // escalera en U: peldaños, rellano y meseta, con la línea de huella por los dos tramos
-      out.push(`<polygon points="${pts(box)}" fill="#fefdfb" stroke="#2f3430" stroke-width="0.014"/>`);
-      const pcs = uStairPieces(st, elevOf(st.toLevel) - elevOf(st.fromLevel));
-      for (const pc of pcs) {
-        const [x0, y0, x1, y1] = pc.rect;
-        out.push(`<polygon points="${pts([[x0, y0], [x1, y0], [x1, y1], [x0, y1]])}" fill="${pc.kind === 'peldaño' ? 'none' : '#f4f2ec'}" stroke="${pc.kind === 'peldaño' ? '#7d8277' : '#2f3430'}" stroke-width="${pc.kind === 'peldaño' ? 0.008 : 0.012}"/>`);
-      }
-      const f1 = pcs.filter((p) => p.flight === 1 && p.kind === 'peldaño');
-      const f2 = pcs.filter((p) => p.flight === 2 && p.kind === 'peldaño');
-      const land = pcs.find((p) => p.kind === 'rellano')!;
-      const mes = pcs.find((p) => p.kind === 'meseta')!;
-      const xc = (r: [number, number, number, number]) => (r[0] + r[2]) / 2;
-      const yc = (r: [number, number, number, number]) => (r[1] + r[3]) / 2;
-      const d = f1[0].dir;
-      const start: Vec2 = [xc(f1[0].rect), d > 0 ? f1[0].rect[1] + 0.08 : f1[0].rect[3] - 0.08];
-      const end: Vec2 = [xc(mes.rect), d > 0 ? mes.rect[3] - 0.12 : mes.rect[1] + 0.12];
-      const walk: Vec2[] = [start, [xc(f1[0].rect), yc(land.rect)], [xc(f2[0].rect), yc(land.rect)], end];
-      out.push(`<polyline points="${pts(walk)}" fill="none" stroke="${stc.color}" stroke-width="0.02"/><circle cx="${n4(start[0])}" cy="${n4(start[1])}" r="0.05" fill="${stc.color}"/>`);
-      const ad = -d;
-      out.push(`<path d="M ${n4(end[0] - 0.1)} ${n4(end[1] - ad * 0.18)} L ${n4(end[0])} ${n4(end[1])} L ${n4(end[0] + 0.1)} ${n4(end[1] - ad * 0.18)}" fill="none" stroke="${stc.color}" stroke-width="0.02"/>`);
-      const tx = xc(f1[0].rect) + 0.16;
-      const ty = (f1[0].rect[1] + f1[f1.length - 1].rect[3]) / 2;
-      out.push(`<text x="${n4(tx)}" y="${n4(ty)}" font-size="0.15" fill="${stc.color}" transform="rotate(${d > 0 ? 90 : -90} ${n4(tx)} ${n4(ty)})" text-anchor="middle">sube</text>`);
-      out.push(`<text x="${n4(xc(land.rect))}" y="${n4(yc(land.rect) + 0.2)}" font-size="0.11" fill="#687066" text-anchor="middle">rellano +${fmtM(land.top)} m</text>`);
-    } else if (st.fromLevel === level?.id) {
+    if (st.fromLevel === level?.id) {
       out.push(`<polygon points="${pts(box)}" fill="#fefdfb" stroke="#2f3430" stroke-width="0.014"/>`);
       const alongX = st.up === '+x' || st.up === '-x';
-      for (let i = 1; i < st.risers; i++) {
-        const t = i / st.risers;
+      const nSteps = st.topFlush ? st.risers - 1 : st.risers;
+      for (let i = 1; i < nSteps; i++) {
+        const t = i / nSteps;
         out.push(alongX
           ? `<line x1="${n4(ax + (bx - ax) * t)}" y1="${n4(ay)}" x2="${n4(ax + (bx - ax) * t)}" y2="${n4(by)}" stroke="#7d8277" stroke-width="0.008"/>`
           : `<line x1="${n4(ax)}" y1="${n4(ay + (by - ay) * t)}" x2="${n4(bx)}" y2="${n4(ay + (by - ay) * t)}" stroke="#7d8277" stroke-width="0.008"/>`);
@@ -478,9 +453,10 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
         out.push(`<g stroke="#2f3430" stroke-width="0.012">${seg}</g>`);
       }
       const confirmed = ['documentado', 'confirmado'].includes(st.upStatus ?? st.status);
-      out.push(`<text x="${n4(cx + 0.14)}" y="${n4(cy)}" font-size="0.15" fill="${stc.color}" transform="rotate(${st.up === '+y' ? 90 : -90} ${n4(cx + 0.14)} ${n4(cy)})" text-anchor="middle">sube${confirmed ? '' : ' (sentido pendiente)'}</text>`);
+      const sube = `sube${confirmed ? '' : (st.upStatus ?? st.status) === 'propuesto' ? ' (propuesta)' : ' (sentido pendiente)'}`;
+      out.push(alongX ? `<text x="${n4(cx)}" y="${n4(cy - 0.12)}" font-size="0.15" fill="${stc.color}" text-anchor="middle">${sube}</text>` : `<text x="${n4(cx + 0.14)}" y="${n4(cy)}" font-size="0.15" fill="${stc.color}" transform="rotate(${st.up === '+y' ? 90 : -90} ${n4(cx + 0.14)} ${n4(cy)})" text-anchor="middle">${sube}</text>`);
     } else if (st.toLevel === level?.id) {
-      out.push(`<polygon points="${pts(box)}" fill="#ecebe5" stroke="#7d8277" stroke-width="0.012" stroke-dasharray="0.1 0.06"/><line x1="${n4(ax)}" y1="${n4(ay)}" x2="${n4(bx)}" y2="${n4(by)}" stroke="#9fa39a" stroke-width="0.008"/><text x="${n4((ax + bx) / 2)}" y="${n4((ay + by) / 2)}" font-size="0.15" fill="#687066" text-anchor="middle" transform="rotate(-90 ${n4((ax + bx) / 2)} ${n4((ay + by) / 2)})">escalera · desembarco</text>`);
+      out.push(`<polygon points="${pts(box)}" fill="#ecebe5" stroke="#7d8277" stroke-width="0.012" stroke-dasharray="0.1 0.06"/><line x1="${n4(ax)}" y1="${n4(ay)}" x2="${n4(bx)}" y2="${n4(by)}" stroke="#9fa39a" stroke-width="0.008"/><text x="${n4((ax + bx) / 2)}" y="${n4((ay + by) / 2)}" font-size="0.15" fill="#687066" text-anchor="middle" dominant-baseline="middle"${bx - ax < by - ay ? ` transform="rotate(-90 ${n4((ax + bx) / 2)} ${n4((ay + by) / 2)})"` : ''}>escalera · llega al altell</text>`);
     }
   }
   out.push('</g>');
@@ -498,7 +474,8 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
   for (const r of (layout.railings ?? []).filter((x) => x.levelId === level?.id)) {
     const edge = r.material === 'vidrio' ? '#6f8a94' : '#3d4239';
     out.push(`<g data-railing="${esc(r.id)}" pointer-events="none"><polyline points="${pts(r.points)}" fill="none" stroke="${edge}" stroke-width="0.05"/><polyline points="${pts(r.points)}" fill="none" stroke="${r.material === 'vidrio' ? '#dce8ec' : '#fefdfb'}" stroke-width="0.02"/></g>`);
-    if (o.showLabels && r.points.length === 2 && Math.hypot(r.points[1][0] - r.points[0][0], r.points[1][1] - r.points[0][1]) >= 2.4) {
+    // las barandillas de escalera (con pendiente) no se rotulan: se superpondrían al dibujo de los peldaños
+    if (o.showLabels && !r.rise && r.points.length === 2 && Math.hypot(r.points[1][0] - r.points[0][0], r.points[1][1] - r.points[0][1]) >= 2.4) {
       const [[ax, ay], [bx, by]] = r.points;
       const vertical = Math.abs(bx - ax) < 1e-6;
       const lx = (ax + bx) / 2 + (vertical ? 0.18 : 0);
