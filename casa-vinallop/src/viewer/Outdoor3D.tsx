@@ -186,6 +186,100 @@ function ArmBetween({ a, b, mats }: { a: [number, number, number]; b: [number, n
   );
 }
 
+/** cañizo: cañas finas paralelas con huecos (alphaTest) para que la sombra salga tamizada */
+function reedTexture() {
+  const W = 512;
+  const H = 64;
+  const c = document.createElement('canvas');
+  c.width = W;
+  c.height = H;
+  const g = c.getContext('2d')!;
+  let s = 7;
+  const r = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+  for (let x = 0; x < W; ) {
+    const w = 3 + r() * 3;
+    const l = 150 + r() * 50;
+    g.fillStyle = `rgb(${l + 20},${l},${l * 0.62})`;
+    g.fillRect(x, 0, w, H);
+    g.fillStyle = 'rgba(90,70,40,0.35)';
+    g.fillRect(x + w - 1, 0, 1, H);
+    for (let k = 0; k < 2; k++) {
+      g.fillStyle = 'rgba(110,85,50,0.5)';
+      g.fillRect(x, r() * H, w, 1.5);
+    }
+    x += w + (r() < 0.25 ? 1 + r() * 2 : 0);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = 8;
+  return t;
+}
+
+/**
+ * Porche mediterráneo ante la cristalera: pilares de obra encalados, viga de madera al frente,
+ * durmiente anclado al muro, viguetas con ligera pendiente hacia fuera y cañizo encima.
+ */
+function Porch({ p, mats }: { p: NonNullable<Outdoor['porches']>[number]; mats: MaterialSet }) {
+  const reed = useMemo(() => {
+    const t = reedTexture();
+    // los huecos entre cañas quedan sin pintar (alfa 0) y el alphaTest los recorta
+    const m = new THREE.MeshStandardMaterial({ map: t, roughness: 0.95, side: THREE.DoubleSide, alphaTest: 0.5 });
+    return { t, m };
+  }, []);
+  useEffect(() => () => { reed.t.dispose(); reed.m.dispose(); }, [reed]);
+  const [x0, , x1] = p.rect;
+  const wallY = p.wallSide === 'y1' ? p.rect[3] : p.rect[1];
+  const fy = p.posts[0][1];
+  const dir = Math.sign(wallY - fy); // de la viga frontal hacia el muro
+  const span = Math.abs(wallY - fy);
+  const beamH = 0.24;
+  const beamW = 0.16;
+  const hTopFront = p.hFront + beamH / 2;
+  const joistH = 0.14;
+  const joists: number[] = [];
+  const n = Math.max(2, Math.round((x1 - x0) / 0.6));
+  for (let i = 0; i <= n; i++) joists.push(x0 + 0.08 + ((x1 - x0 - 0.16) * i) / n);
+  const len = Math.hypot(span + 0.3, p.hWall - hTopFront);
+  const slope = Math.atan2(p.hWall - hTopFront, span + 0.3);
+  const midY = (fy - dir * 0.3 + wallY) / 2;
+  const midH = (hTopFront + p.hWall) / 2 + joistH / 2;
+  reed.t.repeat.set((x1 - x0) / 1.2, 1);
+  return (
+    <group>
+      {p.posts.map(([x, y], i) => (
+        <group key={i}>
+          <mesh position={[x, TOP + p.hFront / 2, y]} material={mats.facade} castShadow receiveShadow>
+            <boxGeometry args={[p.postSize, p.hFront, p.postSize]} />
+          </mesh>
+          {/* zócalo encalado algo más ancho, como en las casas de campo */}
+          <mesh position={[x, TOP + 0.15, y]} material={mats.facade} castShadow receiveShadow>
+            <boxGeometry args={[p.postSize + 0.06, 0.3, p.postSize + 0.06]} />
+          </mesh>
+        </group>
+      ))}
+      {/* viga frontal */}
+      <mesh position={[(x0 + x1) / 2, TOP + p.hFront + beamH / 2, fy]} material={mats.woodBeam} castShadow receiveShadow>
+        <boxGeometry args={[x1 - x0 + 0.3, beamH, beamW]} />
+      </mesh>
+      {/* durmiente sobre el dintel de la cristalera */}
+      <mesh position={[(x0 + x1) / 2, TOP + p.hWall - 0.08, wallY - dir * 0.07]} material={mats.woodBeam} castShadow>
+        <boxGeometry args={[x1 - x0, 0.16, 0.12]} />
+      </mesh>
+      {/* viguetas: vuelan 0,3 m por delante de la viga */}
+      {joists.map((x) => (
+        <mesh key={x} position={[x, TOP + midH, midY]} rotation={[dir * -slope, 0, 0]} material={mats.woodBeam} castShadow receiveShadow>
+          <boxGeometry args={[0.08, joistH, len]} />
+        </mesh>
+      ))}
+      {/* cañizo */}
+      <mesh position={[(x0 + x1) / 2, TOP + midH + joistH / 2 + 0.012, midY]} rotation={[-Math.PI / 2 + dir * -slope, 0, 0]} material={reed.m} castShadow receiveShadow>
+        <planeGeometry args={[x1 - x0 + 0.1, len - 0.05]} />
+      </mesh>
+    </group>
+  );
+}
+
 export function Outdoor3D({ outdoor, mats, options, level, selectedId, onSelect }: {
   outdoor: Outdoor; mats: MaterialSet; options: DesignOptions; level: number; selectedId?: string | null; onSelect?: (id: string) => void;
 }) {
@@ -195,6 +289,7 @@ export function Outdoor3D({ outdoor, mats, options, level, selectedId, onSelect 
       {renderRects(outdoor.pavements).map((p) => <Pavement key={p.id} p={p} mats={mats} />)}
       {outdoor.pavements.filter((p) => p.permeable).map((p) => <TreePit key={`al-${p.id}`} c={p.permeable!.c} r={p.permeable!.r} mats={mats} />)}
       {(outdoor.drains ?? []).map((d) => <Drain key={d.id} a={d.a} b={d.b} mats={mats} />)}
+      {(outdoor.porches ?? []).map((p) => <Porch key={p.id} p={p} mats={mats} />)}
       {outdoor.domeLamp && <DomeLamp lamp={outdoor.domeLamp} mode={options.lamparaExterior} mats={mats} level={level} />}
       <Furniture3D items={outdoor.furniture} mats={mats} elevationOf={elevationOf} options={options} selectedId={selectedId} onSelect={onSelect} />
       {level > 0.05 && outdoor.furniture.filter((f) => f.type === 'aplique').map((f) => (

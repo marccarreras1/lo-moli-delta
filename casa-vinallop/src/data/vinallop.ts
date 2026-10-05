@@ -251,18 +251,32 @@ const ALGARROBO: Vec2 = [17.7, 2.3];
 /** solera en L: 3 m delante (frontal B) y 4 m en el lateral del algarrobo (variante editable, dentro del rango 3–4 m) */
 const SOL_FRENTE = 3;
 const SOL_LATERAL = 4;
+/** solera y porche delante de la cristalera del frontal A (decisión de la propiedad; medidas propuestas) */
+const SOL_TRASERA = 3.4;
+const PORCHE_X0 = r2(ALT_X1);
 /** la mesa va en la esquina de la L, bajo el borde de la copa (el tronco está a ≈1,4 m del lateral) */
 const MESA_EXT: Vec2 = [r2(L + 2.3), r2(W + 1.5)];
 const outdoor: Outdoor = {
   pavements: [
-    { id: 'grava-comedor', label: 'Transición de grava', rect: [-0.5, -0.5, r2(L + SOL_LATERAL + 0.5), r2(W + SOL_FRENTE + 0.5)], joints: 0, status: 'propuesto', note: 'Borde de grava de 0,50 m entre la solera y la tierra; también junto a los frentes sin solera.' },
+    { id: 'grava-comedor', label: 'Transición de grava', rect: [-0.5, r2(-SOL_TRASERA - 0.5), r2(L + SOL_LATERAL + 0.5), r2(W + SOL_FRENTE + 0.5)], joints: 0, status: 'propuesto', note: 'Borde de grava de 0,50 m entre la solera y la tierra; también junto a los frentes sin solera.' },
     {
       id: 'solera-l-frente', label: 'Solera en L · tramo delantero', rect: [0, W, r2(L + SOL_LATERAL), r2(W + SOL_FRENTE)], joints: 3, status: 'confirmado',
       note: 'Solera continua en L (confirmada; anchos de la variante 3 m delante / 4 m lateral, dentro del rango 3–4 m). Tramo de 3 m de fondo a lo largo de todo el frontal B (puerta de entrada). Cemento claro mate con juntas cada ≈3 m; pendiente del 1,5–2 % hacia fuera y rigola en el borde (propuesta de evacuación, pendiente de desarrollo técnico).',
     },
     {
-      id: 'solera-l-lateral', label: 'Solera en L · tramo lateral', rect: [L, 0, r2(L + SOL_LATERAL), r2(W + SOL_FRENTE)], joints: 2, permeable: { c: ALGARROBO, r: 1.2 }, status: 'confirmado',
+      id: 'solera-l-lateral', label: 'Solera en L · tramo lateral', rect: [L, r2(-SOL_TRASERA), r2(L + SOL_LATERAL), r2(W + SOL_FRENTE)], joints: 2, permeable: { c: ALGARROBO, r: 1.2 }, status: 'confirmado',
       note: 'Tramo de 4 m junto al lateral derecho, bajo el algarrobo, continuo con el delantero y al mismo nivel. Se recorta alrededor del tronco para dejar zona permeable sobre las raíces; la posición del árbol es aproximada.',
+    },
+    {
+      id: 'solera-l-porche', label: 'Solera del porche (frontal A)', rect: [PORCHE_X0, r2(-SOL_TRASERA), L, 0], joints: 3.3, status: 'confirmado',
+      note: 'Solera delante de la cristalera, bajo el porche (indicación de la propiedad: «en la parte de la cristalera pon la solera y un porche»). Mismo cemento claro y mismo nivel que la L, con la que se une en la esquina del algarrobo. Fondo de 3,40 m propuesto; pendiente hacia fuera.',
+    },
+  ],
+  porches: [
+    {
+      id: 'porche-cristalera', label: 'Porche de la cristalera', rect: [PORCHE_X0, r2(-SOL_TRASERA + 0.2), L, 0], wallSide: 'y1', hWall: 3.45, hFront: 3.2,
+      posts: [6.6, 9.85, 13.1, 16.1].map((x) => [x, r2(-SOL_TRASERA + 0.4)] as Vec2), postSize: 0.4, status: 'confirmado',
+      note: 'Porche mediterráneo a lo largo del ventanal (indicación de la propiedad): pilares de obra encalados de 40 × 40 cm, viga de madera en el frente y durmiente en la fachada por encima del dintel del ventanal (3,15 m), viguetas cada ≈0,6 m y cubierta de cañizo. Medidas, sección de las vigas y anclaje a la fachada propuestos: pendientes de cálculo. Da sombra a la cristalera, que mira al frontal A (orientación sin confirmar).',
     },
   ],
   furniture: [
@@ -316,6 +330,7 @@ const views: CameraPreset[] = [
   view({ id: 'v13-altell', label: '13 · Altell, vigas cemento y volta terracota', group: 'interior', eyeLevel: true, roomId: 'altell', elevation: 2.8, position: [4.9, 2.46, 1.6], target: [12, 2.46, 1.6], fov: 64 }),
   view({ id: 'v13b-volta', label: '13b · Vigas y volta desde la zona de día', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.2, 2.7, 1.6], target: [10.2, 2.46, 5.6], fov: 60 }),
   view({ id: 'v14-sin-cubierta', label: '14 · Vista sin cubierta', group: 'exterior', hideRoof: true, position: [9.2, 12, 25], target: [9.2, 3.2, 0], fov: 40 }),
+  view({ id: 'v16-porche', label: '16 · Porche y solera de la cristalera', group: 'exterior', position: [4.4, -7.2, 1.6], target: [12.5, -1.0, 2.0], fov: 58 }),
   view({ id: 'v15-corte', label: '15 · Corte longitudinal', group: 'exterior', position: [8.9, -22, 3.4], target: [8.9, 2.46, 3.1], fov: 34, section: true }),
   ...VISTAS_DRON.map(view),
 ];

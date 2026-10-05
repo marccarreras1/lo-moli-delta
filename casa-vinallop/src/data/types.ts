@@ -296,6 +296,21 @@ export interface Outdoor {
     status: DataStatus;
     note: string;
   };
+  /** porches (pérgola de vigas de madera sobre pilares de obra, cubierta de cañizo) */
+  porches?: {
+    id: string;
+    label: string;
+    /** [x0, y0, x1, y1] en planta; el lado `wallSide` apoya en la fachada */
+    rect: [number, number, number, number];
+    wallSide: 'y0' | 'y1';
+    /** cota inferior de las vigas junto a la fachada y en el frente */
+    hWall: number;
+    hFront: number;
+    posts: Vec2[];
+    postSize: number;
+    status: DataStatus;
+    note: string;
+  }[];
   /** propuesta de evacuación: canaleta lineal (tramos) */
   drains?: { id: string; a: Vec2; b: Vec2; status: DataStatus; note: string }[];
 }

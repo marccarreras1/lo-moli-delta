@@ -110,12 +110,25 @@ function outdoorSvg(layout: Layout, od: NonNullable<Layout['outdoor']>, labels: 
     g.push(`<circle cx="${n4(l.treeAnchor.c[0])}" cy="${n4(l.treeAnchor.c[1])}" r="0.07" fill="${AMBER}" stroke="none"/><circle cx="${n4(l.post[0])}" cy="${n4(l.post[1])}" r="0.06" fill="none" stroke="${AMBER}" stroke-width="0.02"/>`);
     if (labels) g.push(`<text x="${n4(l.c[0])}" y="${n4(l.c[1] + 1.55)}" font-size="0.13" fill="${AMBER}" text-anchor="middle">lámpara de cúpula · anclaje sin resolver</text>`);
   }
+  // porche: proyección de la cubierta de cañizo (discontinua), pilares de obra y fondo acotado
+  for (const pr of od.porches ?? []) {
+    const [x0, , x1] = pr.rect;
+    const wallY = pr.wallSide === 'y1' ? pr.rect[3] : pr.rect[1];
+    const fy = pr.posts[0][1];
+    const out = fy + Math.sign(fy - wallY) * 0.3;
+    const ya = Math.min(out, wallY);
+    g.push(`<rect x="${n4(x0)}" y="${n4(ya)}" width="${n4(x1 - x0)}" height="${n4(Math.abs(wallY - out))}" fill="none" stroke="#7a5a3a" stroke-width="0.02" stroke-dasharray="0.12 0.06" data-porch="${esc(pr.id)}"/>`);
+    g.push(`<line x1="${n4(x0)}" y1="${n4(fy)}" x2="${n4(x1)}" y2="${n4(fy)}" stroke="#7a5a3a" stroke-width="0.015" stroke-dasharray="0.05 0.04"/>`);
+    for (const [x, y] of pr.posts) g.push(`<rect x="${n4(x - pr.postSize / 2)}" y="${n4(y - pr.postSize / 2)}" width="${n4(pr.postSize)}" height="${n4(pr.postSize)}" fill="#3a3833" stroke="none"/>`);
+    g.push(dim([x0, wallY], [x0, fy], -0.45, `${fmtM(Math.abs(wallY - fy))} m`, pr.status));
+    if (labels) g.push(`<text x="${n4((x0 + x1) / 2)}" y="${n4((wallY + fy) / 2 + 0.05)}" font-size="0.2" fill="#5e4630" text-anchor="middle">${esc(pr.label)} · cañizo sobre viguetas de madera</text>`);
+  }
   // cotas de los tramos de la solera y superficie (esquina contada una vez)
   const fr = od.pavements.find((p) => p.id === 'solera-l-frente');
   const la = od.pavements.find((p) => p.id === 'solera-l-lateral');
   if (fr) g.push(dim([fr.rect[0], fr.rect[1]], [fr.rect[0], fr.rect[3]], 0.5, `${fmtM(fr.rect[3] - fr.rect[1])} m`, fr.status));
   if (la) g.push(dim([la.rect[0], la.rect[1]], [la.rect[2], la.rect[1]], -0.45, `${fmtM(la.rect[2] - la.rect[0])} m`, la.status));
-  if (q && fr && labels) g.push(`<text x="${n4((fr.rect[0] + fr.rect[2]) / 2 - 3)}" y="${n4(fr.rect[3] - 0.9)}" font-size="0.2" fill="#3d433b" text-anchor="middle">Solera en L · ${fmtM(q.area)} m² (unión, esquina una vez, sin alcorque)</text><text x="${n4((fr.rect[0] + fr.rect[2]) / 2 - 3)}" y="${n4(fr.rect[3] - 0.6)}" font-size="0.13" fill="#687066" text-anchor="middle">juntas ≈3 m / 2 m · pendiente 1,5–2 % hacia la canaleta (propuesta)</text>`);
+  if (q && fr && labels) g.push(`<text x="${n4((fr.rect[0] + fr.rect[2]) / 2 - 3)}" y="${n4(fr.rect[3] - 0.9)}" font-size="0.2" fill="#3d433b" text-anchor="middle">Solera en L y porche · ${fmtM(q.area)} m² (unión, esquinas una vez, sin alcorque)</text><text x="${n4((fr.rect[0] + fr.rect[2]) / 2 - 3)}" y="${n4(fr.rect[3] - 0.6)}" font-size="0.13" fill="#687066" text-anchor="middle">juntas ≈3 m / 2 m · pendiente 1,5–2 % hacia la canaleta (propuesta)</text>`);
   g.push('</g>');
   return g.join('');
 }
@@ -480,7 +493,7 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
   if (o.showDims) {
     const m = (id: string) => layout.measures.find((x) => x.id === id)?.status ?? 'interpretado';
     out.push('<g class="dims">');
-    out.push(outdoor ? dim([minX, minY], [maxX, minY], -1.2, `${fmtM(L)} m`, m('largo')) : dim([minX, maxY], [maxX, maxY], 1.0, `${fmtM(L)} m`, m('largo')));
+    out.push(outdoor ? dim([minX, minY], [maxX, minY], -1.2 - (minY - ex.minY), `${fmtM(L)} m`, m('largo')) : dim([minX, maxY], [maxX, maxY], 1.0, `${fmtM(L)} m`, m('largo')));
     out.push(dim([minX, minY], [minX, maxY], 0.8, `${fmtM(W)} m`, m('ancho')));
     const rs = rooms.find((r) => r.id === selRoom);
     if (rs) {
