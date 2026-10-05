@@ -15,6 +15,7 @@ const filter = args.find((a) => !a.startsWith('--')) ?? '';
 const ambience = (args.find((a) => a.startsWith('--ambiente=')) ?? '--ambiente=dia').split('=')[1];
 const options = JSON.parse((args.find((a) => a.startsWith('--opciones=')) ?? '--opciones={}').slice(11));
 const suffix = (args.find((a) => a.startsWith('--sufijo=')) ?? '--sufijo=').split('=')[1];
+const calidad = (args.find((a) => a.startsWith('--calidad=')) ?? '--calidad=alta').split('=')[1];
 const model = (args.find((a) => a.startsWith('--modelo=')) ?? '--modelo=vinallop').split('=')[1];
 
 const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'pipe', detached: true });
@@ -36,15 +37,15 @@ await page.goto(`http://localhost:${PORT}/?diagnostico`);
 await page.waitForFunction(() => document.querySelector('canvas') && !document.querySelector('.state-center.loading'), null, { timeout: 60000 });
 await page.evaluate((m) => window.__store.getState().setVisual('modelSource', m), model);
 await page.waitForTimeout(3000);
-await page.evaluate(({ ambience, options }) => {
+await page.evaluate(({ ambience, options, calidad }) => {
   const s = window.__store.getState();
   s.setVisual('helpDismissed', true);
-  s.setVisual('quality', 'alta');
+  s.setVisual('quality', calidad);
   s.setVisual('ambience', ambience);
   s.setVisual('showLabels', false);
   s.setVisual('showDims', false);
   for (const [k, v] of Object.entries(options)) s.setOption(k, v);
-}, { ambience, options });
+}, { ambience, options, calidad });
 await page.waitForTimeout(1500);
 const views = await page.evaluate(() => {
   // las vistas preparadas están en el proyecto activo
@@ -58,7 +59,7 @@ for (const [id, tab] of ids) {
   if (filter && !id.includes(filter)) continue;
   await page.evaluate(({ id, tab }) => window.__store.getState().goView(id, tab), { id, tab });
   // la primera vista (y el cambio de modo) tarda más con el renderizado por software
-  await page.waitForTimeout(first ? 9000 : 2600);
+  await page.waitForTimeout(first ? Number((args.find((a) => a.startsWith('--espera=')) ?? '--espera=9000').split('=')[1]) : 2600);
   first = false;
   if (errors.length) console.log('errores en', id, errors.slice(-3).join(' | ').slice(0, 600));
   // con el renderizado por software el bucle continuo no deja capturar: se congela el último fotograma

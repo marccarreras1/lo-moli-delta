@@ -66,10 +66,12 @@ export const SECTION_Y = 2.35;
 export function useMaterials(sel: FinishSelection, mode: DisplayMode, sectionHeight: number, section = false, lampLevel = 0): MaterialSet {
   const clipH = useMemo(() => new THREE.Plane(new THREE.Vector3(0, -1, 0), sectionHeight), [sectionHeight]);
   const clipV = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 0, 1), -SECTION_Y), []);
+  // en corte, los muebles se recortan algo más arriba (≥ 2,20 m): quitan lámparas colgantes y salidas de humos de la vista cenital
+  const clipF = useMemo(() => new THREE.Plane(new THREE.Vector3(0, -1, 0), Math.max(sectionHeight, 2.2)), [sectionHeight]);
   const set = useMemo(() => {
     const ghost = mode === 'atenuado';
     const building: THREE.Plane[] = [...(mode === 'corte' ? [clipH] : []), ...(section ? [clipV] : [])];
-    const all: THREE.Plane[] = section ? [clipV] : [];
+    const all: THREE.Plane[] = [...(mode === 'corte' ? [clipF] : []), ...(section ? [clipV] : [])];
     const cutting = mode === 'corte' || section;
     const tex = (t: TexturePair | null, bumpScale: number) => (t ? { map: t.map, bumpMap: t.bump, bumpScale } : {});
     // revoco de cal: relieve de llana con mapa de normales (se aprecia también a distancia y con luz rasante)
@@ -130,7 +132,7 @@ export function useMaterials(sel: FinishSelection, mode: DisplayMode, sectionHei
       stair: std(new THREE.Color(f('paredes').color).multiplyScalar(0.9).getStyle(), 0.93, tex(plaster, 0.003), true),
       poche: new THREE.MeshBasicMaterial({ color: '#3a3833' }),
     };
-  }, [sel, mode, clipH, clipV, section]);
+  }, [sel, mode, clipH, clipV, clipF, section]);
   // las lámparas se regulan sin recrear materiales
   useEffect(() => {
     set.lampGlow.emissiveIntensity = 0.15 + Math.max(0, Math.min(1, lampLevel)) * 2.4;
