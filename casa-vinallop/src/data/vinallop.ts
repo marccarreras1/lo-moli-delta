@@ -291,7 +291,6 @@ const furniture: Furniture[] = [
 const water = (id: string, levelId: string, p: Vec2, note: string, sourceId = S.planta): Trace => ({ id, levelId, label: 'Punto de agua (×)', cross: p, sourceId, note });
 const traces: Trace[] = [
   water('x-ducha', 'pb', [cx(3.72), 2.3], 'Marca «×» del boceto junto al tabique del dormitorio, en el baño. Con la nueva distribución queda junto al inodoro.'),
-  { id: 'rect-bano', levelId: 'pb', label: 'Rectángulo del baño', sourceId: S.planta, points: [[cx(3.55), 2.0], [cx(4.3), 2.0], [cx(4.3), 3.0], [cx(3.55), 3.0]], closed: true, note: 'Rectángulo de ≈0,75 × 1,00 m dibujado en el baño, sin uso asignado (pendiente).' },
   { id: 'isla-boceto', levelId: 'pb', kind: 'nota', label: 'Isla del boceto', sourceId: S.planta, points: [[cx(8.05), 1.55], [cx(9.55), 1.55], [cx(9.55), 3.2], [cx(8.05), 3.2]], closed: true, note: 'Rectángulo de ≈1,55 × 1,65 m dibujado como isla. Con ese fondo quedaría poco paso hasta la cocina; la propuesta lo reduce a 0,95 m.' },
   water('x-frontal-a', 'pb', [cx(4.65), y0], 'Sobre la línea del frontal A en el tramo del baño.'),
   water('x-cocina-1', 'pb', [cx(7.57), r2(YB - 0.6)], 'En el borde de la encimera.'),

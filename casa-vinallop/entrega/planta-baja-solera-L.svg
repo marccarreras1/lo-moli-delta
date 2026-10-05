@@ -152,8 +152,6 @@
 <text x="7.73" y="2.935" font-size="0.15" fill="#687066" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 7.73 2.935)">Barandilla de la escalera de cristal · h 1,00 m</text>
 <g class="traces" pointer-events="none">
 <g stroke="#94650f" stroke-width="0.025" data-trace="x-ducha"><line x1="3.92" y1="2.2" x2="4.12" y2="2.4"/><line x1="3.92" y1="2.4" x2="4.12" y2="2.2"/></g>
-<polygon points="3.85,2 4.6,2 4.6,3 3.85,3" fill="none" stroke="#94650f" stroke-width="0.025" stroke-dasharray="0.1 0.06"/>
-<text x="4.6" y="2" font-size="0.15" fill="#94650f" text-anchor="middle" dominant-baseline="middle" paint-order="stroke" stroke="#fefdfb" stroke-width="0.05">? Rectángulo del baño · sin interpretar</text>
 <polygon points="8.35,1.55 9.85,1.55 9.85,3.2 8.35,3.2" fill="none" stroke="#9fa39a" stroke-width="0.025" stroke-dasharray="0.1 0.06"/>
 <text x="9.85" y="1.55" font-size="0.15" fill="#687066" text-anchor="middle" dominant-baseline="middle" paint-order="stroke" stroke="#fefdfb" stroke-width="0.05">Isla del boceto</text>
 <g stroke="#94650f" stroke-width="0.025" data-trace="x-frontal-a"><line x1="4.85" y1="0.2" x2="5.05" y2="0.4"/><line x1="4.85" y1="0.4" x2="5.05" y2="0.2"/></g>
