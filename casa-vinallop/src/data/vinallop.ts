@@ -325,6 +325,24 @@ const outdoor: Outdoor = {
       note: 'Solera a lo largo de todo el frontal A, de punta a punta de la casa, con el porche delante de la cristalera (indicaciones de la propiedad: «en la parte de la cristalera pon la solera y un porche» y «la solera de punta a punta de la casa y elimina la solera de la parte de la puerta de entrada»). Cemento claro mate, mismo nivel que el tramo lateral, con el que se une en la esquina del algarrobo. Fondo de 3,40 m propuesto; juntas cada ≈3,3 m; pendiente del 1,5–2 % hacia fuera y canaleta en el borde (propuesta de evacuación, pendiente de desarrollo técnico).',
     },
   ],
+  // jardín seco delante de la fachada de la entrada, hasta los primeros olivos (propiedad; referencia «11 plantes qui
+  // prospèrent en sol sec sans arrosage»), con paseos de losas de cemento hasta las dos puertas del frontal B
+  garden: {
+    id: 'jardin-seco', label: 'Jardín seco de la entrada', rect: [-0.5, r2(W + 0.5), 16.8, 11.5], status: 'propuesto',
+    paths: [
+      { id: 'paseo-entrada', label: 'Paseo de losas a la puerta de entrada', x: r2(X_PUERTA + 0.6), width: 1.1, y0: r2(W + 0.08), y1: 11.5, slab: 0.45, gap: 0.12 },
+      { id: 'paseo-bano', label: 'Paseo de losas a la puerta del baño', x: cx(5.55), width: 0.7, y0: r2(W + 0.08), y1: 11.5, slab: 0.4, gap: 0.14 },
+    ],
+    species: [
+      { id: 'lavanda', label: 'Lavanda', h: 0.55, d: 0.75, band: 0.1, color: '#8a74c4' },
+      { id: 'stipa', label: 'Stipa tenuissima', h: 0.55, d: 0.55, band: 0.35, color: '#d9c58f' },
+      { id: 'agapanto', label: 'Agapanto', h: 0.8, d: 0.6, band: 0.5, color: '#5f7fd8' },
+      { id: 'gaura', label: 'Gaura lindheimeri', h: 0.9, d: 0.7, band: 0.65, color: '#f1ece6' },
+      { id: 'perovskia', label: 'Perovskia', h: 1.0, d: 0.8, band: 0.8, color: '#9aa6d6' },
+      { id: 'verbena', label: 'Verbena de Buenos Aires', h: 1.3, d: 0.5, band: 0.95, color: '#8b4fb8' },
+    ],
+    note: 'Jardín seco mediterráneo (xerojardinería) que no necesita riego una vez arraigado: lavanda y Stipa tenuissima junto a la fachada y los caminos, agapanto y gaura en medio y perovskia y verbena de Buenos Aires al fondo, hacia los olivos, en grupos que se repiten. Acolchado de grava sobre tierra drenante. Dos paseos de losas de cemento con juntas de grava: uno a la puerta de entrada (losas de 1,10 × 0,45 m) y otro a la puerta de vidrio del baño (0,70 × 0,40 m), para salir de la ducha al jardín. Distribución orientativa: la plantación concreta la decide quien la ejecute.',
+  },
   porches: [
     {
       id: 'porche-cristalera', label: 'Porche de la cristalera', rect: [PORCHE_X0, r2(-SOL_TRASERA + 0.2), L, 0], wallSide: 'y1', hWall: 3.45, hFront: 3.2,

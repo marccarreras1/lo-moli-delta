@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import type { DesignOptions, Furniture, Outdoor, OutdoorPavement, Vec2 } from '../data/types';
 import { AMBER } from '../ui/status';
 import { Furniture3D } from './Furniture3D';
+import { Garden3D } from './Garden3D';
 import { WARM } from './Lamps';
 import type { MaterialSet } from './materials';
 
@@ -287,6 +288,7 @@ export function Outdoor3D({ outdoor, mats, options, level, selectedId, onSelect 
   return (
     <group>
       {renderRects(outdoor.pavements).map((p) => <Pavement key={p.id} p={p} mats={mats} />)}
+      {outdoor.garden && <Garden3D garden={outdoor.garden} mats={mats} />}
       {outdoor.pavements.filter((p) => p.permeable).map((p) => <TreePit key={`al-${p.id}`} c={p.permeable!.c} r={p.permeable!.r} mats={mats} />)}
       {(outdoor.drains ?? []).map((d) => <Drain key={d.id} a={d.a} b={d.b} mats={mats} />)}
       {(outdoor.porches ?? []).map((p) => <Porch key={p.id} p={p} mats={mats} />)}

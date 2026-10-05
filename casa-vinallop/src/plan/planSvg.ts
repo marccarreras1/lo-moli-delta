@@ -10,6 +10,7 @@ import {
 import { FRAME, leafPose } from '../model/openings';
 import { passages } from '../model/passages';
 import { soleraQuantities } from '../model/solera';
+import { gardenPlants, pathSlabs } from '../model/garden';
 import type { Issue } from '../model/validate';
 import { ACCENT, AMBER, STATUS_STYLE } from '../ui/status';
 
@@ -90,6 +91,23 @@ function outdoorSvg(layout: Layout, od: NonNullable<Layout['outdoor']>, labels: 
     for (let x = x0 + p.joints; x < x1 - 1e-6; x += p.joints) g.push(`<line x1="${n4(x)}" y1="${n4(y0)}" x2="${n4(x)}" y2="${n4(y1)}" stroke="#b9b5ab" stroke-width="0.012"/>`);
     for (let y = y0 + p.joints; y < y1 - 1e-6; y += p.joints) g.push(`<line x1="${n4(x0)}" y1="${n4(y)}" x2="${n4(x1)}" y2="${n4(y)}" stroke="#b9b5ab" stroke-width="0.012"/>`);
   }
+  // jardín seco: acolchado de grava, matas por especie y paseos de losas
+  if (od.garden) {
+    const gd = od.garden;
+    const [gx0, gy0, gx1, gy1] = gd.rect;
+    g.push(`<rect x="${n4(gx0)}" y="${n4(gy0)}" width="${n4(gx1 - gx0)}" height="${n4(gy1 - gy0)}" fill="#eceee2" stroke="#b9bfa8" stroke-width="0.015" stroke-dasharray="0.1 0.06" data-garden="${esc(gd.id)}"/>`);
+    const col = new Map(gd.species.map((s) => [s.id, s]));
+    for (const pl of gardenPlants(gd)) {
+      const sp = col.get(pl.s)!;
+      g.push(`<circle cx="${n4(pl.x)}" cy="${n4(pl.y)}" r="${n4((sp.d / 2) * pl.k * 0.8)}" fill="${sp.color}" fill-opacity="0.55" stroke="#7d8a6a" stroke-width="0.006"/>`);
+    }
+    for (const p of gd.paths) for (const s of pathSlabs(p)) g.push(`<rect x="${n4(s.x - s.w / 2)}" y="${n4(s.y - s.d / 2)}" width="${n4(s.w)}" height="${n4(s.d)}" fill="#d9d6ce" stroke="#9c988d" stroke-width="0.012"/>`);
+    if (labels) {
+      g.push(`<text x="${n4(gx0 + 0.3)}" y="${n4(gy1 - 0.35)}" font-size="0.2" fill="#56663f">${esc(gd.label)} · sin riego una vez arraigado</text>`);
+      gd.species.forEach((s, i) => g.push(`<circle cx="${n4(gx0 + 0.42 + i * 2.4)}" cy="${n4(gy1 - 0.08 + 0.3)}" r="0.09" fill="${s.color}" stroke="#7d8a6a" stroke-width="0.008"/><text x="${n4(gx0 + 0.58 + i * 2.4)}" y="${n4(gy1 + 0.26)}" font-size="0.13" fill="#56663f">${esc(s.label)}</text>`));
+      for (const p of gd.paths) g.push(`<text x="${n4(p.x + p.width / 2 + 0.1)}" y="${n4((p.y0 + p.y1) / 2)}" font-size="0.11" fill="#687066" transform="rotate(-90 ${n4(p.x + p.width / 2 + 0.1)} ${n4((p.y0 + p.y1) / 2)})" text-anchor="middle">losas de cemento ${fmtM(p.width)} × ${fmtM(p.slab)}</text>`);
+    }
+  }
   for (const p of od.pavements.filter((x) => x.permeable)) {
     const { c, r } = p.permeable!;
     g.push(`<circle cx="${n4(c[0])}" cy="${n4(c[1])}" r="${n4(r)}" fill="#efe9de" stroke="#3a3833" stroke-width="0.02"/>`);
@@ -145,7 +163,7 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
   const extraBottom = o.forExport ? 2.0 : 1.0;
   const levelFirst = (layout.levels.find((l) => l.id === o.levelId) ?? layout.levels[0])?.elevation === 0;
   const outdoor = o.showOutdoor !== false && levelFirst ? layout.outdoor : undefined;
-  const solera = outdoor?.pavements.filter((p) => p.joints > 0) ?? [];
+  const solera = [...(outdoor?.pavements.filter((p) => p.joints > 0) ?? []), ...(outdoor?.garden ? [{ rect: outdoor.garden.rect }] : [])];
   // extensión del dibujo: la casa y, si se muestra, la solera exterior
   const ex = {
     minX: Math.min(minX, ...solera.map((p) => p.rect[0])), minY: Math.min(minY, ...solera.map((p) => p.rect[1])),

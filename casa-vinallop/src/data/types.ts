@@ -286,6 +286,18 @@ export interface OutdoorPavement {
 }
 
 /** Elementos exteriores del proyecto (comedor bajo el algarrobo). */
+export type GardenSpeciesId = 'lavanda' | 'stipa' | 'gaura' | 'verbena' | 'agapanto' | 'perovskia';
+export interface GardenSpecies {
+  id: GardenSpeciesId;
+  label: string;
+  /** altura y diámetro de la mata adulta (m) */
+  h: number;
+  d: number;
+  /** franja preferida: 0 = junto a la fachada y los caminos, 1 = al fondo, hacia los olivos */
+  band: number;
+  color: string;
+}
+
 export interface Outdoor {
   pavements: OutdoorPavement[];
   furniture: Furniture[];
@@ -305,6 +317,19 @@ export interface Outdoor {
     note: string;
   };
   /** porches (pérgola de vigas de madera sobre pilares de obra, cubierta de cañizo) */
+  /** jardín seco (xerojardinería) con caminos de losas */
+  garden?: {
+    id: string;
+    label: string;
+    /** [x0, y0, x1, y1] en planta */
+    rect: [number, number, number, number];
+    /** caminos de losas de hormigón: eje x, ancho de losa, desde y0 hasta y1 */
+    paths: { id: string; label: string; x: number; width: number; y0: number; y1: number; slab: number; gap: number }[];
+    /** especies (las plantas se reparten por la superficie con un generador determinista) */
+    species: GardenSpecies[];
+    status: DataStatus;
+    note: string;
+  };
   porches?: {
     id: string;
     label: string;

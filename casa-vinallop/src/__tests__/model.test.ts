@@ -5,6 +5,7 @@ import { VINALLOP_ACTUAL } from '../data/vinallopActual';
 import { cameraPresets } from '../model/cameras';
 import { furnitureFootprint, pointInPolygon, polygonArea, wallPieces, wallSegmentRect } from '../model/geometry';
 import { passages } from '../model/passages';
+import { gardenPlants, pathSlabs } from '../model/garden';
 import { soleraQuantities } from '../model/solera';
 import { leafPose } from '../model/openings';
 import { hasGeometry, resolveLayout, type Variant } from '../model/resolve';
@@ -392,6 +393,21 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
     const ids = new Set(l2.furniture.filter((f) => f.onlyIf?.salon === 'enfrentados').map((f) => f.id));
     expect(ids.size).toBe(8);
     expect(validateLayout(l2).filter((i) => ids.has(i.elementId))).toEqual([]);
+  });
+  it('jardín seco de la entrada hasta los olivos, con paseos de losas a las dos puertas del frontal B', () => {
+    const g = layout.outdoor!.garden!;
+    const plants = gardenPlants(g);
+    expect(plants.length).toBeGreaterThan(150);
+    expect(new Set(plants.map((p) => p.s)).size).toBe(6);
+    // ninguna mata sobre los paseos
+    for (const p of g.paths) expect(plants.some((pl) => Math.abs(pl.x - p.x) < p.width / 2 && pl.y > p.y0 && pl.y < p.y1)).toBe(false);
+    // cada paseo arranca delante de una puerta del frontal B
+    const doors = layout.openings.filter((o) => o.wallId === 'muro-B' && o.kind === 'puerta');
+    for (const p of g.paths) expect(doors.some((d) => p.x > d.offset + 0.15 && p.x < d.offset + 0.15 + d.width)).toBe(true);
+    // las bajas delante y las altas al fondo
+    const depth = (id: string) => { const l = plants.filter((p) => p.s === id); return l.reduce((a, p) => a + p.y, 0) / l.length; };
+    expect(depth('lavanda')).toBeLessThan(depth('verbena'));
+    expect(pathSlabs(g.paths[0]).length).toBeGreaterThan(8);
   });
   it('cocina también bajo la escalera (en L) y mesa de comedor para 4 sin conflictos', () => {
     const esc = layout.stairs[0];

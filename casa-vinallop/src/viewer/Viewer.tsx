@@ -569,6 +569,7 @@ function GroundDetail({ layout, site, cx, cy }: { layout: Layout; site: Site; cx
       [minX - 0.4, minY - 0.4, maxX + 0.4, maxY + 0.4],
       ...site.pavements.map((p) => p.rect),
       ...(layout.outdoor?.pavements ?? []).filter((p) => p.joints > 0).map((p) => p.rect),
+      ...(layout.outdoor?.garden ? [layout.outdoor.garden.rect] : []),
     ];
     const free = (x: number, y: number, m: number) => !rects.some((rc) => x > rc[0] - m && x < rc[2] + m && y > rc[1] - m && y < rc[3] + m)
       && !site.trees.some((t) => Math.hypot(t.c[0] - x, t.c[1] - y) < 1.2);
