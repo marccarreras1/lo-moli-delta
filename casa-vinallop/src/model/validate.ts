@@ -152,6 +152,8 @@ export function validateLayout(layout: Layout): Issue[] {
       const a = layout.furniture[i];
       const b = layout.furniture[j];
       if (a.type === 'alfombra' || b.type === 'alfombra') continue;
+      // piezas colgadas en la pared (baldas, colgadores, apliques) pueden quedar sobre un mueble
+      if (a.type === 'balda' || b.type === 'balda' || a.type === 'aplique' || b.type === 'aplique') continue;
       const la = layout.rooms.find((r) => r.id === a.roomId)?.levelId;
       const lb = layout.rooms.find((r) => r.id === b.roomId)?.levelId;
       if (la !== lb) continue;

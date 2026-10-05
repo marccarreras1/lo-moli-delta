@@ -108,6 +108,45 @@ function outdoorSvg(layout: Layout, od: NonNullable<Layout['outdoor']>, labels: 
       for (const p of gd.paths) g.push(`<text x="${n4(p.x + p.width / 2 + 0.1)}" y="${n4((p.y0 + p.y1) / 2)}" font-size="0.11" fill="#687066" transform="rotate(-90 ${n4(p.x + p.width / 2 + 0.1)} ${n4((p.y0 + p.y1) / 2)})" text-anchor="middle">losas de cemento ${fmtM(p.width)} × ${fmtM(p.slab)}</text>`);
     }
   }
+  // volúmenes anexos (cuarto técnico): muros, puerta exterior con su giro, medidas
+  for (const an of od.annexes ?? []) {
+    const [ax0, ay0, ax1, ay1] = an.rect;
+    const t = an.wall;
+    g.push(`<rect x="${n4(ax0)}" y="${n4(ay0)}" width="${n4(ax1 - ax0)}" height="${n4(ay1 - ay0)}" fill="#2f3430" data-annex="${esc(an.id)}"/>`);
+    g.push(`<rect x="${n4(ax0 + t)}" y="${n4(ay0 + t)}" width="${n4(ax1 - ax0 - t)}" height="${n4(ay1 - ay0 - 2 * t)}" fill="#f4f2ec"/>`);
+    const d = an.door;
+    if (d.side === 'y1' || d.side === 'y0') {
+      const yw = d.side === 'y1' ? ay1 - t : ay0;
+      g.push(`<rect x="${n4(d.at - d.width / 2)}" y="${n4(yw)}" width="${n4(d.width)}" height="${n4(t)}" fill="#fefdfb"/>`);
+      const yo = d.side === 'y1' ? ay1 : ay0;
+      const sg = d.side === 'y1' ? 1 : -1;
+      g.push(`<path d="M ${n4(d.at - d.width / 2)} ${n4(yo)} L ${n4(d.at - d.width / 2)} ${n4(yo + sg * d.width)} A ${n4(d.width)} ${n4(d.width)} 0 0 ${sg > 0 ? 0 : 1} ${n4(d.at + d.width / 2)} ${n4(yo)}" fill="none" stroke="#7d8277" stroke-width="0.012" stroke-dasharray="0.05 0.04"/>`);
+    }
+    const cxA = (ax0 + t + ax1) / 2;
+    const cyA = (ay0 + ay1) / 2;
+    if (labels) {
+      g.push(`<text x="${n4(cxA)}" y="${n4(cyA - 0.2)}" font-size="0.17" font-weight="600" text-anchor="middle" fill="#252923" transform="rotate(-90 ${n4(cxA)} ${n4(cyA - 0.2)})">${esc(an.label)}</text>`);
+      g.push(`<text x="${n4(cxA + 0.28)}" y="${n4(cyA)}" font-size="0.12" text-anchor="middle" fill="#2f5d6b" class="tnum" transform="rotate(-90 ${n4(cxA + 0.28)} ${n4(cyA)})">${fmtM(ax1 - ax0 - t)} × ${fmtM(ay1 - ay0 - 2 * t)} m · h ${fmtM(an.height)} · acceso exterior</text>`);
+    }
+    g.push(dim([ax0, ay0], [ax1, ay0], -0.45, `${fmtM(ax1 - ax0)} m`, an.status));
+  }
+  // escalones volados en zigzag (en planta: las piezas que salen de la fachada)
+  for (const ws of od.wallSteps ?? []) {
+    for (let i = 0; i < ws.steps; i++) {
+      const side = i % 2 === 0 ? -1 : 1;
+      const along = ws.start + ws.dir * (i * ws.run + side * 0.13);
+      const o0 = ws.face.at;
+      const o1 = ws.face.at + ws.face.outward * ws.projection;
+      const [rx0, rx1] = [Math.min(o0, o1), Math.max(o0, o1)];
+      if (ws.face.axis === 'x') g.push(`<rect x="${n4(rx0)}" y="${n4(along - ws.width / 2)}" width="${n4(rx1 - rx0)}" height="${n4(ws.width)}" fill="#cbbd9e" stroke="#6d6048" stroke-width="0.01"/>`);
+      else g.push(`<rect x="${n4(along - ws.width / 2)}" y="${n4(rx0)}" width="${n4(ws.width)}" height="${n4(rx1 - rx0)}" fill="#cbbd9e" stroke="#6d6048" stroke-width="0.01"/>`);
+    }
+    if (labels && ws.face.axis === 'x') {
+      const lx = ws.face.at + ws.face.outward * (ws.projection + 0.2);
+      const ly = ws.start + ws.dir * ws.steps * ws.run / 2;
+      g.push(`<text x="${n4(lx)}" y="${n4(ly)}" font-size="0.12" fill="#6d6048" text-anchor="middle" transform="rotate(-90 ${n4(lx)} ${n4(ly)})">${esc(ws.label)} · sube a ${fmtM(ws.top)} m</text>`);
+    }
+  }
   for (const p of od.pavements.filter((x) => x.permeable)) {
     const { c, r } = p.permeable!;
     g.push(`<circle cx="${n4(c[0])}" cy="${n4(c[1])}" r="${n4(r)}" fill="#efe9de" stroke="#3a3833" stroke-width="0.02"/>`);
@@ -163,7 +202,7 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
   const extraBottom = o.forExport ? 2.0 : 1.0;
   const levelFirst = (layout.levels.find((l) => l.id === o.levelId) ?? layout.levels[0])?.elevation === 0;
   const outdoor = o.showOutdoor !== false && levelFirst ? layout.outdoor : undefined;
-  const solera = [...(outdoor?.pavements.filter((p) => p.joints > 0) ?? []), ...(outdoor?.garden ? [{ rect: outdoor.garden.rect }] : [])];
+  const solera = [...(outdoor?.pavements.filter((p) => p.joints > 0) ?? []), ...(outdoor?.garden ? [{ rect: outdoor.garden.rect }] : []), ...(outdoor?.annexes ?? [])];
   // extensión del dibujo: la casa y, si se muestra, la solera exterior
   const ex = {
     minX: Math.min(minX, ...solera.map((p) => p.rect[0])), minY: Math.min(minY, ...solera.map((p) => p.rect[1])),
@@ -537,7 +576,9 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
     const m = (id: string) => layout.measures.find((x) => x.id === id)?.status ?? 'interpretado';
     out.push('<g class="dims">');
     out.push(outdoor ? dim([minX, minY], [maxX, minY], -1.2 - (minY - ex.minY), `${fmtM(L)} m`, m('largo')) : dim([minX, maxY], [maxX, maxY], 1.0, `${fmtM(L)} m`, m('largo')));
-    out.push(dim([minX, minY], [minX, maxY], 0.8, `${fmtM(W)} m`, m('ancho')));
+    // si hay un anexo pegado al lateral izquierdo, las cotas verticales se apartan por fuera de él
+    const leftExtra = Math.max(0, ...(outdoor?.annexes ?? []).filter((x) => x.rect[2] <= minX + 0.01).map((x) => minX - x.rect[0]));
+    out.push(dim([minX, minY], [minX, maxY], 0.8 + leftExtra, `${fmtM(W)} m`, m('ancho')));
     // cadenas de cotas por fachada: esquinas exteriores y bordes de cada hueco de este nivel
     const lvlTop = lvlElev + (level?.wallHeight ?? 2.5) + 0.3;
     const center: Vec2 = [(minX + maxX) / 2, (minY + maxY) / 2];
@@ -569,7 +610,7 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
       const tA = Math.min(...walls.filter((x) => x.kind === 'exterior' && Math.abs(x.a[1] - x.b[1]) < 1e-6 && x.a[1] < (minY + maxY) / 2).map((x) => x.thickness), 0.3);
       const tB = Math.max(...walls.filter((x) => x.kind === 'exterior' && Math.abs(x.a[1] - x.b[1]) < 1e-6 && x.a[1] > (minY + maxY) / 2).map((x) => x.thickness), 0.3);
       const ys = [minY, minY + tA, maxY - tB, maxY];
-      for (let i = 0; i < 3; i++) out.push(dim([minX, ys[i]], [minX, ys[i + 1]], 1.45, fmtM(ys[i + 1] - ys[i]), 'documentado'));
+      for (let i = 0; i < 3; i++) out.push(dim([minX, ys[i]], [minX, ys[i + 1]], 1.45 + leftExtra, fmtM(ys[i + 1] - ys[i]), 'documentado'));
     }
     // medidas interiores de cada estancia (ancho × fondo por las caras de los muros)
     for (const r of rooms) {

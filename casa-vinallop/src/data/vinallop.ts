@@ -111,9 +111,9 @@ const walls: Wall[] = [
 const onAB = (x: number) => r2(x - h); // offset sobre el eje de los muros A y B (empieza en x = 0,15)
 const openings: Opening[] = [
   {
-    id: 'obertura-7m', label: 'Ventanal de 7 m (bocetos)', wallId: 'muro-A', kind: 'cristalera', offset: onAB(cx(7.4)), width: 7, sill: 0, height: 3.15,
-    system: null, status: 'documentado', sourceId: S.planta, variantKey: 'ventanal-7',
-    note: 'Anchura escrita en los bocetos («OBERTURA 7 M»). En planta empieza junto a la escalera y en el alzado A termina a ≈1,4 m del extremo. Altura medida en el alzado A (≈3,15 m). Carpintería no definida.',
+    id: 'obertura-7m', label: 'Ventanal de 7 m', wallId: 'muro-A', kind: 'cristalera', offset: onAB(cx(7.4)), width: 7, sill: 0, height: 3.15,
+    system: null, status: 'confirmado', sourceId: S.prop, variantKey: 'ventanal-7',
+    note: 'La propiedad vuelve a los 7 m de los bocetos («OBERTURA 7 M»): menos pérdidas por el lado norte, menos coste y menos estructura que el de 9 m. En planta empieza junto a la escalera y en el alzado A termina a ≈1,4 m del extremo. Altura medida en el alzado A (≈3,15 m). Carpintería no definida.',
   },
   {
     id: 'obertura-9m', label: 'Ventanal de 9 m (solicitado)', wallId: 'muro-A', kind: 'cristalera', offset: onAB(r2(ALT_X1 + 0.5)), width: 9, sill: 0, height: 3.15,
@@ -223,7 +223,10 @@ const f = (x: Furniture) => x;
 const YB = y1;
 const furniture: Furniture[] = [
   // dormitorio (posición de los bocetos, sin cambios respecto a la cadena de cotas)
-  f({ id: 'armario', type: 'armario', label: 'Armario empotrado', roomId: 'dormitorio', x: r2(x0 + 0.25), y: r2((y0 + y1) / 2), w: r2(y1 - y0), d: 0.5, h: 2.4, rot: 270, status: 'documentado', note: 'Franja del lateral izquierdo (propiedad). Fondo ≈0,5 m medido.' }),
+  // armario empotrado (propiedad: «mueve el armario y pon un pequeño armario en el lado del cristal»): se acorta y se lleva
+  // hacia el frontal A, lejos de la cama, y se añade uno pequeño junto a la cristalera del dormitorio
+  f({ id: 'armario', type: 'armario', label: 'Armario empotrado', roomId: 'dormitorio', x: r2(x0 + 0.25), y: r2(y0 + 1.1), w: 2.2, d: 0.5, h: 2.4, rot: 270, status: 'propuesto', note: 'Armario de 2,20 m en el lateral izquierdo, desplazado hacia el frontal A (indicación de la propiedad): ya no queda al lado de la cama y el paso junto a ella pasa de 0,68 m a ≈1,2 m.' }),
+  f({ id: 'armario-cristal', type: 'armario', label: 'Armario pequeño (lado de la cristalera)', roomId: 'dormitorio', x: r2(x0 + 0.5 + 0.06 + 0.4), y: r2(y0 + 0.25), w: 0.8, d: 0.5, h: 2.1, rot: 0, status: 'propuesto', note: 'Armario pequeño de 0,80 m en el frontal A, entre el armario empotrado y la cristalera del dormitorio (indicación de la propiedad).' }),
   f({ id: 'cama', type: 'cama', label: 'Cama 160 × 200', roomId: 'dormitorio', x: cx(1.98), y: r2(YB - 1.0), w: 1.6, d: 2.0, h: 0.55, rot: 180, status: 'interpretado', note: 'Dibujada de ≈1,65 × 2,05 m con dos almohadas y el embozo; cabecero contra el frontal B.' }),
   f({ id: 'mesita-dorm', type: 'mesita', label: 'Mesita', roomId: 'dormitorio', x: cx(3.05), y: r2(YB - 0.22), w: 0.4, d: 0.36, h: 0.5, rot: 180, status: 'propuesto', note: 'Al lado libre de la cama (el otro lado queda junto al armario empotrado).' }),
   f({ id: 'balda-dorm', type: 'balda', label: 'Balda de apoyo', roomId: 'dormitorio', x: cx(1.0), y: r2(YB - 0.15), w: 0.3, d: 0.25, h: 0.55, rot: 180, status: 'propuesto', note: 'Balda volada de madera entre el armario y la cama: deja libre el suelo y el paso al armario.' }),
@@ -240,7 +243,7 @@ const furniture: Furniture[] = [
   f({ id: 'ducha', type: 'ducha', label: 'Zona húmeda · dos duchas enfrentadas', roomId: 'bano', x: r2((B_X0 + B_X1) / 2), y: r2((B_WET + YB) / 2), w: r2(B_X1 - B_X0), d: r2(YB - B_WET), h: 2.0, rot: 0, status: 'confirmado',
     note: 'Dos duchas una frente a la otra (propiedad): rociadores en los tabiques opuestos (dormitorio y escalera), orientados hacia la zona húmeda común de 2,40 × 1,20 m, con mandos independientes. Separación con celosía cerámica (A o B), vidrio fijo por la cara húmeda y cortina en el acceso con carril propio (propuesta). Desde la zona húmeda se sale al exterior por la puerta de vidrio de 70 cm del frontal B (propiedad).' }),
   f({ id: 'lavabo', type: 'lavabo', label: 'Lavabo de obra', roomId: 'bano', x: r2(B_X1 - 0.28), y: 2.68, w: 1.05, d: 0.55, h: 0.85, rot: 90, status: 'propuesto', note: 'Lavabo de obra con un seno, dos cajones de madera, hueco inferior y espejo grande (referencia del baño). En el lateral izquierdo según se entra, contra el tabique de la escalera.' }),
-  f({ id: 'inodoro', type: 'inodoro', label: 'Inodoro', roomId: 'bano', x: r2(B_X0 + 0.325), y: 2.72, w: 0.38, d: 0.65, h: 0.42, rot: 270, status: 'propuesto', note: 'En el lateral derecho según se entra, fuera del eje de la puerta para dar privacidad. Saneamiento a comprobar (el boceto marcaba «×» de agua en este tabique).' }),
+  f({ id: 'inodoro', type: 'inodoro', label: 'Inodoro', roomId: 'bano', x: r2(B_X0 + 0.325), y: 2.42, w: 0.38, d: 0.65, h: 0.42, rot: 270, status: 'propuesto', note: 'En el lateral derecho según se entra, fuera del eje de la puerta para dar privacidad. Saneamiento a comprobar (el boceto marcaba «×» de agua en este tabique).' }),
   // cocina lineal contra el frontal B (propiedad), entre la escalera y la puerta de entrada.
   // Con rot 180 el eje local va de la puerta hacia la escalera: frigorífico, placa y horno, lavavajillas, fregadero.
   f({ id: 'encimera', type: 'encimera', label: 'Cocina', roomId: 'dia', x: cx(8.35), y: r2(YB - 0.3), w: 2.2, d: 0.6, h: 0.9, rot: 180, status: 'confirmado',
@@ -266,7 +269,10 @@ const furniture: Furniture[] = [
     const a = Math.PI / 4 + (k * Math.PI) / 2;
     return f({ id: `silla-redonda-${k + 1}`, type: 'silla', label: 'Silla de comedor', roomId: 'dia', x: r2(MESA_COM[0] + Math.cos(a) * 0.7), y: r2(MESA_COM[1] + 0.1 + Math.sin(a) * 0.7), w: 0.44, d: 0.44, h: 0.82, rot: r2((Math.atan2(Math.cos(a), Math.sin(a)) * 180) / Math.PI + 180), status: 'propuesto', onlyIf: { salon: 'sofa-l', mesaComedor: 'redonda' } });
   }),
-  f({ id: 'sofa-b', onlyIf: { salon: 'sofa-l' }, type: 'sofa-l', label: 'Sofá en L (frontal B)', roomId: 'dia', x: rx(12.75), y: r2(YB - 0.43), w: 4.0, d: 0.85, h: 0.8, rot: 180, status: 'documentado', note: 'Sofá (propiedad): tramo desde la jamba de la puerta, fondo ≈0,85 m. Colchonetas gruesas y cojines blancos y crudos (referencia 03).' }),
+  f({ id: 'sofa-b', onlyIf: { salon: 'sofa-l' }, type: 'sofa-l', label: 'Sofá en L (frontal B)', roomId: 'dia', x: r2(rx(12.75) + 0.25), y: r2(YB - 0.43), w: 3.5, d: 0.85, h: 0.8, rot: 180, status: 'documentado', note: 'Sofá (propiedad): tramo desde la jamba de la puerta, fondo ≈0,85 m. Colchonetas gruesas y cojines blancos y crudos (referencia 03).' }),
+  // recibidor (propiedad): el sofá empieza 50 cm más lejos de la puerta y, junto a la jamba, banco de obra con colgadores
+  f({ id: 'banco-recibidor', type: 'banco', label: 'Banco de obra del recibidor', roomId: 'dia', x: r2(X_PUERTA + 1.2 + 0.29), y: r2(YB - 0.2), w: 0.5, d: 0.4, h: 0.8, rot: 180, status: 'propuesto', note: 'Banco de obra de 0,50 m junto a la puerta de entrada para sentarse y dejar cosas, con colgadores encima (indicación de la propiedad).' }),
+  f({ id: 'colgadores-recibidor', type: 'balda', label: 'Colgadores', roomId: 'dia', x: r2(X_PUERTA + 1.2 + 0.29), y: r2(YB - 0.1), w: 0.5, d: 0.2, h: 1.75, rot: 180, status: 'propuesto' }),
   f({ id: 'sofa-lateral', onlyIf: { salon: 'sofa-l' }, type: 'sofa-l', label: 'Sofá en L (lateral derecho)', roomId: 'dia', x: r2(x1 - 0.33), y: r2(YB - 1.4), w: 2.8, d: 0.65, h: 0.8, rot: 90, status: 'documentado', note: 'Segundo tramo del sofá contra el lateral derecho; fondo dibujado ≈0,65 m.' }),
   f({ id: 'estufa', type: 'estufa', label: 'Estufa', roomId: 'dia', x: rx(14.43), y: 0.9, w: 0.8, d: 0.8, h: 1.0, rot: 0, onlyIf: { salon: 'sofa-l', chimenea: 'estufa' }, status: 'documentado', note: 'El círculo del boceto (propiedad), junto al frontal A al final de la obertura. Dibujado de ≈1 m de diámetro; salida de humos supuesta. Con el ventanal de 9 m queda delante del vidrio.' }),
   // variante: chimenea de obra contra el lateral derecho, a continuación del sofá de obra (referencia de la propiedad)
@@ -314,14 +320,30 @@ const PORCHE_X0 = r2(ALT_X1);
 const MESA_EXT: Vec2 = [r2(L + 2.0), r2(ALGARROBO[1] - 3.6)];
 const outdoor: Outdoor = {
   pavements: [
-    { id: 'grava-comedor', label: 'Transición de grava', rect: [-0.5, r2(-SOL_TRASERA - 0.5), r2(L + SOL_LATERAL + 0.5), r2(W + 0.5)], joints: 0, status: 'propuesto', note: 'Borde de grava de 0,50 m entre la solera y la tierra; también a lo largo del frontal B y la entrada, que quedan sin solera.' },
+    { id: 'grava-comedor', label: 'Transición de grava', rect: [-3.0, r2(-SOL_TRASERA - 0.5), r2(L + SOL_LATERAL + 0.5), r2(W + 0.5)], joints: 0, status: 'propuesto', note: 'Borde de grava de 0,50 m entre la solera y la tierra; también a lo largo del frontal B y la entrada, que quedan sin solera.' },
     {
-      id: 'solera-l-lateral', label: 'Solera en L · tramo lateral', rect: [L, r2(-SOL_TRASERA), r2(L + SOL_LATERAL), W], joints: 2, permeable: { c: ALGARROBO, r: 1.2 }, status: 'confirmado',
+      id: 'solera-l-lateral', label: 'Solera en L · tramo lateral', rect: [L, r2(-SOL_TRASERA), r2(L + SOL_LATERAL), W], joints: 2, permeable: { c: ALGARROBO, r: 1.5 }, status: 'confirmado',
       note: 'Tramo de 4 m junto al lateral derecho, bajo el algarrobo, continuo con el del frontal A y al mismo nivel; termina al ras del frontal B (la propiedad pidió quitar el trozo que sobresalía). La mesa va bajo la copa, entre el tronco y el tramo del frontal A. Se recorta alrededor del tronco para dejar zona permeable sobre las raíces; la posición del árbol es aproximada.',
     },
     {
       id: 'solera-l-frontal-a', label: 'Solera en L · tramo del frontal A (cristalera)', rect: [0, r2(-SOL_TRASERA), L, 0], joints: 3.3, status: 'confirmado',
       note: 'Solera a lo largo de todo el frontal A, de punta a punta de la casa, con el porche delante de la cristalera (indicaciones de la propiedad: «en la parte de la cristalera pon la solera y un porche» y «la solera de punta a punta de la casa y elimina la solera de la parte de la puerta de entrada»). Cemento claro mate, mismo nivel que el tramo lateral, con el que se une en la esquina del algarrobo. Fondo de 3,40 m propuesto; juntas cada ≈3,3 m; pendiente del 1,5–2 % hacia fuera y canaleta en el borde (propuesta de evacuación, pendiente de desarrollo técnico).',
+    },
+  ],
+  // cuarto técnico previsto por la propiedad: 2,50 m × el ancho de la casa × 3,00 m de alto, con acceso solo por el exterior
+  annexes: [
+    {
+      id: 'cuarto-tecnico', label: 'Cuarto técnico y lavadero', rect: [-2.5, 0, 0, W], height: 3.0, wall: 0.3,
+      door: { side: 'y1', at: -1.3, width: 0.9, height: 2.1 }, status: 'confirmado',
+      note: 'Previsto por la propiedad: 2,50 m de fondo por el ancho total de la casa (5,22 m) y 3,00 m de alto, con acceso por el exterior. Colocado en el lateral izquierdo (el derecho lo ocupan el algarrobo y el comedor): posición a confirmar. Interior ≈2,20 × 4,62 m para lavadora, termo o aerotermia, cuadro eléctrico y almacén. Puerta exterior de 0,90 m hacia el lado de la entrada (posición propuesta).',
+    },
+  ],
+  // escalones volados de madera de sabina en zigzag (referencia de la propiedad) para subir a la cubierta del cuarto técnico
+  wallSteps: [
+    {
+      id: 'escalones-volados', label: 'Escalones volados de sabina', face: { axis: 'x', at: -2.5, outward: -1 }, start: r2(W - 0.55), dir: -1,
+      top: 3.0, steps: 12, run: 0.16, projection: 0.6, width: 0.2, thickness: 0.09, status: 'propuesto',
+      note: 'Escalera de pasos alternos con piezas de madera de sabina (o piedra) empotradas en el lateral del cuarto técnico, en zigzag, al estilo ibicenco de la referencia de la propiedad. Sube a la cubierta del cuarto técnico (3,00 m) en 12 pisadas de 0,25 m, alternando pie izquierdo y derecho. Pendiente de cálculo: empotramiento de las piezas (≥ 0,30 m en el muro), barandilla o asidero y peto en la cubierta si se usa como mirador.',
     },
   ],
   // jardín seco delante de la fachada de la entrada, hasta los primeros olivos (propiedad; referencia «11 plantes qui
@@ -401,10 +423,11 @@ const views: CameraPreset[] = [
   view({ id: 'v12-bano-entrada', label: '12 · Baño desde la entrada', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [5.5, 2.05, 1.6], target: [4.7, 4.6, 1.05], fov: 72 }),
   view({ id: 'v12b-bano-ducha', label: '12b · Baño desde la ducha (duchas enfrentadas)', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [5.05, 4.25, 1.6], target: [5.05, 1.6, 1.2], fov: 66 }),
   view({ id: 'v12d-puerta-ducha', label: '12d · Puerta de vidrio desde la ducha', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [5.2, 3.55, 1.6], target: [5.75, 5.0, 1.05], fov: 78 }),
-  view({ id: 'v12c-celosia', label: '12c · Detalle de la celosía', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [4.45, 2.35, 1.6], target: [4.15, 3.6, 1.15], fov: 52 }),
+  view({ id: 'v12c-celosia', label: '12c · Detalle de la celosía', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [4.75, 2.3, 1.6], target: [4.25, 3.6, 1.15], fov: 52 }),
   view({ id: 'v13-altell', label: '13 · Altell, vigas cemento y volta terracota', group: 'interior', eyeLevel: true, roomId: 'altell', elevation: 2.8, position: [4.9, 2.46, 1.6], target: [12, 2.46, 1.6], fov: 64 }),
   view({ id: 'v13b-volta', label: '13b · Vigas y volta desde la zona de día', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.2, 2.7, 1.6], target: [10.2, 2.46, 5.6], fov: 60 }),
   view({ id: 'v14-sin-cubierta', label: '14 · Vista sin cubierta', group: 'exterior', hideRoof: true, position: [9.2, 12, 25], target: [9.2, 3.2, 0], fov: 40 }),
+  view({ id: 'v17-cuarto-tecnico', label: '17 · Cuarto técnico y escalones volados', group: 'exterior', position: [-8.2, 8.6, 1.7], target: [-2.4, 3.0, 1.7], fov: 50 }),
   view({ id: 'v16-porche', label: '16 · Porche y solera de la cristalera', group: 'exterior', position: [4.4, -7.2, 1.6], target: [12.5, -1.0, 2.0], fov: 58 }),
   view({ id: 'v15-corte', label: '15 · Corte longitudinal', group: 'exterior', position: [8.9, -22, 3.4], target: [8.9, 2.46, 3.1], fov: 34, section: true }),
   ...VISTAS_DRON.map(view),
@@ -514,7 +537,7 @@ const PROJECT: ProjectData = {
     { id: 'cota-altell', label: 'Suelo del altell', value: ALTELL, unit: 'm', decimals: 2, sourceId: S.prop, status: 'documentado', note: 'Primero «a 260 cm»; después «altura interior mínima de 2,50 m por piso» con forjado de 0,30 m → 2,80 m.' },
     { id: 'altura-libre', label: 'Altura libre mínima por planta', value: H_LIBRE, unit: 'm', decimals: 2, sourceId: S.prop, status: 'documentado', note: '«Mínimo 2,50 m por piso» (propiedad).' },
     { id: 'canto-altell', label: 'Canto del forjado del altell', value: SLAB, unit: 'm', decimals: 2, sourceId: S.prop, status: 'documentado', note: '«Hazlo de 0,30 m» (propiedad).' },
-    { id: 'obertura-7', label: 'Obertura del frontal A (boceto)', value: 7, unit: 'm', decimals: 0, sourceId: S.fa, status: 'documentado', note: '«OBERTURA 7 M» (planta) y «7 metres» (frontal A). Variante.' },
+    { id: 'obertura-7', label: 'Obertura del frontal A', value: 7, unit: 'm', decimals: 0, sourceId: S.fa, status: 'confirmado', note: '«OBERTURA 7 M» (planta) y «7 metres» (frontal A). Variante.' },
     { id: 'obertura-9', label: 'Ventanal del frontal A (solicitado)', value: 9, unit: 'm', decimals: 0, sourceId: S.prop, status: 'pendiente', note: 'Solicitado por la propiedad; cabe entre 6,85 y 15,85 m. Pendiente de cálculo estructural.' },
     { id: 'obertura-225', label: 'Oberturas de 2,25 m', value: 2.25, unit: 'm', decimals: 2, sourceId: S.planta, status: 'documentado', note: '«OBERTURA: 225 CM»; «2,25 m» dos veces en el frontal A' },
     { id: 'puerta-70', label: 'Puerta del frontal B', value: 0.7, unit: 'm', decimals: 2, sourceId: S.fb, status: 'documentado', note: '«70 cm»; es una puerta (propiedad)' },
@@ -566,7 +589,6 @@ const PROJECT: ProjectData = {
   ],
   questions: [
     'Superficie construida de 79,48 m²: ¿qué parte del rectángulo de 16,33 × 5,22 m excluye el informe?',
-    'Ventanal de 9 m: pendiente del cálculo del arquitecto (zuncho, machones de ≈0,50 m).',
   ],
   // norte a ≈22° en sentido horario desde el frontal A: brújula de la captura de Mapas de Apple de la propiedad
   northDeg: 22,

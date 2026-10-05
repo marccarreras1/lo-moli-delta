@@ -317,6 +317,39 @@ export interface Outdoor {
     note: string;
   };
   /** porches (pérgola de vigas de madera sobre pilares de obra, cubierta de cañizo) */
+  /** volúmenes anexos de una planta (p. ej. cuarto técnico con acceso exterior) */
+  annexes?: {
+    id: string;
+    label: string;
+    /** [x0, y0, x1, y1] por las caras exteriores */
+    rect: [number, number, number, number];
+    height: number;
+    wall: number;
+    /** puerta exterior: fachada ('y0' | 'y1' | 'x0' | 'x1'), centro sobre esa fachada y medidas */
+    door: { side: 'y0' | 'y1' | 'x0' | 'x1'; at: number; width: number; height: number };
+    status: DataStatus;
+    note: string;
+  }[];
+  /** escalones volados empotrados en una fachada, en zigzag (escalera de pasos alternos de estilo ibicenco) */
+  wallSteps?: {
+    id: string;
+    label: string;
+    /** cara de fachada: x = cte (a lo largo de y) o y = cte (a lo largo de x) */
+    face: { axis: 'x' | 'y'; at: number; outward: 1 | -1 };
+    /** coordenada a lo largo de la fachada del primer escalón y sentido de avance */
+    start: number;
+    dir: 1 | -1;
+    /** altura de llegada (cubierta) y número de pisadas */
+    top: number;
+    steps: number;
+    /** avance horizontal por pisada, vuelo, ancho y canto de cada pieza */
+    run: number;
+    projection: number;
+    width: number;
+    thickness: number;
+    status: DataStatus;
+    note: string;
+  }[];
   /** jardín seco (xerojardinería) con caminos de losas */
   garden?: {
     id: string;
@@ -466,7 +499,7 @@ export const EXTRA_OPENINGS: { key: string; label: string }[] = [
 /** propuesta de ventanas completa: fachada sur-suroeste, doble altura, baño, altell y vista al algarrobo */
 export const PROPUESTA_VENTANAS = ['ventilacion-cruzada', 'ventana-dormitorio', 'ventana-bano', 'ventanas-altell', 'ventana-cocina', 'ventanas-altas', 'ventana-algarrobo'];
 
-export const DEFAULT_OPTIONS: DesignOptions = { celosia: 'A', lamparas: 'A', lamparasUbicacion: 'isla', puertaEntrada: 'tablones', entradaSaliente: false, ventanal: '9', aberturas: [], lamparaExterior: 'arbol', chimenea: 'estufa', mesaComedor: 'rectangular', salon: 'sofa-l' };
+export const DEFAULT_OPTIONS: DesignOptions = { celosia: 'A', lamparas: 'A', lamparasUbicacion: 'isla', puertaEntrada: 'tablones', entradaSaliente: false, ventanal: '7', aberturas: [], lamparaExterior: 'arbol', chimenea: 'estufa', mesaComedor: 'rectangular', salon: 'sofa-l' };
 
 export interface Layout extends ProjectData {
   options: DesignOptions;

@@ -82,10 +82,12 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(layout.furniture.find((f) => f.id === 'cama')!.y).toBeGreaterThan(midY);
   });
   it('las oberturas documentadas tienen su anchura y su fachada', () => {
-    expect(op('obertura-9m').width).toBe(9);
-    expect(op('obertura-9m').wallId).toBe('muro-A');
-    expect(layout.openings.some((o) => o.id === 'obertura-7m')).toBe(false);
-    expect(resolveLayout(VINALLOP, variant({ options: { ...baseVariant().options, ventanal: '7' } })).openings.find((o) => o.id === 'obertura-7m')!.width).toBe(7);
+    // la propiedad pasa a 7 m; el de 9 m queda como variante
+    expect(op('obertura-7m').width).toBe(7);
+    expect(op('obertura-7m').wallId).toBe('muro-A');
+    expect(op('obertura-7m').status).toBe('confirmado');
+    expect(layout.openings.some((o) => o.id === 'obertura-9m')).toBe(false);
+    expect(resolveLayout(VINALLOP, variant({ options: { ...baseVariant().options, ventanal: '9' } })).openings.find((o) => o.id === 'obertura-9m')!.width).toBe(9);
     expect(op('obertura-225-pb').width).toBe(2.25);
     expect(op('obertura-225-altell').width).toBe(2.25);
     expect(op('puerta-120').width).toBe(1.2);
@@ -99,10 +101,12 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
   it('la puerta de 1,20 m está donde marca la cadena (9,50 m desde la cara interior del lateral)', () => {
     expect(op('puerta-120').offset + 0.15).toBeCloseTo(9.8, 5);
   });
-  it('el ventanal de 9 m queda en la zona de día, no corta tabiques y está pendiente de cálculo', () => {
-    const o = op('obertura-9m');
-    expect(o.status).not.toBe('confirmado');
-    expect(issues.some((i) => i.elementId === o.id && i.level === 'aviso')).toBe(true);
+  it('el ventanal de 7 m queda en la zona de día y no corta tabiques; la variante de 9 m sigue pendiente de cálculo', () => {
+    const l9 = resolveLayout(VINALLOP, variant({ options: { ...baseVariant().options, ventanal: '9' } }));
+    const o9 = l9.openings.find((x) => x.id === 'obertura-9m')!;
+    expect(o9.status).not.toBe('confirmado');
+    expect(validateLayout(l9).some((i) => i.elementId === o9.id && i.level === 'aviso')).toBe(true);
+    const o = op('obertura-7m');
     const start = o.offset + 0.15;
     expect(start).toBeGreaterThanOrEqual(x0('dia'));
     expect(issues.some((i) => i.elementId === o.id && i.level === 'conflicto')).toBe(false);
@@ -408,6 +412,33 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
     const depth = (id: string) => { const l = plants.filter((p) => p.s === id); return l.reduce((a, p) => a + p.y, 0) / l.length; };
     expect(depth('lavanda')).toBeLessThan(depth('verbena'));
     expect(pathSlabs(g.paths[0]).length).toBeGreaterThan(8);
+  });
+  it('cambios de la propiedad: dormitorio, inodoro, recibidor, alcorque y cuarto técnico', () => {
+    const f = (id: string) => layout.furniture.find((x) => x.id === id)!;
+    const box = (id: string) => { const fp = furnitureFootprint(f(id)); return { x0: Math.min(...fp.map((p) => p[0])), x1: Math.max(...fp.map((p) => p[0])), y0: Math.min(...fp.map((p) => p[1])), y1: Math.max(...fp.map((p) => p[1])) }; };
+    // el armario ya no queda junto a la cama: paso libre de ≥ 1 m al lado de la cama
+    const cama = box('cama');
+    const arm = box('armario');
+    expect(arm.y1).toBeLessThan(cama.y0);
+    expect(cama.x0 - 0.3).toBeGreaterThanOrEqual(1.0);
+    expect(f('armario-cristal').w).toBeLessThan(1);
+    expect(box('armario-cristal').y0).toBeCloseTo(0.3, 5);
+    // inodoro a ≥ 0,75 m de la zona húmeda
+    expect(box('ducha').y0 - box('inodoro').y1).toBeGreaterThanOrEqual(0.75);
+    // recibidor: banco junto a la puerta, sofá 50 cm más allá
+    expect(box('banco-recibidor').x0).toBeGreaterThanOrEqual(9.8 + 1.2);
+    expect(box('sofa-b').x0).toBeGreaterThanOrEqual(box('banco-recibidor').x1);
+    // alcorque más grande que antes pero por debajo de 4 m de diámetro
+    const r = layout.outdoor!.pavements.find((p) => p.permeable)!.permeable!.r;
+    expect(r * 2).toBeGreaterThan(2.4);
+    expect(r * 2).toBeLessThan(4);
+    // cuarto técnico de 2,50 × ancho de la casa × 3,00 con acceso exterior
+    const ct = layout.outdoor!.annexes![0];
+    expect(ct.rect[2] - ct.rect[0]).toBeCloseTo(2.5, 5);
+    expect(ct.rect[3] - ct.rect[1]).toBeCloseTo(layout.bounds.maxY - layout.bounds.minY, 5);
+    expect(ct.height).toBe(3);
+    // cristalera de 7 m por defecto
+    expect(layout.options.ventanal).toBe('7');
   });
   it('cocina también bajo la escalera (en L) y mesa de comedor para 4 sin conflictos', () => {
     const esc = layout.stairs[0];

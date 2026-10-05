@@ -4,7 +4,7 @@
  * tronco; transición de grava; comedor bajo el algarrobo con lámpara de cúpula (referencia 11).
  */
 import { Line } from '@react-three/drei';
-import { useEffect, useMemo } from 'react';
+import { type ReactElement, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import type { DesignOptions, Furniture, Outdoor, OutdoorPavement, Vec2 } from '../data/types';
 import { AMBER } from '../ui/status';
@@ -281,6 +281,83 @@ function Porch({ p, mats }: { p: NonNullable<Outdoor['porches']>[number]; mats: 
   );
 }
 
+/** Volumen anexo de una planta (cuarto técnico): muros encalados, losa de cubierta y puerta metálica exterior. */
+function Annex({ a, mats }: { a: NonNullable<Outdoor['annexes']>[number]; mats: MaterialSet }) {
+  const [x0, y0, x1, y1] = a.rect;
+  const t = a.wall;
+  const wallH = a.height - 0.2;
+  const B = (cx: number, cz: number, w: number, d: number, h: number, y = 0, m: THREE.Material = mats.facade) => (
+    <mesh position={[cx, y + h / 2, cz]} material={m} castShadow receiveShadow><boxGeometry args={[w, h, d]} /></mesh>
+  );
+  const d = a.door;
+  // muros: el lado pegado a la casa (x1 = 0) es el lateral existente
+  const pieces: ReactElement[] = [];
+  const along = (side: 'y0' | 'y1' | 'x0', key: string) => {
+    const horiz = side !== 'x0';
+    const s0 = horiz ? x0 : y0;
+    const s1 = horiz ? x1 - 0.001 : y1;
+    const fixed = side === 'y0' ? y0 + t / 2 : side === 'y1' ? y1 - t / 2 : x0 + t / 2;
+    const seg = (a0: number, a1: number, h: number, yb = 0, k = '') => {
+      if (a1 - a0 < 0.01) return;
+      const c = (a0 + a1) / 2;
+      pieces.push(<group key={`${key}${k}${a0}`}>{horiz ? B(c, fixed, a1 - a0, t, h, yb) : B(fixed, c, t, a1 - a0, h, yb)}</group>);
+    };
+    if (d.side === side) {
+      seg(s0, d.at - d.width / 2, wallH);
+      seg(d.at + d.width / 2, s1, wallH);
+      seg(d.at - d.width / 2, d.at + d.width / 2, wallH - d.height, d.height, 'dintel');
+    } else seg(s0, s1, wallH);
+  };
+  along('y0', 'a');
+  along('y1', 'b');
+  along('x0', 'c');
+  const doorPos: [number, number, number] = d.side === 'y1' ? [d.at, d.height / 2, y1 - t / 2] : d.side === 'y0' ? [d.at, d.height / 2, y0 + t / 2] : [x0 + t / 2, d.height / 2, d.at];
+  const doorRot = d.side === 'x0' || d.side === 'x1' ? Math.PI / 2 : 0;
+  return (
+    <group>
+      {/* solera interior y losa de cubierta con goterón */}
+      {B((x0 + x1) / 2, (y0 + y1) / 2, x1 - x0 - 0.02, y1 - y0 - 0.02, 0.02, 0, mats.concrete)}
+      {pieces}
+      {B((x0 + x1) / 2 - 0.05, (y0 + y1) / 2, x1 - x0 + 0.1, y1 - y0 + 0.16, 0.2, wallH)}
+      {/* puerta metálica gris con rejilla de ventilación baja */}
+      <group position={doorPos} rotation={[0, doorRot, 0]}>
+        <mesh material={mats.metal} castShadow><boxGeometry args={[d.width - 0.04, d.height - 0.02, 0.05]} /></mesh>
+        {[-1, 1].map((k) => <mesh key={k} position={[0, -d.height / 2 + 0.25, k * 0.03]} material={mats.blackMetal}><boxGeometry args={[d.width * 0.6, 0.25, 0.01]} /></mesh>)}
+        {[-1, 1].map((k) => <mesh key={`m${k}`} position={[d.width / 2 - 0.12, 0, k * 0.04]} material={mats.blackMetal}><boxGeometry args={[0.03, 0.16, 0.02]} /></mesh>)}
+      </group>
+    </group>
+  );
+}
+
+/** Escalones volados en zigzag: piezas de madera empotradas que salen de la fachada, alternas a cada lado. */
+function WallSteps({ s }: { s: NonNullable<Outdoor['wallSteps']>[number] }) {
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({ color: '#8f8064', roughness: 0.95 }), []);
+  const dark = useMemo(() => new THREE.MeshStandardMaterial({ color: '#6d6048', roughness: 1 }), []);
+  useEffect(() => () => { mat.dispose(); dark.dispose(); }, [mat, dark]);
+  const rise = s.top / s.steps;
+  const items = Array.from({ length: s.steps }, (_, i) => {
+    const side = i % 2 === 0 ? -1 : 1; // pie izquierdo / derecho
+    const along = s.start + s.dir * (i * s.run + side * 0.13);
+    const y = rise * (i + 1) - s.thickness;
+    const out = s.face.at + s.face.outward * (s.projection / 2 - 0.02);
+    const pos: [number, number, number] = s.face.axis === 'x' ? [out, y, along] : [along, y, out];
+    // cada pieza va algo girada en el plano de la fachada, alternando, como en la referencia
+    const tilt = side * 0.32;
+    const rot: [number, number, number] = s.face.axis === 'x' ? [tilt, 0, 0] : [0, 0, tilt];
+    const size: [number, number, number] = s.face.axis === 'x' ? [s.projection, s.thickness, s.width] : [s.width, s.thickness, s.projection];
+    return { pos, rot, size, i };
+  });
+  return (
+    <group>
+      {items.map((it) => (
+        <mesh key={it.i} position={it.pos} rotation={it.rot} material={it.i % 3 === 1 ? dark : mat} castShadow receiveShadow>
+          <boxGeometry args={it.size} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 export function Outdoor3D({ outdoor, mats, options, level, selectedId, onSelect }: {
   outdoor: Outdoor; mats: MaterialSet; options: DesignOptions; level: number; selectedId?: string | null; onSelect?: (id: string) => void;
 }) {
@@ -289,6 +366,8 @@ export function Outdoor3D({ outdoor, mats, options, level, selectedId, onSelect 
     <group>
       {renderRects(outdoor.pavements).map((p) => <Pavement key={p.id} p={p} mats={mats} />)}
       {outdoor.garden && <Garden3D garden={outdoor.garden} mats={mats} />}
+      {(outdoor.annexes ?? []).map((a) => <Annex key={a.id} a={a} mats={mats} />)}
+      {(outdoor.wallSteps ?? []).map((w) => <WallSteps key={w.id} s={w} />)}
       {outdoor.pavements.filter((p) => p.permeable).map((p) => <TreePit key={`al-${p.id}`} c={p.permeable!.c} r={p.permeable!.r} mats={mats} />)}
       {(outdoor.drains ?? []).map((d) => <Drain key={d.id} a={d.a} b={d.b} mats={mats} />)}
       {(outdoor.porches ?? []).map((p) => <Porch key={p.id} p={p} mats={mats} />)}
