@@ -72,6 +72,7 @@ export function House({ layout, mats, showRoof, showCeiling, mode, sectionHeight
         ((showRoof && mode !== 'corte') || (showCeiling && mode === 'solido')) && <RoofSegments segments={layout.roofSegments} mats={mats} />
       ) : null}
       {!layout.roofSegments?.length && showCeiling && mode === 'solido' && (layout.roof?.ceiling ? <Vaults layout={layout} mats={mats} /> : <Ceiling layout={layout} mats={mats} />)}
+      {layout.roof?.eaves && <EavesWalls layout={layout} mats={mats} />}
       {showRoof && mode !== 'corte' && <Roof layout={layout} mats={mats} />}
       {showRoof && !showCeiling && mode === 'solido' && layout.roof?.ceiling && <Vaults layout={layout} mats={mats} />}
     </group>
@@ -328,7 +329,7 @@ function RoofShape({ layout, mats }: { layout: Layout; mats: MaterialSet }) {
       </group>
     );
   }
-  if (r.eaves) return <EavesRoof L={L} W={W} H={H} r={r} mats={mats} />;
+  if (r.eaves) return <EavesRoof L={L} W={W} r={r} mats={mats} />;
   const pitch = (r.pitchDeg * Math.PI) / 180;
   if (r.type === 'un-agua') {
     const run = W + 2 * o;
@@ -401,10 +402,10 @@ function tileTexture() {
 
 /**
  * Cubierta a un agua con aleros a distinta altura (variante de teja): faldón apoyado en los muros
- * (que llegan al alero bajo), recrecido del frontal alto, hastiales en los laterales y canalón en el
- * alero bajo. La cara superior pasa por las cotas `eaves` en los bordes exteriores.
+ * (que llegan al alero bajo) y canalón en el alero bajo; el recrecido y los hastiales van con los
+ * muros (EavesWalls). La cara superior pasa por las cotas `eaves` en los bordes exteriores.
  */
-function EavesRoof({ L, W, H, r, mats }: { L: number; W: number; H: number; r: NonNullable<Layout['roof']>; mats: MaterialSet }) {
+function EavesRoof({ L, W, r, mats }: { L: number; W: number; r: NonNullable<Layout['roof']>; mats: MaterialSet }) {
   const e = r.eaves!;
   const o = r.overhang;
   const t = r.thickness;
@@ -430,13 +431,31 @@ function EavesRoof({ L, W, H, r, mats }: { L: number; W: number; H: number; r: N
     <group>
       {/* faldón de teja (la cara superior lleva la teja; el resto, el mismo material) */}
       <mesh position={[L / 2, midTop - t / 2 / Math.cos(tilt), W / 2]} rotation={[tilt, 0, 0]} castShadow receiveShadow material={r.tiles ? tileMat : mats.roof} geometry={geo} />
-      {/* recrecido del frontal alto entre el alero bajo y el faldón */}
-      <mesh position={[L / 2, H + (rise - 0.02) / 2, 0.15]} material={mats.facade} castShadow receiveShadow geometry={uvBox(L, rise - 0.02, 0.3)} />
-      <Gable L={L} W={W} H={H} mats={mats} profile={[[0, 0], [W, 0], [0, rise], [0, 0]]} />
       {/* canalón en el alero bajo */}
       <mesh position={[L / 2, e.y1 - Math.tan(tilt) * o - t - 0.04, W + o - 0.02]} rotation={[0, 0, Math.PI / 2]} material={mats.metal} castShadow>
         <cylinderGeometry args={[0.06, 0.06, L + 2 * o, 12, 1, true, 0, Math.PI]} />
       </mesh>
+    </group>
+  );
+}
+
+/**
+ * Cierre de fachada por encima del alero bajo con la cubierta de aleros a distinta altura: recrecido
+ * del frontal alto y hastiales laterales. Es muro, no cubierta: se ve también desde dentro.
+ */
+function EavesWalls({ layout, mats }: { layout: Layout; mats: MaterialSet }) {
+  const { minX, minY, maxX, maxY } = layout.bounds;
+  const L = maxX - minX;
+  const W = maxY - minY;
+  const H = layout.topHeight;
+  const t = layout.roof!.thickness;
+  // altura que cierra el muro bajo el faldón en el borde alto (y0) y bajo (y1)
+  const r0 = roofTopAt(layout, minY) - t - H;
+  const r1 = Math.max(0, roofTopAt(layout, maxY) - t - H);
+  return (
+    <group position={[minX, 0, minY]}>
+      {r0 > 0.01 && <mesh position={[L / 2, H + r0 / 2, 0.15]} material={mats.facade} castShadow receiveShadow geometry={uvBox(L, r0, 0.3)} />}
+      <Gable L={L} W={W} H={H} mats={mats} profile={[[0, 0], [W, 0], [W, r1], [0, r0], [0, 0]]} />
     </group>
   );
 }
