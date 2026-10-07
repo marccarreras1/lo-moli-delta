@@ -223,7 +223,7 @@ export interface Furniture {
   onlyIf?: { chimenea?: 'estufa' | 'obra'; mesaComedor?: 'rectangular' | 'redonda'; salon?: 'sofa-l' | 'enfrentados' };
 }
 
-export type RoofType = 'dos-aguas' | 'un-agua' | 'plana' | 'plana-peto';
+export type RoofType = 'dos-aguas' | 'un-agua' | 'un-agua-teja' | 'plana' | 'plana-peto';
 
 export interface RoofOption {
   type: RoofType;
@@ -236,6 +236,14 @@ export interface RoofOption {
   sourceId?: string;
   /** altura del peto perimetral (0 = sin peto) */
   parapet?: number;
+  /**
+   * cubierta a un agua con aleros a distinta altura: cota de la cara superior del faldón en el borde
+   * exterior del frontal A (y0) y del frontal B (y1). Los muros exteriores bajan hasta el alero bajo y
+   * se cierran con hastiales; el techo interior sigue la pendiente.
+   */
+  eaves?: { y0: number; y1: number };
+  /** acabado de teja cerámica (piezas curvas) */
+  tiles?: boolean;
   /** acabado interior bajo la cubierta */
   ceiling?: { type: 'vuelta-catalana'; spacing: number; rise: number; status: DataStatus; note: string };
 }

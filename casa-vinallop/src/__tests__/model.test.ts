@@ -12,6 +12,7 @@ import { hasGeometry, resolveLayout, type Variant } from '../model/resolve';
 import { validateLayout } from '../model/validate';
 import { baseVariant } from '../state/store';
 import { PROPUESTA_VENTANAS } from '../data/types';
+import { roofTopAt, roofUndersideAt } from '../model/roof';
 
 const test = buildTestModel();
 const variant = (o: Partial<Variant> = {}): Variant => ({ ...baseVariant(), id: 'v1', name: 'V1', ...o });
@@ -170,7 +171,7 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(Math.max(...alt.map((p) => p[0]))).toBeLessThanOrEqual(6.35);
   });
   it('cubierta plana (propiedad) con vuelta catalana por dentro; remate ibicenco propuesto e inclinada del informe para contrastar', () => {
-    expect(layout.roofOptions.map((r) => r.type)).toEqual(['plana', 'plana-peto', 'un-agua']);
+    expect(layout.roofOptions.map((r) => r.type)).toEqual(['plana', 'plana-peto', 'un-agua', 'un-agua-teja']);
     expect(layout.roofOptions[0].status).toBe('confirmado');
     expect(layout.roofOptions[0].note).toMatch(/No está validada técnicamente/);
     expect(layout.roofOptions[1].status).toBe('propuesto');
@@ -178,6 +179,26 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(layout.roof?.type).toBe('plana');
     expect(layout.roof?.ceiling?.type).toBe('vuelta-catalana');
     expect(layout.roof?.ceiling?.spacing).toBe(0.55);
+  });
+  it('variante de teja a un agua: 6 m en el frontal A y 5 m en el de las puertas; muros al alero bajo y techo inclinado', () => {
+    const l = resolveLayout(VINALLOP, { ...baseVariant(), roofType: 'un-agua-teja' });
+    const r = l.roof!;
+    expect(r.tiles).toBe(true);
+    expect(r.status).toBe('propuesto');
+    // la parte baja en el frontal B (y máx., donde están las dos puertas)
+    expect(roofTopAt(l, l.bounds.minY)).toBeCloseTo(6.0, 5);
+    expect(roofTopAt(l, l.bounds.maxY)).toBeCloseTo(5.0, 5);
+    expect(l.openings.find((o) => o.id === 'puerta-120')!.wallId).toBe('muro-B');
+    // muros exteriores hasta el alero bajo; la puerta de la terraza cabe rebajada
+    expect(l.walls.filter((w) => w.kind === 'exterior').every((w) => w.height === 4.75)).toBe(true);
+    expect(l.openings.every((o) => o.sill + o.height <= 4.75 + 1e-6)).toBe(true);
+    expect(l.openings.find((o) => o.id === 'puerta-terraza')!.height).toBeGreaterThanOrEqual(1.9);
+    // altell: altura libre bajo la volta mayor junto al frontal A que junto al B, y por encima de 1,80 m
+    const alt = 2.8;
+    expect(roofUndersideAt(l, 0.3) - alt).toBeGreaterThan(roofUndersideAt(l, 4.62) - alt);
+    expect(roofUndersideAt(l, 4.62) - alt - 0.12).toBeGreaterThan(1.8);
+    // la base sigue siendo la plana a 6,20 m
+    expect(layout.topHeight).toBe(6.2);
   });
   it('la puerta de 70 cm está en el baño', () => {
     const o = op('puerta-70');

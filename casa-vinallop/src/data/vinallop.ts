@@ -503,6 +503,11 @@ const PROJECT: ProjectData = {
       note: 'Cubierta inclinada según el informe del arquitecto (panel tipo sándwich). Pendiente de 8° y vuelo de 0,20 m a modo de hipótesis: el informe no se ha adjuntado. Se muestra para comparar volumen y altura con la plana.',
       ceiling: { type: 'vuelta-catalana', spacing: 0.55, rise: 0.1, status: 'confirmado', note: 'Interior igual que la opción base.' },
     },
+    {
+      type: 'un-agua-teja', label: 'Teja a un agua: 6 m en el frontal A, 5 m en el de las puertas (variante)', pitchDeg: r2((Math.atan(1 / W) * 180) / Math.PI), overhang: 0.3, thickness: 0.25, eaves: { y0: 6.0, y1: 5.0 }, tiles: true, status: 'propuesto', sourceId: S.prop,
+      note: 'Variante pedida por la propiedad: cubierta inclinada a un agua acabada en teja, con la parte alta (6,00 m) en el frontal A, el del ventanal, y la baja (5,00 m) en el frontal B, el de las dos puertas. Pendiente ≈19 % (≈11°) y vuelo de 0,30 m con canalón en el alero bajo. Los muros bajan a 4,75 m (alero bajo menos el canto de 0,25 m); el frontal A se recrece hasta el faldón y los laterales se cierran con hastiales. El techo interior de volta catalana sigue la pendiente. Consecuencias: en el altell la altura libre bajo las vigas va de ≈2,70 m junto al frontal A a ≈1,85 m junto al frontal B (la cama queda en la parte baja, con ≈1,85–2,25 m encima); la puerta de la terraza baja a 1,95 m de alto y no caben las ventanas altas propuestas en la doble altura del frontal B. Pendiente: la teja árabe suele pedir más pendiente (≈30 %): con ≈19 % hace falta una lámina impermeable continua bajo la teja (o teja mixta/plana apta para baja pendiente) según el fabricante y el arquitecto; estructura del faldón sin calcular.',
+      ceiling: { type: 'vuelta-catalana', spacing: 0.55, rise: 0.1, status: 'confirmado', note: 'Vigas color cemento y volta de terracota, siguiendo la pendiente de la cubierta.' },
+    },
   ],
   measures: [
     { id: 'largo', label: 'Largo exterior (informe)', value: L, unit: 'm', decimals: 2, sourceId: S.informe, status: 'documentado', note: 'Informe del arquitecto. La cadena del boceto (3,5 + 2,5 + 3,5 + 1,20 + 5 = 15,70 m) se toma como interior.' },

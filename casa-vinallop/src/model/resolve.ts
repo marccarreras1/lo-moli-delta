@@ -86,8 +86,21 @@ export function resolveLayout(p: ProjectData, v: Variant | null): Layout {
   for (const r of p.rooms) for (const [x, y] of r.polygon) { xs.push(x); ys.push(y); }
   const bounds = xs.length ? { minX: Math.min(...xs), minY: Math.min(...ys), maxX: Math.max(...xs), maxY: Math.max(...ys) } : { minX: 0, minY: 0, maxX: 0, maxY: 0 };
   const elev = (id: string) => p.levels.find((l) => l.id === id)?.elevation ?? 0;
-  const topHeight = p.walls.filter((w) => w.kind === 'exterior').reduce((m, w) => Math.max(m, elev(w.levelId) + w.height), 0) || 2.5;
-  return { ...p, openings, furniture, outdoor, roof, bounds, topHeight, options };
+  // cubierta con aleros a distinta altura: los muros exteriores llegan al alero bajo (bajo el faldón);
+  // por encima se cierran con hastiales y con el recrecido del frontal alto. Los huecos que quedarían
+  // por encima del muro no caben con esa cubierta.
+  const eaveTop = roof?.eaves ? Math.min(roof.eaves.y0, roof.eaves.y1) - roof.thickness : null;
+  const walls = eaveTop === null ? p.walls : p.walls.map((w) => (w.kind === 'exterior' ? { ...w, height: Math.min(w.height, eaveTop - elev(w.levelId)) } : w));
+  const wallH = new Map(walls.map((w) => [w.id, w.height]));
+  // las puertas se rebajan hasta el muro si les queda al menos 1,90 m de paso; el resto de huecos que no caben se quitan
+  const fitted = eaveTop === null ? openings : openings.flatMap((o) => {
+    const top = wallH.get(o.wallId) ?? Infinity;
+    if (o.sill + o.height <= top + 1e-6) return [o];
+    if (o.kind === 'puerta' && top - o.sill >= 1.9) return [{ ...o, height: Math.round((top - o.sill) * 100) / 100, status: 'propuesto' as const }];
+    return [];
+  });
+  const topHeight = walls.filter((w) => w.kind === 'exterior').reduce((m, w) => Math.max(m, elev(w.levelId) + w.height), 0) || 2.5;
+  return { ...p, walls, openings: fitted, furniture, outdoor, roof, bounds, topHeight, options };
 }
 
 /** cota de la base de un muro (cota de su nivel) */

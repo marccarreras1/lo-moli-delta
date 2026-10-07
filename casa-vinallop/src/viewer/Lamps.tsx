@@ -8,6 +8,7 @@ import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import type { Furniture, Layout, PendantGroup, Vec2 } from '../data/types';
 import { pointInPolygon } from '../model/geometry';
+import { roofUndersideAt } from '../model/roof';
 import type { MaterialSet } from './materials';
 
 /** color de una fuente de ≈2700 K */
@@ -16,7 +17,7 @@ export const WARM = '#ffb46b';
 /** cota del techo sobre un punto: bajo un forjado intermedio o bajo la volta catalana */
 export function ceilingAt(layout: Layout, p: Vec2, fromElev = 0) {
   const elev = (id: string) => layout.levels.find((l) => l.id === id)?.elevation ?? 0;
-  let best = layout.topHeight - (layout.roof?.thickness ?? 0.25) - (layout.roof?.ceiling?.rise ?? 0);
+  let best = roofUndersideAt(layout, p[1]);
   for (const s of layout.slabs) {
     const bottom = elev(s.levelId) - s.thickness;
     if (bottom > fromElev && bottom < best && pointInPolygon(p, s.polygon)) best = bottom;

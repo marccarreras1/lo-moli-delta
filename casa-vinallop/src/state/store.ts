@@ -280,7 +280,7 @@ function cleanVariant(x: unknown, fallbackId: string): Variant | null {
     name: str(o.name, 'Variante'),
     createdAt: str(o.createdAt, new Date().toISOString(), 40),
     openingOverrides: overrides,
-    roofType: o.roofType ? pick(o.roofType, ['dos-aguas', 'un-agua', 'plana', 'plana-peto'] as const, 'plana') : null,
+    roofType: o.roofType ? pick(o.roofType, ['dos-aguas', 'un-agua', 'un-agua-teja', 'plana', 'plana-peto'] as const, 'plana') : null,
     finishes,
     presetId: typeof o.presetId === 'string' ? o.presetId : null,
     options: cleanOptions(o.options),

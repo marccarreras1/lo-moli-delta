@@ -44,7 +44,7 @@ await page.evaluate(({ ambience, options, calidad }) => {
   s.setVisual('ambience', ambience);
   s.setVisual('showLabels', false);
   s.setVisual('showDims', false);
-  for (const [k, v] of Object.entries(options)) s.setOption(k, v);
+  for (const [k, v] of Object.entries(options)) k === 'cubierta' ? s.setRoof(v) : s.setOption(k, v);
 }, { ambience, options, calidad });
 await page.waitForTimeout(1500);
 const views = await page.evaluate(() => {

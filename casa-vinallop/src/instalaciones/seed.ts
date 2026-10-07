@@ -9,6 +9,7 @@
  */
 import type { Furniture, Layout, Opening, Room, Vec2, Wall } from '../data/types';
 import { bbox, centroid, distPointSegment, furnitureFootprint, pointInPolygon, pointOnWall, polygonArea, wallDir, wallLength, wallNormal } from '../model/geometry';
+import { roofUndersideAt } from '../model/roof';
 import type { InstallKind, InstallPoint, Layer } from './types';
 
 const r2 = (x: number) => Math.round(x * 100) / 100;
@@ -90,7 +91,7 @@ function blockedBy(l: Layout, p: Vec2, levelId: string, test: (f: Furniture) => 
 /** cota del techo (relativa al nivel) sobre un punto: bajo un forjado superior o bajo la cubierta */
 function ceilingAt(l: Layout, p: Vec2, levelId: string): number {
   const from = levelElev(l, levelId);
-  let best = l.topHeight - (l.roof?.thickness ?? 0.25) - (l.roof?.ceiling?.rise ?? 0);
+  let best = roofUndersideAt(l, p[1]);
   for (const s of l.slabs) {
     const bottom = levelElev(l, s.levelId) - s.thickness;
     if (bottom > from + 0.5 && bottom < best && pointInPolygon(p, s.polygon)) best = bottom;

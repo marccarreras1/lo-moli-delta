@@ -7,6 +7,7 @@ import { pointOnWall, wallDir, wallNormal, wallPieces } from '../model/geometry'
 import type { MaterialSet } from './materials';
 import { Opening3D } from './Opening3D';
 import { uvBox } from './textures';
+import { roofTopAt } from '../model/roof';
 
 /** plano (x, y) → escena (x, altura, y) */
 export const P = (x: number, y: number, h = 0) => new THREE.Vector3(x, h, y);
@@ -241,10 +242,14 @@ function Vaults({ layout, mats }: { layout: Layout; mats: MaterialSet }) {
   const ix1 = Math.max(...xs.map((p) => p[0]));
   const iy0 = Math.min(...ys.map((p) => p[1]));
   const iy1 = Math.max(...ys.map((p) => p[0]));
-  const span = iy1 - iy0;
+  // con cubierta inclinada (aleros a distinta altura) la volta sigue la pendiente: se gira alrededor
+  // del eje del centro de la casa
+  const yMid = (iy0 + iy1) / 2;
+  const tilt = layout.roof?.eaves ? Math.atan2(roofTopAt(layout, iy0) - roofTopAt(layout, iy1), iy1 - iy0) : 0;
+  const span = (iy1 - iy0) / Math.cos(tilt);
   const n = Math.max(1, Math.round((ix1 - ix0) / c.spacing));
   const s = (ix1 - ix0) / n;
-  const crown = layout.topHeight - (layout.roof?.thickness ?? 0.25) - 0.01;
+  const crown = roofTopAt(layout, yMid) - (layout.roof?.thickness ?? 0.25) / Math.cos(tilt) - 0.01;
   const spring = crown - c.rise;
   const R = (s * s / 4 + c.rise * c.rise) / (2 * c.rise);
   const theta = 2 * Math.asin(Math.min(1, s / 2 / R));
@@ -260,7 +265,8 @@ function Vaults({ layout, mats }: { layout: Layout; mats: MaterialSet }) {
   const outer = useMemo(() => new THREE.CylinderGeometry(R + 0.04, R + 0.04, span, 14, 1, true, Math.PI - theta / 2, theta), [R, span, theta]);
   useEffect(() => () => { geo.dispose(); outer.dispose(); }, [geo, outer]);
   return (
-    <group>
+    <group position={[0, crown, yMid]} rotation={[tilt, 0, 0]}>
+    <group position={[0, -crown, -yMid]}>
       {Array.from({ length: n }, (_, i) => (
         <group key={`v${i}`} position={[ix0 + s * (i + 0.5), crown - R, (iy0 + iy1) / 2]} rotation={[Math.PI / 2, 0, 0]}>
           <mesh geometry={geo} material={mats.vault} receiveShadow />
@@ -270,6 +276,7 @@ function Vaults({ layout, mats }: { layout: Layout; mats: MaterialSet }) {
       {Array.from({ length: n + 1 }, (_, i) => (
         <mesh key={`b${i}`} position={[ix0 + s * i, spring - beamH / 2 + 0.02, (iy0 + iy1) / 2]} material={mats.beam} castShadow geometry={uvBox(0.08, beamH, span)} />
       ))}
+    </group>
     </group>
   );
 }
@@ -321,6 +328,7 @@ function RoofShape({ layout, mats }: { layout: Layout; mats: MaterialSet }) {
       </group>
     );
   }
+  if (r.eaves) return <EavesRoof L={L} W={W} H={H} r={r} mats={mats} />;
   const pitch = (r.pitchDeg * Math.PI) / 180;
   if (r.type === 'un-agua') {
     const run = W + 2 * o;
@@ -355,6 +363,80 @@ function RoofShape({ layout, mats }: { layout: Layout; mats: MaterialSet }) {
         <boxGeometry args={[L + 2 * o, r.thickness, slopeLen]} />
       </mesh>
       <Gable L={L} W={W} H={H} mats={mats} profile={[[0, 0], [W, 0], [W / 2, rise], [0, 0]]} />
+    </group>
+  );
+}
+
+/**
+ * Teja árabe en planta: canales de 0,20 m a lo largo de la pendiente y solapes cada 0,36 m
+ * (textura en metros, gris para modular el color del acabado y como relieve).
+ */
+function tileTexture() {
+  const w = 64;
+  const h = 64;
+  const data = new Uint8Array(w * h * 4);
+  for (let j = 0; j < h; j++) {
+    const v = j / h;
+    // borde inferior de cada hilada más oscuro (sombra del solape)
+    const lap = v < 0.12 ? 0.55 + 0.45 * (v / 0.12) : 1;
+    for (let i = 0; i < w; i++) {
+      const u = i / w;
+      // pieza curva: lomo claro y canal oscuro alternos
+      const curve = 0.62 + 0.38 * Math.sin(u * Math.PI * 2 - Math.PI / 2) * 0.5 + 0.19;
+      const n = 0.94 + 0.06 * Math.sin(i * 12.9898 + j * 78.233) ** 2;
+      const g = Math.round(255 * Math.min(1, curve * lap * n));
+      data.set([g, g, g, 255], (j * w + i) * 4);
+    }
+  }
+  const t = new THREE.DataTexture(data, w, h);
+  t.wrapS = THREE.RepeatWrapping;
+  t.wrapT = THREE.RepeatWrapping;
+  t.magFilter = THREE.LinearFilter;
+  t.minFilter = THREE.LinearMipmapLinearFilter;
+  t.generateMipmaps = true;
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.needsUpdate = true;
+  return t;
+}
+
+/**
+ * Cubierta a un agua con aleros a distinta altura (variante de teja): faldón apoyado en los muros
+ * (que llegan al alero bajo), recrecido del frontal alto, hastiales en los laterales y canalón en el
+ * alero bajo. La cara superior pasa por las cotas `eaves` en los bordes exteriores.
+ */
+function EavesRoof({ L, W, H, r, mats }: { L: number; W: number; H: number; r: NonNullable<Layout['roof']>; mats: MaterialSet }) {
+  const e = r.eaves!;
+  const o = r.overhang;
+  const t = r.thickness;
+  const rise = e.y0 - e.y1;
+  const tilt = Math.atan2(rise, W);
+  const slopeLen = (W + 2 * o) / Math.cos(tilt);
+  const tex = useMemo(() => tileTexture(), []);
+  const tileMat = useMemo(() => {
+    const base = mats.roof.color.clone();
+    const hsl = { h: 0, s: 0, l: 0 };
+    base.getHSL(hsl);
+    // con el acabado blanco de cubierta plana se toma la teja árabe envejecida
+    const color = hsl.l > 0.75 ? new THREE.Color('#b07a5a') : base;
+    const map = tex.clone();
+    map.repeat.set(1 / 0.2, 1 / 0.36);
+    map.needsUpdate = true;
+    return new THREE.MeshStandardMaterial({ color, map, bumpMap: map, bumpScale: 1.5, roughness: 0.88 });
+  }, [mats.roof, tex]);
+  useEffect(() => () => { tileMat.map?.dispose(); tileMat.dispose(); tex.dispose(); }, [tileMat, tex]);
+  const geo = useMemo(() => uvBox(L + 2 * o, t, slopeLen), [L, o, t, slopeLen]);
+  const midTop = (e.y0 + e.y1) / 2;
+  return (
+    <group>
+      {/* faldón de teja (la cara superior lleva la teja; el resto, el mismo material) */}
+      <mesh position={[L / 2, midTop - t / 2 / Math.cos(tilt), W / 2]} rotation={[tilt, 0, 0]} castShadow receiveShadow material={r.tiles ? tileMat : mats.roof} geometry={geo} />
+      {/* recrecido del frontal alto entre el alero bajo y el faldón */}
+      <mesh position={[L / 2, H + (rise - 0.02) / 2, 0.15]} material={mats.facade} castShadow receiveShadow geometry={uvBox(L, rise - 0.02, 0.3)} />
+      <Gable L={L} W={W} H={H} mats={mats} profile={[[0, 0], [W, 0], [0, rise], [0, 0]]} />
+      {/* canalón en el alero bajo */}
+      <mesh position={[L / 2, e.y1 - Math.tan(tilt) * o - t - 0.04, W + o - 0.02]} rotation={[0, 0, Math.PI / 2]} material={mats.metal} castShadow>
+        <cylinderGeometry args={[0.06, 0.06, L + 2 * o, 12, 1, true, 0, Math.PI]} />
+      </mesh>
     </group>
   );
 }

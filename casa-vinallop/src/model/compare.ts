@@ -9,6 +9,7 @@ export const QUICK_COMPARE: { id: string; label: string; apply: (v: Variant) => 
   { id: 'lamparas', label: 'Lámparas A ↔ B', apply: (v) => ({ ...v, options: { ...v.options, lamparas: v.options.lamparas === 'A' ? 'B' : 'A' } }) },
   { id: 'cubierta-peto', label: 'Cubierta con remate ibicenco', apply: (v) => ({ ...v, roofType: 'plana-peto' }) },
   { id: 'cubierta-inclinada', label: 'Cubierta inclinada (informe)', apply: (v) => ({ ...v, roofType: 'un-agua' }) },
+  { id: 'cubierta-teja', label: 'Cubierta de teja a un agua (6 → 5 m)', apply: (v) => ({ ...v, roofType: 'un-agua-teja' }) },
   { id: 'ventanas', label: 'Con la propuesta de ventanas', apply: (v) => ({ ...v, options: { ...v.options, aberturas: [...new Set([...v.options.aberturas, ...PROPUESTA_VENTANAS])] } }) },
   { id: 'chimenea', label: 'Estufa ↔ chimenea de obra', apply: (v) => ({ ...v, options: { ...v.options, chimenea: v.options.chimenea === 'obra' ? 'estufa' : 'obra' } }) },
   { id: 'mesa-comedor', label: 'Mesa de comedor rectangular ↔ redonda', apply: (v) => ({ ...v, options: { ...v.options, mesaComedor: v.options.mesaComedor === 'redonda' ? 'rectangular' : 'redonda' } }) },

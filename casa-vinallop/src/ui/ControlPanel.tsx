@@ -180,7 +180,7 @@ function ProposalsSection() {
       )}
       {layout.roofOptions.length > 1 && (
         <Segmented label="Cubierta exterior" id="opt-cubierta" value={layout.roof?.type ?? layout.roofOptions[0].type} onChange={(x) => setRoof(x as RoofType)}
-          options={layout.roofOptions.map((r) => ({ value: r.type, label: r.type === 'plana-peto' ? 'Remate ibicenco (propuesta)' : r.type === 'un-agua' ? 'Inclinada (informe)' : r.type === 'plana' ? 'Plana (propiedad)' : r.label }))} />
+          options={layout.roofOptions.map((r) => ({ value: r.type, label: r.type === 'plana-peto' ? 'Remate ibicenco (propuesta)' : r.type === 'un-agua' ? 'Inclinada (informe)' : r.type === 'un-agua-teja' ? 'Teja a un agua 6 → 5 m (variante)' : r.type === 'plana' ? 'Plana (propiedad)' : r.label }))} />
       )}
       {layout.roofOptions.length > 1 && <p className="hint">Ninguna cubierta está validada técnicamente; la plana debe contrastarse con la inclinada del informe.</p>}
       {hasVentanal && (
