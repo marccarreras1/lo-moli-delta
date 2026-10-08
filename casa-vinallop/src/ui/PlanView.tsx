@@ -8,7 +8,7 @@ import { installationsSvg } from '../instalaciones/planLayer';
 import { useInstalaciones, useResolvedPoints, useVisibleLayers } from '../instalaciones/store';
 import { metersPerPx, overlayReady, useRefs } from '../refs/db';
 import { useModel } from '../state/derived';
-import { useStore } from '../state/store';
+import { activeVariant, useStore } from '../state/store';
 import { useGestion } from '../gestion/store';
 import { pointInPolygon } from '../model/geometry';
 import type { Vec2 } from '../data/types';
@@ -34,14 +34,15 @@ export function PlanView({ fitNonce }: { fitNonce: number }) {
   const [bath, setBath] = useState(false);
   /** alzado de una fachada en lugar de la planta */
   const [facade, setFacade] = useState<FacadeId | null>(null);
+  const variant = useStore(activeVariant);
   const instPoints = useResolvedPoints(layout);
   const instLayers = useVisibleLayers();
   const instSel = useInstalaciones((x) => x.selectedId);
   const levelId = s.levelId ?? layout.levels[0]?.id ?? '';
   const hasBath = layout.rooms.some((r) => r.id === 'bano');
   const svg = useMemo(
-    () => (facade ? elevationSvg(layout, facade, { showDims: s.showDims, showLabels: s.showLabels }) : null) ?? (bath && hasBath ? bathPlanSvg(layout) ?? '' : null) ?? planSvg(layout, { selection, showDims: s.showDims, showAreas: s.showAreas, showFurniture: s.showFurniture, showLabels: s.showLabels, issues, openFractions, overlay, levelId: s.levelId, showPassages: s.showPassages }),
-    [facade, bath, hasBath, s.levelId, layout, selection, s.showDims, s.showAreas, s.showFurniture, s.showLabels, issues, openFractions, overlay, s.showPassages],
+    () => (facade ? elevationSvg(layout, facade, { showDims: s.showDims, showLabels: s.showLabels, variantName: variant.name, finishes: variant.finishes }) : null) ?? (bath && hasBath ? bathPlanSvg(layout) ?? '' : null) ?? planSvg(layout, { selection, showDims: s.showDims, showAreas: s.showAreas, showFurniture: s.showFurniture, showLabels: s.showLabels, issues, openFractions, overlay, levelId: s.levelId, showPassages: s.showPassages }),
+    [facade, variant, bath, hasBath, s.levelId, layout, selection, s.showDims, s.showAreas, s.showFurniture, s.showLabels, issues, openFractions, overlay, s.showPassages],
   );
   const comments = useGestion((x) => x.comentarios);
   const [tool, setTool] = useState<'none' | 'comentar' | 'medir'>('none');

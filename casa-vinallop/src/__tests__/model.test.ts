@@ -213,14 +213,21 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(svgs.izquierdo).toContain('data-annex=');
     expect(svgs.derecho).not.toContain('data-annex=');
     // altura total: 6,20 con la plana; 6,00 con la de teja (y 5,00 en el alero del frontal B)
-    expect(svgs.B).toContain('6,20 m');
+    expect(svgs.B).toContain('+6,20');
     const t = resolveLayout(VINALLOP, { ...baseVariant(), roofType: 'un-agua-teja' });
     const tb = elevationSvg(t, 'B');
-    expect(tb).toContain('6,00 m');
+    expect(tb).toContain('+6,00');
+    expect(tb).toContain('+5,00');
     expect(tb).toContain('url(#tile-B)');
-    // el frontal B se mira con el lateral izquierdo a la izquierda: el cuarto técnico queda antes que la casa
-    const annexX = Number(/data-annex="[^"]+"><rect x="(-?[\d.]+)"/.exec(tb)![1]);
-    expect(annexX).toBeLessThan(0);
+    // el frontal B se mira con el lateral izquierdo a la izquierda: el cuarto técnico queda antes que las puertas
+    const xOf = (re: RegExp) => Number(re.exec(tb)![1]);
+    expect(xOf(/data-annex="[^"]+"><rect x="([\d.]+)"/)).toBeLessThan(xOf(/data-opening="puerta-70"><rect x="([\d.]+)"/));
+    // códigos de carpintería, cuadro y cajetín
+    expect(svgs.B).toMatch(/>P-0\d</);
+    expect(svgs.A).toMatch(/>V-0\d</);
+    expect(svgs.B).toContain('CUADRO DE CARPINTERÍAS');
+    expect(svgs.B).toContain('AL-01');
+    expect(elevationSvg(layout, 'A', { forExport: true })).toContain('1:50');
   });
   it('la puerta de 70 cm está en el baño', () => {
     const o = op('puerta-70');

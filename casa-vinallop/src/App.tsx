@@ -154,7 +154,7 @@ export default function App() {
         setToast({ text: 'Preparando el modelo 3D…' });
         await exportGlb(project.name, variant.name);
       } else if (kind === 'bano') await exportBathSvg(layout, variant.name);
-      else if (kind === 'alzados') await exportElevationsSvg(layout, variant.name);
+      else if (kind === 'alzados') await exportElevationsSvg(layout, variant.name, variant.finishes);
       else if (kind === 'svg') await exportSvg(layout, { showDims: true, showAreas: true, showFurniture: visual.showFurniture, showLabels: true, issues, openFractions: {}, levelId: visual.levelId }, variant.name);
       else await exportJson(serializeConfig(useStore.getState()), project.name, variant.name);
       setToast({ text: kind.startsWith('png') ? 'Imagen exportada.' : kind === 'glb' ? 'Modelo 3D exportado (GLB dentro de un ZIP).' : kind === 'alzados' ? 'Alzados exportados (cuatro SVG).' : kind === 'svg' || kind === 'bano' ? 'Plano exportado.' : 'Configuración exportada.' });
