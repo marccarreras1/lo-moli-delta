@@ -52,7 +52,7 @@ const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 const n4 = (x: number) => Math.round(x * 1e4) / 1e4;
 const pts = (p: Vec2[]) => p.map(([x, y]) => `${n4(x)},${n4(y)}`).join(' ');
 
-function dim(a: Vec2, b: Vec2, off: number, label: string, status: DataStatus) {
+export function dim(a: Vec2, b: Vec2, off: number, label: string, status: DataStatus) {
   const st = STATUS_STYLE[status];
   const dx = b[0] - a[0];
   const dy = b[1] - a[1];

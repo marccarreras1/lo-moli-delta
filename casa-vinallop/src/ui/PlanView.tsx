@@ -3,6 +3,7 @@ import { Icon } from './icons';
 import { ConfirmButton } from './controls';
 import { planSvg, type PlanOverlay } from '../plan/planSvg';
 import { bathPlanSvg } from '../plan/bathPlan';
+import { elevationSvg, FACADES, type FacadeId } from '../plan/elevationSvg';
 import { installationsSvg } from '../instalaciones/planLayer';
 import { useInstalaciones, useResolvedPoints, useVisibleLayers } from '../instalaciones/store';
 import { metersPerPx, overlayReady, useRefs } from '../refs/db';
@@ -31,14 +32,16 @@ export function PlanView({ fitNonce }: { fitNonce: number }) {
     return { href: urls[r.id], x: r.alignment!.x, y: r.alignment!.y, rotation: r.alignment!.rotation, widthM: r.width * k, heightM: r.height * k, opacity: s.overlayOpacity };
   }, [refs, urls, s.overlayRefId, s.overlayOpacity]);
   const [bath, setBath] = useState(false);
+  /** alzado de una fachada en lugar de la planta */
+  const [facade, setFacade] = useState<FacadeId | null>(null);
   const instPoints = useResolvedPoints(layout);
   const instLayers = useVisibleLayers();
   const instSel = useInstalaciones((x) => x.selectedId);
   const levelId = s.levelId ?? layout.levels[0]?.id ?? '';
   const hasBath = layout.rooms.some((r) => r.id === 'bano');
   const svg = useMemo(
-    () => (bath && hasBath ? bathPlanSvg(layout) ?? '' : null) ?? planSvg(layout, { selection, showDims: s.showDims, showAreas: s.showAreas, showFurniture: s.showFurniture, showLabels: s.showLabels, issues, openFractions, overlay, levelId: s.levelId, showPassages: s.showPassages }),
-    [bath, hasBath, s.levelId, layout, selection, s.showDims, s.showAreas, s.showFurniture, s.showLabels, issues, openFractions, overlay, s.showPassages],
+    () => (facade ? elevationSvg(layout, facade, { showDims: s.showDims, showLabels: s.showLabels }) : null) ?? (bath && hasBath ? bathPlanSvg(layout) ?? '' : null) ?? planSvg(layout, { selection, showDims: s.showDims, showAreas: s.showAreas, showFurniture: s.showFurniture, showLabels: s.showLabels, issues, openFractions, overlay, levelId: s.levelId, showPassages: s.showPassages }),
+    [facade, bath, hasBath, s.levelId, layout, selection, s.showDims, s.showAreas, s.showFurniture, s.showLabels, issues, openFractions, overlay, s.showPassages],
   );
   const comments = useGestion((x) => x.comentarios);
   const [tool, setTool] = useState<'none' | 'comentar' | 'medir'>('none');
@@ -50,9 +53,9 @@ export function PlanView({ fitNonce }: { fitNonce: number }) {
   const removeComment = useGestion((x) => x.removeComment);
   const svgFull = useMemo(() => {
     if (bath) return svg;
-    let extra = instLayers.size ? installationsSvg(instPoints, instLayers, levelId, instSel ?? undefined, { labels: s.showLabels, walls: layout.walls }) : '';
+    let extra = instLayers.size && !facade ? installationsSvg(instPoints, instLayers, levelId, instSel ?? undefined, { labels: s.showLabels, walls: layout.walls }) : '';
     // comentarios del nivel (chinchetas numeradas)
-    comments.filter((c) => c.nivel === levelId).forEach((c, i) => {
+    if (!facade) comments.filter((c) => c.nivel === levelId).forEach((c, i) => {
       const col = COMMENT_COLOR[c.estado] ?? '#b26a00';
       extra += `<g data-comment="${c.id}" class="comment-pin"><circle cx="${c.posicion.x}" cy="${c.posicion.y}" r="0.2" fill="${col}" stroke="#fff" stroke-width="0.04"/><text x="${c.posicion.x}" y="${c.posicion.y + 0.07}" font-size="0.2" text-anchor="middle" fill="#fff" font-weight="700">${i + 1}</text></g>`;
     });
@@ -70,7 +73,7 @@ export function PlanView({ fitNonce }: { fitNonce: number }) {
       extra += '</g>';
     }
     return extra ? svg.replace(/<\/svg>$/, `${extra}</svg>`) : svg;
-  }, [svg, bath, instPoints, instLayers, levelId, instSel, s.showLabels, layout.walls, comments, measure, draft]);
+  }, [svg, facade, bath, instPoints, instLayers, levelId, instSel, s.showLabels, layout.walls, comments, measure, draft]);
   /** pantalla → metros de planta; con imán a esquinas de estancias y muros (≤ 0,15 m) y a 5 cm */
   const toPlan = (clientX: number, clientY: number, snap: boolean): Vec2 | null => {
     const el = document.querySelector('.plan-inner svg') as SVGSVGElement | null;
@@ -78,6 +81,7 @@ export function PlanView({ fitNonce }: { fitNonce: number }) {
     if (!el || !m) return null;
     const pt = new DOMPoint(clientX, clientY).matrixTransform(m.inverse());
     let p: Vec2 = [pt.x, pt.y];
+    if (snap && facade) return [Math.round(p[0] * 20) / 20, Math.round(p[1] * 20) / 20];
     if (snap) {
       let best: Vec2 | null = null;
       let bd = 0.15;
@@ -175,8 +179,12 @@ export function PlanView({ fitNonce }: { fitNonce: number }) {
       </div>
       <div className="plan-zoom" role="group" aria-label="Zoom de la planta">
         <button type="button" className={`tool tool-text${tool === 'medir' ? ' active' : ''}`} aria-pressed={tool === 'medir'} onClick={() => { setTool((t) => (t === 'medir' ? 'none' : 'medir')); setMeasure([]); }} data-action="plan-medir" title="Medir distancias sobre el modelo">Medir</button>
-        <button type="button" className={`tool tool-text${tool === 'comentar' ? ' active' : ''}`} aria-pressed={tool === 'comentar'} onClick={() => { setTool((t) => (t === 'comentar' ? 'none' : 'comentar')); setDraft(null); }} data-action="plan-comentar" title="Añadir un comentario en el plano">Nota</button>
-        {hasBath && (
+        {!facade && <button type="button" className={`tool tool-text${tool === 'comentar' ? ' active' : ''}`} aria-pressed={tool === 'comentar'} onClick={() => { setTool((t) => (t === 'comentar' ? 'none' : 'comentar')); setDraft(null); }} data-action="plan-comentar" title="Añadir un comentario en el plano">Nota</button>}
+        <button type="button" className={`tool tool-text${facade ? ' active' : ''}`} aria-pressed={!!facade} onClick={() => { setFacade((x) => (x ? null : 'B')); setBath(false); setMeasure([]); setDraft(null); if (tool === 'comentar') setTool('none'); setView({ k: 1, x: 0, y: 0 }); }} data-action="plan-alzados" title="Alzados de las fachadas">Alzados</button>
+        {facade && FACADES.map((x) => (
+          <button key={x.id} type="button" className={`tool tool-text${facade === x.id ? ' active' : ''}`} aria-pressed={facade === x.id} onClick={() => { setFacade(x.id); setMeasure([]); setView({ k: 1, x: 0, y: 0 }); }} data-facade={x.id} title={`Alzado: ${x.label}`}>{x.short}</button>
+        ))}
+        {hasBath && !facade && (
           <button type="button" className={`tool tool-text${bath ? ' active' : ''}`} aria-pressed={bath} onClick={() => { setBath((b) => !b); setView({ k: 1, x: 0, y: 0 }); }} data-action="plan-bano" title="Planta acotada del baño">Baño</button>
         )}
         <button type="button" className="tool" onClick={() => zoomAt(1.25)} aria-label="Acercar"><Icon name="plus" /></button>

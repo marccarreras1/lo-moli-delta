@@ -191,6 +191,16 @@ export async function exportSvg(layout: Layout, opts: Omit<PlanOptions, 'forExpo
   await download(exportName(`planta-${(layout.levels.find((l) => l.id === opts.levelId) ?? layout.levels[0])?.name ?? ''}`, layout.name, variantName, 'svg'), `<?xml version="1.0" encoding="UTF-8"?>\n${svg}`, 'image/svg+xml');
 }
 
+export async function exportElevationsSvg(layout: Layout, variantName: string) {
+  const { elevationSvg, FACADES } = await import('../plan/elevationSvg');
+  for (const f of FACADES) {
+    const svg = elevationSvg(layout, f.id, { forExport: true });
+    // pausa corta entre descargas: algunos navegadores bloquean varias seguidas
+    if (f !== FACADES[0]) await new Promise((r) => setTimeout(r, 400));
+    await download(exportName(`alzado-${f.id === 'A' || f.id === 'B' ? `frontal-${f.id}` : `lateral-${f.id}`}`, layout.name, variantName, 'svg'), `<?xml version="1.0" encoding="UTF-8"?>\n${svg}`, 'image/svg+xml');
+  }
+}
+
 export async function exportBathSvg(layout: Layout, variantName: string) {
   const svg = bathPlanSvg(layout, { forExport: true });
   if (!svg) throw new Error('El proyecto no tiene baño.');

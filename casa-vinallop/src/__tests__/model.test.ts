@@ -13,6 +13,7 @@ import { validateLayout } from '../model/validate';
 import { baseVariant } from '../state/store';
 import { PROPUESTA_VENTANAS } from '../data/types';
 import { roofTopAt, roofUndersideAt } from '../model/roof';
+import { elevationSvg } from '../plan/elevationSvg';
 
 const test = buildTestModel();
 const variant = (o: Partial<Variant> = {}): Variant => ({ ...baseVariant(), id: 'v1', name: 'V1', ...o });
@@ -199,6 +200,27 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(roofUndersideAt(l, 4.62) - alt - 0.12).toBeGreaterThan(1.8);
     // la base sigue siendo la plana a 6,20 m
     expect(layout.topHeight).toBe(6.2);
+  });
+  it('alzados de las cuatro fachadas: huecos de cada fachada, cuarto técnico y altura según la cubierta', () => {
+    const svgs = Object.fromEntries((['A', 'B', 'izquierdo', 'derecho'] as const).map((f) => [f, elevationSvg(layout, f)]));
+    // frontal B: puerta de entrada y puerta de vidrio del baño; frontal A: ventanal
+    expect(svgs.B).toContain('data-opening="puerta-120"');
+    expect(svgs.B).toContain('data-opening="puerta-70"');
+    expect(svgs.B).not.toContain('data-opening="obertura-7m"');
+    expect(svgs.A).toContain('data-opening="obertura-7m"');
+    // lateral izquierdo: puerta de la terraza y cuarto técnico delante; en el derecho no se ve
+    expect(svgs.izquierdo).toContain('data-opening="puerta-terraza"');
+    expect(svgs.izquierdo).toContain('data-annex=');
+    expect(svgs.derecho).not.toContain('data-annex=');
+    // altura total: 6,20 con la plana; 6,00 con la de teja (y 5,00 en el alero del frontal B)
+    expect(svgs.B).toContain('6,20 m');
+    const t = resolveLayout(VINALLOP, { ...baseVariant(), roofType: 'un-agua-teja' });
+    const tb = elevationSvg(t, 'B');
+    expect(tb).toContain('6,00 m');
+    expect(tb).toContain('url(#tile-B)');
+    // el frontal B se mira con el lateral izquierdo a la izquierda: el cuarto técnico queda antes que la casa
+    const annexX = Number(/data-annex="[^"]+"><rect x="(-?[\d.]+)"/.exec(tb)![1]);
+    expect(annexX).toBeLessThan(0);
   });
   it('la puerta de 70 cm está en el baño', () => {
     const o = op('puerta-70');
