@@ -58,14 +58,19 @@ const x0 = T, x1 = r2(L - T), y0 = T, y1 = r2(W - TB); // interior: 0,30–16,03
 const cx = (v: number) => r2(XI + v);
 /** posición en el estar, referida al lateral derecho (gana los 3 cm del informe) */
 const rx = (v: number) => r2(XI + v + XR);
-const X_DORM = cx(CHAIN[0]); // 3,80 tabique dormitorio / baño
-const X_ESC = cx(CHAIN[0] + CHAIN[1]); // 6,30 tabique baño / escalera
+/** Dormitorio de 3,50 m libres y baño de 2,00 m libres (propiedad, 10/10/2026); antes, ejes de la cadena 3,5 + 2,5. */
+const DORM_LIBRE = 3.5;
+const BANO_LIBRE = 2.0;
+const X_DORM = r2(XI + DORM_LIBRE + TP / 2); // 3,85 tabique dormitorio / baño
+const X_ESC = r2(X_DORM + TP + BANO_LIBRE); // 5,95 tabique baño / escalera
 const X_PUERTA = cx(CHAIN[0] + CHAIN[1] + CHAIN[2]); // 9,80 puerta de entrada
 const Y_PASILLO = 1.2; // línea del pasillo junto al frontal A (≈0,85 m libres, se conserva)
 /** Puerta del baño: el arco dibujado en la línea del pasillo, junto a la escalera (propiedad). */
-const BANO_PUERTA_X0 = cx(5.05);
-const ALT_X1 = r2(X_ESC + TP / 2); // 6,35 borde del altell
-const ESC: [number, number, number, number] = [ALT_X1, r2(Y_PASILLO + TP / 2), cx(7.25), y1];
+/** puerta exterior de la ducha (0,70 m) en el lado de la escalera de la zona húmeda */
+const DUCHA_PUERTA_X0 = r2(X_ESC - TP / 2 - 0.05 - 0.7);
+const BANO_PUERTA_X0 = r2(X_ESC - TP / 2 - 0.05 - 0.9); // puerta de 0,90 junto a la escalera
+const ALT_X1 = r2(X_ESC + TP / 2); // 6,00 borde del altell
+const ESC: [number, number, number, number] = [ALT_X1, r2(Y_PASILLO + TP / 2), r2(ALT_X1 + 1.2), y1];
 /** cocina bajo la escalera: desde el 8.º peldaño la cara inferior queda por encima de la encimera (0,90 m) */
 const ESC_HUECO = r2(ESC[1] + ((ESC[3] - ESC[1]) * 7) / 15);
 /** mesa de comedor entre la isla y el salón */
@@ -115,9 +120,9 @@ const openings: Opening[] = [
     note: 'Solicitado por la propiedad y presupuestado (PAC26-0052: demolición para abertura de 9 m y zuncho de 9 m de 40 × 70 cm con triple armado, propuesta del constructor). Encaje en el modelo: de 6,85 a 15,85 m; deja un machón de 0,50 m junto al borde del altell y 0,48 m en la esquina (0,18 m de jamba interior más el lateral de 0,30 m). Apoyos, machones y zuncho pendientes de cálculo del arquitecto. La estufa queda delante del vidrio.',
   },
   {
-    id: 'obertura-225-pb', label: 'Obertura de 2,25 m (planta baja)', wallId: 'muro-A', kind: 'cristalera', offset: onAB(cx(1.4)), width: 2.25, sill: 0, height: 2.4,
-    system: null, status: 'documentado', sourceId: S.prop,
-    note: 'Anchura documentada (225 cm) y altura de 2,40 m (propiedad: «es ok 2,40 m»), por debajo del forjado del altell (cara inferior a 2,50 m). Posición: media entre la planta, el alzado A y el altell.',
+    id: 'obertura-225-pb', label: 'Puerta exterior del dormitorio (1,50 m)', wallId: 'muro-A', kind: 'puerta', offset: onAB(r2(cx(1.4) + 2.25 / 2 - 0.75)), width: 1.5, sill: 0, height: 2.4, glazed: 'transparente',
+    system: { type: 'abatible', leaves: 2, status: 'propuesto' }, status: 'confirmado', sourceId: S.prop,
+    note: 'Puerta exterior del dormitorio de 1,50 m (propiedad, 10/10/2026), en el sitio de la obertura de 2,25 m del boceto y centrada en ella. Dos hojas de vidrio abatibles (propuesta). Se mantiene la altura de 2,40 m de la obertura (por debajo del forjado del altell, cara inferior a 2,50 m): a confirmar.',
   },
   {
     id: 'obertura-225-altell', label: 'Obertura de 2,25 m (altell)', wallId: 'muro-A', kind: 'cristalera', offset: onAB(cx(1.4)), width: 2.25, sill: r2(ALTELL + 1.1), height: 2.0,
@@ -125,9 +130,9 @@ const openings: Opening[] = [
     note: 'Anchura documentada (2,25 m), alineada con la de planta baja. Antepecho a 1,10 m sobre el suelo del altell (3,90 m) y dintel a ≈5,90 m, como en el alzado A; al subir el altell a 2,80 m el hueco queda de 2,00 m de alto. Los bordes en zigzag se ignoran (propiedad).',
   },
   {
-    id: 'puerta-120', label: 'Puerta de entrada (1,20 × 2,60 m)', wallId: 'muro-B', kind: 'puerta', offset: onAB(X_PUERTA), width: 1.2, sill: 0, height: 2.6,
+    id: 'puerta-120', label: 'Puerta de entrada (1,20 × 2,10 m)', wallId: 'muro-B', kind: 'puerta', offset: onAB(X_PUERTA), width: 1.2, sill: 0, height: 2.1,
     system: { type: 'abatible', leaves: 1, status: 'interpretado' }, swing: { hinge: 'inicio', dir: -1 }, entrance: true, status: 'documentado', sourceId: S.planta,
-    note: 'Anchura y posición documentadas (cadena de cotas y «120 cm» del frontal B). En el muro de 0,60 m. Una hoja con bisagra en el lado del 9,50, abre hacia dentro. Altura de 2,60 m (propiedad; el alzado B dibujaba ≈3,0 m).',
+    note: 'Anchura y posición documentadas (cadena de cotas y «120 cm» del frontal B). En el muro de 0,60 m. Una hoja con bisagra en el lado del 9,50, abre hacia dentro. 1,20 × 2,10 m (propiedad, 10/10/2026; antes 2,60 m de alto y el alzado B dibujaba ≈3,0 m).',
   },
   {
     id: 'puerta-terraza', label: 'Puerta del altell a la terraza (lateral izquierdo)', wallId: 'muro-izquierdo', kind: 'puerta', offset: 0.6, width: 0.9, sill: ALTELL, height: 2.1, glazed: 'transparente',
@@ -135,9 +140,9 @@ const openings: Opening[] = [
     note: 'Propuesta de la propiedad: terraza para el altell encima del cuarto técnico, con acceso desde el lateral. Puerta de vidrio de 0,90 m en el lateral izquierdo, en la parte del altell junto al frontal A (lejos de la cama). Abre hacia dentro. Con el cuarto técnico bajado a 2,75 m (propiedad), la terraza queda a +2,78, enrasada con el altell (+2,80) salvo el umbral: sin escalón interior. Pendiente: impermeabilización de la cubierta del cuarto, desagüe, carga de uso y cálculo del arquitecto.',
   },
   {
-    id: 'puerta-70', label: 'Puerta de vidrio del baño (70 cm, desde la ducha)', wallId: 'muro-B', kind: 'puerta', offset: onAB(cx(5.2)), width: 0.7, sill: 0, height: 2.2, glazed: 'mate',
+    id: 'puerta-70', label: 'Puerta de vidrio del baño (0,70 × 2,10 m, desde la ducha)', wallId: 'muro-B', kind: 'puerta', offset: onAB(DUCHA_PUERTA_X0), width: 0.7, sill: 0, height: 2.1, glazed: 'mate',
     system: { type: 'abatible', leaves: 1, status: 'documentado' }, swing: { hinge: 'fin', dir: 1 }, status: 'documentado', sourceId: S.prop,
-    note: 'Puerta (propiedad) de 70 cm del frontal B, en la zona húmeda de las duchas. Indicación de la propiedad: «la puerta que hay debería ser de cristal y poder acceder desde la ducha». Hoja de vidrio en marco fino; vidrio mate propuesto por intimidad. Abre hacia fuera, con la bisagra en la jamba derecha en el plano. Se accede directamente desde la zona de duchas, sin celosía delante. Posición según el alzado B y la marca «×» de la planta (5,20–5,90 m). Bajo el altell: altura 2,20 m (hipótesis). Umbral sin escalón, con un pequeño rebaje, y el sumidero lineal del plato justo delante de la puerta para que el agua no salga: solución aceptada por la propiedad; el detalle constructivo (rebaje, pendientes, impermeabilización) lo define el arquitecto.',
+    note: 'Puerta (propiedad) de 70 cm del frontal B, en la zona húmeda de las duchas. Indicación de la propiedad: «la puerta que hay debería ser de cristal y poder acceder desde la ducha». Hoja de vidrio en marco fino; vidrio mate propuesto por intimidad. Abre hacia fuera, con la bisagra en la jamba derecha en el plano. Se accede directamente desde la zona de duchas, sin celosía delante. 0,70 × 2,10 m (propiedad, 10/10/2026), en la zona húmeda del baño de 2,00 m, del lado de la escalera. Bajo el altell: altura 2,20 m (hipótesis). Umbral sin escalón, con un pequeño rebaje, y el sumidero lineal del plato justo delante de la puerta para que el agua no salga: solución aceptada por la propiedad; el detalle constructivo (rebaje, pendientes, impermeabilización) lo define el arquitecto.',
   },
   {
     id: 'puerta-bano', label: 'Puerta del baño', wallId: 'tab-pasillo', kind: 'puerta', offset: r2(BANO_PUERTA_X0 - (X_DORM + TP / 2)), width: 0.9, sill: 0, height: 2.1,
@@ -161,7 +166,7 @@ const openings: Opening[] = [
     note: 'Ventana practicable con contraventana de madera junto a la cama, sobre la mesita. El presupuesto habla de dos ventanas en la habitación de abajo; la segunda no tiene sitio claro (armario empotrado en el lateral, cabecero en el frontal B): pendiente.',
   },
   {
-    id: 'var-ventana-bano', label: 'Ventana alta del baño (variante)', wallId: 'muro-B', kind: 'ventana', offset: onAB(cx(3.85)), width: 0.7, sill: 1.85, height: 0.5,
+    id: 'var-ventana-bano', label: 'Ventana alta del baño (variante)', wallId: 'muro-B', kind: 'ventana', offset: onAB(r2(X_DORM + 0.2)), width: 0.7, sill: 1.85, height: 0.5,
     system: { type: 'abatible', leaves: 1, status: 'propuesto' }, status: 'propuesto', sourceId: S.prop, variantKey: 'ventana-bano',
     note: 'Ventana alta sobre la zona húmeda (presupuesto: «una ventana pequeña en el baño»), con extracción mecánica compatible con dos duchas (≈15 l/s, propuesta pendiente de proyecto de instalaciones).',
   },
@@ -171,7 +176,7 @@ const openings: Opening[] = [
     note: 'El presupuesto incluye dos ventanas en la habitación de arriba. Propuesta: a ambos lados del cabecero, en el frontal B.',
   },
   {
-    id: 'var-ventana-altell-2', label: 'Ventana del altell 2 (variante)', wallId: 'muro-B', kind: 'ventana', offset: onAB(cx(3.55)), width: 0.6, sill: r2(ALTELL + 0.9), height: 1.2,
+    id: 'var-ventana-altell-2', label: 'Ventana del altell 2 (variante)', wallId: 'muro-B', kind: 'ventana', offset: onAB(r2(X_DORM + 0.1)), width: 0.6, sill: r2(ALTELL + 0.9), height: 1.2,
     system: { type: 'abatible', leaves: 1, status: 'propuesto' }, status: 'propuesto', sourceId: S.prop, variantKey: 'ventanas-altell',
     note: 'Segunda ventana del altell (presupuesto). Posición propuesta.',
   },
@@ -204,9 +209,9 @@ const room = (id: string, levelId: string, name: string, poly: Vec2[], status: R
 const rooms: Room[] = [
   room('dormitorio', 'pb', 'Dormitorio', rect(x0, y0, X_DORM - TP / 2, y1), 'interpretado', S.planta, 'Cama en el extremo izquierdo, cabecero contra el frontal B, y armario empotrado en el lateral.', { openTo: ['pasillo'] }),
   room('pasillo', 'pb', 'Pasillo', rect(X_DORM - TP / 2, y0, ALT_X1, Y_PASILLO - TP / 2), 'interpretado', S.planta, 'Franja de ≈0,85 m libres junto al frontal A: une la zona de día y el arranque de la escalera con el dormitorio.', { openTo: ['dormitorio', 'dia'] }),
-  room('bano', 'pb', 'Baño', rect(X_DORM + TP / 2, Y_PASILLO + TP / 2, X_ESC - TP / 2, y1), 'documentado', S.prop, 'Entrada desde el pasillo, junto a la escalera (propiedad). Sin el armario del pasillo (eliminado por la propiedad), el baño ocupa todo el ancho entre el dormitorio y la escalera. Al fondo, zona húmeda común de 2,40 × 1,20 m con dos duchas enfrentadas (confirmado); lavabo a la izquierda e inodoro a la derecha según se entra (propuesta). La puerta exterior de 70 cm cae en la zona húmeda: pendiente.'),
+  room('bano', 'pb', 'Baño', rect(X_DORM + TP / 2, Y_PASILLO + TP / 2, X_ESC - TP / 2, y1), 'documentado', S.prop, 'Entrada desde el pasillo, junto a la escalera (propiedad). Sin el armario del pasillo (eliminado por la propiedad), el baño ocupa todo el ancho entre el dormitorio y la escalera. Baño de 2,00 m libres (propiedad, 10/10/2026). Al fondo, zona húmeda común de 2,00 × 1,20 m con dos duchas enfrentadas (confirmado); lavabo a la izquierda e inodoro a la derecha según se entra (propuesta). Puerta exterior de vidrio de 0,70 × 2,10 m en la zona húmeda.'),
   room('dia', 'pb', 'Cocina y estar', rect(ALT_X1, y0, x1, y1), 'documentado', S.prop, 'Doble altura (propiedad). Entrada al baño por el pasillo. Escalera en L, cocina junto a la escalera con isla central, sofá en L y estufa.', { openTo: ['pasillo'] }),
-  room('altell', 'altell', 'Altell', rect(x0, y0, ALT_X1, y1), 'documentado', S.prop, 'Zona diáfana a 2,80 m con cama de matrimonio (propiedad), sobre el dormitorio, el pasillo y el baño. La zona de día es de doble altura. Borde hacia la doble altura en el 6,05, con barandilla.'),
+  room('altell', 'altell', 'Altell', rect(x0, y0, ALT_X1, y1), 'documentado', S.prop, 'Zona diáfana a 2,80 m con cama de matrimonio (propiedad), sobre el dormitorio, el pasillo y el baño. La zona de día es de doble altura. Borde hacia la doble altura a 5,70 m del lateral izquierdo, con barandilla.'),
 ];
 
 const f = (x: Furniture) => x;
@@ -230,13 +235,13 @@ const furniture: Furniture[] = [
   // baño: dos duchas enfrentadas al fondo (propiedad), lavabo de obra a la izquierda y inodoro a la derecha
   // (izquierda y derecha según se entra desde el pasillo, mirando hacia el frontal B)
   f({ id: 'ducha', type: 'ducha', label: 'Zona húmeda · dos duchas enfrentadas', roomId: 'bano', x: r2((B_X0 + B_X1) / 2), y: r2((B_WET + YB) / 2), w: r2(B_X1 - B_X0), d: r2(YB - B_WET), h: 2.0, rot: 0, status: 'confirmado',
-    note: 'Dos duchas una frente a la otra (propiedad): rociadores en los tabiques opuestos (dormitorio y escalera), orientados hacia la zona húmeda común de 2,40 × 1,20 m, con mandos independientes. Separación con celosía cerámica (A o B), vidrio fijo por la cara húmeda y cortina en el acceso con carril propio (propuesta). Desde la zona húmeda se sale al exterior por la puerta de vidrio de 70 cm del frontal B (propiedad).' }),
+    note: 'Dos duchas una frente a la otra (propiedad): rociadores en los tabiques opuestos (dormitorio y escalera), orientados hacia la zona húmeda común de 2,00 × 1,20 m (baño de 2,00 m), con mandos independientes. Separación con celosía cerámica (A o B), vidrio fijo por la cara húmeda y cortina en el acceso con carril propio (propuesta). Desde la zona húmeda se sale al exterior por la puerta de vidrio de 70 cm del frontal B (propiedad).' }),
   f({ id: 'lavabo', type: 'lavabo', label: 'Lavabo de obra', roomId: 'bano', x: r2(B_X1 - 0.28), y: 2.68, w: 1.05, d: 0.55, h: 0.85, rot: 90, status: 'propuesto', note: 'Lavabo de obra con un seno, dos cajones de madera, hueco inferior y espejo grande (referencia del baño). En el lateral izquierdo según se entra, contra el tabique de la escalera.' }),
-  f({ id: 'inodoro', type: 'inodoro', label: 'Inodoro', roomId: 'bano', x: r2(B_X0 + 0.325), y: 2.42, w: 0.38, d: 0.65, h: 0.42, rot: 270, status: 'propuesto', note: 'En el lateral derecho según se entra, fuera del eje de la puerta para dar privacidad. Saneamiento a comprobar (el boceto marcaba «×» de agua en este tabique).' }),
+  f({ id: 'inodoro', type: 'inodoro', label: 'Inodoro', roomId: 'bano', x: r2(B_X0 + 0.33), y: 2.42, w: 0.38, d: 0.65, h: 0.42, rot: 270, status: 'propuesto', note: 'En el lateral derecho según se entra, fuera del eje de la puerta para dar privacidad. Saneamiento a comprobar (el boceto marcaba «×» de agua en este tabique).' }),
   // cocina lineal contra el frontal B (propiedad), entre la escalera y la puerta de entrada.
   // Con rot 180 el eje local va de la puerta hacia la escalera: frigorífico, placa y horno, lavavajillas, fregadero.
-  f({ id: 'encimera', type: 'encimera', label: 'Cocina', roomId: 'dia', x: cx(8.35), y: r2(YB - 0.3), w: 2.2, d: 0.6, h: 0.9, rot: 180, status: 'confirmado',
-    modules: [{ kind: 'frigorifico', w: 0.55 }, { kind: 'placa-horno', w: 0.6 }, { kind: 'lavavajillas', w: 0.45 }, { kind: 'fregadero', w: 0.6 }],
+  f({ id: 'encimera', type: 'encimera', label: 'Cocina', roomId: 'dia', x: r2((ESC[2] + 9.75) / 2), y: r2(YB - 0.3), w: r2(9.75 - ESC[2]), d: 0.6, h: 0.9, rot: 180, status: 'confirmado',
+    modules: [{ kind: 'frigorifico', w: 0.55 }, { kind: 'placa-horno', w: 0.6 }, { kind: 'lavavajillas', w: 0.45 }, { kind: 'fregadero', w: 0.6 }, { kind: 'cajones', w: r2(9.75 - ESC[2] - 2.2) }],
     note: 'Cocina junto a la escalera (propiedad), contra el frontal B. Módulos propuestos sobre los dos puntos de agua del boceto: fregadero y lavavajillas; placa con horno debajo y frigorífico integrado bajo encimera (no cabe una columna: al lado está la puerta de entrada). Frentes de roble con nudos dentro de una envolvente mineral clara, encimera y salpicadero coordinados, balda corrida gruesa y grifo extraíble negro mate (referencia 01).' }),
   // isla de obra: estructura de la referencia 05 y acabado de la 06; deja 1,00 m de paso hasta la cocina
   f({ id: 'isla', type: 'isla', label: 'Isla de obra', roomId: 'dia', x: cx(9.05), y: r2(YB - 0.6 - 1.0 - 0.475), w: 1.6, d: 0.95, h: 0.9, rot: 0, status: 'propuesto',
@@ -334,7 +339,7 @@ const outdoor: Outdoor = {
     id: 'jardin-seco', label: 'Jardín seco de la entrada', rect: [-0.5, r2(W + 0.5), 16.8, 11.5], status: 'propuesto',
     paths: [
       { id: 'paseo-entrada', label: 'Paseo de losas a la puerta de entrada', x: r2(X_PUERTA + 0.6), width: 1.1, y0: r2(W + 0.08), y1: 11.5, slab: 0.45, gap: 0.12 },
-      { id: 'paseo-bano', label: 'Paseo de losas a la puerta del baño', x: cx(5.55), width: 0.7, y0: r2(W + 0.08), y1: 11.5, slab: 0.4, gap: 0.14 },
+      { id: 'paseo-bano', label: 'Paseo de losas a la puerta del baño', x: r2(DUCHA_PUERTA_X0 + 0.35), width: 0.7, y0: r2(W + 0.08), y1: 11.5, slab: 0.4, gap: 0.14 },
     ],
     species: [
       { id: 'lavanda', label: 'Lavanda', h: 0.55, d: 0.75, band: 0.1, color: '#8a74c4' },
@@ -475,7 +480,7 @@ const PROJECT: ProjectData = {
     { label: 'Superficie construida', items: [{ source: 'Informe del arquitecto', value: '79,48 m² construidos (estado actual)' }, { source: 'Rectángulo del informe', value: '16,33 × 5,22 = 85,24 m²' }], status: 'pendiente', note: 'No coinciden: la edificación actual no es un rectángulo completo (el anexo es más estrecho en las fotos) o la superficie excluye algún tramo. Pendiente de contrastar con el informe completo.' },
     { label: 'Ventanal del frontal A', items: [{ source: 'Boceto (planta y alzado A)', value: '«OBERTURA 7 M»' }, { source: 'Propiedad / especificación', value: 'Ventanal de 9 m' }, { source: 'Presupuesto PAC26-0052', value: 'Zuncho 40 × 70 cm para el hueco (propuesta del constructor)' }], status: 'pendiente', note: 'Por defecto se dibuja 9 m (6,85–15,85 m, machones de 0,50 y 0,48 m); la variante de 7 m se conserva. Antes de fijarlo: cálculo estructural del arquitecto (dintel, machones, apoyos) y comprobación de que el altell y la escalera no interfieren.' },
     { label: 'Altura del altell (sección)', items: [{ source: 'Propiedad', value: '2,50 m libres por planta + forjado 0,30 m' }, { source: 'Alzados', value: 'Coronación 6,20 m' }], status: 'interpretado', note: 'Suelo del altell a 2,80 m; libre bajo cubierta 6,20 − 2,80 − canto de cubierta (0,25) − flecha de la volta (0,10) ≈ 3,05 m en el centro, ≈2,95 m bajo vigas. Verificable en la vista «Corte longitudinal».' },
-    { label: 'Superficie del altell', items: [{ source: 'Calculada sobre el modelo', value: '≈26 m² (6,05 × 4,32 m interior)' }], status: 'interpretado', note: 'Resultado del cálculo, no una medida tomada.' },
+    { label: 'Superficie del altell', items: [{ source: 'Calculada sobre el modelo', value: '≈24,6 m² (5,70 × 4,32 m interior)' }], status: 'interpretado', note: 'Resultado del cálculo, no una medida tomada.' },
   ],
   railings: [
     {

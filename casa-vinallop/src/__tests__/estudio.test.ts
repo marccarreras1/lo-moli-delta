@@ -20,8 +20,8 @@ describe('recorrido con colisiones', () => {
     expect(p[0]).toBeLessThan(16.03 - 0.2);
   });
   it('se pasa por la puerta del baño pero no a través del tabique', () => {
-    expect(blocked([5.8, 1.2], o)).toBe(false); // en el hueco de la puerta del baño
-    expect(blocked([4.5, 1.2], o)).toBe(true); // tabique del pasillo junto al armario
+    expect(blocked([5.4, 1.2], o)).toBe(false); // en el hueco de la puerta del baño
+    expect(blocked([4.3, 1.2], o)).toBe(true); // tabique del pasillo
   });
   it('la celosía de la ducha bloquea salvo el acceso central', () => {
     const d = layout.furniture.find((f) => f.id === 'ducha')!;
@@ -37,8 +37,8 @@ describe('recorrido con colisiones', () => {
   });
   it('en el altell no se puede pisar el hueco de la escalera ni cruzar la barandilla', () => {
     const oa = walkObstacles(layout, 'altell');
-    expect(blocked([6.35, 2.0], oa)).toBe(true);
-    expect(blocked([6.35, 3.2], oa)).toBe(true);
+    expect(blocked([6.0, 2.0], oa)).toBe(true);
+    expect(blocked([6.0, 3.2], oa)).toBe(true);
   });
 });
 

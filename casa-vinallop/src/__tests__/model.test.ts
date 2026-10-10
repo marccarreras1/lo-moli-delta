@@ -31,12 +31,12 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(bad, JSON.stringify(bad, null, 2)).toEqual([]);
     expect(layout.slabs[0].thickness).toBe(0.3);
   });
-  it('dos duchas enfrentadas: zona húmeda común al fondo del baño, de pared a pared (2,40 × 1,20 m)', () => {
+  it('dos duchas enfrentadas: zona húmeda común al fondo del baño, de pared a pared (2,00 × 1,20 m, baño de 2,00 m)', () => {
     const d = layout.furniture.find((f) => f.id === 'ducha')!;
     const b = room('bano').polygon;
     expect(d.status).toBe('confirmado');
     expect(d.rot).toBe(0);
-    expect(d.w).toBeCloseTo(2.4, 5);
+    expect(d.w).toBeCloseTo(2.0, 5);
     expect(d.d).toBeCloseTo(1.2, 5);
     expect(d.x - d.w / 2).toBeCloseTo(Math.min(...b.map((p) => p[0])), 5);
     expect(d.x + d.w / 2).toBeCloseTo(Math.max(...b.map((p) => p[0])), 5);
@@ -62,7 +62,7 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(e.points.every((p) => p[0] === layout.stairs[0].rect[2])).toBe(true);
     expect(e.rise![1]).toBe(2.8);
     expect(r.levelId).toBe('altell');
-    expect(r.points.every((p) => p[0] === 6.35)).toBe(true);
+    expect(r.points.every((p) => p[0] === 6.0)).toBe(true);
     expect(Math.max(...r.points.map((p) => p[1]))).toBeLessThan(layout.stairs[0].rect[3]);
   });
   it('altell diáfano con cama de matrimonio', () => {
@@ -89,10 +89,13 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(op('obertura-7m').status).toBe('confirmado');
     expect(layout.openings.some((o) => o.id === 'obertura-9m')).toBe(false);
     expect(resolveLayout(VINALLOP, variant({ options: { ...baseVariant().options, ventanal: '9' } })).openings.find((o) => o.id === 'obertura-9m')!.width).toBe(9);
-    expect(op('obertura-225-pb').width).toBe(2.25);
+    // dormitorio: puerta exterior de 1,50 m en el sitio de la obertura del boceto (propiedad)
+    expect(op('obertura-225-pb').width).toBe(1.5);
+    expect(op('obertura-225-pb').kind).toBe('puerta');
     expect(op('obertura-225-altell').width).toBe(2.25);
     expect(op('puerta-120').width).toBe(1.2);
-    expect(op('puerta-120').height).toBe(2.6);
+    expect(op('puerta-120').height).toBe(2.1);
+    expect([op('puerta-70').width, op('puerta-70').height]).toEqual([0.7, 2.1]);
     // puerta del baño: de vidrio y abierta a la zona húmeda de las duchas
     expect(op('puerta-70').glazed).toBe('mate');
     expect(op('puerta-120').wallId).toBe('muro-B');
@@ -139,8 +142,14 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
   it('entrada al baño desde el pasillo; el baño ocupa todo el ancho entre dormitorio y escalera', () => {
     const b = room('bano').polygon;
     expect(b).toHaveLength(4);
-    expect(Math.max(...b.map((p) => p[0]))).toBeCloseTo(6.25, 5);
-    expect(Math.min(...b.map((p) => p[0]))).toBeCloseTo(3.85, 5);
+    // baño de 2,00 m libres entre el dormitorio (3,50 m libres) y la escalera
+    expect(Math.max(...b.map((p) => p[0])) - Math.min(...b.map((p) => p[0]))).toBeCloseTo(2.0, 5);
+    const dm = room('dormitorio').polygon;
+    expect(Math.max(...dm.map((p) => p[0])) - Math.min(...dm.map((p) => p[0]))).toBeCloseTo(3.5, 5);
+    // la puerta de la ducha cae en la zona húmeda del baño
+    const pd = op('puerta-70');
+    expect(pd.offset + 0.15).toBeGreaterThanOrEqual(Math.min(...b.map((p) => p[0])));
+    expect(pd.offset + 0.15 + pd.width).toBeLessThanOrEqual(Math.max(...b.map((p) => p[0])));
     expect(op('puerta-bano').wallId).toBe('tab-pasillo');
     expect(['ducha', 'inodoro', 'lavabo'].every((id) => layout.furniture.some((f) => f.id === id && f.roomId === 'bano'))).toBe(true);
   });
