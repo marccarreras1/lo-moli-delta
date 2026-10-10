@@ -408,13 +408,14 @@ export function elevationSvg(layout: Layout, f: FacadeId, o: { showDims?: boolea
     };
     // cadena de huecos y largo total (abajo)
     const chain = [0, ...ops.flatMap((p) => [p.a, p.b]), len].map((x) => Math.min(len, Math.max(0, x))).sort((p, q) => p - q).filter((x, i, arr) => i === 0 || x - arr[i - 1] > 0.02);
-    for (let i = 0; i < chain.length - 1; i++) out.push(dimH(chain[i], chain[i + 1], 0.75, fmtM(chain[i + 1] - chain[i])));
+    // cadena de huecos (si no hay huecos, basta con el largo total)
+    if (chain.length > 2) for (let i = 0; i < chain.length - 1; i++) out.push(dimH(chain[i], chain[i + 1], 0.75, fmtM(chain[i + 1] - chain[i])));
     out.push(dimH(0, len, 1.3, fmtM(len)));
     if (front) for (const { a, b } of annex) out.push(dimH(a, b, 0.75, fmtM(b - a)));
     // alturas (derecha): huecos, muro y total
     const xr = X(u1) + 0.45;
     const hs = [...new Set([0, ...ops.flatMap((p) => [p.o.sill, p.o.sill + p.o.height]), wtMax, top].map((v) => Math.round(v * 100) / 100))].sort((p, q) => p - q);
-    for (let i = 0; i < hs.length - 1; i++) if (hs[i + 1] - hs[i] > 0.04) out.push(dimV(xr, hs[i], hs[i + 1], fmtM(hs[i + 1] - hs[i])));
+    if (hs.length > 2) for (let i = 0; i < hs.length - 1; i++) if (hs[i + 1] - hs[i] > 0.04) out.push(dimV(xr, hs[i], hs[i + 1], fmtM(hs[i + 1] - hs[i])));
     out.push(dimV(xr + 0.55, 0, top, fmtM(top)));
   }
 
@@ -491,7 +492,7 @@ export function elevationSvg(layout: Layout, f: FacadeId, o: { showDims?: boolea
   const ky = by + 0.35;
   const L = maxX - minX;
   const W = maxY - minY;
-  const ks = Math.min((kw - 0.5) / L, (kw - 0.5) / W) * 1;
+  const ks = Math.min((kw - 1.0) / L, (kw - 1.0) / W);
   const kcx = kx + kw / 2;
   const kcy = ky + 0.95;
   const KX = (x: number) => kcx + (x - (minX + L / 2)) * ks;

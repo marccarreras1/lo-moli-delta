@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AVISO, APP_VERSION, detectExport, exportGlb, exportJson, exportPng, exportSvg, exportBathSvg, exportElevationsSvg, type ExportMode } from './export/export';
+import { AVISO, APP_VERSION, detectExport, exportGlb, exportJson, exportPng, exportSvg, exportBathSvg, exportElevationsSvg, exportSheetSet, type ExportMode } from './export/export';
 import { useRefs } from './refs/db';
 import { useModel } from './state/derived';
 import { SECTIONS, serializeConfig, useStore, type ViewTab } from './state/store';
@@ -143,7 +143,7 @@ export default function App() {
   const bottomInset = mobile ? sheetH : 0;
   const insets = useMemo(() => ({ bottom: bottomInset, right: mobile ? sideW : 0 }), [bottomInset, sideW, mobile]);
 
-  const doExport = async (kind: 'png' | 'png-alta' | 'glb' | 'svg' | 'bano' | 'alzados' | 'json') => {
+  const doExport = async (kind: 'png' | 'png-alta' | 'glb' | 'svg' | 'bano' | 'alzados' | 'juego' | 'json') => {
     setMenu(null);
     const label = camLabel ? `${viewTitle} · ${camLabel}` : viewTitle;
     try {
@@ -155,9 +155,10 @@ export default function App() {
         await exportGlb(project.name, variant.name);
       } else if (kind === 'bano') await exportBathSvg(layout, variant.name);
       else if (kind === 'alzados') await exportElevationsSvg(layout, variant.name, variant.finishes);
+      else if (kind === 'juego') await exportSheetSet(layout, variant.name, variant.finishes);
       else if (kind === 'svg') await exportSvg(layout, { showDims: true, showAreas: true, showFurniture: visual.showFurniture, showLabels: true, issues, openFractions: {}, levelId: visual.levelId }, variant.name);
       else await exportJson(serializeConfig(useStore.getState()), project.name, variant.name);
-      setToast({ text: kind.startsWith('png') ? 'Imagen exportada.' : kind === 'glb' ? 'Modelo 3D exportado (GLB dentro de un ZIP).' : kind === 'alzados' ? 'Alzados exportados (cuatro SVG).' : kind === 'svg' || kind === 'bano' ? 'Plano exportado.' : 'Configuración exportada.' });
+      setToast({ text: kind.startsWith('png') ? 'Imagen exportada.' : kind === 'glb' ? 'Modelo 3D exportado (GLB dentro de un ZIP).' : kind === 'alzados' ? 'Alzados exportados (cuatro SVG).' : kind === 'juego' ? 'Juego de planos exportado (plantas y alzados en SVG).' : kind === 'svg' || kind === 'bano' ? 'Plano exportado.' : 'Configuración exportada.' });
     } catch (e) {
       setToast({ text: e instanceof Error ? e.message : 'No se pudo exportar.', error: true });
     }
@@ -443,7 +444,7 @@ function EmptyState({ refsCount, onAdd, onRefs, onTest }: { refsCount: number; o
   );
 }
 
-function ExportItems({ threeReady, empty, onExport }: { threeReady: boolean; empty: boolean; onExport: (k: 'png' | 'png-alta' | 'glb' | 'svg' | 'bano' | 'alzados' | 'json') => void }) {
+function ExportItems({ threeReady, empty, onExport }: { threeReady: boolean; empty: boolean; onExport: (k: 'png' | 'png-alta' | 'glb' | 'svg' | 'bano' | 'alzados' | 'juego' | 'json') => void }) {
   return (
     <>
       <button type="button" role="menuitem" disabled={!threeReady} onClick={() => onExport('png')} data-action="export-png">Imagen PNG de la vista</button>
@@ -452,6 +453,7 @@ function ExportItems({ threeReady, empty, onExport }: { threeReady: boolean; emp
       <button type="button" role="menuitem" disabled={empty} onClick={() => onExport('svg')} data-action="export-svg">Plano SVG</button>
       <button type="button" role="menuitem" disabled={empty} onClick={() => onExport('bano')} data-action="export-bano">Planta acotada del baño (SVG)</button>
       <button type="button" role="menuitem" disabled={empty} onClick={() => onExport('alzados')} data-action="export-alzados">Alzados de las cuatro fachadas (SVG)</button>
+      <button type="button" role="menuitem" disabled={empty} onClick={() => onExport('juego')} data-action="export-juego">Juego de planos: plantas y alzados (SVG, 1:50)</button>
       <button type="button" role="menuitem" onClick={() => onExport('json')} data-action="export-json">Configuración JSON</button>
     </>
   );

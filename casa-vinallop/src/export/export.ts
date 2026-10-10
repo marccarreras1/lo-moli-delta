@@ -201,6 +201,15 @@ export async function exportElevationsSvg(layout: Layout, variantName: string, f
   }
 }
 
+export async function exportSheetSet(layout: Layout, variantName: string, finishes?: Record<string, string>) {
+  const { sheetSet } = await import('../plan/sheets');
+  const sheets = sheetSet(layout, { forExport: true, variantName, finishes });
+  for (const [i, s] of sheets.entries()) {
+    if (i > 0) await new Promise((r) => setTimeout(r, 400));
+    await download(exportName(`${s.id}-${s.name}`, layout.name, variantName, 'svg'), `<?xml version="1.0" encoding="UTF-8"?>\n${s.svg}`, 'image/svg+xml');
+  }
+}
+
 export async function exportBathSvg(layout: Layout, variantName: string) {
   const svg = bathPlanSvg(layout, { forExport: true });
   if (!svg) throw new Error('El proyecto no tiene baño.');

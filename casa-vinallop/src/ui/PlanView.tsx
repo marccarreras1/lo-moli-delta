@@ -4,6 +4,7 @@ import { ConfirmButton } from './controls';
 import { planSvg, type PlanOverlay } from '../plan/planSvg';
 import { bathPlanSvg } from '../plan/bathPlan';
 import { elevationSvg, FACADES, type FacadeId } from '../plan/elevationSvg';
+import { planSheetSvg } from '../plan/sheets';
 import { installationsSvg } from '../instalaciones/planLayer';
 import { useInstalaciones, useResolvedPoints, useVisibleLayers } from '../instalaciones/store';
 import { metersPerPx, overlayReady, useRefs } from '../refs/db';
@@ -34,6 +35,8 @@ export function PlanView({ fitNonce }: { fitNonce: number }) {
   const [bath, setBath] = useState(false);
   /** alzado de una fachada en lugar de la planta */
   const [facade, setFacade] = useState<FacadeId | null>(null);
+  /** lámina de la planta del nivel activo (con cajetín y cuadro de superficies) */
+  const [sheet, setSheet] = useState(false);
   const variant = useStore(activeVariant);
   const instPoints = useResolvedPoints(layout);
   const instLayers = useVisibleLayers();
@@ -41,8 +44,8 @@ export function PlanView({ fitNonce }: { fitNonce: number }) {
   const levelId = s.levelId ?? layout.levels[0]?.id ?? '';
   const hasBath = layout.rooms.some((r) => r.id === 'bano');
   const svg = useMemo(
-    () => (facade ? elevationSvg(layout, facade, { showDims: s.showDims, showLabels: s.showLabels, variantName: variant.name, finishes: variant.finishes }) : null) ?? (bath && hasBath ? bathPlanSvg(layout) ?? '' : null) ?? planSvg(layout, { selection, showDims: s.showDims, showAreas: s.showAreas, showFurniture: s.showFurniture, showLabels: s.showLabels, issues, openFractions, overlay, levelId: s.levelId, showPassages: s.showPassages }),
-    [facade, variant, bath, hasBath, s.levelId, layout, selection, s.showDims, s.showAreas, s.showFurniture, s.showLabels, issues, openFractions, overlay, s.showPassages],
+    () => (sheet && !facade && !bath ? planSheetSvg(layout, levelId, { variantName: variant.name, finishes: variant.finishes }) : null) ?? (facade ? elevationSvg(layout, facade, { showDims: s.showDims, showLabels: s.showLabels, variantName: variant.name, finishes: variant.finishes }) : null) ?? (bath && hasBath ? bathPlanSvg(layout) ?? '' : null) ?? planSvg(layout, { selection, showDims: s.showDims, showAreas: s.showAreas, showFurniture: s.showFurniture, showLabels: s.showLabels, issues, openFractions, overlay, levelId: s.levelId, showPassages: s.showPassages }),
+    [sheet, levelId, facade, variant, bath, hasBath, s.levelId, layout, selection, s.showDims, s.showAreas, s.showFurniture, s.showLabels, issues, openFractions, overlay, s.showPassages],
   );
   const comments = useGestion((x) => x.comentarios);
   const [tool, setTool] = useState<'none' | 'comentar' | 'medir'>('none');
@@ -181,6 +184,7 @@ export function PlanView({ fitNonce }: { fitNonce: number }) {
       <div className="plan-zoom" role="group" aria-label="Zoom de la planta">
         <button type="button" className={`tool tool-text${tool === 'medir' ? ' active' : ''}`} aria-pressed={tool === 'medir'} onClick={() => { setTool((t) => (t === 'medir' ? 'none' : 'medir')); setMeasure([]); }} data-action="plan-medir" title="Medir distancias sobre el modelo">Medir</button>
         {!facade && <button type="button" className={`tool tool-text${tool === 'comentar' ? ' active' : ''}`} aria-pressed={tool === 'comentar'} onClick={() => { setTool((t) => (t === 'comentar' ? 'none' : 'comentar')); setDraft(null); }} data-action="plan-comentar" title="Añadir un comentario en el plano">Nota</button>}
+        {!facade && <button type="button" className={`tool tool-text${sheet ? ' active' : ''}`} aria-pressed={sheet} onClick={() => { setSheet((x) => !x); setBath(false); setMeasure([]); setDraft(null); if (tool === 'comentar') setTool('none'); setView({ k: 1, x: 0, y: 0 }); }} data-action="plan-lamina" title="Lámina de la planta con cajetín y superficies">Lámina</button>}
         <button type="button" className={`tool tool-text${facade ? ' active' : ''}`} aria-pressed={!!facade} onClick={() => { setFacade((x) => (x ? null : 'B')); setBath(false); setMeasure([]); setDraft(null); if (tool === 'comentar') setTool('none'); setView({ k: 1, x: 0, y: 0 }); }} data-action="plan-alzados" title="Alzados de las fachadas">Alzados</button>
         {facade && FACADES.map((x) => (
           <button key={x.id} type="button" className={`tool tool-text${facade === x.id ? ' active' : ''}`} aria-pressed={facade === x.id} onClick={() => { setFacade(x.id); setMeasure([]); setView({ k: 1, x: 0, y: 0 }); }} data-facade={x.id} title={`Alzado: ${x.label}`}>{x.short}</button>

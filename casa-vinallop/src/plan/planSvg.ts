@@ -644,7 +644,7 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
       // alto y antepecho de cada hueco, por la cara interior
       for (const x of ops) {
         const c = pointOnWall(w, x.offset + x.width / 2, -outward * (w.thickness / 2 + 0.16));
-        out.push(`<text x="${n4(c[0])}" y="${n4(c[1])}" font-size="0.11" text-anchor="middle" dominant-baseline="middle" fill="#55605a" class="tnum" paint-order="stroke" stroke="#fefdfb" stroke-width="0.04">h ${fmtM(x.height)}${x.sill > 0.01 ? ` · ant. ${fmtM(x.sill - (lvlElev - elevOf(w.levelId)))}` : ''}</text>`);
+        out.push(`<text x="${n4(c[0])}" y="${n4(c[1])}" font-size="0.11" text-anchor="middle" dominant-baseline="middle" fill="#55605a" class="tnum" paint-order="stroke" stroke="#fefdfb" stroke-width="0.04">h ${fmtM(x.height)}${x.sill - (lvlElev - elevOf(w.levelId)) > 0.01 ? ` · ant. ${fmtM(x.sill - (lvlElev - elevOf(w.levelId)))}` : ''}</text>`);
       }
     }
     // espesores de los muros y fondo interior (lateral izquierdo)

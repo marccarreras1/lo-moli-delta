@@ -14,6 +14,7 @@ import { baseVariant } from '../state/store';
 import { PROPUESTA_VENTANAS } from '../data/types';
 import { roofTopAt, roofUndersideAt } from '../model/roof';
 import { elevationSvg } from '../plan/elevationSvg';
+import { sheetSet } from '../plan/sheets';
 
 const test = buildTestModel();
 const variant = (o: Partial<Variant> = {}): Variant => ({ ...baseVariant(), id: 'v1', name: 'V1', ...o });
@@ -244,6 +245,16 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(svgs.B).toContain('CUADRO DE CARPINTERÍAS');
     expect(svgs.B).toContain('AL-01');
     expect(elevationSvg(layout, 'A', { forExport: true })).toContain('1:50');
+  });
+  it('juego de planos: dos plantas (P-01, P-02) con cuadro de superficies y los cuatro alzados', () => {
+    const set = sheetSet(layout, { variantName: 'Base' });
+    expect(set.map((x) => x.id)).toEqual(['P-01', 'P-02', 'AL-01', 'AL-02', 'AL-03', 'AL-04']);
+    expect(set[0].svg).toContain('CUADRO DE SUPERFICIES');
+    expect(set[0].svg).toContain('PLANTA BAJA');
+    expect(set[1].svg).toContain('PLANTA ALTELL');
+    expect(set[0].svg).toContain('+0,36 sobre el terreno');
+    // cada lámina es un SVG bien formado (sin atributos repetidos en el dibujo anidado)
+    for (const x of set) expect(x.svg.match(/<svg /g)!.length).toBeLessThanOrEqual(2);
   });
   it('la puerta de 70 cm está en el baño', () => {
     const o = op('puerta-70');
