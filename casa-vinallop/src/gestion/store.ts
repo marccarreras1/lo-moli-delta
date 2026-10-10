@@ -97,6 +97,35 @@ function migrate(data: GestionData): GestionData {
   return { ...data, fases, presupuesto: { ...data.presupuesto, partidas: [...data.presupuesto.partidas, ...add] } };
 }
 
+/**
+ * Corrección de la propiedad (10/10/2026): el alzado de 36 cm ya está en PAC-11 (2.500 €), que pasa a
+ * la fase 1; los 2.000 € de PAC-04.1 son para recrecer los muros hasta 6,00 m.
+ */
+function migrate2(data: GestionData): GestionData {
+  let done: string[] = [];
+  try { done = JSON.parse(window.localStorage.getItem(MIGRATIONS_KEY) ?? '[]') as string[]; } catch { /* sin almacenamiento */ }
+  const id = '2026-10-10-pac11-fase1';
+  if (done.includes(id)) return data;
+  const seed = new Map([...ADDED_PARTIDAS(), ...seedGestion().presupuesto.partidas].map((p) => [p.id, p]));
+  const partidas = data.presupuesto.partidas.map((p) => {
+    if (p.id === 'p-pac-04-1') return { ...p, descripcion: seed.get(p.id)!.descripcion, notas: seed.get(p.id)!.notas };
+    if (p.id === 'p-pac-11' && data.fases.some((f) => f.id === FASE_PAC)) {
+      const { noSeleccionada: _omit, ...rest } = p;
+      return { ...rest, fase: FASE_PAC, notas: seed.get(p.id)?.notas ?? p.notas };
+    }
+    return p;
+  });
+  const texts = new Map(ADDED_TAREAS);
+  const fases = data.fases.map((f) => {
+    if (f.id !== FASE_PAC) return f;
+    let tareas = f.tareas.map((x) => (x.partida === 'PAC-04.1' ? { ...x, texto: texts.get('PAC-04.1')! } : x));
+    if (!tareas.some((x) => x.partida === 'PAC-11')) tareas = [...tareas, { id: `${FASE_PAC}-t-add-pac11`, texto: texts.get('PAC-11')!, hecha: false, partida: 'PAC-11' }];
+    return { ...f, tareas };
+  });
+  try { window.localStorage.setItem(MIGRATIONS_KEY, JSON.stringify([...done, id])); } catch { /* sin almacenamiento */ }
+  return { ...data, fases, presupuesto: { ...data.presupuesto, partidas } };
+}
+
 function load(): { data: GestionData; aviso: string | null } {
   if (typeof window === 'undefined') return { data: seedGestion(), aviso: null };
   let raw: string | null = null;
@@ -108,7 +137,7 @@ function load(): { data: GestionData; aviso: string | null } {
   if (!raw) return { data: seedGestion(), aviso: null };
   try {
     const parsed = JSON.parse(raw) as unknown;
-    const data = migrate(parseGestion(parsed, false));
+    const data = migrate2(migrate(parseGestion(parsed, false)));
     let aviso: string | null = null;
     try { parseGestion(parsed, true); } catch (e) {
       aviso = `Se han descartado datos guardados no válidos (${e instanceof GestionInvalida ? e.message : 'formato'}).`;

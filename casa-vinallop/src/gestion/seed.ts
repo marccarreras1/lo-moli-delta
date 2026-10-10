@@ -97,11 +97,11 @@ const pac = (n: number, descripcion: string, capitulo: string, precio: number, f
 export const ADDED_PARTIDAS = (): Partida[] => [
   {
     id: 'p-pac-04-1', codigo: 'PAC-04.1',
-    descripcion: 'Ampliación de la partida de alzado de muros: alzado de la casa 36 cm',
+    descripcion: 'Ampliación de la partida de alzado de muros: recrecido de muros hasta 6,00 m',
     capitulo: CAP.estructura, fase: FASE_PAC,
     cantidad: 1, unidad: 'PA', precio: 2000,
     proveedor: PAC_PROVEEDOR, referencia: '', contratado: null, extras: null, real: null, pagos: [],
-    notas: 'Se suma a PAC-04 (recrecido de muros, 4.500 €): +2.000 € para elevar la casa 36 cm. Importe indicado por la propiedad; se toma sin IVA como el resto del presupuesto. Pendiente de confirmación escrita del constructor.',
+    notas: 'Se suma a PAC-04 (recrecido de muros, 4.500 €): +2.000 € para llegar a los 6,00 m de altura (indicación de la propiedad). El alzado de la casa de 36 cm va aparte, en PAC-11 (2.500 €). Importe sin IVA como el resto del presupuesto; pendiente de confirmación escrita del constructor.',
     origenPrecio: 'Indicación de la propiedad (10/10/2026)', fechaPrecio: '2026-10-10',
     condicion: 'estimación', impuesto: 21, base: null,
   },
@@ -119,7 +119,8 @@ export const ADDED_PARTIDAS = (): Partida[] => [
 
 /** Tareas de la fase 1 para las partidas añadidas. */
 export const ADDED_TAREAS: [string, string][] = [
-  ['PAC-04.1', 'Alzado de la casa 36 cm (ampliación del alzado de muros)'],
+  ['PAC-11', 'Alzado de la casa 36 cm (partida de 2.500 €: relleno interior y elevación)'],
+  ['PAC-04.1', 'Recrecido de muros hasta 6,00 m (ampliación del alzado de muros, +2.000 €)'],
   ['ZAN-01', 'Zanja y tubo de agua y electricidad desde el pozo y la caja eléctrica'],
 ];
 
@@ -142,8 +143,8 @@ function partidas(): Partida[] {
       'No seleccionada en el presupuesto: fase pendiente de asignar hasta confirmar.'),
     pac(10, 'Cisterna enterrada de 10 m² × 1,50 m (15 m³) con tapa a nivel, conexión de pluviales y cubos de polipropileno; montaje de bomba excluido', CAP.agua, 7000, FASE_PENDIENTE,
       'No seleccionada en el presupuesto: fase pendiente de asignar hasta confirmar. Montaje de bomba excluido.'),
-    pac(11, 'Relleno interior con la tierra y piedra de la casa para elevar 15 cm y capa de hormigón de 6 cm', CAP.pavimentos, 2500, FASE_PENDIENTE,
-      'No seleccionada en el presupuesto: fase pendiente de asignar hasta confirmar.'),
+    pac(11, 'Relleno interior con la tierra y piedra de la casa para elevar 15 cm y capa de hormigón de 6 cm', CAP.pavimentos, 2500, FASE_PAC,
+      'No estaba seleccionada en el presupuesto. Según la propiedad (10/10/2026), esta partida de 2.500 € incluye el alzado de la casa de 36 cm y pasa a la fase 1. El documento habla de elevar 15 cm: aclarar con el constructor.'),
     pac(12, 'Escalera de hormigón sin revestir para conectar el altillo', CAP.estructura, 3000, FASE_PENDIENTE,
       'No seleccionada en el presupuesto: fase pendiente de asignar hasta confirmar.'),
     {
@@ -160,7 +161,7 @@ function partidas(): Partida[] {
 }
 
 export const PAC_SELECCION = ['PAC-01', 'PAC-02', 'PAC-03', 'PAC-04', 'PAC-05', 'PAC-06', 'PAC-07', 'PAC-08'];
-export const PAC_NO_SELECCION = ['PAC-09', 'PAC-10', 'PAC-11', 'PAC-12'];
+export const PAC_NO_SELECCION = ['PAC-09', 'PAC-10', 'PAC-12'];
 
 function ofertas(): Oferta[] {
   return [{
@@ -223,7 +224,7 @@ function fases(): Fase[] {
       ['Identificar y solicitar los permisos aplicables', 'Comprobar el fibrocemento', 'Gestión especializada del fibrocemento si corresponde'],
       { dependencias: ['f01'] }),
     fase(FASE_PAC, 'Fase 1 · Estructura, aberturas, cubierta y forjado (presupuesto PAC26-0052)',
-      'Partidas seleccionadas del presupuesto PAC26-0052 (oferta recibida, no aceptada) y añadidos de la propiedad: alzado de la casa 36 cm y zanja de agua y electricidad desde el pozo. Cada tarea corresponde a una partida.',
+      'Partidas seleccionadas del presupuesto PAC26-0052 (oferta recibida, no aceptada) y añadidos de la propiedad: alzado de la casa 36 cm (PAC-11), recrecido de muros hasta 6,00 m y zanja de agua y electricidad desde el pozo. Cada tarea corresponde a una partida.',
       [],
       {
         tareas: [...PAC_TAREAS, ...ADDED_TAREAS].map(([codigo, texto], i) => t(FASE_PAC, i + 1, texto, codigo)),
@@ -248,8 +249,8 @@ function fases(): Fase[] {
       ['Luminarias', 'Aparatos', 'Sistemas', 'Comprobaciones'], { dependencias: ['f07', 'f08'] }),
     fase('f10', '10 · Revisión final', 'Incidencias, repasos, documentación y cierre económico.',
       ['Incidencias', 'Repasos', 'Documentación', 'Cierre económico'], { dependencias: ['f09'] }),
-    fase(FASE_PENDIENTE, 'Pendiente de asignar', 'Partidas no seleccionadas del presupuesto PAC26-0052 (fosa séptica, cisterna, relleno interior y escalera): fase por asignar hasta confirmar.', [],
-      { observaciones: 'Total no seleccionadas: 15.700 € antes de descuentos e IVA.' }),
+    fase(FASE_PENDIENTE, 'Pendiente de asignar', 'Partidas no seleccionadas del presupuesto PAC26-0052 (fosa séptica, cisterna y escalera): fase por asignar hasta confirmar.', [],
+      { observaciones: 'Total no seleccionadas: 13.200 € antes de descuentos e IVA (el relleno interior con el alzado de 36 cm pasa a la fase 1).' }),
   ];
 }
 
