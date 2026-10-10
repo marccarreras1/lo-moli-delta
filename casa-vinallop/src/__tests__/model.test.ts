@@ -542,8 +542,18 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
     expect(fr.rect[0]).toBe(layout.bounds.minX);
     expect(fr.rect[2]).toBe(layout.bounds.maxX);
     expect(fr.rect[3]).toBe(layout.bounds.minY);
-    // ningún tramo de solera delante del frontal B (puerta de entrada) a lo largo de la casa
-    expect(o.pavements.filter((p) => p.joints > 0 && p.rect[3] > layout.bounds.maxY && p.rect[0] < layout.bounds.maxX)).toEqual([]);
+    // delante del frontal B solo la pequeña solera del sol de invierno, a la derecha de la puerta (sin tapar la puerta)
+    expect(o.pavements.filter((p) => p.joints > 0 && p.rect[3] > layout.bounds.maxY && p.rect[0] < layout.bounds.maxX).map((p) => p.id)).toEqual(['solera-sol-invierno']);
+    const sol = o.pavements.find((p) => p.id === 'solera-sol-invierno')!;
+    const pe = layout.openings.find((x) => x.id === 'puerta-120')!;
+    expect(sol.rect[0]).toBeGreaterThanOrEqual(pe.offset + 0.15 + pe.width - 1e-6);
+    const banco = o.furniture.find((f) => f.id === 'banco-sol')!;
+    expect(banco.y - banco.d / 2).toBeCloseTo(layout.bounds.maxY, 5);
+    expect(banco.x - banco.w / 2).toBeGreaterThanOrEqual(sol.rect[0]);
+    expect(banco.x + banco.w / 2).toBeLessThanOrEqual(sol.rect[2]);
+    // el porche cubre toda la solera del frontal A, hasta el dormitorio
+    const por = o.porches![0];
+    expect(por.rect[0]).toBe(layout.bounds.minX);
     expect(la.rect[2] - la.rect[0]).toBeCloseTo(4, 5);
     expect(la.permeable!.r).toBeGreaterThan(1);
     expect(layout.site!.trees[0].c).toEqual(la.permeable!.c);

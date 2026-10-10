@@ -309,7 +309,10 @@ const ALGARROBO: Vec2 = [17.7, 2.3];
 const SOL_LATERAL = 4;
 /** fondo del tramo del frontal A, bajo el porche (medida propuesta) */
 const SOL_TRASERA = 3.4;
-const PORCHE_X0 = r2(ALT_X1);
+/** el porche cubre toda la solera del frontal A, hasta el dormitorio (propiedad, 10/10/2026) */
+const PORCHE_X0 = 0;
+/** solera de sol de invierno a la derecha de la puerta de entrada, con banco de obra contra la fachada (propiedad) */
+const SOL_INV: [number, number, number, number] = [r2(X_PUERTA + 1.2), W, 15.6, r2(W + 2.4)];
 /** la mesa va justo bajo el algarrobo (propiedad), entre el tronco y el tramo del frontal A: el alcorque y las sillas no se tocan */
 const MESA_EXT: Vec2 = [r2(L + 2.0), r2(ALGARROBO[1] - 3.6)];
 const outdoor: Outdoor = {
@@ -318,6 +321,10 @@ const outdoor: Outdoor = {
     {
       id: 'solera-l-lateral', label: 'Solera en L · tramo lateral', rect: [L, r2(-SOL_TRASERA), r2(L + SOL_LATERAL), W], joints: 2, permeable: { c: ALGARROBO, r: 1.5 }, status: 'confirmado',
       note: 'Tramo de 4 m junto al lateral derecho, bajo el algarrobo, continuo con el del frontal A y al mismo nivel; termina al ras del frontal B (la propiedad pidió quitar el trozo que sobresalía). La mesa va bajo la copa, entre el tronco y el tramo del frontal A. Se recorta alrededor del tronco para dejar zona permeable sobre las raíces; la posición del árbol es aproximada.',
+    },
+    {
+      id: 'solera-sol-invierno', label: 'Solera del sol de invierno (entrada)', rect: SOL_INV, joints: 2.2, status: 'propuesto',
+      note: 'Indicación de la propiedad: a la derecha de la puerta de entrada, mirando la fachada, una pequeña zona de solera con un banco de obra pegado a la pared para tomar el sol en la época de frío. El frontal B mira al sur-suroeste: en invierno recibe sol casi todo el día y el muro de 0,60 m guarda calor. 4,40 × 2,40 m de cemento claro, como la solera en L, unida al paseo de la entrada. Medidas propuestas.',
     },
     {
       id: 'solera-l-frontal-a', label: 'Solera en L · tramo del frontal A (cristalera)', rect: [0, r2(-SOL_TRASERA), L, 0], joints: 3.3, status: 'confirmado',
@@ -337,6 +344,7 @@ const outdoor: Outdoor = {
   // prospèrent en sol sec sans arrosage»), con paseos de losas de cemento hasta las dos puertas del frontal B
   garden: {
     id: 'jardin-seco', label: 'Jardín seco de la entrada', rect: [-0.5, r2(W + 0.5), 16.8, 11.5], status: 'propuesto',
+    clearings: [SOL_INV],
     paths: [
       { id: 'paseo-entrada', label: 'Paseo de losas a la puerta de entrada', x: r2(X_PUERTA + 0.6), width: 1.1, y0: r2(W + 0.08), y1: 11.5, slab: 0.45, gap: 0.12 },
       { id: 'paseo-bano', label: 'Paseo de losas a la puerta del baño', x: r2(DUCHA_PUERTA_X0 + 0.35), width: 0.7, y0: r2(W + 0.08), y1: 11.5, slab: 0.4, gap: 0.14 },
@@ -354,14 +362,17 @@ const outdoor: Outdoor = {
   porches: [
     {
       id: 'porche-cristalera', label: 'Porche de la cristalera', rect: [PORCHE_X0, r2(-SOL_TRASERA + 0.2), L, 0], wallSide: 'y1', hWall: 3.45, hFront: 3.2,
-      posts: [6.6, 9.85, 13.1, 16.1].map((x) => [x, r2(-SOL_TRASERA + 0.4)] as Vec2), postSize: 0.4, status: 'confirmado',
-      note: 'Porche mediterráneo a lo largo del ventanal (indicación de la propiedad): pilares de obra encalados de 40 × 40 cm, viga de madera en el frente y durmiente en la fachada por encima del dintel del ventanal (3,15 m), viguetas cada ≈0,6 m y cubierta de cañizo. Medidas, sección de las vigas y anclaje a la fachada propuestos: pendientes de cálculo. Con el norte de la captura de Mapas de Apple (≈22° desde el frontal A), la cristalera mira al nor-noreste: le da el sol de primera hora en verano y casi nada el resto del día, así que el porche sirve sobre todo de estancia exterior a la sombra en las tardes; la entrada (frontal B) mira al sur-suroeste.',
+      posts: [0.4, 3.5, 6.6, 9.85, 13.1, 16.1].map((x) => [x, r2(-SOL_TRASERA + 0.4)] as Vec2), postSize: 0.4, status: 'confirmado',
+      note: 'Porche mediterráneo a lo largo de toda la solera del frontal A, desde el ventanal hasta el dormitorio (indicaciones de la propiedad: porche en la cristalera y «el porche lo haremos de toda la solera, hasta la habitación»): pilares de obra encalados de 40 × 40 cm, viga de madera en el frente y durmiente en la fachada por encima del dintel del ventanal (3,15 m), viguetas cada ≈0,6 m y cubierta de cañizo. Medidas, sección de las vigas y anclaje a la fachada propuestos: pendientes de cálculo. Con el norte de la captura de Mapas de Apple (≈22° desde el frontal A), la cristalera mira al nor-noreste: le da el sol de primera hora en verano y casi nada el resto del día, así que el porche sirve sobre todo de estancia exterior a la sombra en las tardes; la entrada (frontal B) mira al sur-suroeste.',
     },
   ],
   furniture: [
     // decoración de la entrada (propuesta, como en la referencia de calidad): no es una decisión del proyecto
     ...[r2(X_PUERTA - 0.5), r2(X_PUERTA + 1.2 + 0.5)].map((x, i) => f({ id: `maceta-entrada-${i + 1}`, type: 'maceta', label: 'Tinaja de barro con olivo (decoración propuesta)', roomId: 'exterior', x, y: r2(W + 0.45), w: 0.62, d: 0.62, h: 1.55, rot: 0, status: 'propuesto', note: 'Decoración propuesta junto a la puerta de entrada; se puede quitar.' })),
     ...[r2(X_PUERTA - 0.3), r2(X_PUERTA + 1.2 + 0.3)].map((x, i) => f({ id: `aplique-entrada-${i + 1}`, type: 'aplique', label: 'Aplique exterior (propuesta)', roomId: 'exterior', x, y: r2(W + 0.07), w: 0.14, d: 0.14, h: 2.25, rot: 0, status: 'propuesto', note: 'Luz cálida a ambos lados de la entrada (propuesta; ubicación y modelo por decidir).' })),
+    // banco de obra contra el frontal B en la solera del sol de invierno (propiedad)
+    f({ id: 'banco-sol', type: 'banco', label: 'Banco de obra al sol (frontal B)', roomId: 'exterior', x: r2((SOL_INV[0] + 0.8 + SOL_INV[2] - 0.2) / 2), y: r2(W + 0.23), w: r2(SOL_INV[2] - 0.2 - SOL_INV[0] - 0.8), d: 0.46, h: 0.45, rot: 0, status: 'propuesto',
+      note: 'Banco corrido de obra encalado, pegado a la fachada de la entrada, con asiento de 0,45 m de fondo y alto y remate de piedra o terracota; para tomar el sol de invierno (indicación de la propiedad). Deja libre la tinaja junto a la puerta.' }),
     f({ id: 'mesa-exterior', type: 'mesa-exterior', label: 'Mesa redonda Ø 1,80', roomId: 'exterior', x: MESA_EXT[0], y: MESA_EXT[1], w: 1.8, d: 1.8, h: 0.75, rot: 0, status: 'propuesto', note: 'Mesa circular de tablero mineral claro grueso (≈10 cm) sobre pie central cilíndrico (referencia 11). Ocho plazas; diámetro orientativo.' }),
     ...Array.from({ length: 8 }, (_, i) => {
       const a = (i / 8) * Math.PI * 2 + Math.PI / 8;

@@ -27,6 +27,7 @@ export function gardenPlants(g: NonNullable<Outdoor['garden']>, avoid: { x: numb
       // fuera de los caminos (con margen) y de lo que haya que evitar (macetas, troncos)
       if (g.paths.some((p) => Math.abs(px - p.x) < p.width / 2 + 0.28 && py > p.y0 - 0.2 && py < p.y1 + 0.2)) continue;
       if (avoid.some((a) => Math.hypot(px - a.x, py - a.y) < a.r)) continue;
+      if ((g.clearings ?? []).some(([cx0, cy0, cx1, cy1]) => px > cx0 - 0.25 && px < cx1 + 0.25 && py > cy0 - 0.25 && py < cy1 + 0.25)) continue;
       // claros de grava entre grupos
       const n = Math.sin(px * 1.3 + py * 0.7) + Math.sin(px * 0.47 - py * 1.9 + 1.7);
       if (n > 1.35) continue;

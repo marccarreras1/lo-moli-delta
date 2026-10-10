@@ -370,6 +370,8 @@ export interface Outdoor {
     rect: [number, number, number, number];
     /** caminos de losas de hormigón: eje x, ancho de losa, desde y0 hasta y1 */
     paths: { id: string; label: string; x: number; width: number; y0: number; y1: number; slab: number; gap: number }[];
+    /** zonas sin plantas (soleras u otros usos dentro del jardín): [x0, y0, x1, y1] */
+    clearings?: [number, number, number, number][];
     /** especies (las plantas se reparten por la superficie con un generador determinista) */
     species: GardenSpecies[];
     status: DataStatus;
