@@ -143,6 +143,8 @@ const partidaOf = (strict: boolean) => (x: unknown, p: string): Partida => {
   };
   if (vinculo === 'solera-l-area') r.vinculo = 'solera-l-area';
   if (bool(o, 'noSeleccionada', p)) r.noSeleccionada = true;
+  const ejecutado = num(o, 'ejecutado', p, 0, 100);
+  if (ejecutado != null) r.ejecutado = ejecutado;
   return r;
 };
 function capitulo(x: unknown, p: string): Capitulo {

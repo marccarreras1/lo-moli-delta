@@ -139,3 +139,18 @@
 }
 @media (max-width: 400px) { .gx-kpis { grid-template-columns: 1fr; } }
 .gx-page .segmented button { min-height: 40px; min-width: 88px; }
+
+/* situación de obra */
+.sit-bars { display: grid; grid-template-columns: minmax(0, max-content) 1fr auto; gap: var(--s2) var(--s3); align-items: center; font-size: var(--fs-meta); color: var(--text-2); }
+.sit-bars .gx-progress { width: 100%; height: 10px; }
+.sit-bars b { color: var(--text); font-variant-numeric: tabular-nums; }
+.sit-check { display: flex; align-items: center; gap: var(--s2); min-height: var(--touch); font-size: 14px; cursor: pointer; }
+.sit-check input { width: 20px; height: 20px; accent-color: var(--accent); }
+.sit-alerts { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.sit-alerts .gx-badge { white-space: normal; }
+.sit-tbl td.num small, .sit-tbl td small { display: block; color: var(--text-2); font-weight: 400; }
+.sit-tbl td.sit-up { color: var(--danger); font-weight: 600; }
+.sit-tbl td.sit-down { color: var(--accent-strong); font-weight: 600; }
+.sit-tbl .gx-progress { width: 64px; }
+@media (max-width: 767px) { .sit-bars { grid-template-columns: 1fr auto; } .sit-bars > span { grid-column: 1 / -1; } }
+.modal-body > .tbl-wrap, .modal-body > .gx-breakdown { flex-shrink: 0; }

@@ -53,10 +53,10 @@ export interface Visual {
   section: AppSection;
 }
 
-export type AppSection = 'proyecto' | 'visor' | 'referencias' | 'instalaciones' | 'decisiones' | 'fases' | 'presupuesto' | 'cambios';
+export type AppSection = 'proyecto' | 'visor' | 'referencias' | 'instalaciones' | 'decisiones' | 'fases' | 'presupuesto' | 'situacion' | 'cambios';
 export const SECTIONS: { id: AppSection; label: string }[] = [
   { id: 'proyecto', label: 'Proyecto' }, { id: 'visor', label: 'Visor 3D' }, { id: 'referencias', label: 'Referencias' }, { id: 'instalaciones', label: 'Instalaciones' },
-  { id: 'decisiones', label: 'Decisiones' }, { id: 'fases', label: 'Fases de obra' }, { id: 'presupuesto', label: 'Presupuesto' }, { id: 'cambios', label: 'Cambios' },
+  { id: 'decisiones', label: 'Decisiones' }, { id: 'fases', label: 'Fases de obra' }, { id: 'presupuesto', label: 'Presupuesto' }, { id: 'situacion', label: 'Situación de obra' }, { id: 'cambios', label: 'Cambios' },
 ];
 
 /** Vista favorita guardada por el usuario. */
@@ -207,7 +207,7 @@ function cleanVisual(x: unknown): Visual {
     levelId: typeof o.levelId === 'string' ? o.levelId.slice(0, 40) : null,
     lampDimmer: num(o.lampDimmer, 0, 1, d.lampDimmer),
     showPassages: bool(o.showPassages, d.showPassages),
-    section: pick(o.section, ['proyecto', 'visor', 'referencias', 'instalaciones', 'decisiones', 'fases', 'presupuesto', 'cambios'] as const, d.section),
+    section: pick(o.section, ['proyecto', 'visor', 'referencias', 'instalaciones', 'decisiones', 'fases', 'presupuesto', 'situacion', 'cambios'] as const, d.section),
     presentation: bool(o.presentation, d.presentation),
     longSection: bool(o.longSection, d.longSection),
   };

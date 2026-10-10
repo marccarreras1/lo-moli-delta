@@ -110,6 +110,8 @@ export interface Partida {
   vinculo?: Vinculo;
   /** partida ofertada pero no seleccionada: se lista como referencia y no se suma */
   noSeleccionada?: boolean;
+  /** avance de ejecución en % indicado por la propiedad (ausente = se toma de las tareas vinculadas) */
+  ejecutado?: number;
 }
 
 export interface Capitulo {

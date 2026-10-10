@@ -27,4 +27,6 @@ export const CAMBIOS_SEED: CambioEntrada[] = [
     'Láminas de planta baja (P-01) y altell (P-02) con cuadro de superficies y cajetín, más los cuatro alzados (AL-01 a AL-04). En Plantas, botón «Lámina»; en Exportar, juego completo en SVG a 1:50.'),
   e('c-2026-10-10-registro', '2026-10-10', 'otros', 'Registro de cambios',
     'Nueva sección «Cambios» con este registro: notas y fotos por entrada y exportación a PDF.'),
+  e('c-2026-10-10-situacion', '2026-10-10', 'presupuesto', 'Situación de la obra',
+    'Nueva sección «Situación de obra»: por fase y partida, presupuesto de referencia, comprometido (contratado + extras), coste real, desviación en € y %, avance, obra ejecutada, pagos y pendiente de pago, con alertas. Registro de pagos y exportación a PDF y CSV.'),
 ];
