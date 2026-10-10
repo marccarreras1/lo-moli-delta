@@ -114,7 +114,7 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     const start = o.offset + 0.15;
     expect(start).toBeGreaterThanOrEqual(x0('dia'));
     expect(issues.some((i) => i.elementId === o.id && i.level === 'conflicto')).toBe(false);
-    expect(op('obertura-225-pb').height).toBe(2.4);
+    expect(op('obertura-225-pb').height).toBe(2.5);
   });
   it('los huecos son reales en los muros (también el del altell)', () => {
     for (const o of layout.openings) {

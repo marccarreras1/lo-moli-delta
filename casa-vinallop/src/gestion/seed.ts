@@ -93,6 +93,36 @@ const pac = (n: number, descripcion: string, capitulo: string, precio: number, f
   ...(fase === FASE_PENDIENTE ? { noSeleccionada: true } : {}),
 });
 
+/** Partidas añadidas por la propiedad después del presupuesto (también se incorporan a los datos ya guardados). */
+export const ADDED_PARTIDAS = (): Partida[] => [
+  {
+    id: 'p-pac-04-1', codigo: 'PAC-04.1',
+    descripcion: 'Ampliación de la partida de alzado de muros: alzado de la casa 36 cm',
+    capitulo: CAP.estructura, fase: FASE_PAC,
+    cantidad: 1, unidad: 'PA', precio: 2000,
+    proveedor: PAC_PROVEEDOR, referencia: '', contratado: null, extras: null, real: null, pagos: [],
+    notas: 'Se suma a PAC-04 (recrecido de muros, 4.500 €): +2.000 € para elevar la casa 36 cm. Importe indicado por la propiedad; se toma sin IVA como el resto del presupuesto. Pendiente de confirmación escrita del constructor.',
+    origenPrecio: 'Indicación de la propiedad (10/10/2026)', fechaPrecio: '2026-10-10',
+    condicion: 'estimación', impuesto: 21, base: null,
+  },
+  {
+    id: 'p-zanja-pozo', codigo: 'ZAN-01',
+    descripcion: 'Zanja y tubo para agua y electricidad desde el pozo y la caja eléctrica',
+    capitulo: CAP.agua, fase: FASE_PAC,
+    cantidad: 1, unidad: 'PA', precio: 3500,
+    proveedor: '', referencia: '', contratado: null, extras: null, real: null, pagos: [],
+    notas: 'Presupuesto pasado a la propiedad: 3.500 €. Incluye agua y electricidad (se anota en el capítulo de agua). Proveedor y si el importe lleva IVA, sin indicar: a completar.',
+    origenPrecio: 'Presupuesto recibido por la propiedad (10/10/2026)', fechaPrecio: '2026-10-10',
+    condicion: 'oferta recibida', impuesto: 21, base: null,
+  },
+];
+
+/** Tareas de la fase 1 para las partidas añadidas. */
+export const ADDED_TAREAS: [string, string][] = [
+  ['PAC-04.1', 'Alzado de la casa 36 cm (ampliación del alzado de muros)'],
+  ['ZAN-01', 'Zanja y tubo de agua y electricidad desde el pozo y la caja eléctrica'],
+];
+
 function partidas(): Partida[] {
   return [
     pac(1, 'Demolición del techo actual y preparación para el nuevo', CAP.demoliciones, 1500, FASE_PAC,
@@ -101,6 +131,8 @@ function partidas(): Partida[] {
     pac(3, 'Zuncho de 9 m, sección 40 × 70 cm con triple armado, conectado al cinturón de la casa (cinturón incluido)', CAP.estructura, 5000, FASE_PAC,
       'Característica estructural propuesta por el constructor, no cálculo validado.'),
     pac(4, 'Recrecido de muros con bloque de 20 cm hasta las alturas previstas, dejando huecos para ventanas y remate con cinturón de hormigón', CAP.estructura, 4500, FASE_PAC),
+    // añadidos de la propiedad (10/10/2026) a la fase 1
+    ...ADDED_PARTIDAS(),
     pac(5, 'Aberturas: además de la de 9 m, una ventana más en el comedor, una pequeña en el baño, dos en la habitación de abajo y dos en la de arriba', CAP.fachadas, 3700, FASE_PAC),
     pac(6, 'Cubierta plana con vigas de hormigón y revoltón cerámico terracota visto entre vigas (volta hacia arriba), relleno superior; obra básica, material y mano de obra', CAP.cubierta, 12000, FASE_PAC,
       'Difiere del informe de cubierta inclinada con panel sándwich; coordinar documentos antes de obras.'),
@@ -191,10 +223,10 @@ function fases(): Fase[] {
       ['Identificar y solicitar los permisos aplicables', 'Comprobar el fibrocemento', 'Gestión especializada del fibrocemento si corresponde'],
       { dependencias: ['f01'] }),
     fase(FASE_PAC, 'Fase 1 · Estructura, aberturas, cubierta y forjado (presupuesto PAC26-0052)',
-      'Partidas seleccionadas del presupuesto PAC26-0052 (oferta recibida, no aceptada). Cada tarea corresponde a una partida.',
+      'Partidas seleccionadas del presupuesto PAC26-0052 (oferta recibida, no aceptada) y añadidos de la propiedad: alzado de la casa 36 cm y zanja de agua y electricidad desde el pozo. Cada tarea corresponde a una partida.',
       [],
       {
-        tareas: PAC_TAREAS.map(([codigo, texto], i) => t(FASE_PAC, i + 1, texto, codigo)),
+        tareas: [...PAC_TAREAS, ...ADDED_TAREAS].map(([codigo, texto], i) => t(FASE_PAC, i + 1, texto, codigo)),
         dependencias: ['f01', 'f02'],
         requisitos: ['Permisos aplicables obtenidos', 'Comprobación del fibrocemento/amianto y gestión especializada si corresponde', 'Proyecto validado por el técnico (estructura, cubierta y aberturas)'],
         documentos: [`Presupuesto ${PAC_REF}`],

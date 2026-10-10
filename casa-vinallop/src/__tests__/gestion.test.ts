@@ -58,15 +58,16 @@ describe('partidas sin valorar', () => {
     const r = resumenEconomico(pres);
     expect(r.sinValorar).toBe(1);
     expect(r.parcial).toBe(true);
-    // solo cuentan las 8 partidas seleccionadas; las 4 no seleccionadas son referencia
-    expect(r.previsto.n).toBe(8);
-    expect(r.previsto.base).toBe(37900);
-    expect(r.revisado.base).toBe(37900);
+    // cuentan las 8 partidas seleccionadas y los 2 añadidos de la propiedad (+2.000 alzado 36 cm, 3.500 zanja); las 4 no seleccionadas son referencia
+    expect(r.previsto.n).toBe(10);
+    expect(r.previsto.base).toBe(37900 + 2000 + 3500);
+    expect(r.revisado.base).toBe(37900 + 2000 + 3500);
     expect(r.noSeleccionadas).toEqual({ n: 4, base: 15700 });
     expect(pres.partidas.filter((p) => p.noSeleccionada).map((p) => p.codigo)).toEqual(PAC_NO_SELECCION);
     // el panel parte de 37.900 y aplica el descuento una sola vez hasta 39.930
     const o = ofertaResumen(oferta, pres.partidas);
-    expect(o.seleccion).toBe(r.previsto.base);
+    // la oferta sigue siendo la del documento (8 partidas); los añadidos van aparte
+    expect(o.seleccion).toBe(37900);
     expect([o.descuento, o.trasDescuento, o.ajuste, o.base, o.impuestos, o.total]).toEqual([3790, 34110, -1110, 33000, 6930, 39930]);
     expect(r.capitulosSinValorar.length).toBeGreaterThan(0);
     expect(r.reserva.disponible).toBeNull();
@@ -95,7 +96,7 @@ describe('avance', () => {
   });
   it('la fase del presupuesto tiene una tarea por partida seleccionada', () => {
     const fp = seed.fases.find((x) => x.id === 'f-pac26')!;
-    expect(fp.tareas.map((t) => t.partida)).toEqual(PAC_SELECCION);
+    expect(fp.tareas.map((t) => t.partida)).toEqual([...PAC_SELECCION, 'PAC-04.1', 'ZAN-01']);
     expect(fp.dependencias).toEqual(['f01', 'f02']);
     expect(seed.fases.every((x) => !x.previstoInicio && !x.responsable)).toBe(true);
   });

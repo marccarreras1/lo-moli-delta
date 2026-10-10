@@ -120,9 +120,9 @@ const openings: Opening[] = [
     note: 'Solicitado por la propiedad y presupuestado (PAC26-0052: demolición para abertura de 9 m y zuncho de 9 m de 40 × 70 cm con triple armado, propuesta del constructor). Encaje en el modelo: de 6,85 a 15,85 m; deja un machón de 0,50 m junto al borde del altell y 0,48 m en la esquina (0,18 m de jamba interior más el lateral de 0,30 m). Apoyos, machones y zuncho pendientes de cálculo del arquitecto. La estufa queda delante del vidrio.',
   },
   {
-    id: 'obertura-225-pb', label: 'Puerta exterior del dormitorio (1,50 m)', wallId: 'muro-A', kind: 'puerta', offset: onAB(r2(cx(1.4) + 2.25 / 2 - 0.75)), width: 1.5, sill: 0, height: 2.4, glazed: 'transparente',
+    id: 'obertura-225-pb', label: 'Puerta exterior del dormitorio (1,50 m)', wallId: 'muro-A', kind: 'puerta', offset: onAB(r2(cx(1.4) + 2.25 / 2 - 0.75)), width: 1.5, sill: 0, height: 2.5, glazed: 'transparente',
     system: { type: 'abatible', leaves: 2, status: 'propuesto' }, status: 'confirmado', sourceId: S.prop,
-    note: 'Puerta exterior del dormitorio de 1,50 m (propiedad, 10/10/2026), en el sitio de la obertura de 2,25 m del boceto y centrada en ella. Dos hojas de vidrio abatibles (propuesta). Se mantiene la altura de 2,40 m de la obertura (por debajo del forjado del altell, cara inferior a 2,50 m): a confirmar.',
+    note: 'Puerta exterior del dormitorio de 1,50 m (propiedad, 10/10/2026), en el sitio de la obertura de 2,25 m del boceto y centrada en ella. Dos hojas de vidrio abatibles (propuesta). 1,50 × 2,50 m (propiedad, 10/10/2026): llega a la cara inferior del forjado del altell (2,50 m), así que no queda dintel de muro: el canto del forjado o un zuncho hace de dintel. A comprobar con el arquitecto.',
   },
   {
     id: 'obertura-225-altell', label: 'Obertura de 2,25 m (altell)', wallId: 'muro-A', kind: 'cristalera', offset: onAB(cx(1.4)), width: 2.25, sill: r2(ALTELL + 1.1), height: 2.0,

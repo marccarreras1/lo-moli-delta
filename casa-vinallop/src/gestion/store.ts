@@ -5,7 +5,7 @@
  * colaboración multiusuario). Se guarda con retardo tras cada cambio y al ocultar la página.
  */
 import { create } from 'zustand';
-import { seedGestion } from './seed';
+import { ADDED_PARTIDAS, ADDED_TAREAS, FASE_PAC, seedGestion } from './seed';
 import type {
   Asignacion, Bloqueo, Comentario, Decision, Documento, Fase, GestionData, Oferta, Pago, Partida, Presupuesto, Reserva, Tarea,
 } from './types';
@@ -75,6 +75,28 @@ export interface GestionState extends GestionData {
 
 // ---------------------------------------------------------------- carga
 
+/**
+ * Incorpora a los datos guardados las partidas y tareas añadidas después (una sola vez por
+ * migración: si luego se borran, no vuelven).
+ */
+const MIGRATIONS_KEY = `${GESTION_KEY}-migraciones`;
+function migrate(data: GestionData): GestionData {
+  let done: string[] = [];
+  try { done = JSON.parse(window.localStorage.getItem(MIGRATIONS_KEY) ?? '[]') as string[]; } catch { /* sin almacenamiento */ }
+  const id = '2026-10-10-partidas-propiedad';
+  if (done.includes(id)) return data;
+  const have = new Set(data.presupuesto.partidas.map((p) => p.id));
+  const add = ADDED_PARTIDAS().filter((p) => !have.has(p.id) && data.fases.some((f) => f.id === p.fase) && data.presupuesto.capitulos.some((c) => c.id === p.capitulo));
+  const fases = data.fases.map((f) => {
+    if (f.id !== FASE_PAC) return f;
+    const linked = new Set(f.tareas.map((x) => x.partida));
+    const extra = ADDED_TAREAS.filter(([codigo]) => !linked.has(codigo)).map(([codigo, texto], i) => ({ id: `${FASE_PAC}-t-add-${f.tareas.length + i + 1}`, texto, hecha: false, partida: codigo }));
+    return extra.length ? { ...f, tareas: [...f.tareas, ...extra] } : f;
+  });
+  try { window.localStorage.setItem(MIGRATIONS_KEY, JSON.stringify([...done, id])); } catch { /* sin almacenamiento */ }
+  return { ...data, fases, presupuesto: { ...data.presupuesto, partidas: [...data.presupuesto.partidas, ...add] } };
+}
+
 function load(): { data: GestionData; aviso: string | null } {
   if (typeof window === 'undefined') return { data: seedGestion(), aviso: null };
   let raw: string | null = null;
@@ -86,7 +108,7 @@ function load(): { data: GestionData; aviso: string | null } {
   if (!raw) return { data: seedGestion(), aviso: null };
   try {
     const parsed = JSON.parse(raw) as unknown;
-    const data = parseGestion(parsed, false);
+    const data = migrate(parseGestion(parsed, false));
     let aviso: string | null = null;
     try { parseGestion(parsed, true); } catch (e) {
       aviso = `Se han descartado datos guardados no válidos (${e instanceof GestionInvalida ? e.message : 'formato'}).`;
