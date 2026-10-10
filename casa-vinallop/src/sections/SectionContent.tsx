@@ -10,6 +10,7 @@ import { ReferencesPage } from './ReferencesPage';
 const InstallationsPage = lazy(() => import('../instalaciones/InstallationsPage').then((m) => ({ default: m.InstallationsPage })));
 const DecisionsPage = lazy(() => import('../gestion/DecisionsPage').then((m) => ({ default: m.DecisionsPage })));
 const PhasesPage = lazy(() => import('../gestion/PhasesPage').then((m) => ({ default: m.PhasesPage })));
+const BitacoraPage = lazy(() => import('../bitacora/BitacoraPage').then((m) => ({ default: m.BitacoraPage })));
 const BudgetPage = lazy(() => import('../gestion/BudgetPage').then((m) => ({ default: m.BudgetPage })));
 
 export function SectionContent({ section }: { section: Exclude<AppSection, 'visor'> }) {
@@ -32,6 +33,7 @@ export function SectionContent({ section }: { section: Exclude<AppSection, 'viso
         {section === 'decisiones' && <DecisionsPage />}
         {section === 'fases' && <PhasesPage />}
         {section === 'presupuesto' && <BudgetPage layout={layout} />}
+        {section === 'cambios' && <BitacoraPage />}
       </Suspense>
     </div>
   );
