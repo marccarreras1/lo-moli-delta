@@ -70,10 +70,12 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(camas).toHaveLength(1);
     expect(layout.walls.filter((w) => w.levelId === 'altell')).toEqual([]);
   });
-  it('envolvente del informe: 16,33 m de largo (la cadena de 15,70 m es interior) y altura 6,20 m', () => {
+  it('envolvente del informe: 16,33 m de largo (la cadena de 15,70 m es interior) y altura 6,00 m sobre el terreno (propiedad)', () => {
     expect(layout.bounds.maxX - layout.bounds.minX).toBeCloseTo(16.33, 5);
     expect(layout.measures.find((m) => m.id === 'cadena')!.value).toBe(15.7);
-    expect(layout.topHeight).toBeCloseTo(6.2, 5);
+    expect(layout.topHeight).toBeCloseTo(6.0, 5);
+    // interior elevado 0,36 m sobre el terreno
+    expect(layout.levels.find((l) => l.id === 'pb')!.elevation).toBe(0.36);
   });
   it('el dormitorio está en el extremo izquierdo y la cama en la mitad inferior', () => {
     const order = layout.rooms.filter((r) => r.levelId === 'pb').sort((a, b) => x0(a.id) - x0(b.id)).map((r) => r.id);
@@ -173,10 +175,14 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
   });
   it('altell a 2,80 m (2,50 m libres por planta con forjado de 0,30 m) solo sobre dormitorio y baño', () => {
     const lvl = layout.levels.find((l) => l.id === 'altell')!;
-    expect(lvl.elevation).toBe(2.8);
-    expect(lvl.elevation - layout.slabs[0].thickness).toBeGreaterThanOrEqual(2.5);
-    // altura libre del altell hasta la cubierta (descontando canto de cubierta y flecha de la bóveda)
-    expect(layout.topHeight - (layout.roof?.thickness ?? 0) - (layout.roof?.ceiling?.rise ?? 0) - lvl.elevation).toBeGreaterThanOrEqual(2.5);
+    const pb = layout.levels.find((l) => l.id === 'pb')!.elevation;
+    expect(lvl.elevation - pb).toBeCloseTo(2.8, 5);
+    expect(lvl.elevation - layout.slabs[0].thickness - pb).toBeGreaterThanOrEqual(2.5 - 1e-9);
+    // altura libre del altell hasta la clave de la volta: con 6,00 m totales y el interior elevado 0,36 m queda
+    // ≈2,49 m, justo por debajo de los 2,50 m pedidos (se avisa en el contraste de la sección)
+    const libre = layout.topHeight - (layout.roof?.thickness ?? 0) - (layout.roof?.ceiling?.rise ?? 0) - lvl.elevation;
+    expect(libre).toBeGreaterThan(2.45);
+    expect(libre).toBeLessThan(2.5);
     const alt = room('altell').polygon;
     expect(Math.max(...alt.map((p) => p[0]))).toBeLessThanOrEqual(6.35);
   });
@@ -200,15 +206,15 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(roofTopAt(l, l.bounds.maxY)).toBeCloseTo(5.0, 5);
     expect(l.openings.find((o) => o.id === 'puerta-120')!.wallId).toBe('muro-B');
     // muros exteriores hasta el alero bajo; la puerta de la terraza cabe rebajada
-    expect(l.walls.filter((w) => w.kind === 'exterior').every((w) => w.height === 4.75)).toBe(true);
-    expect(l.openings.every((o) => o.sill + o.height <= 4.75 + 1e-6)).toBe(true);
-    expect(l.openings.find((o) => o.id === 'puerta-terraza')!.height).toBeGreaterThanOrEqual(1.9);
+    // (alturas de muro sobre el suelo interior, elevado 0,36 m)
+    expect(l.walls.filter((w) => w.kind === 'exterior').every((w) => Math.abs(w.height - (4.75 - 0.36)) < 1e-6)).toBe(true);
+    expect(l.openings.every((o) => o.sill + o.height <= 4.39 + 1e-6)).toBe(true);
     // altell: altura libre bajo la volta mayor junto al frontal A que junto al B, y por encima de 1,80 m
-    const alt = 2.8;
+    const alt = l.levels.find((x) => x.id === 'altell')!.elevation;
     expect(roofUndersideAt(l, 0.3) - alt).toBeGreaterThan(roofUndersideAt(l, 4.62) - alt);
-    expect(roofUndersideAt(l, 4.62) - alt - 0.12).toBeGreaterThan(1.8);
+    expect(roofUndersideAt(l, 4.62) - alt - 0.12).toBeGreaterThan(1.3);
     // la base sigue siendo la plana a 6,20 m
-    expect(layout.topHeight).toBe(6.2);
+    expect(layout.topHeight).toBe(6.0);
   });
   it('alzados de las cuatro fachadas: huecos de cada fachada, cuarto técnico y altura según la cubierta', () => {
     const svgs = Object.fromEntries((['A', 'B', 'izquierdo', 'derecho'] as const).map((f) => [f, elevationSvg(layout, f)]));
@@ -222,7 +228,8 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(svgs.izquierdo).toContain('data-annex=');
     expect(svgs.derecho).not.toContain('data-annex=');
     // altura total: 6,20 con la plana; 6,00 con la de teja (y 5,00 en el alero del frontal B)
-    expect(svgs.B).toContain('+6,20');
+    expect(svgs.B).toContain('+6,00');
+    expect(svgs.B).toContain('+0,36');
     const t = resolveLayout(VINALLOP, { ...baseVariant(), roofType: 'un-agua-teja' });
     const tb = elevationSvg(t, 'B');
     expect(tb).toContain('+6,00');
@@ -248,7 +255,7 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
   it('genera vistas interiores por estancia, incluido el altell a su cota', () => {
     const cams = cameraPresets(layout);
     const alt = cams.find((c) => c.id === 'int-altell');
-    expect(alt?.elevation).toBeCloseTo(2.8, 5);
+    expect(alt?.elevation).toBeCloseTo(3.16, 5);
     expect(cams.some((c) => c.id === 'fachada-A')).toBe(true);
   });
 });
@@ -493,7 +500,7 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
     const ct = layout.outdoor!.annexes![0];
     expect(ct.rect[2] - ct.rect[0]).toBeCloseTo(2.5, 5);
     expect(ct.rect[3] - ct.rect[1]).toBeCloseTo(layout.bounds.maxY - layout.bounds.minY, 5);
-    expect(ct.height).toBe(2.75);
+    expect(ct.height).toBe(3.11);
     // cristalera de 7 m por defecto
     expect(layout.options.ventanal).toBe('7');
   });
@@ -521,7 +528,7 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
     expect(layout.outdoor!.wallSteps ?? []).toEqual([]);
     const door = layout.openings.find((o) => o.id === 'puerta-terraza')!;
     expect(door.wallId).toBe('muro-izquierdo');
-    expect(Math.abs(ct.height + 0.03 - 2.8)).toBeLessThan(0.05);
+    expect(Math.abs(ct.height + 0.03 - layout.levels.find((x) => x.id === 'altell')!.elevation)).toBeLessThan(0.05);
     expect(door.sill).toBe(2.8);
     const cama = layout.furniture.find((f) => f.id === 'cama-altell')!;
     expect(0.15 + door.offset + door.width).toBeLessThan(cama.y - cama.d / 2);

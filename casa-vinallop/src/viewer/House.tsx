@@ -3,7 +3,7 @@ import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import type { Layout, Opening, Railing, RoofSegment, Stair, Trace, Vec2, Wall } from '../data/types';
 import { AMBER } from '../ui/status';
-import { pointOnWall, wallDir, wallNormal, wallPieces } from '../model/geometry';
+import { pointOnWall, wallDir, wallLength, wallNormal, wallPieces, wallSegmentRect } from '../model/geometry';
 import type { MaterialSet } from './materials';
 import { Opening3D } from './Opening3D';
 import { uvBox } from './textures';
@@ -46,6 +46,7 @@ export function House({ layout, mats, showRoof, showCeiling, mode, sectionHeight
           <WallMesh wall={w} openings={layout.openings} mats={mats} center={center} />
         </group>
       ))}
+      <Plinth layout={layout} mats={mats} center={center} />
       {mode === 'corte' && <SectionCaps layout={layout} mats={mats} h={sectionHeight} />}
       {layout.openings.map((o) => {
         const w = layout.walls.find((x) => x.id === o.wallId);
@@ -146,6 +147,49 @@ function StairMesh({ st, from, to, mats }: { st: Stair; from: number; to: number
       })}
     </group>
   );
+}
+
+/**
+ * Interior elevado sobre el terreno: zócalo de los muros exteriores desde el terreno hasta el suelo
+ * de planta baja y escalones (dos de igual tabica) delante de las puertas y cristaleras a ras de suelo.
+ */
+function Plinth({ layout, mats, center }: { layout: Layout; mats: MaterialSet; center: Vec2 }) {
+  const elevOf = (id: string) => layout.levels.find((l) => l.id === id)?.elevation ?? 0;
+  const ext = layout.walls.filter((w) => w.kind === 'exterior' && elevOf(w.levelId) > 0.02);
+  if (!ext.length) return null;
+  const items: React.ReactElement[] = [];
+  for (const w of ext) {
+    const h = elevOf(w.levelId);
+    const [e0, e1] = w.ext ?? [0, 0];
+    items.push(<SlabMesh key={`z-${w.id}`} poly={wallSegmentRect(w, -e0, wallLength(w) + e1)} top={h} thickness={h} mat={mats.facade} />);
+    const [ux, uy] = wallDir(w);
+    let [nx, ny] = wallNormal(w);
+    const mid = pointOnWall(w, wallLength(w) / 2);
+    if ((center[0] - mid[0]) * nx + (center[1] - mid[1]) * ny > 0) { nx = -nx; ny = -ny; }
+    const rot = -Math.atan2(uy, ux);
+    for (const o of layout.openings.filter((x) => x.wallId === w.id && x.sill < 0.05 && x.kind !== 'ventana' && x.kind !== 'paso')) {
+      const n = Math.max(1, Math.round(h / 0.19));
+      const rise = h / n;
+      const tread = 0.3;
+      const width = o.width + 0.2;
+      const c = pointOnWall(w, o.offset + o.width / 2, 0);
+      for (let k = 0; k < n; k++) {
+        // peldaño k (0 = el más bajo): de la cara del muro hacia fuera
+        const depth = tread * (n - k);
+        const off = w.thickness / 2 + depth / 2;
+        const cx = c[0] + nx * off;
+        const cz = c[1] + ny * off;
+        const top = rise * (k + 1);
+        items.push(
+          <group key={`s-${o.id}-${k}`} position={[cx, 0, cz]} rotation={[0, rot, 0]}>
+            <mesh position={[0, (top - 0.03) / 2, 0]} castShadow receiveShadow material={mats.concrete} geometry={uvBox(width, top - 0.03, depth)} />
+            <mesh position={[0, top - 0.015, 0]} castShadow receiveShadow material={mats.terracottaTile} geometry={uvBox(width + 0.02, 0.03, depth + 0.02)} />
+          </group>,
+        );
+      }
+    }
+  }
+  return <group>{items}</group>;
 }
 
 /** Trazo del boceto sin interpretar: línea discontinua ámbar sobre el suelo. */

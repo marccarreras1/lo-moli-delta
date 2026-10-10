@@ -48,7 +48,8 @@ export function walkObstacles(layout: Layout, levelId: string): Obstacles {
     for (let i = 0; i < r.points.length - 1; i++) segs.push([r.points[i], r.points[i + 1]]);
   }
   // hueco de la escalera visto desde el altell: no se puede pisar
-  if (elev > 0) for (const st of layout.stairs) if (st.toLevel === levelId) {
+  // en los niveles superiores (no en el más bajo, que puede estar elevado sobre el terreno)
+  if (elev > Math.min(...layout.levels.map((l) => l.elevation)) + 0.01) for (const st of layout.stairs) if (st.toLevel === levelId) {
     const [x0, y0, x1, y1] = st.rect;
     polys.push([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]);
   }

@@ -89,7 +89,7 @@ export function cameraPresets(layout: Layout): CameraPreset[] {
   // altell parcial: mirador hacia la zona de doble altura
   for (const r of layout.rooms) {
     const lvl = layout.levels.find((l) => l.id === r.levelId);
-    if (!lvl || lvl.elevation <= 0) continue;
+    if (!lvl || lvl.elevation <= Math.min(...layout.levels.map((l) => l.elevation)) + 0.01) continue;
     const b = bbox(r.polygon);
     if (maxX - b.maxX < 2) continue;
     const cyr = (b.minY + b.maxY) / 2;

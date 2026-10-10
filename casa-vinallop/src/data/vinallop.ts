@@ -43,8 +43,10 @@ const XR = r2(L - 0.3 - (XI + CHAIN.reduce((a, b) => a + b, 0)));
 const T = 0.3;
 const TB = 0.6;
 const TP = 0.1;
-/** Altura total de los alzados: 6,20 m (documentado). */
-const H_TOTAL = 6.2;
+/** Altura total desde el terreno: 6,00 m (propiedad, 10/10/2026; los alzados del boceto marcaban 6,20 m). */
+const H_TOTAL = 6.0;
+/** El interior se eleva 0,36 m sobre el terreno (propiedad, 10/10/2026): suelo de planta baja a +0,36. */
+const PB_EL = 0.36;
 /** Altura libre mínima de 2,50 m por planta (propiedad): con el forjado de 0,30 m el suelo del altell sube a 2,80 m. */
 const H_LIBRE = 2.5;
 const ALTELL = r2(H_LIBRE + 0.3);
@@ -91,7 +93,7 @@ const S = {
   hip: 'hipotesis',
 };
 
-const ext = { levelId: 'pb', thickness: T, height: H_TOTAL, kind: 'exterior' as const, status: 'documentado' as const, sourceId: S.prop };
+const ext = { levelId: 'pb', thickness: T, height: r2(H_TOTAL - PB_EL), kind: 'exterior' as const, status: 'documentado' as const, sourceId: S.prop };
 const tab = { levelId: 'pb', thickness: TP, height: H_PB, kind: 'tabique' as const, status: 'interpretado' as const, sourceId: S.planta };
 
 const walls: Wall[] = [
@@ -125,9 +127,9 @@ const openings: Opening[] = [
     note: 'Puerta exterior del dormitorio de 1,50 m (propiedad, 10/10/2026), en el sitio de la obertura de 2,25 m del boceto y centrada en ella. Dos hojas de vidrio abatibles (propuesta). 1,50 × 2,50 m (propiedad, 10/10/2026): llega a la cara inferior del forjado del altell (2,50 m), así que no queda dintel de muro: el canto del forjado o un zuncho hace de dintel. A comprobar con el arquitecto.',
   },
   {
-    id: 'obertura-225-altell', label: 'Obertura de 2,25 m (altell)', wallId: 'muro-A', kind: 'cristalera', offset: onAB(cx(1.4)), width: 2.25, sill: r2(ALTELL + 1.1), height: 2.0,
+    id: 'obertura-225-altell', label: 'Obertura de 2,25 m (altell)', wallId: 'muro-A', kind: 'cristalera', offset: onAB(cx(1.4)), width: 2.25, sill: r2(ALTELL + 1.1), height: 1.3,
     system: null, status: 'interpretado', sourceId: S.fa,
-    note: 'Anchura documentada (2,25 m), alineada con la de planta baja. Antepecho a 1,10 m sobre el suelo del altell (3,90 m) y dintel a ≈5,90 m, como en el alzado A; al subir el altell a 2,80 m el hueco queda de 2,00 m de alto. Los bordes en zigzag se ignoran (propiedad).',
+    note: 'Anchura documentada (2,25 m), alineada con la de planta baja. Antepecho a 1,10 m sobre el suelo del altell. Con la casa a 6,00 m y el interior elevado 0,36 m solo quedan ≈2,49 m libres en el altell: el hueco baja a 1,30 m de alto (dintel 0,10 m bajo el forjado de cubierta). El alzado A lo dibujaba más alto. Los bordes en zigzag se ignoran (propiedad).',
   },
   {
     id: 'puerta-120', label: 'Puerta de entrada (1,20 × 2,10 m)', wallId: 'muro-B', kind: 'puerta', offset: onAB(X_PUERTA), width: 1.2, sill: 0, height: 2.1,
@@ -270,7 +272,7 @@ const furniture: Furniture[] = [
   f({ id: 'sofa-lateral', onlyIf: { salon: 'sofa-l' }, type: 'sofa-l', label: 'Sofá en L (lateral derecho)', roomId: 'dia', x: r2(x1 - 0.33), y: r2(YB - 1.4), w: 2.8, d: 0.65, h: 0.8, rot: 90, status: 'documentado', note: 'Segundo tramo del sofá contra el lateral derecho; fondo dibujado ≈0,65 m.' }),
   f({ id: 'estufa', type: 'estufa', label: 'Estufa', roomId: 'dia', x: rx(14.43), y: 0.9, w: 0.8, d: 0.8, h: 1.0, rot: 0, onlyIf: { salon: 'sofa-l', chimenea: 'estufa' }, status: 'documentado', note: 'El círculo del boceto (propiedad), junto al frontal A al final de la obertura. Dibujado de ≈1 m de diámetro; salida de humos supuesta. Con el ventanal de 9 m queda delante del vidrio.' }),
   // variante: chimenea de obra contra el lateral derecho, a continuación del sofá de obra (referencia de la propiedad)
-  f({ id: 'chimenea-obra', type: 'chimenea-obra', label: 'Chimenea de obra (variante)', roomId: 'dia', x: r2(x1 - 0.33), y: r2(y0 + 0.75), w: 1.5, d: 0.65, h: 6.2, rot: 90, status: 'propuesto', onlyIf: { salon: 'sofa-l', chimenea: 'obra' },
+  f({ id: 'chimenea-obra', type: 'chimenea-obra', label: 'Chimenea de obra (variante)', roomId: 'dia', x: r2(x1 - 0.33), y: r2(y0 + 0.75), w: 1.5, d: 0.65, h: r2(H_TOTAL - PB_EL), rot: 90, status: 'propuesto', onlyIf: { salon: 'sofa-l', chimenea: 'obra' },
     note: 'Variante (imagen de referencia de la propiedad): volumen de obra encalado de 1,50 m pegado al lateral derecho y hasta la cubierta, con hogar cerrado acristalado de ≈75 × 65 cm, leñero vertical empotrado y banco de obra de 0,42 m con remate oscuro delante del fuego, que continúa en el sofá de obra del lateral. Sustituye a la estufa redonda. Salida de humos por dentro del volumen hasta la cubierta. Pendiente: modelo de hogar, salida de humos, distancias a materiales combustibles y aire de combustión. Incompatible con la variante de puerta al comedor exterior en este mismo lateral.' }),
   // variante de salón (propiedad): dos sofás enfrentados en el centro, perpendiculares a los frontales A y B, y la mesa
   // de comedor rectangular en el rincón de la cristalera (donde va la variante de chimenea), con banco de obra
@@ -312,7 +314,7 @@ const SOL_TRASERA = 3.4;
 /** el porche cubre toda la solera del frontal A, hasta el dormitorio (propiedad, 10/10/2026) */
 const PORCHE_X0 = 0;
 /** solera de sol de invierno a la derecha de la puerta de entrada, con banco de obra contra la fachada (propiedad) */
-const SOL_INV: [number, number, number, number] = [r2(X_PUERTA + 1.2), W, 15.6, r2(W + 2.4)];
+const SOL_INV: [number, number, number, number] = [r2(X_PUERTA + 1.2), W, r2(L + SOL_LATERAL), r2(W + 2.4)];
 /** la mesa va justo bajo el algarrobo (propiedad), entre el tronco y el tramo del frontal A: el alcorque y las sillas no se tocan */
 const MESA_EXT: Vec2 = [r2(L + 2.0), r2(ALGARROBO[1] - 3.6)];
 const outdoor: Outdoor = {
@@ -324,7 +326,7 @@ const outdoor: Outdoor = {
     },
     {
       id: 'solera-sol-invierno', label: 'Solera del sol de invierno (entrada)', rect: SOL_INV, joints: 2.2, status: 'propuesto',
-      note: 'Indicación de la propiedad: a la derecha de la puerta de entrada, mirando la fachada, una pequeña zona de solera con un banco de obra pegado a la pared para tomar el sol en la época de frío. El frontal B mira al sur-suroeste: en invierno recibe sol casi todo el día y el muro de 0,60 m guarda calor. 4,40 × 2,40 m de cemento claro, como la solera en L, unida al paseo de la entrada. Medidas propuestas.',
+      note: 'Indicación de la propiedad: a la derecha de la puerta de entrada, mirando la fachada, una pequeña zona de solera con un banco de obra pegado a la pared para tomar el sol en la época de frío. El frontal B mira al sur-suroeste: en invierno recibe sol casi todo el día y el muro de 0,60 m guarda calor. De cemento claro, como la solera en L, unida al paseo de la entrada y continua con el tramo del algarrobo (propiedad: «la solera delantera la juntaría con la del algarrobo»), 2,40 m de fondo. Medidas propuestas.',
     },
     {
       id: 'solera-l-frontal-a', label: 'Solera en L · tramo del frontal A (cristalera)', rect: [0, r2(-SOL_TRASERA), L, 0], joints: 3.3, status: 'confirmado',
@@ -334,10 +336,10 @@ const outdoor: Outdoor = {
   // cuarto técnico previsto por la propiedad: 2,50 m × el ancho de la casa × 3,00 m de alto, con acceso solo por el exterior
   annexes: [
     {
-      id: 'cuarto-tecnico', label: 'Cuarto técnico y lavadero', rect: [-2.5, 0, 0, W], height: 2.75, wall: 0.3,
+      id: 'cuarto-tecnico', label: 'Cuarto técnico y lavadero', rect: [-2.5, 0, 0, W], height: r2(PB_EL + ALTELL - 0.05), wall: 0.3,
       door: { side: 'y1', at: -1.3, width: 0.9, height: 2.1 }, status: 'confirmado',
       terrace: { parapet: 1.0, label: 'Terraza del altell', status: 'propuesto' },
-      note: 'Previsto por la propiedad: 2,50 m de fondo por el ancho total de la casa (5,22 m); bajado a 2,75 m de alto (propiedad) para que la terraza del altell quede enrasada con el altell, con acceso por el exterior. Colocado en el lateral izquierdo (el derecho lo ocupan el algarrobo y el comedor): posición a confirmar. Interior ≈2,20 × 4,62 m para lavadora, termo o aerotermia, cuadro eléctrico y almacén. Puerta exterior de 0,90 m hacia el lado de la entrada (posición propuesta).',
+      note: 'Previsto por la propiedad: 2,50 m de fondo por el ancho total de la casa (5,22 m); con la cubierta 5 cm por debajo del suelo del altell para que la terraza quede enrasada con él (con el interior elevado 0,36 m, ≈3,11 m de alto), con acceso por el exterior. Colocado en el lateral izquierdo (el derecho lo ocupan el algarrobo y el comedor): posición a confirmar. Interior ≈2,20 × 4,62 m para lavadora, termo o aerotermia, cuadro eléctrico y almacén. Puerta exterior de 0,90 m hacia el lado de la entrada (posición propuesta).',
     },
   ],
   // jardín seco delante de la fachada de la entrada, hasta los primeros olivos (propiedad; referencia «11 plantes qui
@@ -361,9 +363,9 @@ const outdoor: Outdoor = {
   },
   porches: [
     {
-      id: 'porche-cristalera', label: 'Porche de la cristalera', rect: [PORCHE_X0, r2(-SOL_TRASERA + 0.2), L, 0], wallSide: 'y1', hWall: 3.45, hFront: 3.2,
+      id: 'porche-cristalera', label: 'Porche de la cristalera', rect: [PORCHE_X0, r2(-SOL_TRASERA + 0.2), L, 0], wallSide: 'y1', hWall: r2(PB_EL + 3.15 + 0.3), hFront: r2(PB_EL + 3.15 + 0.05),
       posts: [0.4, 3.5, 6.6, 9.85, 13.1, 16.1].map((x) => [x, r2(-SOL_TRASERA + 0.4)] as Vec2), postSize: 0.4, status: 'confirmado',
-      note: 'Porche mediterráneo a lo largo de toda la solera del frontal A, desde el ventanal hasta el dormitorio (indicaciones de la propiedad: porche en la cristalera y «el porche lo haremos de toda la solera, hasta la habitación»): pilares de obra encalados de 40 × 40 cm, viga de madera en el frente y durmiente en la fachada por encima del dintel del ventanal (3,15 m), viguetas cada ≈0,6 m y cubierta de cañizo. Medidas, sección de las vigas y anclaje a la fachada propuestos: pendientes de cálculo. Con el norte de la captura de Mapas de Apple (≈22° desde el frontal A), la cristalera mira al nor-noreste: le da el sol de primera hora en verano y casi nada el resto del día, así que el porche sirve sobre todo de estancia exterior a la sombra en las tardes; la entrada (frontal B) mira al sur-suroeste.',
+      note: 'Porche mediterráneo a lo largo de toda la solera del frontal A, desde el ventanal hasta el dormitorio (indicaciones de la propiedad: porche en la cristalera y «el porche lo haremos de toda la solera, hasta la habitación»): pilares de obra encalados de 40 × 40 cm, viga de madera en el frente y durmiente en la fachada por encima del dintel del ventanal (3,15 m sobre el suelo interior, 3,51 m sobre el terreno), viguetas cada ≈0,6 m y cubierta de cañizo. Medidas, sección de las vigas y anclaje a la fachada propuestos: pendientes de cálculo. Con el norte de la captura de Mapas de Apple (≈22° desde el frontal A), la cristalera mira al nor-noreste: le da el sol de primera hora en verano y casi nada el resto del día, así que el porche sirve sobre todo de estancia exterior a la sombra en las tardes; la entrada (frontal B) mira al sur-suroeste.',
     },
   ],
   furniture: [
@@ -371,7 +373,7 @@ const outdoor: Outdoor = {
     ...[r2(X_PUERTA - 0.5), r2(X_PUERTA + 1.2 + 0.5)].map((x, i) => f({ id: `maceta-entrada-${i + 1}`, type: 'maceta', label: 'Tinaja de barro con olivo (decoración propuesta)', roomId: 'exterior', x, y: r2(W + 0.45), w: 0.62, d: 0.62, h: 1.55, rot: 0, status: 'propuesto', note: 'Decoración propuesta junto a la puerta de entrada; se puede quitar.' })),
     ...[r2(X_PUERTA - 0.3), r2(X_PUERTA + 1.2 + 0.3)].map((x, i) => f({ id: `aplique-entrada-${i + 1}`, type: 'aplique', label: 'Aplique exterior (propuesta)', roomId: 'exterior', x, y: r2(W + 0.07), w: 0.14, d: 0.14, h: 2.25, rot: 0, status: 'propuesto', note: 'Luz cálida a ambos lados de la entrada (propuesta; ubicación y modelo por decidir).' })),
     // banco de obra contra el frontal B en la solera del sol de invierno (propiedad)
-    f({ id: 'banco-sol', type: 'banco', label: 'Banco de obra al sol (frontal B)', roomId: 'exterior', x: r2((SOL_INV[0] + 0.8 + SOL_INV[2] - 0.2) / 2), y: r2(W + 0.23), w: r2(SOL_INV[2] - 0.2 - SOL_INV[0] - 0.8), d: 0.46, h: 0.45, rot: 0, status: 'propuesto',
+    f({ id: 'banco-sol', type: 'banco', label: 'Banco de obra al sol (frontal B)', roomId: 'exterior', x: r2((SOL_INV[0] + 0.8 + 15.6) / 2), y: r2(W + 0.23), w: r2(15.6 - SOL_INV[0] - 0.8), d: 0.46, h: 0.45, rot: 0, status: 'propuesto',
       note: 'Banco corrido de obra encalado, pegado a la fachada de la entrada, con asiento de 0,45 m de fondo y alto y remate de piedra o terracota; para tomar el sol de invierno (indicación de la propiedad). Deja libre la tinaja junto a la puerta.' }),
     f({ id: 'mesa-exterior', type: 'mesa-exterior', label: 'Mesa redonda Ø 1,80', roomId: 'exterior', x: MESA_EXT[0], y: MESA_EXT[1], w: 1.8, d: 1.8, h: 0.75, rot: 0, status: 'propuesto', note: 'Mesa circular de tablero mineral claro grueso (≈10 cm) sobre pie central cilíndrico (referencia 11). Ocho plazas; diámetro orientativo.' }),
     ...Array.from({ length: 8 }, (_, i) => {
@@ -410,20 +412,20 @@ const views: CameraPreset[] = [
   view({ id: 'v05-algarrobo', label: '5 · Mesa y lámpara bajo el algarrobo', group: 'exterior', position: [14.6, -8.2, 1.6], target: [MESA_EXT[0] + 0.3, MESA_EXT[1] + 1.0, 1.5], fov: 56 }),
   view({ id: 'v06-desde-comedor', label: '6 · La casa desde el comedor exterior', group: 'exterior', position: [21.4, -5.4, 1.6], target: [10, -0.6, 2.2], fov: 56 }),
   view({ id: 'v00-interior-cenital', label: 'Interior · vista cenital 3D', group: 'interior', topDown: true, position: [8.2, 5.6, 19.5], target: [8.2, 2.5, 0], fov: 44 }),
-  view({ id: 'v07-salon-ventanal', label: '7 · Salón: sofá de obra y ventanal', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.3, 1.2, 1.6], target: [15.4, 3.9, 0.7], fov: 66 }),
-  view({ id: 'v07b-fuego', label: '7b · Rincón de la cristalera (estufa, chimenea o comedor)', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.7, 2.15, 1.6], target: [16.0, 1.15, 1.25], fov: 62 }),
-  view({ id: 'v08-ventanal-cocina', label: '8 · Del ventanal hacia cocina e isla', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.4, 0.8, 1.6], target: [9.2, 3.6, 1.0], fov: 60 }),
-  view({ id: 'v09-cocina-taburetes', label: '9 · Cocina desde el lado de los taburetes', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.3, 0.7, 1.6], target: [8.9, 3.2, 0.75], fov: 56 }),
-  view({ id: 'v10-cocina-encimera', label: '10 · Isla desde la cocina', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.35, 3.75, 1.6], target: [8.7, 1.4, 0.7], fov: 58 }),
-  view({ id: 'v10b-cocina-escalera', label: '10b · Cocina bajo la escalera', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [10.2, 3.5, 1.6], target: [7.2, 3.6, 0.8], fov: 64 }),
-  view({ id: 'v10c-comedor', label: '10c · Mesa de comedor para 4', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [13.9, 1.0, 1.6], target: [11.1, 1.9, 0.75], fov: 60 }),
-  view({ id: 'v11-dormitorio', label: '11 · Dormitorio', group: 'interior', eyeLevel: true, roomId: 'dormitorio', elevation: 0, position: [3.45, 0.7, 1.6], target: [1.8, 3.9, 0.9], fov: 60 }),
-  view({ id: 'v12-bano-entrada', label: '12 · Baño desde la entrada', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [5.5, 2.05, 1.6], target: [4.7, 4.6, 1.05], fov: 72 }),
-  view({ id: 'v12b-bano-ducha', label: '12b · Baño desde la ducha (duchas enfrentadas)', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [5.05, 4.25, 1.6], target: [5.05, 1.6, 1.2], fov: 66 }),
-  view({ id: 'v12d-puerta-ducha', label: '12d · Puerta de vidrio desde la ducha', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [5.2, 3.55, 1.6], target: [5.75, 5.0, 1.05], fov: 78 }),
-  view({ id: 'v12c-celosia', label: '12c · Detalle de la celosía', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: 0, position: [4.75, 2.3, 1.6], target: [4.25, 3.6, 1.15], fov: 52 }),
-  view({ id: 'v13-altell', label: '13 · Altell, vigas cemento y volta terracota', group: 'interior', eyeLevel: true, roomId: 'altell', elevation: 2.8, position: [4.9, 2.46, 1.6], target: [12, 2.46, 1.6], fov: 64 }),
-  view({ id: 'v13b-volta', label: '13b · Vigas y volta desde la zona de día', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: 0, position: [12.2, 2.7, 1.6], target: [10.2, 2.46, 5.6], fov: 60 }),
+  view({ id: 'v07-salon-ventanal', label: '7 · Salón: sofá de obra y ventanal', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: PB_EL, position: [12.3, 1.2, 1.6], target: [15.4, 3.9, 0.7], fov: 66 }),
+  view({ id: 'v07b-fuego', label: '7b · Rincón de la cristalera (estufa, chimenea o comedor)', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: PB_EL, position: [12.7, 2.15, 1.6], target: [16.0, 1.15, 1.25], fov: 62 }),
+  view({ id: 'v08-ventanal-cocina', label: '8 · Del ventanal hacia cocina e isla', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: PB_EL, position: [12.4, 0.8, 1.6], target: [9.2, 3.6, 1.0], fov: 60 }),
+  view({ id: 'v09-cocina-taburetes', label: '9 · Cocina desde el lado de los taburetes', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: PB_EL, position: [10.3, 0.7, 1.6], target: [8.9, 3.2, 0.75], fov: 56 }),
+  view({ id: 'v10-cocina-encimera', label: '10 · Isla desde la cocina', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: PB_EL, position: [10.35, 3.75, 1.6], target: [8.7, 1.4, 0.7], fov: 58 }),
+  view({ id: 'v10b-cocina-escalera', label: '10b · Cocina bajo la escalera', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: PB_EL, position: [10.2, 3.5, 1.6], target: [7.2, 3.6, 0.8], fov: 64 }),
+  view({ id: 'v10c-comedor', label: '10c · Mesa de comedor para 4', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: PB_EL, position: [13.9, 1.0, 1.6], target: [11.1, 1.9, 0.75], fov: 60 }),
+  view({ id: 'v11-dormitorio', label: '11 · Dormitorio', group: 'interior', eyeLevel: true, roomId: 'dormitorio', elevation: PB_EL, position: [3.45, 0.7, 1.6], target: [1.8, 3.9, 0.9], fov: 60 }),
+  view({ id: 'v12-bano-entrada', label: '12 · Baño desde la entrada', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: PB_EL, position: [5.5, 2.05, 1.6], target: [4.7, 4.6, 1.05], fov: 72 }),
+  view({ id: 'v12b-bano-ducha', label: '12b · Baño desde la ducha (duchas enfrentadas)', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: PB_EL, position: [5.05, 4.25, 1.6], target: [5.05, 1.6, 1.2], fov: 66 }),
+  view({ id: 'v12d-puerta-ducha', label: '12d · Puerta de vidrio desde la ducha', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: PB_EL, position: [5.2, 3.55, 1.6], target: [5.75, 5.0, 1.05], fov: 78 }),
+  view({ id: 'v12c-celosia', label: '12c · Detalle de la celosía', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: PB_EL, position: [4.75, 2.3, 1.6], target: [4.25, 3.6, 1.15], fov: 52 }),
+  view({ id: 'v13-altell', label: '13 · Altell, vigas cemento y volta terracota', group: 'interior', eyeLevel: true, roomId: 'altell', elevation: r2(PB_EL + ALTELL), position: [4.9, 2.46, 1.6], target: [12, 2.46, 1.6], fov: 64 }),
+  view({ id: 'v13b-volta', label: '13b · Vigas y volta desde la zona de día', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: PB_EL, position: [12.2, 2.7, 1.6], target: [10.2, 2.46, 5.6], fov: 60 }),
   view({ id: 'v14-sin-cubierta', label: '14 · Vista sin cubierta', group: 'exterior', hideRoof: true, position: [9.2, 12, 25], target: [9.2, 3.2, 0], fov: 40 }),
   view({ id: 'v18-terraza-altell', label: '18 · Terraza del altell sobre el cuarto técnico', group: 'exterior', position: [-5.6, -2.6, 8.2], target: [-0.6, 2.6, 3.2], fov: 52 }),
   view({ id: 'v17-cuarto-tecnico', label: '17 · Cuarto técnico y terraza del altell', group: 'exterior', position: [-8.2, 8.6, 1.7], target: [-2.4, 3.0, 1.7], fov: 50 }),
@@ -465,8 +467,8 @@ const PROJECT: ProjectData = {
   site: { ...PARCELA, pavements: [], trees: PARCELA.trees.map((t) => (t.id === 'algarrobo' ? { ...t, c: ALGARROBO } : t)) },
   version: '1.0 · bocetos, respuestas, fotos de la parcela, informe (16,33 × 5,22 m) y referencias de diseño',
   levels: [
-    { id: 'pb', name: 'Planta baja', elevation: 0, wallHeight: H_PB, elevationStatus: 'documentado' },
-    { id: 'altell', name: 'Altell', elevation: ALTELL, wallHeight: r2(H_TOTAL - ALTELL), elevationStatus: 'documentado' },
+    { id: 'pb', name: 'Planta baja', elevation: PB_EL, wallHeight: H_PB, elevationStatus: 'documentado' },
+    { id: 'altell', name: 'Altell', elevation: r2(PB_EL + ALTELL), wallHeight: r2(H_TOTAL - PB_EL - ALTELL), elevationStatus: 'documentado' },
   ],
   walls,
   openings,
@@ -490,7 +492,7 @@ const PROJECT: ProjectData = {
     { label: 'Dimensiones exteriores', items: [{ source: 'Informe del arquitecto (transmitido por la propiedad)', value: '16,33 × 5,22 m exteriores' }, { source: 'Modelo anterior (cadena del boceto y «5 de ancho»)', value: '15,70 × 5,00 m' }, { source: 'Especificación inicial del estudio', value: '17 × 4,5 × 5 m' }], status: 'documentado', note: 'Se adopta el informe: 16,33 × 5,22 m. La cadena de 15,70 m se interpreta como interior (15,70 + 2 × 0,30 = 16,30 m, a 3 cm del informe; los 3 cm van al estar). El ancho de 5,22 m deja 4,32 m interiores con el muro de 0,60 m del frontal B.' },
     { label: 'Superficie construida', items: [{ source: 'Informe del arquitecto', value: '79,48 m² construidos (estado actual)' }, { source: 'Rectángulo del informe', value: '16,33 × 5,22 = 85,24 m²' }], status: 'pendiente', note: 'No coinciden: la edificación actual no es un rectángulo completo (el anexo es más estrecho en las fotos) o la superficie excluye algún tramo. Pendiente de contrastar con el informe completo.' },
     { label: 'Ventanal del frontal A', items: [{ source: 'Boceto (planta y alzado A)', value: '«OBERTURA 7 M»' }, { source: 'Propiedad / especificación', value: 'Ventanal de 9 m' }, { source: 'Presupuesto PAC26-0052', value: 'Zuncho 40 × 70 cm para el hueco (propuesta del constructor)' }], status: 'pendiente', note: 'Por defecto se dibuja 9 m (6,85–15,85 m, machones de 0,50 y 0,48 m); la variante de 7 m se conserva. Antes de fijarlo: cálculo estructural del arquitecto (dintel, machones, apoyos) y comprobación de que el altell y la escalera no interfieren.' },
-    { label: 'Altura del altell (sección)', items: [{ source: 'Propiedad', value: '2,50 m libres por planta + forjado 0,30 m' }, { source: 'Alzados', value: 'Coronación 6,20 m' }], status: 'interpretado', note: 'Suelo del altell a 2,80 m; libre bajo cubierta 6,20 − 2,80 − canto de cubierta (0,25) − flecha de la volta (0,10) ≈ 3,05 m en el centro, ≈2,95 m bajo vigas. Verificable en la vista «Corte longitudinal».' },
+    { label: 'Altura del altell (sección)', items: [{ source: 'Propiedad', value: '2,50 m libres por planta + forjado 0,30 m' }, { source: 'Propiedad', value: 'Coronación 6,00 m sobre el terreno; interior elevado 0,36 m' }], status: 'interpretado', note: 'Suelo de planta baja a +0,36 (interior elevado) y suelo del altell a +3,16 sobre el terreno (2,80 m sobre el suelo interior). Libre bajo cubierta: 6,00 − 3,16 − canto de cubierta (0,25) − flecha de la volta (0,10) ≈ 2,49 m en el centro y ≈2,39 m bajo las vigas: justo. Verificable en la vista «Corte longitudinal».' },
     { label: 'Superficie del altell', items: [{ source: 'Calculada sobre el modelo', value: '≈24,6 m² (5,70 × 4,32 m interior)' }], status: 'interpretado', note: 'Resultado del cálculo, no una medida tomada.' },
   ],
   railings: [
@@ -506,7 +508,7 @@ const PROJECT: ProjectData = {
   roofOptions: [
     {
       type: 'plana', label: 'Plana (decisión de la propiedad)', pitchDeg: 0, overhang: 0, thickness: 0.25, parapet: 0, status: 'confirmado',
-      note: 'Cubierta plana indicada por la propiedad, coronada a 6,20 m como los alzados. El informe del arquitecto describe una cubierta inclinada y el presupuesto PAC26-0052 una plana de viguetas con revoltón: pendiente de contrastar. No está validada técnicamente (pendientes, impermeabilización, desagües y cálculo).',
+      note: 'Cubierta plana indicada por la propiedad, coronada a 6,00 m sobre el terreno (propiedad, 10/10/2026; los alzados del boceto marcaban 6,20 m), con el interior elevado 0,36 m. El informe del arquitecto describe una cubierta inclinada y el presupuesto PAC26-0052 una plana de viguetas con revoltón: pendiente de contrastar. No está validada técnicamente (pendientes, impermeabilización, desagües y cálculo).',
       ceiling: { type: 'vuelta-catalana', spacing: 0.55, rise: 0.1, status: 'confirmado', note: 'Techo confirmado por la propiedad: vigas vistas color cemento (gris natural mate) y volta catalana de terracota entre vigas, cada 0,55 m cruzando el ancho; flecha de 0,10 m. Sustituye las indicaciones anteriores de vigas blancas, de madera o del mismo color que la volta.' },
     },
     {
@@ -521,7 +523,7 @@ const PROJECT: ProjectData = {
     },
     {
       type: 'un-agua-teja', label: 'Teja a un agua: 6 m en el frontal A, 5 m en el de las puertas (variante)', pitchDeg: r2((Math.atan(1 / W) * 180) / Math.PI), overhang: 0.3, thickness: 0.25, eaves: { y0: 6.0, y1: 5.0 }, tiles: true, status: 'propuesto', sourceId: S.prop,
-      note: 'Variante pedida por la propiedad: cubierta inclinada a un agua acabada en teja, con la parte alta (6,00 m) en el frontal A, el del ventanal, y la baja (5,00 m) en el frontal B, el de las dos puertas. Pendiente ≈19 % (≈11°) y vuelo de 0,30 m con canalón en el alero bajo. Los muros bajan a 4,75 m (alero bajo menos el canto de 0,25 m); el frontal A se recrece hasta el faldón y los laterales se cierran con hastiales. El techo interior de volta catalana sigue la pendiente. Consecuencias: en el altell la altura libre bajo las vigas va de ≈2,70 m junto al frontal A a ≈1,85 m junto al frontal B (la cama queda en la parte baja, con ≈1,85–2,25 m encima); la puerta de la terraza baja a 1,95 m de alto y no caben las ventanas altas propuestas en la doble altura del frontal B. Pendiente: la teja árabe suele pedir más pendiente (≈30 %): con ≈19 % hace falta una lámina impermeable continua bajo la teja (o teja mixta/plana apta para baja pendiente) según el fabricante y el arquitecto; estructura del faldón sin calcular.',
+      note: 'Variante pedida por la propiedad: cubierta inclinada a un agua acabada en teja, con la parte alta (6,00 m) en el frontal A, el del ventanal, y la baja (5,00 m) en el frontal B, el de las dos puertas. Pendiente ≈19 % (≈11°) y vuelo de 0,30 m con canalón en el alero bajo. Los muros bajan a 4,75 m (alero bajo menos el canto de 0,25 m); el frontal A se recrece hasta el faldón y los laterales se cierran con hastiales. El techo interior de volta catalana sigue la pendiente. Consecuencias (con el interior elevado 0,36 m): en el altell la altura libre bajo las vigas iría de ≈2,30 m junto al frontal A a ≈1,40 m junto al frontal B, no cabe la puerta de la terraza ni las ventanas altas del frontal B. Variante descartada por la propiedad (techo horizontal). Pendiente: la teja árabe suele pedir más pendiente (≈30 %): con ≈19 % hace falta una lámina impermeable continua bajo la teja (o teja mixta/plana apta para baja pendiente) según el fabricante y el arquitecto; estructura del faldón sin calcular.',
       ceiling: { type: 'vuelta-catalana', spacing: 0.55, rise: 0.1, status: 'confirmado', note: 'Vigas color cemento y volta de terracota, siguiendo la pendiente de la cubierta.' },
     },
   ],
@@ -537,7 +539,8 @@ const PROJECT: ProjectData = {
     { id: 'ancho', label: 'Ancho exterior (informe)', value: W, unit: 'm', decimals: 2, sourceId: S.informe, status: 'documentado', note: 'Informe del arquitecto. La propiedad había indicado «5 de ancho».' },
     { id: 'espesor-b', label: 'Muro del frontal B (puerta de entrada)', value: TB, unit: 'm', decimals: 2, sourceId: S.prop, status: 'documentado' },
     { id: 'espesor', label: 'Resto de muros exteriores', value: T, unit: 'm', decimals: 2, sourceId: S.prop, status: 'documentado' },
-    { id: 'altura', label: 'Altura total (alzados A y B)', value: H_TOTAL, unit: 'm', decimals: 2, sourceId: S.fa, status: 'documentado', note: '«6\'20 METRES»' },
+    { id: 'altura', label: 'Altura total sobre el terreno', value: H_TOTAL, unit: 'm', decimals: 2, sourceId: S.prop, status: 'confirmado', note: '6,00 m sobre el terreno (propiedad, 10/10/2026). Los alzados del boceto marcaban «6\'20 METRES».' },
+    { id: 'interior-elevado', label: 'Elevación del suelo interior', value: PB_EL, unit: 'm', decimals: 2, sourceId: S.prop, status: 'confirmado', note: 'El interior se eleva 0,36 m sobre el terreno (propiedad, 10/10/2026): escalones en las puertas exteriores.' },
     { id: 'cota-altell', label: 'Suelo del altell', value: ALTELL, unit: 'm', decimals: 2, sourceId: S.prop, status: 'documentado', note: 'Primero «a 260 cm»; después «altura interior mínima de 2,50 m por piso» con forjado de 0,30 m → 2,80 m.' },
     { id: 'altura-libre', label: 'Altura libre mínima por planta', value: H_LIBRE, unit: 'm', decimals: 2, sourceId: S.prop, status: 'documentado', note: '«Mínimo 2,50 m por piso» (propiedad).' },
     { id: 'canto-altell', label: 'Canto del forjado del altell', value: SLAB, unit: 'm', decimals: 2, sourceId: S.prop, status: 'documentado', note: '«Hazlo de 0,30 m» (propiedad).' },

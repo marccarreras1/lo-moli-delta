@@ -209,7 +209,8 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
   const W = maxY - minY;
   const margin = 1.8;
   const extraBottom = o.forExport ? 2.0 : 1.0;
-  const levelFirst = (layout.levels.find((l) => l.id === o.levelId) ?? layout.levels[0])?.elevation === 0;
+  // nivel más bajo (planta baja, aunque el interior esté elevado sobre el terreno)
+  const levelFirst = ((layout.levels.find((l) => l.id === o.levelId) ?? layout.levels[0])?.elevation ?? 0) <= Math.min(...layout.levels.map((l) => l.elevation)) + 0.01;
   const outdoor = o.showOutdoor !== false && levelFirst ? layout.outdoor : undefined;
   // en una planta alta: cubiertas transitables de los anexos a la altura del nivel (terraza del altell)
   const lvElev = (layout.levels.find((l) => l.id === o.levelId) ?? layout.levels[0])?.elevation ?? 0;

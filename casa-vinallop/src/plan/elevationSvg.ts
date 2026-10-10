@@ -60,7 +60,8 @@ function roofProfile(layout: Layout, y: number): number {
   return H + r.thickness + Math.tan(p) * (W / 2 - Math.abs(y - (minY + W / 2)));
 }
 
-interface PlacedOpening { o: Opening; w: Wall; a: number; b: number; hingeLeft: boolean }
+/** `o.sill` se da sobre el terreno (antepecho + cota del nivel del muro); `rawSill`, sobre el suelo interior */
+interface PlacedOpening { o: Opening; w: Wall; a: number; b: number; hingeLeft: boolean; rawSill: number; base: number }
 
 function placedOpenings(layout: Layout, f: FacadeId): PlacedOpening[] {
   const u = along(layout, f);
@@ -70,7 +71,8 @@ function placedOpenings(layout: Layout, f: FacadeId): PlacedOpening[] {
       const us = u(pointOnWall(w, op.offset));
       const ue = u(pointOnWall(w, op.offset + op.width));
       const hingeAtStart = (op.swing?.hinge ?? 'inicio') === 'inicio';
-      out.push({ o: op, w, a: Math.min(us, ue), b: Math.max(us, ue), hingeLeft: hingeAtStart ? us < ue : ue < us });
+      const base = layout.levels.find((l) => l.id === w.levelId)?.elevation ?? 0;
+      out.push({ o: { ...op, sill: op.sill + base }, w, a: Math.min(us, ue), b: Math.max(us, ue), hingeLeft: hingeAtStart ? us < ue : ue < us, rawSill: op.sill, base });
     }
   }
   return out.sort((p, q) => p.a - q.a);
@@ -178,7 +180,11 @@ export function elevationSvg(layout: Layout, f: FacadeId, o: { showDims?: boolea
   g.push(`<polygon points="${pts(wallPoly)}" fill="url(#cal-${f})" stroke="none"/>`);
 
   // líneas ocultas: forjado del altell y forjado de cubierta
-  const altell = layout.levels.find((l) => l.elevation > 0);
+  const hiddenLine = (h: number) => `<line x1="${n4(X(0) + 0.3)}" y1="${n4(-h)}" x2="${n4(X(len) - 0.3)}" y2="${n4(-h)}" stroke="${LIGHT}" stroke-width="${LW.hidden}" stroke-dasharray="0.12 0.07"/>`;
+  // nivel alto (altell): el de mayor cota si hay más de uno; el de planta baja puede estar elevado sobre el terreno
+  const sortedLv = [...layout.levels].sort((a, b) => a.elevation - b.elevation);
+  const altell = sortedLv.length > 1 ? sortedLv[sortedLv.length - 1] : undefined;
+  if (sortedLv[0] && sortedLv[0].elevation > 0.02) g.push(hiddenLine(sortedLv[0].elevation));
   const hidden = (h: number) => `<line x1="${n4(X(0) + 0.3)}" y1="${n4(-h)}" x2="${n4(X(len) - 0.3)}" y2="${n4(-h)}" stroke="${LIGHT}" stroke-width="${LW.hidden}" stroke-dasharray="0.12 0.07"/>`;
   if (altell) {
     const slab = layout.slabs.find((s) => s.levelId === altell.id)?.thickness ?? 0.3;
@@ -238,8 +244,17 @@ export function elevationSvg(layout: Layout, f: FacadeId, o: { showDims?: boolea
         g.push(`<path d="M ${n4(lx0 + lw * 0.25)} ${n4(ym)} L ${n4(lx0 + lw * 0.75)} ${n4(ym)} M ${n4(lx0 + lw * (0.5 + 0.25 * d) - d * 0.08)} ${n4(ym - 0.05)} L ${n4(lx0 + lw * (0.5 + 0.25 * d))} ${n4(ym)} L ${n4(lx0 + lw * (0.5 + 0.25 * d) - d * 0.08)} ${n4(ym + 0.05)}" fill="none" stroke="${GREY}" stroke-width="${LW.fine}"/>`);
       }
     }
+    // escalones delante de los huecos a ras del suelo interior elevado
+    if (p.rawSill < 0.05 && p.base > 0.05) {
+      const n = Math.max(1, Math.round(p.base / 0.19));
+      for (let k = 0; k < n; k++) {
+        const hTop = (p.base * (k + 1)) / n;
+        const ext = 0.1 + 0.0 * k;
+        g.push(`<rect x="${n4(xa - ext)}" y="${n4(-hTop)}" width="${n4(xb - xa + 2 * ext)}" height="${n4(p.base / n)}" fill="#ffffff" stroke="${INK}" stroke-width="${LW.leaf}"/>`);
+      }
+    }
     // vierteaguas
-    if (op.kind !== 'puerta' && op.sill > 0.05) g.push(`<rect x="${n4(xa - 0.04)}" y="${n4(-y0)}" width="${n4(xb - xa + 0.08)}" height="0.04" fill="#ffffff" stroke="${INK}" stroke-width="${LW.leaf}"/>`);
+    if (op.kind !== 'puerta' && p.rawSill > 0.05) g.push(`<rect x="${n4(xa - 0.04)}" y="${n4(-y0)}" width="${n4(xb - xa + 0.08)}" height="0.04" fill="#ffffff" stroke="${INK}" stroke-width="${LW.leaf}"/>`);
     // contraventanas de lamas abiertas contra la fachada
     if (op.shutters) {
       const sw = (xb - xa) / 2;
@@ -320,7 +335,9 @@ export function elevationSvg(layout: Layout, f: FacadeId, o: { showDims?: boolea
   out.push(`<g clip-path="url(#draw-${f})">${g.join('')}</g>`);
 
   // ---------------------------------------------------------------- marcas de nivel (izquierda)
-  const levelMarks: { h: number; text: string }[] = [{ h: 0, text: 'suelo planta baja' }];
+  const pbLevel = layout.levels.find((l) => l.elevation >= 0 && !layout.levels.some((m) => m.elevation >= 0 && m.elevation < l.elevation));
+  const levelMarks: { h: number; text: string }[] = [{ h: 0, text: (pbLevel?.elevation ?? 0) > 0.02 ? 'terreno' : 'suelo planta baja' }];
+  if (pbLevel && pbLevel.elevation > 0.02) levelMarks.push({ h: pbLevel.elevation, text: 'suelo planta baja (interior elevado)' });
   if (altell) levelMarks.push({ h: altell.elevation, text: `suelo ${altell.name.toLowerCase()}` });
   const wtMax = front ? wallTop(0) : Math.max(...wallPoly.map((p) => p[1]));
   if (sloped) {
@@ -426,7 +443,7 @@ export function elevationSvg(layout: Layout, f: FacadeId, o: { showDims?: boolea
   const rows = ops.length ? ops : [];
   rows.forEach((p, i) => {
     const y = rowY(i + 1);
-    const cells = [codes.get(p.o.id) ?? '', p.o.label.replace(/\s*\(.*\)$/, ''), `${fmtM(p.o.width)} × ${fmtM(p.o.height)}`, p.o.sill > 0.005 ? fmtM(p.o.sill) : '—', p.o.system ? `${SYSTEM_LABEL[p.o.system.type] ?? p.o.system.type}${p.o.system.leaves > 1 ? ` · ${p.o.system.leaves} hojas` : ''}` : 'Por definir'];
+    const cells = [codes.get(p.o.id) ?? '', p.o.label.replace(/\s*\(.*\)$/, ''), `${fmtM(p.o.width)} × ${fmtM(p.o.height)}`, p.rawSill > 0.005 ? fmtM(p.rawSill) : '—', p.o.system ? `${SYSTEM_LABEL[p.o.system.type] ?? p.o.system.type}${p.o.system.leaves > 1 ? ` · ${p.o.system.leaves} hojas` : ''}` : 'Por definir'];
     cells.forEach((c, k) => {
       const maxChars = Math.floor(((k < 4 ? cols[k + 1] : tw) - cols[k]) / 0.068);
       const s = c.length > maxChars ? `${c.slice(0, Math.max(1, maxChars - 1))}…` : c;
