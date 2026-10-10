@@ -12,6 +12,7 @@ import { Furniture3D } from './Furniture3D';
 import { Garden3D } from './Garden3D';
 import { WARM } from './Lamps';
 import type { MaterialSet } from './materials';
+import { groundTopAt } from '../model/ground';
 
 /** cota de la cara superior de la solera exterior */
 const TOP = -0.05;
@@ -42,8 +43,10 @@ function outline(p: OutdoorPavement): Vec2[] {
 
 function Pavement({ p, mats }: { p: OutdoorPavement; mats: MaterialSet }) {
   const gravel = p.joints === 0;
-  const thick = gravel ? 0.03 : 0.1;
-  const top = gravel ? TOP - 0.02 : TOP;
+  // solera elevada: el canto queda a la vista como un escalón sobre el terreno
+  const lift = gravel ? 0 : p.top ?? 0;
+  const thick = gravel ? 0.03 : 0.1 + lift;
+  const top = gravel ? TOP - 0.02 : TOP + lift;
   const geo = useMemo(() => {
     const s = new THREE.Shape();
     const pts = gravel ? (() => { const [x0, y0, x1, y1] = p.rect; return [[x0, y0], [x1, y0], [x1, y1], [x0, y1]] as Vec2[]; })() : outline(p);
@@ -117,11 +120,11 @@ function TreePit({ c, r, mats }: { c: Vec2; r: number; mats: MaterialSet }) {
 }
 
 /** Canaleta lineal con rejilla (propuesta de evacuación). */
-function Drain({ a, b, mats }: { a: Vec2; b: Vec2; mats: MaterialSet }) {
+function Drain({ a, b, mats, lift = 0 }: { a: Vec2; b: Vec2; mats: MaterialSet; lift?: number }) {
   const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
   const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
   return (
-    <group position={[(a[0] + b[0]) / 2, TOP + 0.001, (a[1] + b[1]) / 2]} rotation={[0, -ang, 0]}>
+    <group position={[(a[0] + b[0]) / 2, TOP + lift + 0.001, (a[1] + b[1]) / 2]} rotation={[0, -ang, 0]}>
       <mesh material={mats.blackMetal} receiveShadow><boxGeometry args={[len, 0.004, 0.12]} /></mesh>
     </group>
   );
@@ -390,7 +393,7 @@ function WallSteps({ s }: { s: NonNullable<Outdoor['wallSteps']>[number] }) {
 export function Outdoor3D({ outdoor, mats, options, level, selectedId, onSelect }: {
   outdoor: Outdoor; mats: MaterialSet; options: DesignOptions; level: number; selectedId?: string | null; onSelect?: (id: string) => void;
 }) {
-  const elevationOf = (_f: Furniture) => TOP;
+  const elevationOf = (f: Furniture) => TOP + groundTopAt(outdoor, f.x, f.y);
   return (
     <group>
       {renderRects(outdoor.pavements).map((p) => <Pavement key={p.id} p={p} mats={mats} />)}
@@ -398,7 +401,7 @@ export function Outdoor3D({ outdoor, mats, options, level, selectedId, onSelect 
       {(outdoor.annexes ?? []).map((a) => <Annex key={a.id} a={a} mats={mats} />)}
       {(outdoor.wallSteps ?? []).map((w) => <WallSteps key={w.id} s={w} />)}
       {outdoor.pavements.filter((p) => p.permeable).map((p) => <TreePit key={`al-${p.id}`} c={p.permeable!.c} r={p.permeable!.r} mats={mats} />)}
-      {(outdoor.drains ?? []).map((d) => <Drain key={d.id} a={d.a} b={d.b} mats={mats} />)}
+      {(outdoor.drains ?? []).map((d) => <Drain key={d.id} a={d.a} b={d.b} mats={mats} lift={groundTopAt(outdoor, (d.a[0] + d.b[0]) / 2, (d.a[1] + d.b[1]) / 2)} />)}
       {(outdoor.porches ?? []).map((p) => <Porch key={p.id} p={p} mats={mats} />)}
       {outdoor.domeLamp && <DomeLamp lamp={outdoor.domeLamp} mode={options.lamparaExterior} mats={mats} level={level} />}
       <Furniture3D items={outdoor.furniture} mats={mats} elevationOf={elevationOf} options={options} selectedId={selectedId} onSelect={onSelect} />

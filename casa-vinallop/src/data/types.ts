@@ -289,6 +289,8 @@ export interface OutdoorPavement {
   rect: [number, number, number, number];
   /** separación de juntas (m) */
   joints: number;
+  /** cara superior sobre el terreno (solera elevada con escalón en el borde); 0 si va a ras */
+  top?: number;
   /** zona sin pavimentar (alcorque) */
   permeable?: { c: Vec2; r: number };
   status: DataStatus;

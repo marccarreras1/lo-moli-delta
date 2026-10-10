@@ -12,6 +12,7 @@ import type { Layout, Opening, Vec2, Wall } from '../data/types';
 import { FINISHES } from '../data/acabados';
 import { fmtM, pointOnWall } from '../model/geometry';
 import { roofTopAt } from '../model/roof';
+import { groundTopAt } from '../model/ground';
 
 export type FacadeId = 'A' | 'B' | 'izquierdo' | 'derecho';
 
@@ -173,11 +174,27 @@ export function elevationSvg(layout: Layout, f: FacadeId, o: { showDims?: boolea
   g.push(`<rect x="${n4(gx0)}" y="0" width="${n4(gx1 - gx0)}" height="0.3" fill="url(#earth-${f})"/>`);
   g.push(`<line x1="${n4(gx0)}" y1="0" x2="${n4(gx1)}" y2="0" stroke="${INK}" stroke-width="${LW.terrain}"/>`);
 
+  // soleras elevadas delante de la fachada: su canto se ve como una franja sobre el terreno
+  const pavBands: string[] = [];
+  let pavTop = 0;
+  for (const pv of layout.outdoor?.pavements ?? []) {
+    if (pv.joints === 0 || !pv.top) continue;
+    const [px0, py0, px1, py1] = pv.rect;
+    const inFront = f === 'A' ? py0 < minY - 0.01 : f === 'B' ? py1 > maxY + 0.01 : f === 'izquierdo' ? px0 < minX - 0.01 : px1 > maxX + 0.01;
+    if (!inFront) continue;
+    const us = [u([px0, py0]), u([px1, py0]), u([px0, py1]), u([px1, py1])];
+    const a = Math.max(Math.min(...us), u0 - 0.9);
+    const b = Math.min(Math.max(...us), u1 + 0.9);
+    if (b - a > 0.05) pavTop = Math.max(pavTop, pv.top);
+    if (b - a > 0.05) pavBands.push(`<rect x="${n4(X(a))}" y="${n4(-pv.top)}" width="${n4(b - a)}" height="${n4(pv.top)}" fill="#efede7" stroke="${INK}" stroke-width="${LW.leaf}" data-pavement="${esc(pv.id)}"/>`);
+  }
+
   // ---------------------------------------------------------------- muro de fachada
   const wallPoly: Vec2[] = [[X(0), 0], [X(len), 0]];
   const steps = front ? [len, 0] : Array.from({ length: N + 1 }, (_, i) => len - (len * i) / N);
   for (const uu of steps) wallPoly.push([X(uu), wallTop(uu)]);
   g.push(`<polygon points="${pts(wallPoly)}" fill="url(#cal-${f})" stroke="none"/>`);
+  g.push(...pavBands);
 
   // líneas ocultas: forjado del altell y forjado de cubierta
   const hiddenLine = (h: number) => `<line x1="${n4(X(0) + 0.3)}" y1="${n4(-h)}" x2="${n4(X(len) - 0.3)}" y2="${n4(-h)}" stroke="${LIGHT}" stroke-width="${LW.hidden}" stroke-dasharray="0.12 0.07"/>`;
@@ -246,11 +263,18 @@ export function elevationSvg(layout: Layout, f: FacadeId, o: { showDims?: boolea
     }
     // escalones delante de los huecos a ras del suelo interior elevado
     if (p.rawSill < 0.05 && p.base > 0.05) {
-      const n = Math.max(1, Math.round(p.base / 0.19));
-      for (let k = 0; k < n; k++) {
-        const hTop = (p.base * (k + 1)) / n;
-        const ext = 0.1 + 0.0 * k;
-        g.push(`<rect x="${n4(xa - ext)}" y="${n4(-hTop)}" width="${n4(xb - xa + 2 * ext)}" height="${n4(p.base / n)}" fill="#ffffff" stroke="${INK}" stroke-width="${LW.leaf}"/>`);
+      // arrancan de la superficie exterior delante del hueco (solera elevada o terreno)
+      const mid = pointOnWall(p.w, p.o.offset + p.o.width / 2);
+      const out = 0.4 + p.w.thickness / 2;
+      const probe: Vec2 = f === 'A' ? [mid[0], minY - out] : f === 'B' ? [mid[0], maxY + out] : f === 'izquierdo' ? [minX - out, mid[1]] : [maxX + out, mid[1]];
+      const g0 = groundTopAt(layout.outdoor, probe[0], probe[1]);
+      const rise = p.base - g0;
+      if (rise > 0.05) {
+        const n = Math.max(1, Math.round(rise / 0.19));
+        for (let k = 0; k < n; k++) {
+          const hTop = g0 + (rise * (k + 1)) / n;
+          g.push(`<rect x="${n4(xa - 0.1)}" y="${n4(-hTop)}" width="${n4(xb - xa + 0.2)}" height="${n4(rise / n)}" fill="#ffffff" stroke="${INK}" stroke-width="${LW.leaf}"/>`);
+        }
       }
     }
     // vierteaguas
@@ -338,6 +362,7 @@ export function elevationSvg(layout: Layout, f: FacadeId, o: { showDims?: boolea
   const pbLevel = layout.levels.find((l) => l.elevation >= 0 && !layout.levels.some((m) => m.elevation >= 0 && m.elevation < l.elevation));
   const levelMarks: { h: number; text: string }[] = [{ h: 0, text: (pbLevel?.elevation ?? 0) > 0.02 ? 'terreno' : 'suelo planta baja' }];
   if (pbLevel && pbLevel.elevation > 0.02) levelMarks.push({ h: pbLevel.elevation, text: 'suelo planta baja (interior elevado)' });
+  if (pavTop > 0.02) levelMarks.push({ h: pavTop, text: 'solera exterior' });
   if (altell) levelMarks.push({ h: altell.elevation, text: `suelo ${altell.name.toLowerCase()}` });
   const wtMax = front ? wallTop(0) : Math.max(...wallPoly.map((p) => p[1]));
   if (sloped) {

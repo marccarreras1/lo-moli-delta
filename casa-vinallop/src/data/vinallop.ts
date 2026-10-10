@@ -314,22 +314,24 @@ const SOL_TRASERA = 3.4;
 /** el porche cubre toda la solera del frontal A, hasta el dormitorio (propiedad, 10/10/2026) */
 const PORCHE_X0 = 0;
 /** solera de sol de invierno a la derecha de la puerta de entrada, con banco de obra contra la fachada (propiedad) */
-const SOL_INV: [number, number, number, number] = [r2(X_PUERTA + 1.2), W, r2(L + SOL_LATERAL), r2(W + 2.4)];
+const SOL_INV: [number, number, number, number] = [r2(X_PUERTA - 0.2), W, r2(L + SOL_LATERAL), r2(W + 2.4)];
+/** Soleras elevadas 0,18 m sobre el terreno (escalón en el borde) y otro escalón de 0,18 m hasta el suelo interior (+0,36). */
+const SOL_TOP = 0.18;
 /** la mesa va justo bajo el algarrobo (propiedad), entre el tronco y el tramo del frontal A: el alcorque y las sillas no se tocan */
 const MESA_EXT: Vec2 = [r2(L + 2.0), r2(ALGARROBO[1] - 3.6)];
 const outdoor: Outdoor = {
   pavements: [
     { id: 'grava-comedor', label: 'Transición de grava', rect: [-3.0, r2(-SOL_TRASERA - 0.5), r2(L + SOL_LATERAL + 0.5), r2(W + 0.5)], joints: 0, status: 'propuesto', note: 'Borde de grava de 0,50 m entre la solera y la tierra; también a lo largo del frontal B y la entrada, que quedan sin solera.' },
     {
-      id: 'solera-l-lateral', label: 'Solera en L · tramo lateral', rect: [L, r2(-SOL_TRASERA), r2(L + SOL_LATERAL), W], joints: 2, permeable: { c: ALGARROBO, r: 1.5 }, status: 'confirmado',
+      id: 'solera-l-lateral', label: 'Solera en L · tramo lateral', rect: [L, r2(-SOL_TRASERA), r2(L + SOL_LATERAL), W], joints: 2, top: SOL_TOP, permeable: { c: ALGARROBO, r: 1.5 }, status: 'confirmado',
       note: 'Tramo de 4 m junto al lateral derecho, bajo el algarrobo, continuo con el del frontal A y al mismo nivel; termina al ras del frontal B (la propiedad pidió quitar el trozo que sobresalía). La mesa va bajo la copa, entre el tronco y el tramo del frontal A. Se recorta alrededor del tronco para dejar zona permeable sobre las raíces; la posición del árbol es aproximada.',
     },
     {
-      id: 'solera-sol-invierno', label: 'Solera del sol de invierno (entrada)', rect: SOL_INV, joints: 2.2, status: 'propuesto',
-      note: 'Indicación de la propiedad: a la derecha de la puerta de entrada, mirando la fachada, una pequeña zona de solera con un banco de obra pegado a la pared para tomar el sol en la época de frío. El frontal B mira al sur-suroeste: en invierno recibe sol casi todo el día y el muro de 0,60 m guarda calor. De cemento claro, como la solera en L, unida al paseo de la entrada y continua con el tramo del algarrobo (propiedad: «la solera delantera la juntaría con la del algarrobo»), 2,40 m de fondo. Medidas propuestas.',
+      id: 'solera-sol-invierno', label: 'Solera del sol de invierno (entrada)', rect: SOL_INV, joints: 2.2, top: SOL_TOP, status: 'propuesto',
+      note: 'Indicación de la propiedad: a la derecha de la puerta de entrada, mirando la fachada, una pequeña zona de solera con un banco de obra pegado a la pared para tomar el sol en la época de frío. El frontal B mira al sur-suroeste: en invierno recibe sol casi todo el día y el muro de 0,60 m guarda calor. De cemento claro, como la solera en L, delante de la puerta de entrada (un solo escalón de 0,18 m hasta el interior), unida al paseo y continua con el tramo del algarrobo (propiedad: «la solera delantera la juntaría con la del algarrobo»), 2,40 m de fondo. Medidas propuestas.',
     },
     {
-      id: 'solera-l-frontal-a', label: 'Solera en L · tramo del frontal A (cristalera)', rect: [0, r2(-SOL_TRASERA), L, 0], joints: 3.3, status: 'confirmado',
+      id: 'solera-l-frontal-a', label: 'Solera en L · tramo del frontal A (cristalera)', rect: [0, r2(-SOL_TRASERA), L, 0], joints: 3.3, top: SOL_TOP, status: 'confirmado',
       note: 'Solera a lo largo de todo el frontal A, de punta a punta de la casa, con el porche delante de la cristalera (indicaciones de la propiedad: «en la parte de la cristalera pon la solera y un porche» y «la solera de punta a punta de la casa y elimina la solera de la parte de la puerta de entrada»). Cemento claro mate, mismo nivel que el tramo lateral, con el que se une en la esquina del algarrobo. Fondo de 3,40 m propuesto; juntas cada ≈3,3 m; pendiente del 1,5–2 % hacia fuera y canaleta en el borde (propuesta de evacuación, pendiente de desarrollo técnico).',
     },
   ],
@@ -348,7 +350,7 @@ const outdoor: Outdoor = {
     id: 'jardin-seco', label: 'Jardín seco de la entrada', rect: [-0.5, r2(W + 0.5), 16.8, 11.5], status: 'propuesto',
     clearings: [SOL_INV],
     paths: [
-      { id: 'paseo-entrada', label: 'Paseo de losas a la puerta de entrada', x: r2(X_PUERTA + 0.6), width: 1.1, y0: r2(W + 0.08), y1: 11.5, slab: 0.45, gap: 0.12 },
+      { id: 'paseo-entrada', label: 'Paseo de losas a la puerta de entrada', x: r2(X_PUERTA + 0.6), width: 1.1, y0: r2(SOL_INV[3] + 0.05), y1: 11.5, slab: 0.45, gap: 0.12 },
       { id: 'paseo-bano', label: 'Paseo de losas a la puerta del baño', x: r2(DUCHA_PUERTA_X0 + 0.35), width: 0.7, y0: r2(W + 0.08), y1: 11.5, slab: 0.4, gap: 0.14 },
     ],
     species: [
@@ -373,7 +375,7 @@ const outdoor: Outdoor = {
     ...[r2(X_PUERTA - 0.5), r2(X_PUERTA + 1.2 + 0.5)].map((x, i) => f({ id: `maceta-entrada-${i + 1}`, type: 'maceta', label: 'Tinaja de barro con olivo (decoración propuesta)', roomId: 'exterior', x, y: r2(W + 0.45), w: 0.62, d: 0.62, h: 1.55, rot: 0, status: 'propuesto', note: 'Decoración propuesta junto a la puerta de entrada; se puede quitar.' })),
     ...[r2(X_PUERTA - 0.3), r2(X_PUERTA + 1.2 + 0.3)].map((x, i) => f({ id: `aplique-entrada-${i + 1}`, type: 'aplique', label: 'Aplique exterior (propuesta)', roomId: 'exterior', x, y: r2(W + 0.07), w: 0.14, d: 0.14, h: 2.25, rot: 0, status: 'propuesto', note: 'Luz cálida a ambos lados de la entrada (propuesta; ubicación y modelo por decidir).' })),
     // banco de obra contra el frontal B en la solera del sol de invierno (propiedad)
-    f({ id: 'banco-sol', type: 'banco', label: 'Banco de obra al sol (frontal B)', roomId: 'exterior', x: r2((SOL_INV[0] + 0.8 + 15.6) / 2), y: r2(W + 0.23), w: r2(15.6 - SOL_INV[0] - 0.8), d: 0.46, h: 0.45, rot: 0, status: 'propuesto',
+    f({ id: 'banco-sol', type: 'banco', label: 'Banco de obra al sol (frontal B)', roomId: 'exterior', x: r2((X_PUERTA + 2.0 + 15.6) / 2), y: r2(W + 0.23), w: r2(15.6 - X_PUERTA - 2.0), d: 0.46, h: 0.45, rot: 0, status: 'propuesto',
       note: 'Banco corrido de obra encalado, pegado a la fachada de la entrada, con asiento de 0,45 m de fondo y alto y remate de piedra o terracota; para tomar el sol de invierno (indicación de la propiedad). Deja libre la tinaja junto a la puerta.' }),
     f({ id: 'mesa-exterior', type: 'mesa-exterior', label: 'Mesa redonda Ø 1,80', roomId: 'exterior', x: MESA_EXT[0], y: MESA_EXT[1], w: 1.8, d: 1.8, h: 0.75, rot: 0, status: 'propuesto', note: 'Mesa circular de tablero mineral claro grueso (≈10 cm) sobre pie central cilíndrico (referencia 11). Ocho plazas; diámetro orientativo.' }),
     ...Array.from({ length: 8 }, (_, i) => {

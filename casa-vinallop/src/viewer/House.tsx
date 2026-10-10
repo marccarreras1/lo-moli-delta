@@ -8,6 +8,7 @@ import type { MaterialSet } from './materials';
 import { Opening3D } from './Opening3D';
 import { uvBox } from './textures';
 import { roofTopAt } from '../model/roof';
+import { groundTopAt } from '../model/ground';
 
 /** plano (x, y) → escena (x, altura, y) */
 export const P = (x: number, y: number, h = 0) => new THREE.Vector3(x, h, y);
@@ -168,18 +169,21 @@ function Plinth({ layout, mats, center }: { layout: Layout; mats: MaterialSet; c
     if ((center[0] - mid[0]) * nx + (center[1] - mid[1]) * ny > 0) { nx = -nx; ny = -ny; }
     const rot = -Math.atan2(uy, ux);
     for (const o of layout.openings.filter((x) => x.wallId === w.id && x.sill < 0.05 && x.kind !== 'ventana' && x.kind !== 'paso')) {
-      const n = Math.max(1, Math.round(h / 0.19));
-      const rise = h / n;
+      const c = pointOnWall(w, o.offset + o.width / 2, 0);
+      // los escalones arrancan de la superficie exterior delante del hueco (solera elevada o terreno)
+      const base = groundTopAt(layout.outdoor, c[0] + nx * (w.thickness / 2 + 0.4), c[1] + ny * (w.thickness / 2 + 0.4));
+      if (h - base < 0.05) continue;
+      const n = Math.max(1, Math.round((h - base) / 0.19));
+      const rise = (h - base) / n;
       const tread = 0.3;
       const width = o.width + 0.2;
-      const c = pointOnWall(w, o.offset + o.width / 2, 0);
       for (let k = 0; k < n; k++) {
         // peldaño k (0 = el más bajo): de la cara del muro hacia fuera
         const depth = tread * (n - k);
         const off = w.thickness / 2 + depth / 2;
         const cx = c[0] + nx * off;
         const cz = c[1] + ny * off;
-        const top = rise * (k + 1);
+        const top = base + rise * (k + 1);
         items.push(
           <group key={`s-${o.id}-${k}`} position={[cx, 0, cz]} rotation={[0, rot, 0]}>
             <mesh position={[0, (top - 0.03) / 2, 0]} castShadow receiveShadow material={mats.concrete} geometry={uvBox(width, top - 0.03, depth)} />

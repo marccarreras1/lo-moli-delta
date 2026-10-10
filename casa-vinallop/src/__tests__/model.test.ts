@@ -475,7 +475,7 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
     // las bajas delante y las altas al fondo
     const depth = (id: string) => { const l = plants.filter((p) => p.s === id); return l.reduce((a, p) => a + p.y, 0) / l.length; };
     expect(depth('lavanda')).toBeLessThan(depth('verbena'));
-    expect(pathSlabs(g.paths[0]).length).toBeGreaterThan(8);
+    expect(pathSlabs(g.paths[0]).length).toBeGreaterThan(5); // el paseo de la entrada arranca en el borde de la solera elevada
   });
   it('cambios de la propiedad: dormitorio, inodoro, recibidor, alcorque y cuarto técnico', () => {
     const f = (id: string) => layout.furniture.find((x) => x.id === id)!;
@@ -553,10 +553,14 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
     expect(o.pavements.filter((p) => p.joints > 0 && p.rect[3] > layout.bounds.maxY && p.rect[0] < layout.bounds.maxX).map((p) => p.id)).toEqual(['solera-sol-invierno']);
     const sol = o.pavements.find((p) => p.id === 'solera-sol-invierno')!;
     const pe = layout.openings.find((x) => x.id === 'puerta-120')!;
-    expect(sol.rect[0]).toBeGreaterThanOrEqual(pe.offset + 0.15 + pe.width - 1e-6);
+    // cubre el frente de la puerta: un solo escalón de 0,18 m de la solera al interior, y otro de la solera al terreno
+    expect(sol.rect[0]).toBeLessThanOrEqual(pe.offset + 0.15 + 1e-6);
+    expect(sol.top).toBe(0.18);
+    expect(layout.levels.find((l) => l.id === 'pb')!.elevation - sol.top!).toBeCloseTo(0.18, 5);
+    expect(o.pavements.filter((p) => p.id.startsWith('solera')).every((p) => p.top === 0.18)).toBe(true);
     const banco = o.furniture.find((f) => f.id === 'banco-sol')!;
     expect(banco.y - banco.d / 2).toBeCloseTo(layout.bounds.maxY, 5);
-    expect(banco.x - banco.w / 2).toBeGreaterThanOrEqual(sol.rect[0]);
+    expect(banco.x - banco.w / 2).toBeGreaterThanOrEqual(pe.offset + 0.15 + pe.width);
     expect(banco.x + banco.w / 2).toBeLessThanOrEqual(sol.rect[2]);
     // el porche cubre toda la solera del frontal A, hasta el dormitorio
     const por = o.porches![0];
