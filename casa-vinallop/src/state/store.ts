@@ -545,8 +545,10 @@ export const useStore = create<Store>((set, get) => {
 });
 
 export function activeDesign(s: Pick<Store, 'designs' | 'visual'>): ProjectDesign {
-  return s.designs[projectIdOf(s.visual.modelSource)] ?? emptyDesign();
+  return s.designs[projectIdOf(s.visual.modelSource)] ?? EMPTY_DESIGN;
 }
+/** diseño vacío compartido: los selectores deben devolver siempre el mismo objeto si no hay cambios */
+const EMPTY_DESIGN: ProjectDesign = emptyDesign();
 export function activeVariant(s: Pick<Store, 'designs' | 'visual'>): Variant {
   const d = activeDesign(s);
   return d.activeId === BASE_ID ? d.base : d.variants.find((v) => v.id === d.activeId) ?? d.base;

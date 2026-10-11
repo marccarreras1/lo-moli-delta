@@ -37,7 +37,9 @@ export function PlanView({ fitNonce }: { fitNonce: number }) {
   const [facade, setFacade] = useState<FacadeId | null>(null);
   /** lámina de la planta del nivel activo (con cajetín y cuadro de superficies) */
   const [sheet, setSheet] = useState(false);
-  const variant = useStore(activeVariant);
+  // se calcula fuera del selector: sin diseño guardado, activeVariant crea un objeto nuevo en cada llamada
+  const designs = useStore((x) => x.designs);
+  const variant = useMemo(() => activeVariant({ designs, visual: s }), [designs, s]);
   const instPoints = useResolvedPoints(layout);
   const instLayers = useVisibleLayers();
   const instSel = useInstalaciones((x) => x.selectedId);

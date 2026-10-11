@@ -118,3 +118,11 @@ describe('archivo de proyecto completo', () => {
     expect(importProjectFile(broken).ok).toBe(false);
   });
 });
+
+describe('selectores estables', () => {
+  it('sin diseño guardado, activeVariant devuelve siempre el mismo objeto (evita bucles de render en Plantas)', async () => {
+    const { activeVariant } = await import('../state/store');
+    const st = { designs: {}, visual: { modelSource: 'reforma' } } as never;
+    expect(activeVariant(st)).toBe(activeVariant(st));
+  });
+});

@@ -29,4 +29,6 @@ export const CAMBIOS_SEED: CambioEntrada[] = [
     'Nueva sección «Cambios» con este registro: notas y fotos por entrada y exportación a PDF.'),
   e('c-2026-10-10-situacion', '2026-10-10', 'presupuesto', 'Situación de la obra',
     'Nueva sección «Situación de obra»: por fase y partida, presupuesto de referencia, comprometido (contratado + extras), coste real, desviación en € y %, avance, obra ejecutada, pagos y pendiente de pago, con alertas. Registro de pagos y exportación a PDF y CSV.'),
+  e('c-2026-10-11-plantas', '2026-10-11', 'otros', 'Corregido el acceso a Plantas',
+    'La vista de plantas, láminas y alzados se bloqueaba al abrirla (la página entraba en un bucle de actualización) si no se había guardado ningún cambio de diseño. Corregido.'),
 ];
