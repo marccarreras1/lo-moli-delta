@@ -60,10 +60,10 @@ describe('partidas sin valorar', () => {
     expect(r.sinValorar).toBe(1);
     expect(r.parcial).toBe(true);
     // cuentan las 8 partidas seleccionadas, PAC-11 (alzado de 36 cm, 2.500, pasa a la fase 1) y los añadidos de la propiedad
-    // (+2.000 recrecido hasta 6 m, 3.500 zanja); las 3 no seleccionadas son referencia
-    expect(r.previsto.n).toBe(11);
-    expect(r.previsto.base).toBe(37900 + 2500 + 2000 + 3500);
-    expect(r.revisado.base).toBe(37900 + 2500 + 2000 + 3500);
+    // (+2.000 recrecido hasta 6 m, 3.500 zanja) y el depósito de agua potable (2.282); las 3 no seleccionadas son referencia
+    expect(r.previsto.n).toBe(12);
+    expect(r.previsto.base).toBe(37900 + 2500 + 2000 + 3500 + 2282);
+    expect(r.revisado.base).toBe(37900 + 2500 + 2000 + 3500 + 2282);
     expect(r.noSeleccionadas).toEqual({ n: 3, base: 13200 });
     expect(pres.partidas.filter((p) => p.noSeleccionada).map((p) => p.codigo)).toEqual(PAC_NO_SELECCION);
     // el panel parte de 37.900 y aplica el descuento una sola vez hasta 39.930
@@ -98,7 +98,7 @@ describe('avance', () => {
   });
   it('la fase del presupuesto tiene una tarea por partida seleccionada', () => {
     const fp = seed.fases.find((x) => x.id === 'f-pac26')!;
-    expect(fp.tareas.map((t) => t.partida)).toEqual([...PAC_SELECCION, 'PAC-11', 'PAC-04.1', 'ZAN-01']);
+    expect(fp.tareas.map((t) => t.partida)).toEqual([...PAC_SELECCION, 'PAC-11', 'PAC-04.1', 'ZAN-01', 'DEP-01']);
     expect(fp.dependencias).toEqual(['f01', 'f02']);
     expect(seed.fases.every((x) => !x.previstoInicio && !x.responsable)).toBe(true);
   });
@@ -145,5 +145,18 @@ describe('CSV', () => {
     const sol = lines.find((l) => l.startsWith('SOL-01;'))!;
     expect(sol).toContain('sin valorar (pendiente)');
     expect(lines.find((l) => l.startsWith('PAC-09;'))).toContain('no seleccionada (no se suma)');
+  });
+});
+
+describe('depósito de agua potable (PN20260783)', () => {
+  it('partida y oferta con los importes del presupuesto, recibida y sin pagos', () => {
+    const p = pres.partidas.find((x) => x.codigo === 'DEP-01')!;
+    expect(importePrevisto(p)).toBe(2282);
+    expect(p.impuesto).toBe(21);
+    expect(p.pagos).toHaveLength(0);
+    expect(p.contratado).toBeNull();
+    const o = pres.ofertas.find((x) => x.referencia === 'PN20260783')!;
+    expect(o.estado).toBe('recibida');
+    expect(ofertaResumen(o, pres.partidas)).toMatchObject({ base: 2282, impuestos: 479.22, total: 2761.22 });
   });
 });

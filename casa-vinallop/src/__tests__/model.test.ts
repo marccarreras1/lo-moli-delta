@@ -611,3 +611,14 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
     expect(layout.references!.filter((r) => !r.consulted).map((r) => r.id)).toEqual(['ref-color-techo']);
   });
 });
+
+describe('depósito de agua potable', () => {
+  it('DE12000 enterrado fuera del cuarto técnico, a 1 m o más de su cimentación', () => {
+    const tk = VINALLOP.outdoor!.tanks!.find((x) => x.id === 'deposito-agua-potable')!;
+    expect(tk.capacity).toBe(12000);
+    expect([tk.diameter, tk.length]).toEqual([2.45, 2.94]);
+    const an = VINALLOP.outdoor!.annexes!.find((a) => a.id === 'cuarto-tecnico')!;
+    const x1 = tk.c[0] + (tk.axis === 'y' ? tk.diameter : tk.length) / 2;
+    expect(an.rect[0] - x1).toBeGreaterThanOrEqual(1 - 1e-9);
+  });
+});

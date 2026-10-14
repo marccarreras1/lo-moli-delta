@@ -28,7 +28,8 @@ export function planSheetSvg(layout: Layout, levelId: string, o: SheetOptions = 
   const { minX, minY, maxX, maxY } = layout.bounds;
   const annexX0 = Math.min(minX, ...(layout.outdoor?.annexes ?? []).map((a) => a.rect[0]));
   // recorte del dibujo: la casa con el cuarto técnico, sus cotas y una franja del exterior
-  const crop = { x0: annexX0 - 2.6, y0: minY - 2.2, x1: maxX + 1.4, y1: maxY + 1.9 };
+  const tankX0 = Math.min(Infinity, ...(layout.outdoor?.tanks ?? []).map((tk) => tk.c[0] - (tk.axis === 'y' ? tk.diameter : tk.length) / 2));
+  const crop = { x0: Math.min(annexX0 - 2.6, tankX0 - 1.0), y0: minY - 2.2, x1: maxX + 1.4, y1: maxY + 1.9 };
   const inner = planSvg(layout, {
     selection: null, showDims: true, showAreas: false, showFurniture: true, showLabels: true, issues: [], openFractions: {},
     levelId: level.id, showPassages: false, crop,

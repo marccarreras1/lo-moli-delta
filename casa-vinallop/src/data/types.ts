@@ -393,6 +393,25 @@ export interface Outdoor {
     status: DataStatus;
     note: string;
   }[];
+  /** depósitos enterrados (cilindro horizontal): solo asoman la boca de hombre y el venteo */
+  tanks?: {
+    id: string;
+    label: string;
+    /** centro en planta */
+    c: Vec2;
+    /** eje del cilindro: 'x' o 'y' */
+    axis: 'x' | 'y';
+    diameter: number;
+    length: number;
+    /** capacidad en litros */
+    capacity: number;
+    /** diámetro de la boca de hombre */
+    manhole: number;
+    /** tierra sobre la generatriz superior (m) */
+    cover: number;
+    status: DataStatus;
+    note: string;
+  }[];
   /** propuesta de evacuación: canaleta lineal (tramos) */
   drains?: { id: string; a: Vec2; b: Vec2; status: DataStatus; note: string }[];
 }

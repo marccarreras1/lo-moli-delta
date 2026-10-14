@@ -31,4 +31,6 @@ export const CAMBIOS_SEED: CambioEntrada[] = [
     'Nueva sección «Situación de obra»: por fase y partida, presupuesto de referencia, comprometido (contratado + extras), coste real, desviación en € y %, avance, obra ejecutada, pagos y pendiente de pago, con alertas. Registro de pagos y exportación a PDF y CSV.'),
   e('c-2026-10-11-plantas', '2026-10-11', 'otros', 'Corregido el acceso a Plantas',
     'La vista de plantas, láminas y alzados se bloqueaba al abrirla (la página entraba en un bucle de actualización) si no se había guardado ningún cambio de diseño. Corregido.'),
+  e('c-2026-10-14-deposito', '2026-10-14', 'presupuesto', 'Depósito enterrado de agua potable (12.000 l)',
+    'Presupuesto PN20260783 de Hidroserver: depósito horizontal para enterrar DE12000, 12.000 l, Ø 2,45 × 2,94 m, 2.282 € + IVA (2.761,22 €), portes incluidos. Añadido como partida DEP-01 de la fase 1, con su oferta, documento y tarea. Solo suministro: excavación, descarga con grúa, colocación, conexiones y bomba quedan por valorar. En el modelo, enterrado junto al cuarto técnico (ubicación propuesta, a confirmar).'),
 ];

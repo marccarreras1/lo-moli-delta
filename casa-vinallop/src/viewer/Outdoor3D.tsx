@@ -284,6 +284,28 @@ function Porch({ p, mats }: { p: NonNullable<Outdoor['porches']>[number]; mats: 
   );
 }
 
+/** Depósito enterrado: huella de la excavación rellena, cuello y tapa de la boca de hombre y «T» de venteo. */
+function Tank({ t }: { t: NonNullable<Outdoor['tanks']>[number] }) {
+  const [w, d] = t.axis === 'y' ? [t.diameter, t.length] : [t.length, t.diameter];
+  const fill = useMemo(() => new THREE.MeshStandardMaterial({ color: '#b89a7c', roughness: 1 }), []);
+  const collar = useMemo(() => new THREE.MeshStandardMaterial({ color: '#d9d4c8', roughness: 0.85 }), []);
+  const lid = useMemo(() => new THREE.MeshStandardMaterial({ color: '#3c4a3f', roughness: 0.6, metalness: 0.2 }), []);
+  useEffect(() => () => { fill.dispose(); collar.dispose(); lid.dispose(); }, [fill, collar, lid]);
+  const r = t.manhole / 2;
+  const [cx, cz] = t.c;
+  return (
+    <group>
+      <mesh position={[cx, TOP + 0.012, cz]} rotation={[-Math.PI / 2, 0, 0]} material={fill} receiveShadow>
+        <planeGeometry args={[w + 0.6, d + 0.6]} />
+      </mesh>
+      <mesh position={[cx, TOP + 0.08, cz]} material={collar} castShadow receiveShadow><cylinderGeometry args={[r + 0.1, r + 0.14, 0.16, 32]} /></mesh>
+      <mesh position={[cx, TOP + 0.165, cz]} material={lid} castShadow><cylinderGeometry args={[r, r, 0.02, 32]} /></mesh>
+      <mesh position={[cx + r + 0.3, TOP + 0.35, cz]} material={collar} castShadow><cylinderGeometry args={[0.04, 0.04, 0.7, 12]} /></mesh>
+      <mesh position={[cx + r + 0.3, TOP + 0.7, cz]} rotation={[0, 0, Math.PI / 2]} material={collar} castShadow><cylinderGeometry args={[0.04, 0.04, 0.24, 12]} /></mesh>
+    </group>
+  );
+}
+
 /** Volumen anexo de una planta (cuarto técnico): muros encalados, losa de cubierta y puerta metálica exterior. */
 function Annex({ a, mats }: { a: NonNullable<Outdoor['annexes']>[number]; mats: MaterialSet }) {
   const [x0, y0, x1, y1] = a.rect;
@@ -400,6 +422,7 @@ export function Outdoor3D({ outdoor, mats, options, level, selectedId, onSelect 
       {outdoor.garden && <Garden3D garden={outdoor.garden} mats={mats} />}
       {(outdoor.annexes ?? []).map((a) => <Annex key={a.id} a={a} mats={mats} />)}
       {(outdoor.wallSteps ?? []).map((w) => <WallSteps key={w.id} s={w} />)}
+      {(outdoor.tanks ?? []).map((t) => <Tank key={t.id} t={t} />)}
       {outdoor.pavements.filter((p) => p.permeable).map((p) => <TreePit key={`al-${p.id}`} c={p.permeable!.c} r={p.permeable!.r} mats={mats} />)}
       {(outdoor.drains ?? []).map((d) => <Drain key={d.id} a={d.a} b={d.b} mats={mats} lift={groundTopAt(outdoor, (d.a[0] + d.b[0]) / 2, (d.a[1] + d.b[1]) / 2)} />)}
       {(outdoor.porches ?? []).map((p) => <Porch key={p.id} p={p} mats={mats} />)}

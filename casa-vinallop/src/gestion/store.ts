@@ -5,7 +5,7 @@
  * colaboración multiusuario). Se guarda con retardo tras cada cambio y al ocultar la página.
  */
 import { create } from 'zustand';
-import { ADDED_PARTIDAS, ADDED_TAREAS, FASE_PAC, seedGestion } from './seed';
+import { ADDED_PARTIDAS, ADDED_TAREAS, DEP_CODIGO, DEP_DOCUMENTO, FASE_PAC, OFERTA_DEPOSITO, seedGestion } from './seed';
 import type {
   Asignacion, Bloqueo, Comentario, Decision, Documento, Fase, GestionData, Oferta, Pago, Partida, Presupuesto, Reserva, Tarea,
 } from './types';
@@ -126,6 +126,29 @@ function migrate2(data: GestionData): GestionData {
   return { ...data, fases, presupuesto: { ...data.presupuesto, partidas } };
 }
 
+/** Presupuesto del depósito de agua potable (PN20260783, 13/10/2026): partida, oferta, documento y tarea. */
+function migrate3(data: GestionData): GestionData {
+  let done: string[] = [];
+  try { done = JSON.parse(window.localStorage.getItem(MIGRATIONS_KEY) ?? '[]') as string[]; } catch { /* sin almacenamiento */ }
+  const id = '2026-10-14-deposito-agua';
+  if (done.includes(id)) return data;
+  const pr = data.presupuesto;
+  const partida = ADDED_PARTIDAS().find((p) => p.codigo === DEP_CODIGO)!;
+  const fase = data.fases.some((f) => f.id === partida.fase) ? partida.fase : '';
+  const capitulo = pr.capitulos.some((c) => c.id === partida.capitulo) ? partida.capitulo : '';
+  const presupuesto = {
+    ...pr,
+    partidas: pr.partidas.some((p) => p.id === partida.id || p.codigo === DEP_CODIGO) ? pr.partidas : [...pr.partidas, { ...partida, fase, capitulo }],
+    ofertas: pr.ofertas.some((o) => o.id === OFERTA_DEPOSITO().id) ? pr.ofertas : [...pr.ofertas, OFERTA_DEPOSITO()],
+    documentos: pr.documentos.some((d) => d.id === DEP_DOCUMENTO.id) ? pr.documentos : [...pr.documentos, { ...DEP_DOCUMENTO }],
+  };
+  const texto = new Map(ADDED_TAREAS).get(DEP_CODIGO)!;
+  const fases = data.fases.map((f) => (f.id !== FASE_PAC || f.tareas.some((x) => x.partida === DEP_CODIGO) ? f
+    : { ...f, tareas: [...f.tareas, { id: `${FASE_PAC}-t-add-dep01`, texto, hecha: false, partida: DEP_CODIGO }] }));
+  try { window.localStorage.setItem(MIGRATIONS_KEY, JSON.stringify([...done, id])); } catch { /* sin almacenamiento */ }
+  return { ...data, fases, presupuesto };
+}
+
 function load(): { data: GestionData; aviso: string | null } {
   if (typeof window === 'undefined') return { data: seedGestion(), aviso: null };
   let raw: string | null = null;
@@ -137,7 +160,7 @@ function load(): { data: GestionData; aviso: string | null } {
   if (!raw) return { data: seedGestion(), aviso: null };
   try {
     const parsed = JSON.parse(raw) as unknown;
-    const data = migrate2(migrate(parseGestion(parsed, false)));
+    const data = migrate3(migrate2(migrate(parseGestion(parsed, false))));
     let aviso: string | null = null;
     try { parseGestion(parsed, true); } catch (e) {
       aviso = `Se han descartado datos guardados no válidos (${e instanceof GestionInvalida ? e.message : 'formato'}).`;

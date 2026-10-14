@@ -306,6 +306,7 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
         if (site.pavements.some((p) => inRect(p.rect, 0.8))) continue;
         if ((layout.outdoor?.pavements ?? []).some((p) => p.joints > 0 && inRect(p.rect, 1.2))) continue;
         if ((layout.outdoor?.annexes ?? []).some((a) => inRect(a.rect, 1.5))) continue;
+        if ((layout.outdoor?.tanks ?? []).some((tk) => Math.hypot(tk.c[0] - x, tk.c[1] - y) < Math.max(tk.length, tk.diameter) / 2 + 2.5)) continue;
         out.push({ x, y, k, rot });
       }
     }

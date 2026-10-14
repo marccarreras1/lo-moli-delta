@@ -161,6 +161,20 @@ function outdoorSvg(layout: Layout, od: NonNullable<Layout['outdoor']>, labels: 
     g.push(`<circle cx="${n4(c[0])}" cy="${n4(c[1])}" r="${n4(r)}" fill="#efe9de" stroke="#3a3833" stroke-width="0.02"/>`);
     if (labels) g.push(`<text x="${n4(c[0])}" y="${n4(c[1] + r + 0.22)}" font-size="0.13" fill="#687066" text-anchor="middle">alcorque permeable Ø ${fmtM(2 * r)}</text>`);
   }
+  // depósitos enterrados: contorno oculto (discontinuo), boca de hombre y medidas
+  for (const tk of od.tanks ?? []) {
+    const [w, h] = tk.axis === 'y' ? [tk.diameter, tk.length] : [tk.length, tk.diameter];
+    const x0 = tk.c[0] - w / 2;
+    const y0 = tk.c[1] - h / 2;
+    g.push(`<rect x="${n4(x0)}" y="${n4(y0)}" width="${n4(w)}" height="${n4(h)}" rx="${n4(Math.min(w, h) * 0.12)}" fill="#e3edf1" fill-opacity="0.6" stroke="#2f5d6b" stroke-width="0.025" stroke-dasharray="0.12 0.06" data-tank="${esc(tk.id)}"/>`);
+    g.push(`<circle cx="${n4(tk.c[0])}" cy="${n4(tk.c[1])}" r="${n4(tk.manhole / 2)}" fill="#fefdfb" stroke="#2f5d6b" stroke-width="0.02"/>`);
+    if (labels) {
+      const lx = x0 - 0.25;
+      g.push(`<text x="${n4(lx)}" y="${n4(tk.c[1])}" font-size="0.15" font-weight="600" text-anchor="middle" fill="#2f5d6b" transform="rotate(-90 ${n4(lx)} ${n4(tk.c[1])})">${esc(tk.label)}</text>`);
+      g.push(`<text x="${n4(lx + 0.2)}" y="${n4(tk.c[1])}" font-size="0.11" text-anchor="middle" fill="#2f5d6b" class="tnum" transform="rotate(-90 ${n4(lx + 0.2)} ${n4(tk.c[1])})">${(tk.capacity / 1000).toLocaleString('es-ES')} m³ · Ø ${fmtM(tk.diameter)} × ${fmtM(tk.length)} m · boca ${Math.round(tk.manhole * 100)} cm</text>`);
+    }
+    g.push(dim([x0, y0], [x0 + w, y0], -0.35, `${fmtM(w)} m`, tk.status));
+  }
   for (const d of od.drains ?? []) g.push(`<line x1="${n4(d.a[0])}" y1="${n4(d.a[1])}" x2="${n4(d.b[0])}" y2="${n4(d.b[1])}" stroke="#3a3833" stroke-width="0.08" stroke-dasharray="0.04 0.02"/>`);
   for (const t of layout.site?.trees ?? []) {
     g.push(`<circle cx="${n4(t.c[0])}" cy="${n4(t.c[1])}" r="${n4(t.r)}" fill="none" stroke="#6f7f52" stroke-width="0.025" stroke-dasharray="0.15 0.08"/><circle cx="${n4(t.c[0])}" cy="${n4(t.c[1])}" r="0.3" fill="#8a7a64" stroke="none"/>`);
@@ -215,7 +229,11 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
   // en una planta alta: cubiertas transitables de los anexos a la altura del nivel (terraza del altell)
   const lvElev = (layout.levels.find((l) => l.id === o.levelId) ?? layout.levels[0])?.elevation ?? 0;
   const terraces = !levelFirst && o.showOutdoor !== false ? (layout.outdoor?.annexes ?? []).filter((a) => a.terrace && Math.abs(a.height - lvElev) < 0.6) : [];
-  const solera = [...(outdoor?.pavements.filter((p) => p.joints > 0) ?? []), ...(outdoor?.garden ? [{ rect: outdoor.garden.rect }] : []), ...(outdoor?.annexes ?? []), ...terraces];
+  const tankRects = (outdoor?.tanks ?? []).map((tk) => {
+    const [w, h] = tk.axis === 'y' ? [tk.diameter, tk.length] : [tk.length, tk.diameter];
+    return { rect: [tk.c[0] - w / 2 - 0.5, tk.c[1] - h / 2, tk.c[0] + w / 2, tk.c[1] + h / 2] as [number, number, number, number] };
+  });
+  const solera = [...(outdoor?.pavements.filter((p) => p.joints > 0) ?? []), ...(outdoor?.garden ? [{ rect: outdoor.garden.rect }] : []), ...(outdoor?.annexes ?? []), ...tankRects, ...terraces];
   // extensión del dibujo: la casa y, si se muestra, la solera exterior
   const ex = {
     minX: Math.min(minX, ...solera.map((p) => p.rect[0])), minY: Math.min(minY, ...solera.map((p) => p.rect[1])),

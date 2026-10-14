@@ -389,6 +389,14 @@ const outdoor: Outdoor = {
     post: [r2(MESA_EXT[0] + 1.75), r2(MESA_EXT[1] - 0.35)], status: 'propuesto',
     note: 'Cúpula grande de metal oscuro centrada sobre la mesa, luz cálida regulable (referencia 11). Suspensión desde una rama del algarrobo o desde un pie independiente: el anclaje está SIN RESOLVER (resistencia de la rama, crecimiento, viento y alimentación eléctrica exterior por comprobar).',
   },
+  // depósito de agua potable (presupuesto Hidroserver PN20260783, 13/10/2026): ubicación propuesta, a confirmar
+  tanks: [
+    {
+      id: 'deposito-agua-potable', label: 'Depósito enterrado de agua potable', c: [r2(-2.5 - 1.0 - 2.45 / 2), r2(W / 2)], axis: 'y',
+      diameter: 2.45, length: 2.94, capacity: 12000, manhole: 0.6, cover: 0.5, status: 'propuesto',
+      note: 'Depósito horizontal para enterrar DE12000 de Hidroserver (presupuesto PN20260783): 12.000 l, Ø 2,45 m × 2,94 m, poliéster reforzado con fibra de vidrio y resina alimentaria, boca de hombre superior de 600 mm con «T» de venteo. Ubicación propuesta junto al cuarto técnico (lado izquierdo), a 1 m de su cimentación, para llevar la tubería a la bomba y al termo; a confirmar sobre el terreno según el pozo, el acceso del camión y la grúa (la descarga es a pie de transporte) y las instrucciones de enterrado del fabricante. Tierra encima ≈0,50 m propuesta.',
+    },
+  ],
   drains: [
     { id: 'rigola-frontal-a', a: [0.3, r2(-SOL_TRASERA + 0.15)], b: [r2(L + SOL_LATERAL - 0.15), r2(-SOL_TRASERA + 0.15)], status: 'propuesto', note: 'Canaleta lineal en el borde exterior del tramo del frontal A; pendiente del 1,5–2 % desde la fachada.' },
     { id: 'rigola-lateral', a: [r2(L + SOL_LATERAL - 0.15), r2(-SOL_TRASERA + 0.3)], b: [r2(L + SOL_LATERAL - 0.15), r2(W - 0.15)], status: 'propuesto', note: 'Canaleta en el borde exterior del tramo lateral, hacia el terreno (lejos del alcorque).' },
@@ -413,6 +421,7 @@ const views: CameraPreset[] = [
   view({ id: 'v04-solera', label: '4 · Solera completa en L', group: 'exterior', position: [-3.8, -10.5, 4.4], target: [11, -0.8, 0], fov: 46 }),
   view({ id: 'v05-algarrobo', label: '5 · Mesa y lámpara bajo el algarrobo', group: 'exterior', position: [14.6, -8.2, 1.6], target: [MESA_EXT[0] + 0.3, MESA_EXT[1] + 1.0, 1.5], fov: 56 }),
   view({ id: 'v06-desde-comedor', label: '6 · La casa desde el comedor exterior', group: 'exterior', position: [21.4, -5.4, 1.6], target: [10, -0.6, 2.2], fov: 56 }),
+  view({ id: 'v06b-deposito', label: '6b · Cuarto técnico y depósito de agua', group: 'exterior', position: [-13.5, 9.5, 5.2], target: [-3.6, 2.4, 0.4], fov: 46 }),
   view({ id: 'v00-interior-cenital', label: 'Interior · vista cenital 3D', group: 'interior', topDown: true, position: [8.2, 5.6, 19.5], target: [8.2, 2.5, 0], fov: 44 }),
   view({ id: 'v07-salon-ventanal', label: '7 · Salón: sofá de obra y ventanal', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: PB_EL, position: [12.3, 1.2, 1.6], target: [15.4, 3.9, 0.7], fov: 66 }),
   view({ id: 'v07b-fuego', label: '7b · Rincón de la cristalera (estufa, chimenea o comedor)', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: PB_EL, position: [12.7, 2.15, 1.6], target: [16.0, 1.15, 1.25], fov: 62 }),

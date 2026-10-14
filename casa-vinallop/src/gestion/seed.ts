@@ -76,6 +76,11 @@ export const PAC_FECHA = '2026-05-26';
 export const FASE_PAC = 'f-pac26';
 export const FASE_PENDIENTE = 'f-pendiente';
 export const SOLERA_CODIGO = 'SOL-01';
+export const DEP_CODIGO = 'DEP-01';
+export const DEP_REF = 'PN20260783';
+export const DEP_PROVEEDOR = 'Hidroserver Ingeniería y Tratamientos del Agua S.L.';
+export const DEP_FECHA = '2026-10-13';
+export const DEP_DOCUMENTO = { id: 'doc-pn20260783', titulo: `Presupuesto ${DEP_REF} · depósito de agua potable`, referencia: `${DEP_PROVEEDOR} · documento PDF de la propiedad`, fecha: DEP_FECHA, nota: 'Oferta recibida, no aceptada ni pagada.' };
 
 const pac = (n: number, descripcion: string, capitulo: string, precio: number, fase: string, notas = ''): Partida => ({
   id: `p-pac-${String(n).padStart(2, '0')}`,
@@ -115,13 +120,48 @@ export const ADDED_PARTIDAS = (): Partida[] => [
     origenPrecio: 'Presupuesto recibido por la propiedad (10/10/2026)', fechaPrecio: '2026-10-10',
     condicion: 'oferta recibida', impuesto: 21, base: null,
   },
+  {
+    id: 'p-deposito-agua', codigo: DEP_CODIGO,
+    descripcion: 'Depósito horizontal para enterrar DE12000 para agua potable: 12.000 l, Ø 2,45 × 2,94 m, poliéster con fibra de vidrio y resina alimentaria, boca de hombre de 600 mm con «T» de venteo; portes a Tarragona incluidos',
+    capitulo: CAP.agua, fase: FASE_PAC,
+    cantidad: 1, unidad: 'ud', precio: 2282,
+    proveedor: DEP_PROVEEDOR, referencia: DEP_REF, contratado: null, extras: null, real: null, pagos: [],
+    notas: 'Solo suministro (depósito y portes). No incluye: descarga (es a pie de transporte: grúa o medios de descarga a cargo de la obra), excavación, cama o losa de apoyo, relleno, colocación, conexiones, bomba ni tratamiento del agua: costes pendientes de valorar. Pago: 50 % al confirmar el pedido y 50 % a la entrega. Garantía de 2 años por defectos de fabricación (no cubre una colocación incorrecta). Distinto de PAC-10 (cisterna de obra de 15 m³ para pluviales, no seleccionada).',
+    origenPrecio: `Presupuesto ${DEP_REF} (importe sin IVA)`, fechaPrecio: DEP_FECHA,
+    condicion: 'oferta recibida', impuesto: 21, base: null,
+  },
 ];
+
+/** Oferta del depósito de agua potable (también se incorpora a los datos ya guardados). */
+export const OFERTA_DEPOSITO = (): Oferta => ({
+  id: 'o-pn20260783',
+  proveedor: DEP_PROVEEDOR,
+  referencia: DEP_REF,
+  fecha: DEP_FECHA,
+  alcance: 'Suministro de un depósito horizontal para enterrar DE12000 (12.000 l) para agua potable, con portes a Tarragona incluidos.',
+  partidas: [DEP_CODIGO],
+  importeBase: null,
+  descuentoPct: null,
+  ajuste: null,
+  ajusteNota: '',
+  impuestoPct: 21,
+  estado: 'recibida',
+  documentos: [`Presupuesto ${DEP_REF} (${DEP_PROVEEDOR}, 13/10/2026) con hoja técnica del DE12000`],
+  notas: 'Oferta recibida: no aceptada ni pagada. Plazo de suministro a convenir.',
+  totalesImpresos: { subtotal: 2282, descuento: null, base: 2282, impuestos: 479.22, total: 2761.22, nota: 'Totales impresos del presupuesto (coinciden con la partida).' },
+  condiciones: 'Forma de pago: transferencia del 50 % a la confirmación del pedido y el 50 % restante a la entrega del equipo. Plazo de suministro: a convenir. Descarga de la mercancía: a pie de transporte. Garantía de dos años por defectos de fabricación, que no cubre una colocación incorrecta del depósito. Documentación: declaración de conformidad CE, ficha técnica, certificado de responsabilidad civil y registro sanitario.',
+  avisos: [
+    'Solo suministro: excavación, descarga con grúa, colocación, relleno, conexiones y bomba no están incluidos.',
+    'La garantía no cubre una colocación incorrecta: enterrar siguiendo las instrucciones del fabricante.',
+  ],
+});
 
 /** Tareas de la fase 1 para las partidas añadidas. */
 export const ADDED_TAREAS: [string, string][] = [
   ['PAC-11', 'Alzado de la casa 36 cm (partida de 2.500 €: relleno interior y elevación)'],
   ['PAC-04.1', 'Recrecido de muros hasta 6,00 m (ampliación del alzado de muros, +2.000 €)'],
   ['ZAN-01', 'Zanja y tubo de agua y electricidad desde el pozo y la caja eléctrica'],
+  [DEP_CODIGO, 'Depósito enterrado de agua potable de 12.000 l: pedido, excavación, descarga, colocación y conexión'],
 ];
 
 function partidas(): Partida[] {
@@ -189,7 +229,7 @@ function ofertas(): Oferta[] {
       'La cubierta plana propuesta difiere del informe (cubierta inclinada con panel sándwich): coordinar documentos antes de obras.',
       'El zuncho de 40 × 70 cm es una característica propuesta por el constructor, no un cálculo estructural validado.',
     ],
-  }];
+  }, OFERTA_DEPOSITO()];
 }
 
 // ---------------------------------------------------------------- fases
@@ -224,7 +264,7 @@ function fases(): Fase[] {
       ['Identificar y solicitar los permisos aplicables', 'Comprobar el fibrocemento', 'Gestión especializada del fibrocemento si corresponde'],
       { dependencias: ['f01'] }),
     fase(FASE_PAC, 'Fase 1 · Estructura, aberturas, cubierta y forjado (presupuesto PAC26-0052)',
-      'Partidas seleccionadas del presupuesto PAC26-0052 (oferta recibida, no aceptada) y añadidos de la propiedad: alzado de la casa 36 cm (PAC-11), recrecido de muros hasta 6,00 m y zanja de agua y electricidad desde el pozo. Cada tarea corresponde a una partida.',
+      'Partidas seleccionadas del presupuesto PAC26-0052 (oferta recibida, no aceptada) y añadidos de la propiedad: alzado de la casa 36 cm (PAC-11), recrecido de muros hasta 6,00 m, zanja de agua y electricidad desde el pozo y depósito enterrado de agua potable. Cada tarea corresponde a una partida.',
       [],
       {
         tareas: [...PAC_TAREAS, ...ADDED_TAREAS].map(([codigo, texto], i) => t(FASE_PAC, i + 1, texto, codigo)),
@@ -264,7 +304,7 @@ export function seedGestion(): GestionData {
       capitulos: capitulos(),
       partidas: partidas(),
       ofertas: ofertas(),
-      documentos: [{ id: 'doc-pac26-0052', titulo: `Presupuesto ${PAC_REF}`, referencia: `${PAC_PROVEEDOR} · documento en papel con nota manuscrita`, fecha: PAC_FECHA, nota: 'Oferta recibida, no aceptada ni pagada.' }],
+      documentos: [{ id: 'doc-pac26-0052', titulo: `Presupuesto ${PAC_REF}`, referencia: `${PAC_PROVEEDOR} · documento en papel con nota manuscrita`, fecha: PAC_FECHA, nota: 'Oferta recibida, no aceptada ni pagada.' }, { ...DEP_DOCUMENTO }],
       reserva: { importe: null, nota: '', asignaciones: [] },
       avisos: [
         'La solera exterior en L no figura valorada en este presupuesto.',
