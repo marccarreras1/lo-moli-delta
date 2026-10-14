@@ -573,6 +573,10 @@ function GroundDetail({ layout, site, cx, cy }: { layout: Layout; site: Site; cx
       ...(layout.outdoor?.pavements ?? []).filter((p) => p.joints > 0).map((p) => p.rect),
       ...(layout.outdoor?.garden ? [layout.outdoor.garden.rect] : []),
       ...(layout.outdoor?.annexes ?? []).map((a) => a.rect),
+      ...(layout.outdoor?.tanks ?? []).map((tk) => {
+        const [w, d] = tk.axis === 'y' ? [tk.diameter, tk.length] : [tk.length, tk.diameter];
+        return [tk.c[0] - w / 2 - 0.3, tk.c[1] - d / 2 - 0.3, tk.c[0] + w / 2 + 0.3, tk.c[1] + d / 2 + 0.3] as [number, number, number, number];
+      }),
     ];
     const free = (x: number, y: number, m: number) => !rects.some((rc) => x > rc[0] - m && x < rc[2] + m && y > rc[1] - m && y < rc[3] + m)
       && !site.trees.some((t) => Math.hypot(t.c[0] - x, t.c[1] - y) < 1.2);
