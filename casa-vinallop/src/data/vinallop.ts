@@ -425,7 +425,7 @@ const views: CameraPreset[] = [
   view({ id: 'v04-solera', label: '4 · Solera completa en L', group: 'exterior', position: [-3.8, -10.5, 4.4], target: [11, -0.8, 0], fov: 46 }),
   view({ id: 'v05-algarrobo', label: '5 · Mesa y lámpara bajo el algarrobo', group: 'exterior', position: [14.6, -8.2, 1.6], target: [MESA_EXT[0] + 0.3, MESA_EXT[1] + 1.0, 1.5], fov: 56 }),
   view({ id: 'v06-desde-comedor', label: '6 · La casa desde el comedor exterior', group: 'exterior', position: [21.4, -5.4, 1.6], target: [10, -0.6, 2.2], fov: 56 }),
-  view({ id: 'v06b-deposito', label: '6b · Cuarto técnico y depósito de agua', group: 'exterior', position: [-15.8, 9.4, 4.6], target: [-4.4, 2.0, 0.6], fov: 50 }),
+  view({ id: 'v06b-deposito', label: '6b · Cuarto técnico y depósito de agua', group: 'exterior', position: [-12.8, 10.2, 6.2], target: [-4.4, 2.0, 0.4], fov: 52 }),
   view({ id: 'v00-interior-cenital', label: 'Interior · vista cenital 3D', group: 'interior', topDown: true, position: [8.2, 5.6, 19.5], target: [8.2, 2.5, 0], fov: 44 }),
   view({ id: 'v07-salon-ventanal', label: '7 · Salón: sofá de obra y ventanal', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: PB_EL, position: [12.3, 1.2, 1.6], target: [15.4, 3.9, 0.7], fov: 66 }),
   view({ id: 'v07b-fuego', label: '7b · Rincón de la cristalera (estufa, chimenea o comedor)', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: PB_EL, position: [12.7, 2.15, 1.6], target: [16.0, 1.15, 1.25], fov: 62 }),
