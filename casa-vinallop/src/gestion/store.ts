@@ -5,7 +5,7 @@
  * colaboración multiusuario). Se guarda con retardo tras cada cambio y al ocultar la página.
  */
 import { create } from 'zustand';
-import { ADDED_PARTIDAS, ADDED_TAREAS, DEP_CODIGO, DEP_DOCUMENTO, FASE_PAC, OFERTA_DEPOSITO, seedGestion } from './seed';
+import { ADDED_PARTIDAS, ADDED_TAREAS, DECISION_FOSA, DEP_CODIGO, DEP_DOCUMENTO, FASE_PAC, OFERTA_DEPOSITO, seedGestion, TAREAS_FOSA } from './seed';
 import type {
   Asignacion, Bloqueo, Comentario, Decision, Documento, Fase, GestionData, Oferta, Pago, Partida, Presupuesto, Reserva, Tarea,
 } from './types';
@@ -149,6 +149,24 @@ function migrate3(data: GestionData): GestionData {
   return { ...data, fases, presupuesto };
 }
 
+/** Fosa existente como posible aljibe de pluviales (14/10/2026): decisión y comprobaciones en la fase 2. */
+function migrate4(data: GestionData): GestionData {
+  let done: string[] = [];
+  try { done = JSON.parse(window.localStorage.getItem(MIGRATIONS_KEY) ?? '[]') as string[]; } catch { /* sin almacenamiento */ }
+  const id = '2026-10-14-fosa-pluviales';
+  if (done.includes(id)) return data;
+  const dec = DECISION_FOSA();
+  const decisiones = data.decisiones.some((d) => d.id === dec.id) ? data.decisiones : [...data.decisiones, dec];
+  const fases = data.fases.map((f) => {
+    if (f.id !== 'f02') return f;
+    const have = new Set(f.tareas.map((x) => x.id));
+    const extra = TAREAS_FOSA.filter(([tid]) => !have.has(`f02-${tid}`)).map(([tid, texto]) => ({ id: `f02-${tid}`, texto, hecha: false, partida: '' }));
+    return extra.length ? { ...f, tareas: [...f.tareas, ...extra] } : f;
+  });
+  try { window.localStorage.setItem(MIGRATIONS_KEY, JSON.stringify([...done, id])); } catch { /* sin almacenamiento */ }
+  return { ...data, decisiones, fases };
+}
+
 function load(): { data: GestionData; aviso: string | null } {
   if (typeof window === 'undefined') return { data: seedGestion(), aviso: null };
   let raw: string | null = null;
@@ -161,7 +179,7 @@ function load(): { data: GestionData; aviso: string | null } {
   try {
     const parsed = JSON.parse(raw) as unknown;
     const base = parseGestion(parsed, false);
-    const data = migrate3(migrate2(migrate(base)));
+    const data = migrate4(migrate3(migrate2(migrate(base))));
     // las migraciones se marcan como hechas: hay que guardar ya su resultado o se perderían al recargar sin editar
     if (data !== base) try { window.localStorage.setItem(GESTION_KEY, JSON.stringify(envelope(data))); } catch { /* sin almacenamiento */ }
     let aviso: string | null = null;

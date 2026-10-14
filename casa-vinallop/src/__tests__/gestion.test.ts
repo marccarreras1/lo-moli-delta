@@ -160,3 +160,13 @@ describe('depósito de agua potable (PN20260783)', () => {
     expect(ofertaResumen(o, pres.partidas)).toMatchObject({ base: 2282, impuestos: 479.22, total: 2761.22 });
   });
 });
+
+describe('fosa existente como aljibe de pluviales', () => {
+  it('decisión por comparar y comprobaciones en la fase 2, sin importes', () => {
+    expect(seed.decisiones.find((d) => d.id === 'd-fosa-pluviales')!.estado).toBe('por comparar');
+    const f02 = seed.fases.find((f) => f.id === 'f02')!;
+    expect(f02.tareas.length).toBe(3 + 4);
+    expect(f02.tareas.filter((t) => t.id.startsWith('f02-t-fosa')).length).toBe(4);
+    expect(pres.partidas.some((p) => /fosa existente/i.test(p.descripcion))).toBe(false);
+  });
+});

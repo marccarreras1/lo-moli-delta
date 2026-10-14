@@ -341,6 +341,8 @@ export interface Outdoor {
     door: { side: 'y0' | 'y1' | 'x0' | 'x1'; at: number; width: number; height: number };
     /** cubierta transitable: peto perimetral (no contra la casa) con un hueco opcional en la cara x0 (llegada de los escalones) */
     terrace?: { parapet: number; gap?: [number, number]; label: string; status: DataStatus };
+    /** tapas de registro en el suelo interior (p. ej. acceso a un aljibe o fosa) */
+    hatches?: { id: string; label: string; c: Vec2; size: number; status: DataStatus; note: string }[];
     status: DataStatus;
     note: string;
   }[];

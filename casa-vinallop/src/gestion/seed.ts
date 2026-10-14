@@ -12,6 +12,20 @@ import type { Capitulo, Decision, Fase, GestionData, Oferta, Partida } from './t
 const dec = (id: string, elemento: string, estancia: string, opcion: string, alternativas: string, estado: Decision['estado'], notas = ''): Decision =>
   ({ id, elemento, estancia, opcion, alternativas, estado, fecha: '', notas });
 
+/** Decisión sobre la fosa existente (también se incorpora a los datos ya guardados). */
+export const DECISION_FOSA = (): Decision => dec('d-fosa-pluviales', 'Fosa séptica existente (bajo el baño actual)', 'Cuarto técnico / exterior',
+  'Recuperarla como aljibe de agua de lluvia para riego y jardín, con el registro, la bomba y el filtro en el cuarto técnico',
+  'Anularla (vaciar, limpiar y rellenar con grava compactada) y recoger la lluvia en un depósito exterior o llevar las bajantes al jardín', 'por comparar',
+  'Propuesta de la propiedad (14/10/2026). Depende de la inspección: posición, medidas, capacidad, estado y estanqueidad, y de poder sacar el registro al cuarto técnico. El suelo de la casa sobre la fosa necesita losa calculada por el técnico. Si ahora recibe las aguas del baño, el baño nuevo necesita otra salida (fosa nueva PAC-09, 3.200 €, no seleccionada). Consultar el trámite para anular o cambiar el uso de la fosa. Agua solo para riego (no potable).');
+
+/** Comprobaciones previas de la fosa (fase 2). */
+export const TAREAS_FOSA: [string, string][] = [
+  ['t-fosa-1', 'Localizar la fosa existente bajo el baño actual y medirla (planta, profundidad y capacidad)'],
+  ['t-fosa-2', 'Vaciarla con gestor autorizado, limpiarla, desinfectarla y comprobar su estado y estanqueidad'],
+  ['t-fosa-3', 'Decidir: aljibe de pluviales con registro en el cuarto técnico, o anularla'],
+  ['t-fosa-4', 'Resolver la salida de aguas residuales del baño nuevo (fosa nueva u otra solución autorizada)'],
+];
+
 function decisiones(): Decision[] {
   return [
     dec('d-vigas', 'Techo · vigas', 'Interior', 'Vigas vistas color cemento, gris natural mate', '', 'elegido por propiedad'),
@@ -29,6 +43,7 @@ function decisiones(): Decision[] {
     dec('d-planta', 'Planta decorativa del comedor', 'Comedor', 'Eliminada a petición de la propiedad', '', 'elegido por propiedad'),
     dec('d-aberturas', 'Aberturas adicionales (variantes)', 'Varias', '',
       'Acceso acristalado al comedor exterior; ventana de ventilación cruzada; ventana y contraventana en dormitorio; ventana alta en baño + extracción; abertura alta en altillo', 'por comparar'),
+    DECISION_FOSA(),
   ];
 }
 
@@ -262,7 +277,7 @@ function fases(): Fase[] {
       ['Contrastar medidas', 'Contrastar distribución', 'Contrastar estructura', 'Contrastar cubierta', 'Contrastar altillo', 'Contrastar aberturas']),
     fase('f02', '2 · Tramitación y trabajos previos', 'Permisos aplicables, comprobación del fibrocemento y gestión especializada si corresponde.',
       ['Identificar y solicitar los permisos aplicables', 'Comprobar el fibrocemento', 'Gestión especializada del fibrocemento si corresponde'],
-      { dependencias: ['f01'] }),
+      { dependencias: ['f01'], tareas: [...['Identificar y solicitar los permisos aplicables', 'Comprobar el fibrocemento', 'Gestión especializada del fibrocemento si corresponde'].map((x, i) => t('f02', i + 1, x)), ...TAREAS_FOSA.map(([id, texto]) => ({ id: `f02-${id}`, texto, hecha: false, partida: '' }))] }),
     fase(FASE_PAC, 'Fase 1 · Estructura, aberturas, cubierta y forjado (presupuesto PAC26-0052)',
       'Partidas seleccionadas del presupuesto PAC26-0052 (oferta recibida, no aceptada) y añadidos de la propiedad: alzado de la casa 36 cm (PAC-11), recrecido de muros hasta 6,00 m, zanja de agua y electricidad desde el pozo y depósito enterrado de agua potable. Cada tarea corresponde a una partida.',
       [],

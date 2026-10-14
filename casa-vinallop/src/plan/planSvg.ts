@@ -122,6 +122,15 @@ function outdoorSvg(layout: Layout, od: NonNullable<Layout['outdoor']>, labels: 
       const sg = d.side === 'y1' ? 1 : -1;
       g.push(`<path d="M ${n4(d.at - d.width / 2)} ${n4(yo)} L ${n4(d.at - d.width / 2)} ${n4(yo + sg * d.width)} A ${n4(d.width)} ${n4(d.width)} 0 0 ${sg > 0 ? 0 : 1} ${n4(d.at + d.width / 2)} ${n4(yo)}" fill="none" stroke="#7d8277" stroke-width="0.012" stroke-dasharray="0.05 0.04"/>`);
     }
+    for (const h of an.hatches ?? []) {
+      const hs = h.size / 2;
+      g.push(`<rect x="${n4(h.c[0] - hs)}" y="${n4(h.c[1] - hs)}" width="${n4(h.size)}" height="${n4(h.size)}" fill="#e3edf1" stroke="#2f5d6b" stroke-width="0.02" data-hatch="${esc(h.id)}"/>`);
+      g.push(`<path d="M ${n4(h.c[0] - hs)} ${n4(h.c[1] - hs)} L ${n4(h.c[0] + hs)} ${n4(h.c[1] + hs)} M ${n4(h.c[0] + hs)} ${n4(h.c[1] - hs)} L ${n4(h.c[0] - hs)} ${n4(h.c[1] + hs)}" stroke="#2f5d6b" stroke-width="0.012"/>`);
+      if (labels) {
+        const ly = h.c[1] - hs - 0.2;
+        g.push(`<text x="${n4(h.c[0])}" y="${n4(ly)}" font-size="0.1" text-anchor="middle" fill="#2f5d6b"><tspan x="${n4(h.c[0])}">registro aljibe</tspan><tspan x="${n4(h.c[0])}" dy="0.12">pluviales (fosa)</tspan></text>`);
+      }
+    }
     const cxA = (ax0 + t + ax1) / 2;
     const cyA = (ay0 + ay1) / 2;
     if (labels) {

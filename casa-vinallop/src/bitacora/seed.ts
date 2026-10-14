@@ -33,4 +33,6 @@ export const CAMBIOS_SEED: CambioEntrada[] = [
     'La vista de plantas, láminas y alzados se bloqueaba al abrirla (la página entraba en un bucle de actualización) si no se había guardado ningún cambio de diseño. Corregido.'),
   e('c-2026-10-14-deposito', '2026-10-14', 'presupuesto', 'Depósito enterrado de agua potable (12.000 l)',
     'Presupuesto PN20260783 de Hidroserver: depósito horizontal para enterrar DE12000, 12.000 l, Ø 2,45 × 2,94 m, 2.282 € + IVA (2.761,22 €), portes incluidos. Añadido como partida DEP-01 de la fase 1, con su oferta, documento y tarea. Solo suministro: excavación, descarga con grúa, colocación, conexiones y bomba quedan por valorar. En el modelo, enterrado junto al cuarto técnico (ubicación propuesta, a confirmar).'),
+  e('c-2026-10-14-fosa', '2026-10-14', 'exterior', 'Fosa existente como aljibe de pluviales (propuesta)',
+    'Propuesta de recuperar la fosa séptica que hay bajo el baño actual para recoger agua de lluvia para riego y jardín, con el registro, la bomba y el filtro en el cuarto técnico (tapa dibujada junto al lateral de la casa). Añadida a Decisiones como «por comparar» frente a anularla, con cuatro comprobaciones en la fase 2: localizarla y medirla, vaciarla e inspeccionarla, decidir y resolver la salida de aguas del baño nuevo. Sin precio todavía.'),
 ];

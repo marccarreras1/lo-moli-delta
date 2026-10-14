@@ -343,6 +343,13 @@ function Annex({ a, mats }: { a: NonNullable<Outdoor['annexes']>[number]; mats: 
       {/* solera interior y losa de cubierta con goterón */}
       {B((x0 + x1) / 2, (y0 + y1) / 2, x1 - x0 - 0.02, y1 - y0 - 0.02, 0.02, 0, mats.concrete)}
       {pieces}
+      {/* tapas de registro en el suelo (aljibe) */}
+      {(a.hatches ?? []).map((h) => (
+        <group key={h.id}>
+          {B(h.c[0], h.c[1], h.size + 0.08, h.size + 0.08, 0.012, 0.02, mats.metal)}
+          {B(h.c[0], h.c[1], h.size, h.size, 0.016, 0.02, mats.blackMetal)}
+        </group>
+      ))}
       {B((x0 + x1) / 2 - 0.05, (y0 + y1) / 2, x1 - x0 + 0.1, y1 - y0 + 0.16, 0.2, wallH)}
       {a.terrace && (() => {
         // terraza transitable: pavimento de terracota y peto encalado de 0,15 m con albardilla (no contra la casa)
