@@ -148,7 +148,7 @@ export const OFERTA_DEPOSITO = (): Oferta => ({
   estado: 'recibida',
   documentos: [`Presupuesto ${DEP_REF} (${DEP_PROVEEDOR}, 13/10/2026) con hoja técnica del DE12000`],
   notas: 'Oferta recibida: no aceptada ni pagada. Plazo de suministro a convenir.',
-  totalesImpresos: { subtotal: 2282, descuento: null, base: 2282, impuestos: 479.22, total: 2761.22, nota: 'Totales impresos del presupuesto (coinciden con la partida).' },
+  totalesImpresos: null,
   condiciones: 'Forma de pago: transferencia del 50 % a la confirmación del pedido y el 50 % restante a la entrega del equipo. Plazo de suministro: a convenir. Descarga de la mercancía: a pie de transporte. Garantía de dos años por defectos de fabricación, que no cubre una colocación incorrecta del depósito. Documentación: declaración de conformidad CE, ficha técnica, certificado de responsabilidad civil y registro sanitario.',
   avisos: [
     'Solo suministro: excavación, descarga con grúa, colocación, relleno, conexiones y bomba no están incluidos.',

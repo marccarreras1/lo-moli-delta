@@ -160,7 +160,10 @@ function load(): { data: GestionData; aviso: string | null } {
   if (!raw) return { data: seedGestion(), aviso: null };
   try {
     const parsed = JSON.parse(raw) as unknown;
-    const data = migrate3(migrate2(migrate(parseGestion(parsed, false))));
+    const base = parseGestion(parsed, false);
+    const data = migrate3(migrate2(migrate(base)));
+    // las migraciones se marcan como hechas: hay que guardar ya su resultado o se perderían al recargar sin editar
+    if (data !== base) try { window.localStorage.setItem(GESTION_KEY, JSON.stringify(envelope(data))); } catch { /* sin almacenamiento */ }
     let aviso: string | null = null;
     try { parseGestion(parsed, true); } catch (e) {
       aviso = `Se han descartado datos guardados no válidos (${e instanceof GestionInvalida ? e.message : 'formato'}).`;
