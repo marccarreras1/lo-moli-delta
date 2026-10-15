@@ -52,8 +52,8 @@ export function DecisionsPage() {
         <p className="hint" aria-live="polite">{filtradas.length} de {decisiones.length} decisiones</p>
       </div>
 
-      <div className="tbl-wrap">
-        <table className="tbl">
+      <div className="tbl-wrap as-cards">
+        <table className="tbl cards">
           <thead>
             <tr><th>Elemento</th><th>Estancia</th><th>Opción elegida</th><th>Alternativas</th><th>Estado</th><th>Fecha</th><th>Notas</th><th><span className="sr-only">Acciones</span></th></tr>
           </thead>
@@ -61,12 +61,12 @@ export function DecisionsPage() {
             {filtradas.map((d) => (
               <tr key={d.id}>
                 <td className="gx-cell-main">{d.elemento || <Pendiente>sin nombre</Pendiente>}</td>
-                <td>{d.estancia || <span className="gx-muted">—</span>}</td>
-                <td>{d.opcion || <Pendiente>sin elegir</Pendiente>}</td>
-                <td>{d.alternativas || <span className="gx-muted">—</span>}</td>
-                <td><EstadoDecision estado={d.estado} /></td>
-                <td className="num">{fmtFecha(d.fecha) || <span className="gx-muted">—</span>}</td>
-                <td><span className="gx-clamp">{d.notas}</span></td>
+                <td data-label="Estancia">{d.estancia || <span className="gx-muted">—</span>}</td>
+                <td className="wide" data-label="Opción elegida">{d.opcion || <Pendiente>sin elegir</Pendiente>}</td>
+                <td className="wide" data-label="Alternativas">{d.alternativas || <span className="gx-muted">—</span>}</td>
+                <td data-label="Estado"><EstadoDecision estado={d.estado} /></td>
+                <td data-label="Fecha">{fmtFecha(d.fecha) || <span className="gx-muted">—</span>}</td>
+                <td className={d.notas ? 'wide' : ''} data-label={d.notas ? 'Notas' : undefined}>{d.notas ? <span className="gx-clamp">{d.notas}</span> : null}</td>
                 <td className="actions">
                   <button type="button" className="btn ghost" onClick={() => setEditId(d.id)} aria-label={`Editar «${d.elemento}»`}><Icon name="edit" size={16} /> Editar</button>
                   <DeleteButton onConfirm={() => removeDecision(d.id)} />

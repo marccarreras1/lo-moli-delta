@@ -84,8 +84,8 @@ export function SituacionPage() {
         <label className="sit-check"><input type="checkbox" checked={soloAlertas} onChange={(e) => setSoloAlertas(e.target.checked)} /> Solo con alertas</label>
       </div>
 
-      <div className="tbl-wrap">
-        <table className="tbl sit-tbl" style={{ minWidth: 1180 }}>
+      <div className="tbl-wrap as-cards">
+        <table className="tbl sit-tbl cards" style={{ minWidth: 1180 }}>
           <thead>
             <tr>
               <th>Partida</th><th className="num">Referencia</th><th className="num">Comprometido</th><th className="num">Coste real</th>
@@ -96,9 +96,9 @@ export function SituacionPage() {
             {grupos.map((g) => (
               <Fragment key={g.fase || 'sin'}>
                 <tr className="sub">
-                  <td>{g.nombre}</td><td className="num">{fmtEur(g.totales.referencia)}</td><td className="num">{g.totales.nComprometido ? fmtEur(g.totales.comprometido) : '—'}</td><td />
-                  <td className="num">{g.totales.nDesviacion ? fmtEur(g.totales.desviacion) : '—'}</td><td>{fmtPct(g.totales.avance)}</td><td className="num">{fmtEur(g.totales.ejecutado)}</td>
-                  <td className="num">{fmtEur(g.totales.pagado)}</td><td className="num">{g.totales.nComprometido ? fmtEur(g.totales.pendiente) : '—'}</td><td />
+                  <td>{g.nombre}</td><td className="num" data-label="Referencia">{fmtEur(g.totales.referencia)}</td><td className="num" data-label="Comprometido">{g.totales.nComprometido ? fmtEur(g.totales.comprometido) : '—'}</td><td />
+                  <td className="num" data-label="Desviación">{g.totales.nDesviacion ? fmtEur(g.totales.desviacion) : '—'}</td><td data-label="Avance">{fmtPct(g.totales.avance)}</td><td className="num" data-label="Ejecutado">{fmtEur(g.totales.ejecutado)}</td>
+                  <td className="num" data-label="Pagado">{fmtEur(g.totales.pagado)}</td><td className="num" data-label="Pendiente">{g.totales.nComprometido ? fmtEur(g.totales.pendiente) : '—'}</td><td />
                 </tr>
                 {g.filas.map((f) => <Fila key={f.p.id} f={f} onEdit={() => setEdit(f.p.id)} />)}
               </Fragment>
@@ -124,16 +124,16 @@ function Fila({ f, onEdit }: { f: SituacionPartida; onEdit: () => void }) {
         <small className="gx-muted" style={{ display: 'block' }}>{p.condicion}{p.proveedor ? ` · ${p.proveedor}` : ''}</small>
         {f.alertas.length > 0 && <span className="sit-alerts">{f.alertas.map((a) => <Badge key={a} tone={a.startsWith('sobrecoste') || a.startsWith('pagado por encima') ? 'danger' : 'warn'}>{a}</Badge>)}</span>}
       </td>
-      <td className="num">{f.referencia == null ? <Pendiente>sin valorar</Pendiente> : fmtEur(f.referencia)}{f.refOrigen === 'base' && <small>base fijada</small>}</td>
-      <td className="num">{f.comprometido == null ? '—' : fmtEur(f.comprometido)}{p.extras ? <small>incl. extras {fmtEur(p.extras)}</small> : null}</td>
-      <td className="num">{p.real == null ? '—' : fmtEur(p.real)}</td>
-      <td className={`num${f.desviacion != null && f.desviacion > 0.005 ? ' sit-up' : f.desviacion != null && f.desviacion < -0.005 ? ' sit-down' : ''}`}>
+      <td className="num" data-label="Referencia">{f.referencia == null ? <Pendiente>sin valorar</Pendiente> : fmtEur(f.referencia)}{f.refOrigen === 'base' && <small>base fijada</small>}</td>
+      <td className="num" data-label="Comprometido">{f.comprometido == null ? '—' : fmtEur(f.comprometido)}{p.extras ? <small>incl. extras {fmtEur(p.extras)}</small> : null}</td>
+      <td className="num" data-label="Coste real">{p.real == null ? '—' : fmtEur(p.real)}</td>
+      <td data-label="Desviación" className={`num${f.desviacion != null && f.desviacion > 0.005 ? ' sit-up' : f.desviacion != null && f.desviacion < -0.005 ? ' sit-down' : ''}`}>
         {f.desviacion == null ? '—' : <>{fmtEur(f.desviacion)}<small>{pct(f.desviacionPct)}</small></>}
       </td>
-      <td><ProgressBar ratio={f.avance} label={`Avance de ${p.codigo}`} /> <span className="tnum">{fmtPct(f.avance)}</span>{f.avanceOrigen === 'tareas' && <small style={{ display: 'block' }} className="gx-muted">según tareas</small>}</td>
-      <td className="num">{f.ejecutado == null ? '—' : fmtEur(f.ejecutado)}</td>
-      <td className="num">{f.pagado ? fmtEur(f.pagado) : '—'}{p.pagos.length > 0 && <small>{p.pagos.length} {p.pagos.length === 1 ? 'pago' : 'pagos'}</small>}</td>
-      <td className="num">{f.pendiente == null ? (f.comprometido != null ? <Pendiente>sin tasa</Pendiente> : '—') : fmtEur(f.pendiente)}</td>
+      <td data-label="Avance"><ProgressBar ratio={f.avance} label={`Avance de ${p.codigo}`} /> <span className="tnum">{fmtPct(f.avance)}</span>{f.avanceOrigen === 'tareas' && <small style={{ display: 'block' }} className="gx-muted">según tareas</small>}</td>
+      <td className="num" data-label="Ejecutado">{f.ejecutado == null ? '—' : fmtEur(f.ejecutado)}</td>
+      <td className="num" data-label="Pagado">{f.pagado ? fmtEur(f.pagado) : '—'}{p.pagos.length > 0 && <small>{p.pagos.length} {p.pagos.length === 1 ? 'pago' : 'pagos'}</small>}</td>
+      <td className="num" data-label="Pendiente">{f.pendiente == null ? (f.comprometido != null ? <Pendiente>sin tasa</Pendiente> : '—') : fmtEur(f.pendiente)}</td>
       <td className="actions"><button type="button" className="btn ghost" onClick={onEdit} aria-label={`Seguimiento de ${p.codigo}`}><Icon name="edit" size={16} /> Seguimiento</button></td>
     </tr>
   );
@@ -162,12 +162,12 @@ function PagosCard({ pagos, onEdit }: { pagos: ReturnType<typeof pagosObra>; onE
         </button>
       </div>
       {pagos.length ? (
-        <div className="tbl-wrap">
-          <table className="tbl" style={{ minWidth: 640 }}>
+        <div className="tbl-wrap as-cards">
+          <table className="tbl cards" style={{ minWidth: 640 }}>
             <thead><tr><th>Fecha</th><th>Partida</th><th>Concepto</th><th className="num">Importe</th><th><span className="sr-only">Acciones</span></th></tr></thead>
             <tbody>
               {pagos.map((x) => (
-                <tr key={x.id}><td>{fmtFecha(x.fecha) || '—'}</td><td>{x.partida.codigo} · {x.partida.descripcion}</td><td>{x.nota}</td><td className="num">{fmtEur(x.importe)}</td>
+                <tr key={x.id}><td data-label="Fecha" className="half">{fmtFecha(x.fecha) || '—'}</td><td data-label="Partida" className="wide">{x.partida.codigo} · {x.partida.descripcion}</td><td data-label="Concepto">{x.nota}</td><td className="num" data-label="Importe">{fmtEur(x.importe)}</td>
                   <td className="actions"><button type="button" className="btn ghost" onClick={() => onEdit(x.partida.id)}>Partida</button></td></tr>
               ))}
             </tbody>

@@ -194,15 +194,15 @@ function PartidasTab({ onEdit }: { onEdit: (id: string) => void }) {
     return (
       <tr key={p.id}>
         <td>{p.codigo || <span className="gx-muted">—</span>}</td>
-        <td><span className="gx-cell-main">{p.descripcion || <Pendiente>sin descripción</Pendiente>}</span>{p.notas && <small className="gx-clamp">{p.notas}</small>}</td>
-        <td className="num">{p.cantidad == null ? <Pendiente /> : `${fmtNum(p.cantidad)} ${p.unidad}`}{p.vinculo && <small>vinculada al modelo</small>}</td>
-        <td className="num">{p.precio == null ? <Pendiente /> : fmtEur(p.precio)}</td>
-        <td className="num">{prev == null ? <Pendiente>sin valorar</Pendiente> : fmtEur(prev)}</td>
-        <td>{p.noSeleccionada && <Badge tone="warn">no seleccionada · pendiente de asignar</Badge>} <Badge tone={p.condicion === 'contratado' ? 'ok' : p.condicion === 'oferta recibida' ? 'info' : 'neutral'}>{p.condicion}</Badge>{p.proveedor && <small>{p.proveedor}</small>}</td>
-        <td className="num">{ob == null ? '—' : fmtEur(ob)}</td>
-        <td className="num">{p.real == null ? '—' : fmtEur(p.real)}</td>
-        <td className="num">{p.pagos.length ? fmtEur(pagado(p)) : '—'}</td>
-        <td className="num">{p.impuesto == null ? <Pendiente /> : `${fmtNum(p.impuesto)} %`}</td>
+        <td className="wide"><span className="gx-cell-main">{p.descripcion || <Pendiente>sin descripción</Pendiente>}</span>{p.notas && <small className="gx-clamp">{p.notas}</small>}</td>
+        <td className="num" data-label="Cantidad">{p.cantidad == null ? <Pendiente /> : `${fmtNum(p.cantidad)} ${p.unidad}`}{p.vinculo && <small>vinculada al modelo</small>}</td>
+        <td className="num" data-label="Precio unit.">{p.precio == null ? <Pendiente /> : fmtEur(p.precio)}</td>
+        <td className="num" data-label="Previsto">{prev == null ? <Pendiente>sin valorar</Pendiente> : fmtEur(prev)}</td>
+        <td className="wide">{p.noSeleccionada && <Badge tone="warn">no seleccionada · pendiente de asignar</Badge>} <Badge tone={p.condicion === 'contratado' ? 'ok' : p.condicion === 'oferta recibida' ? 'info' : 'neutral'}>{p.condicion}</Badge>{p.proveedor && <small>{p.proveedor}</small>}</td>
+        <td className="num" data-label="Contratado + extras">{ob == null ? '—' : fmtEur(ob)}</td>
+        <td className="num" data-label="Real">{p.real == null ? '—' : fmtEur(p.real)}</td>
+        <td className="num" data-label="Pagado">{p.pagos.length ? fmtEur(pagado(p)) : '—'}</td>
+        <td className="num" data-label="Impuesto">{p.impuesto == null ? <Pendiente /> : `${fmtNum(p.impuesto)} %`}</td>
         <td className="actions"><button type="button" className="btn ghost" onClick={() => onEdit(p.id)} aria-label={`Editar partida ${p.codigo}`}><Icon name="edit" size={16} /> Editar</button></td>
       </tr>
     );
@@ -216,8 +216,8 @@ function PartidasTab({ onEdit }: { onEdit: (id: string) => void }) {
         <button type="button" className="btn primary" onClick={() => onEdit(addPartida({ capitulo: cap !== TODOS && !pres.capitulos.find((c) => c.id === cap)?.reserva ? cap : '', fase: fase !== TODOS ? fase : '' }))}><Icon name="plus" size={16} /> Añadir partida</button>
         <button type="button" className="btn" onClick={() => setCaps(true)}>Capítulos</button>
       </div>
-      <div className="tbl-wrap">
-        <table className="tbl" style={{ minWidth: 1080 }}>
+      <div className="tbl-wrap as-cards">
+        <table className="tbl cards" style={{ minWidth: 1080 }}>
           <thead>
             <tr><th>Código</th><th>Descripción</th><th className="num">Cantidad</th><th className="num">Precio unit.</th><th className="num">Previsto</th><th>Condición</th>
               <th className="num">Contratado + extras</th><th className="num">Real</th><th className="num">Pagado</th><th className="num">Impuesto</th><th><span className="sr-only">Acciones</span></th></tr>
@@ -492,12 +492,12 @@ function PagosTab({ onEdit }: { onEdit: (partidaId: string) => void }) {
         <h2>Registro de pagos</h2>
         <p className="hint">Los pagos se registran desde cada partida (botón «Editar» → Pagos). Importes pagados, impuestos incluidos. Total registrado: {fmtEur(total)}.</p>
         {pagos.length ? (
-          <div className="tbl-wrap">
-            <table className="tbl">
+          <div className="tbl-wrap as-cards">
+            <table className="tbl cards">
               <thead><tr><th>Fecha</th><th>Partida</th><th className="num">Importe</th><th>Nota</th><th><span className="sr-only">Acciones</span></th></tr></thead>
               <tbody>
                 {pagos.map((x) => (
-                  <tr key={x.id}><td>{fmtFecha(x.fecha) || '—'}</td><td>{x.partida.codigo} · {x.partida.descripcion}</td><td className="num">{fmtEur(x.importe)}</td><td>{x.nota}</td>
+                  <tr key={x.id}><td data-label="Fecha" className="half">{fmtFecha(x.fecha) || '—'}</td><td data-label="Partida" className="wide">{x.partida.codigo} · {x.partida.descripcion}</td><td className="num" data-label="Importe">{fmtEur(x.importe)}</td><td data-label="Nota">{x.nota}</td>
                     <td className="actions"><button type="button" className="btn ghost" onClick={() => onEdit(x.partida.id)}>Abrir partida</button></td></tr>
                 ))}
               </tbody>

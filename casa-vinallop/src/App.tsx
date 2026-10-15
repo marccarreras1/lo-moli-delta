@@ -176,7 +176,7 @@ export default function App() {
   const views = project.views ?? [];
 
   return (
-    <div className={`app tab-${tab}${mobile ? ' is-mobile' : ''}${tablet ? ' is-tablet' : ''}${presenting ? ' presenting' : ''}`}>
+    <div className={`app tab-${tab} sec-${visual.section}${mobile ? ' is-mobile' : ''}${tablet ? ' is-tablet' : ''}${presenting ? ' presenting' : ''}`}>
       <header className="topbar">
         <div className="brand">
           <img className="brand-logo" src={logoSrc ?? logoLoMoli} alt="Lo Molí · Delta" />
@@ -264,11 +264,7 @@ export default function App() {
       </header>
 
       {!presenting && (
-        <nav className="sectionbar" aria-label="Secciones">
-          {SECTIONS.map((x) => (
-            <button key={x.id} type="button" aria-current={visual.section === x.id ? 'page' : undefined} className={visual.section === x.id ? 'on' : ''} onClick={() => setVisual('section', x.id)} data-nav={x.id}>{x.label}</button>
-          ))}
-        </nav>
+        <SectionBar current={visual.section} onGo={(id) => setVisual('section', id)} />
       )}
       {visual.section !== 'visor' && !presenting && (
         <div className="workspace section-workspace">
@@ -411,7 +407,7 @@ export default function App() {
         </main>
       </div>
 
-      {mobile && !presenting && <BottomSheet onHeight={setSheetH} onSide={setSideW}>{panel}</BottomSheet>}
+      {mobile && !presenting && visual.section === 'visor' && <BottomSheet onHeight={setSheetH} onSide={setSideW}>{panel}</BottomSheet>}
       {presenting && <Presentation views={views} current={lastPreset} onExit={() => setVisual('presentation', false)} />}
       {dialog === 'info' && <InfoDialog onClose={() => setDialog(null)} />}
       {(dialog === 'refs' || dialog === 'refs-add') && <ReferencesDialog autoPick={dialog === 'refs-add'} onClose={() => setDialog(null)} />}
@@ -508,6 +504,38 @@ function Presentation({ views, current, onExit }: { views: { id: string; label: 
       <span className="presentation-label">{views[i]?.label ?? 'Presentación'}</span>
       {views.length > 0 && <button type="button" className="tool" onClick={() => go(i + 1)} aria-label="Vista siguiente"><Icon name="forward" /></button>}
       <button type="button" className="btn" onClick={onExit} data-action="presentation-off">Salir</button>
+    </div>
+  );
+}
+
+/** Menú de secciones: en móvil se desplaza de lado; la sección activa siempre queda a la vista y un degradado indica que hay más. */
+function SectionBar({ current, onGo }: { current: (typeof SECTIONS)[number]['id']; onGo: (id: (typeof SECTIONS)[number]['id']) => void }) {
+  const ref = useRef<HTMLElement>(null);
+  const [edges, setEdges] = useState({ l: false, r: false });
+  const measure = () => {
+    const el = ref.current;
+    if (el) setEdges({ l: el.scrollLeft > 4, r: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 });
+  };
+  useEffect(() => {
+    const el = ref.current;
+    const on = el?.querySelector<HTMLElement>('button.on');
+    if (el && on) {
+      const target = on.offsetLeft - (el.clientWidth - on.offsetWidth) / 2;
+      el.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+    }
+    measure();
+  }, [current]);
+  useEffect(() => {
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
+  return (
+    <div className={`sectionbar-wrap${edges.l ? ' fade-l' : ''}${edges.r ? ' fade-r' : ''}`}>
+      <nav ref={ref} className="sectionbar" aria-label="Secciones" onScroll={measure}>
+        {SECTIONS.map((x) => (
+          <button key={x.id} type="button" aria-current={current === x.id ? 'page' : undefined} className={current === x.id ? 'on' : ''} onClick={() => onGo(x.id)} data-nav={x.id}>{x.label}</button>
+        ))}
+      </nav>
     </div>
   );
 }

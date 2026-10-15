@@ -154,3 +154,5 @@
 .sit-tbl .gx-progress { width: 64px; }
 @media (max-width: 767px) { .sit-bars { grid-template-columns: 1fr auto; } .sit-bars > span { grid-column: 1 / -1; } }
 .modal-body > .tbl-wrap, .modal-body > .gx-breakdown { flex-shrink: 0; }
+
+@media (max-width: 767px) { .gx-badge { white-space: normal; } }
