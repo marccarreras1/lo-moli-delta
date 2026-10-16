@@ -302,8 +302,9 @@ const traces: Trace[] = [
 ];
 
 // ---------- exterior: solera en L y comedor bajo el algarrobo (decisiones confirmadas; medidas propuestas) ----------
-/** algarrobo: posición aproximada sobre la vista cenital (src/data/parcela.ts) */
-const ALGARROBO: Vec2 = [17.7, 2.3];
+/** algarrobo: medido por la propiedad (16/10/2026), tronco a 2,64 m del lateral derecho y a 3,50 m del frontal B; +0,50 m de radio del tronco */
+const ALGARROBO_TRONCO_R = 0.5;
+const ALGARROBO: Vec2 = [r2(L + 2.64 + ALGARROBO_TRONCO_R), r2(W - 3.5 - ALGARROBO_TRONCO_R)];
 /**
  * solera en L (propiedad): tramo a lo largo de todo el frontal A, el de la cristalera, de punta a punta,
  * y tramo de 4 m en el lateral del algarrobo; sin solera en el frontal B (puerta de entrada).
@@ -318,13 +319,13 @@ const SOL_INV: [number, number, number, number] = [r2(X_PUERTA - 0.2), W, r2(L +
 /** Soleras elevadas 0,18 m sobre el terreno (escalón en el borde) y otro escalón de 0,18 m hasta el suelo interior (+0,36). */
 const SOL_TOP = 0.18;
 /** la mesa va justo bajo el algarrobo (propiedad), entre el tronco y el tramo del frontal A: el alcorque y las sillas no se tocan */
-const MESA_EXT: Vec2 = [r2(L + 2.0), r2(ALGARROBO[1] - 3.6)];
+const MESA_EXT: Vec2 = [r2(L + 2.0), r2(Math.max(ALGARROBO[1] - 3.6, -SOL_TRASERA + 1.5))];
 const outdoor: Outdoor = {
   pavements: [
     { id: 'grava-comedor', label: 'Transición de grava', rect: [-3.0, r2(-SOL_TRASERA - 0.5), r2(L + SOL_LATERAL + 0.5), r2(W + 0.5)], joints: 0, status: 'propuesto', note: 'Borde de grava de 0,50 m entre la solera y la tierra; también a lo largo del frontal B y la entrada, que quedan sin solera.' },
     {
       id: 'solera-l-lateral', label: 'Solera en L · tramo lateral', rect: [L, r2(-SOL_TRASERA), r2(L + SOL_LATERAL), W], joints: 2, top: SOL_TOP, permeable: { c: ALGARROBO, r: 1.5 }, status: 'confirmado',
-      note: 'Tramo de 4 m junto al lateral derecho, bajo el algarrobo, continuo con el del frontal A y al mismo nivel; termina al ras del frontal B (la propiedad pidió quitar el trozo que sobresalía). La mesa va bajo la copa, entre el tronco y el tramo del frontal A. Se recorta alrededor del tronco para dejar zona permeable sobre las raíces; la posición del árbol es aproximada.',
+      note: 'Tramo de 4 m junto al lateral derecho, bajo el algarrobo, continuo con el del frontal A y al mismo nivel; termina al ras del frontal B (la propiedad pidió quitar el trozo que sobresalía). La mesa va bajo la copa, entre el tronco y el tramo del frontal A. Se recorta alrededor del tronco para dejar zona permeable sobre las raíces; posición del tronco medida por la propiedad (2,64 m del lateral y 3,50 m del frontal B).',
     },
     {
       id: 'solera-sol-invierno', label: 'Solera del sol de invierno (entrada)', rect: SOL_INV, joints: 2.2, top: SOL_TOP, status: 'propuesto',

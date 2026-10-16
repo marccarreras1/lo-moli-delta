@@ -278,7 +278,8 @@ export interface Site {
   ground: string;
   /** olivar en retícula aproximada; se deja libre la zona `clear` alrededor de la casa */
   olives: { spacing: number; extent: number; clear: [number, number, number, number]; seed: number };
-  trees: { id: string; label: string; c: Vec2; r: number; h: number; note: string }[];
+  /** medido: posición tomada en el terreno por la propiedad (si no, aproximada sobre fotos) */
+  trees: { id: string; label: string; c: Vec2; r: number; h: number; note: string; medido?: boolean }[];
   pavements: { id: string; label: string; rect: [number, number, number, number]; note: string }[];
 }
 

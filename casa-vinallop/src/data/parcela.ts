@@ -22,7 +22,9 @@ export const PARCELA: Site = {
   ground: '#c49c80',
   olives: { spacing: 9, extent: 70, clear: [-1.8, -1.8, 18.1, 7.0], seed: 11 },
   trees: [
-    { id: 'algarrobo', label: 'Algarrobo', c: [17.7, 2.3], r: 5.4, h: 8.0, note: 'Algarrobo grande y viejo (fotos de dron y de suelo): tronco muy grueso (≈1 m en la base) y retorcido, con raíces vistas; se abre en ramas gruesas a 2–2,5 m; copa ancha y baja que cubre la habitación pequeña. Tronco a ≈1,4 m del lateral derecho, hacia la mitad (a ojo).' },
+    // medido por la propiedad (16/10/2026): el tronco a 2,64 m del lateral derecho (x = 16,33) y a 3,50 m del frontal B
+    // (y = 5,22), medidas hasta la cara del tronco; el centro se sitúa sumando su radio (≈0,50 m)
+    { id: 'algarrobo', label: 'Algarrobo', c: [19.47, 1.22], r: 5.4, h: 8.0, medido: true, note: 'Algarrobo grande y viejo (fotos de dron y de suelo): tronco muy grueso (≈1 m en la base) y retorcido, con raíces vistas; se abre en ramas gruesas a 2–2,5 m; copa ancha y baja. Posición medida por la propiedad: tronco a 2,64 m del lateral derecho de la casa y a 3,50 m de la fachada de la entrada (frontal B), medidas hasta el tronco; centro supuesto a 0,50 m más (radio del tronco).' },
   ],
   pavements: [
     { id: 'solera', label: 'Solera de hormigón', rect: [-0.3, 5.22, 17.2, 7.8], note: 'Franja de hormigón de ≈2,5 m a lo largo del frontal B (vista cenital).' },
