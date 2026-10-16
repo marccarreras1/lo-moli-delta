@@ -119,6 +119,11 @@ function FurnitureSelection({ id }: { id: string }) {
       </dl>
       {f.note && <p className="hint">{f.note}</p>}
       {own.map((i, k) => <p key={k} className={`issue-inline issue-${i.level}`}><Icon name="alert" size={14} /> {i.message}</p>)}
+      {f.onlyIf?.mesaComedor && (f.type === 'mesa' || f.type === 'mesa-redonda' || f.type === 'silla') && (
+        <button type="button" className="btn" data-action="quitar-mesa-comedor" onClick={() => { useStore.getState().setOption('mesaComedor', 'ninguna'); select(null); }}>
+          <Icon name="trash" size={16} /> Quitar la mesa de comedor
+        </button>
+      )}
       <div className="design-box">
         <span className="eyebrow">Diseño · {isBase ? 'base' : variant.name}</span>
         {isBase ? (
@@ -204,10 +209,13 @@ function ProposalsSection() {
         <Segmented label="Salón" id="opt-salon" value={o.salon} onChange={(x) => setOption('salon', x)}
           options={[{ value: 'sofa-l', label: 'Sofá de obra en L' }, { value: 'enfrentados', label: 'Sofás enfrentados' }]} />
       )}
-      {project.furniture.some((f) => f.onlyIf?.mesaComedor) && o.salon !== 'enfrentados' && (
+      {project.furniture.some((f) => f.onlyIf?.mesaComedor) && (o.salon !== 'enfrentados' ? (
         <Segmented label="Mesa de comedor" id="opt-mesa-comedor" value={o.mesaComedor} onChange={(x) => setOption('mesaComedor', x)}
-          options={[{ value: 'rectangular', label: 'Rectangular 120 × 80' }, { value: 'redonda', label: 'Redonda Ø 0,90' }]} />
-      )}
+          options={[{ value: 'rectangular', label: 'Rectangular 120 × 80' }, { value: 'redonda', label: 'Redonda Ø 0,90' }, { value: 'ninguna', label: 'Sin mesa' }]} />
+      ) : (
+        <Segmented label="Mesa de comedor" id="opt-mesa-comedor" value={o.mesaComedor === 'ninguna' ? 'ninguna' : 'rectangular'} onChange={(x) => setOption('mesaComedor', x)}
+          options={[{ value: 'rectangular', label: 'En el rincón' }, { value: 'ninguna', label: 'Sin mesa' }]} />
+      ))}
       {project.furniture.some((f) => f.onlyIf?.chimenea) && o.salon !== 'enfrentados' && (
         <>
           <Segmented label="Fuego del salón" id="opt-chimenea" value={o.chimenea} onChange={(x) => setOption('chimenea', x)}

@@ -226,7 +226,7 @@ function cleanOptions(x: unknown): DesignOptions {
     aberturas: Array.isArray(o.aberturas) ? [...new Set(o.aberturas.filter((k): k is string => typeof k === 'string').map((k) => k.slice(0, 40)))].slice(0, 20) : [],
     lamparaExterior: pick(o.lamparaExterior, ['arbol', 'soporte'] as const, d.lamparaExterior),
     chimenea: pick(o.chimenea, ['estufa', 'obra'] as const, d.chimenea),
-    mesaComedor: pick(o.mesaComedor, ['rectangular', 'redonda'] as const, d.mesaComedor),
+    mesaComedor: pick(o.mesaComedor, ['rectangular', 'redonda', 'ninguna'] as const, d.mesaComedor),
     salon: pick(o.salon, ['sofa-l', 'enfrentados'] as const, d.salon),
   };
 }
@@ -425,7 +425,7 @@ export const useStore = create<Store>((set, get) => {
     setOpenFraction: (id, f) => set((s) => ({ openFractions: { ...s.openFractions, [id]: Math.max(0, Math.min(1, f)) } })),
     select: (selection) => set({ selection }),
     requestCamera: (id, instant) => {
-      const special = id === 'encajar' || id === 'memoria' || id.startsWith('paso:') || id.startsWith('room:');
+      const special = id === 'encajar' || id === 'memoria' || id.startsWith('paso:') || id.startsWith('room:') || id.startsWith('zoom:');
       set((s) => ({
         cameraRequest: { id, nonce: nonce++, instant },
         lastPreset: special ? s.lastPreset : { ...s.lastPreset, [s.tab]: id === 'inicio' ? undefined : id },

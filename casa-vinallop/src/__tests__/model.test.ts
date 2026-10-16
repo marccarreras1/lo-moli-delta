@@ -462,6 +462,15 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
     const minY = (l: typeof l2, pre: string) => Math.min(...l.furniture.filter((f) => f.id.startsWith(pre)).flatMap((f) => furnitureFootprint(f).map((p) => p[1])));
     expect(minY(l2, 'silla-redonda')).toBeGreaterThan(minY(layout, 'silla-comedor') + 0.1);
   });
+  it('sin mesa de comedor: se quitan la mesa y sus sillas con las dos distribuciones del salón', () => {
+    for (const salon of ['sofa-l', 'enfrentados'] as const) {
+      const l2 = resolveLayout(VINALLOP, { ...baseVariant(), options: { ...baseVariant().options, salon, mesaComedor: 'ninguna' } });
+      expect(l2.furniture.filter((f) => /^mesa-comedor|^silla-(comedor|redonda|rincon)/.test(f.id))).toEqual([]);
+      expect(l2.furniture.some((f) => f.type === 'sofa' || f.id === 'sofa-lateral')).toBe(true);
+    }
+    const conMesa = resolveLayout(VINALLOP, { ...baseVariant(), options: { ...baseVariant().options, salon: 'enfrentados', mesaComedor: 'redonda' } });
+    expect(conMesa.furniture.some((f) => f.id === 'mesa-comedor-rincon')).toBe(true);
+  });
   it('variante de salón con sofás enfrentados y comedor en el rincón de la cristalera, sin conflictos', () => {
     const l2 = resolveLayout(VINALLOP, { ...baseVariant(), options: { ...baseVariant().options, salon: 'enfrentados' } });
     for (const id of ['sofa-b', 'sofa-lateral', 'estufa', 'mesa-comedor', 'mesa-salon']) expect(l2.furniture.some((f) => f.id === id), id).toBe(false);

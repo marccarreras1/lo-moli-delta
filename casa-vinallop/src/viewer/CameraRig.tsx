@@ -28,6 +28,9 @@ interface Props {
 const reduceMotion = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 const toScene = ([x, y, h]: [number, number, number]) => new THREE.Vector3(x, h, y);
 const EXT_FOV = 35;
+/** campo visual mínimo y máximo del zoom en interiores */
+const FOV_MIN = 18;
+const FOV_MAX = 90;
 
 const defaultFor = defaultPreset;
 
@@ -39,6 +42,8 @@ export function CameraRig({ presets, request, tab, eyeHeight, interiorFov, layou
   const roomRef = useRef<string | null>(null);
   const moving = useRef(false);
   const limits = useRef({ min: 3, max: 60 });
+  const interiorRef = useRef(false);
+  const gl = useThree((s) => s.gl);
   const { minX, minY, maxX, maxY } = layout.bounds;
   const R = Math.max(maxX - minX, maxY - minY, 4);
 
@@ -74,6 +79,19 @@ export function CameraRig({ presets, request, tab, eyeHeight, interiorFov, layou
     anim.current = { fromP: camera.position.clone(), toP: pos, fromT: c.target.clone(), toT, fromF: camera.fov, toF: fov, t: 0, dur: instant || reduceMotion ? 0 : 0.5, lookAhead };
   };
 
+  /** Acercar (factor > 1) o alejar: fuera, la cámara se acerca al centro de giro; dentro, se cierra el campo visual. */
+  const zoomBy = (factor: number) => {
+    const c = controls.current;
+    if (!c || !(factor > 0)) return;
+    if (interiorRef.current) {
+      go(camera.position.clone(), c.target.clone(), THREE.MathUtils.clamp(camera.fov / factor, FOV_MIN, FOV_MAX), false, false);
+      return;
+    }
+    const dir = camera.position.clone().sub(c.target);
+    const d = THREE.MathUtils.clamp(dir.length() / factor, limits.current.min, limits.current.max);
+    go(c.target.clone().add(dir.setLength(d)), c.target.clone(), camera.fov, false, false);
+  };
+
   // en interiores, la vista cenital 3D usa la órbita de exterior (desplazar y acercar) en lugar de la de a pie
   const [overview, setOverview] = useState(false);
   useEffect(() => { if (tab !== 'interior') setOverview(false); }, [tab]);
@@ -89,6 +107,10 @@ export function CameraRig({ presets, request, tab, eyeHeight, interiorFov, layou
       return;
     }
     if (tab === 'interior' && (id.startsWith('walk:') || id.startsWith('paso:'))) setOverview(false);
+    if (id.startsWith('zoom:')) {
+      zoomBy(Number(id.slice(5)));
+      return;
+    }
     if (id.startsWith('paso:')) {
       // desplazamiento controlado en interiores: solo si se queda dentro de la estancia
       const dir = c.target.clone().sub(camera.position).setY(0).normalize().multiplyScalar(0.5 * Number(id.slice(5)));
@@ -240,19 +262,52 @@ export function CameraRig({ presets, request, tab, eyeHeight, interiorFov, layou
     }
   });
 
+  // zoom en interiores (la órbita no acerca): rueda y pellizco cambian el campo visual
+  useEffect(() => {
+    if (tab !== 'interior' || overview) return;
+    const el = gl.domElement;
+    const setFov = (f: number) => {
+      if (anim.current) return;
+      camera.fov = THREE.MathUtils.clamp(f, FOV_MIN, FOV_MAX);
+      camera.updateProjectionMatrix();
+    };
+    const wheel = (e: WheelEvent) => { e.preventDefault(); setFov(camera.fov * (e.deltaY < 0 ? 1 / 1.1 : 1.1)); };
+    const pts = new Map<number, [number, number]>();
+    let start: { d: number; f: number } | null = null;
+    const dist = () => { const [a, b] = [...pts.values()]; return Math.hypot(a[0] - b[0], a[1] - b[1]); };
+    const down = (e: PointerEvent) => { if (e.pointerType !== 'touch') return; pts.set(e.pointerId, [e.clientX, e.clientY]); if (pts.size === 2) start = { d: dist(), f: camera.fov }; };
+    const move = (e: PointerEvent) => { if (!pts.has(e.pointerId)) return; pts.set(e.pointerId, [e.clientX, e.clientY]); if (pts.size === 2 && start && start.d > 0) setFov((start.f * start.d) / dist()); };
+    const up = (e: PointerEvent) => { if (pts.delete(e.pointerId) && start) { start = null; save(); } };
+    el.addEventListener('wheel', wheel, { passive: false });
+    el.addEventListener('pointerdown', down);
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+    return () => {
+      el.removeEventListener('wheel', wheel);
+      el.removeEventListener('pointerdown', down);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, overview, gl, camera]);
+
   // límites: el centro de giro no se aleja del edificio
   const clampTarget = () => {
     const c = controls.current;
     if (!c || interior) return;
-    const m = R * 0.6;
+    const m = Math.max(R * 0.6, 75);
     c.target.x = THREE.MathUtils.clamp(c.target.x, minX - m, maxX + m);
     c.target.z = THREE.MathUtils.clamp(c.target.z, minY - m, maxY + m);
     c.target.y = THREE.MathUtils.clamp(c.target.y, 0, layout.topHeight);
   };
 
   const interior = tab === 'interior' && !overview;
+  interiorRef.current = interior;
   const plan = tab === 'plantas';
-  limits.current = { min: interior ? 0.3 : 3, max: interior ? 1 : R * 4.5 };
+  // fuera se puede alejar hasta ver la finca entera (el camino y la entrada quedan a unos 65 m)
+  limits.current = { min: interior ? 0.3 : 1.5, max: interior ? 1 : Math.max(R * 4.5, 160) };
   return (
     <OrbitControls
       ref={controls}

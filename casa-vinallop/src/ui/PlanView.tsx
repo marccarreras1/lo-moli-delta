@@ -17,6 +17,10 @@ import type { Vec2 } from '../data/types';
 const COMMENT_COLOR = { pendiente: '#b26a00', resuelto: '#3f7a4a' } as Record<string, string>;
 const fmt2 = (n: number) => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+/** límites del zoom del plano (1 = plano entero) */
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 24;
+
 /** Plano 2D interactivo: selección de estancias y aberturas, zoom y desplazamiento. */
 export function PlanView({ fitNonce }: { fitNonce: number }) {
   const { layout, issues } = useModel();
@@ -103,11 +107,12 @@ export function PlanView({ fitNonce }: { fitNonce: number }) {
   useEffect(() => setView({ k: 1, x: 0, y: 0 }), [fitNonce]);
   const drag = useRef<{ x: number; y: number; vx: number; vy: number; moved: boolean } | null>(null);
   const pinch = useRef<Map<number, { x: number; y: number }>>(new Map());
-  const pinchStart = useRef<{ d: number; k: number } | null>(null);
+  const pinchStart = useRef<{ d: number; k: number; mx: number; my: number; vx: number; vy: number } | null>(null);
+  const lastTap = useRef(0);
 
   const zoomAt = (factor: number, cx = 0, cy = 0) =>
     setView((v) => {
-      const k = Math.min(8, Math.max(0.6, v.k * factor));
+      const k = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, v.k * factor));
       const f = k / v.k;
       return { k, x: cx - (cx - v.x) * f, y: cy - (cy - v.y) * f };
     });
@@ -125,7 +130,8 @@ export function PlanView({ fitNonce }: { fitNonce: number }) {
           pinch.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
           if (pinch.current.size === 2) {
             const [a, b] = [...pinch.current.values()];
-            pinchStart.current = { d: Math.hypot(a.x - b.x, a.y - b.y), k: view.k };
+            const r = e.currentTarget.getBoundingClientRect();
+            pinchStart.current = { d: Math.hypot(a.x - b.x, a.y - b.y), k: view.k, mx: (a.x + b.x) / 2 - r.left - r.width / 2, my: (a.y + b.y) / 2 - r.top - r.height / 2, vx: view.x, vy: view.y };
             drag.current = null;
           } else {
             drag.current = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, moved: false };
@@ -135,9 +141,15 @@ export function PlanView({ fitNonce }: { fitNonce: number }) {
           if (pinch.current.has(e.pointerId)) pinch.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
           if (pinch.current.size === 2 && pinchStart.current) {
             const [a, b] = [...pinch.current.values()];
+            const ps = pinchStart.current;
+            const r = e.currentTarget.getBoundingClientRect();
             const d = Math.hypot(a.x - b.x, a.y - b.y);
-            const k = Math.min(8, Math.max(0.6, (pinchStart.current.k * d) / pinchStart.current.d));
-            setView((v) => ({ ...v, k }));
+            const k = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, (ps.k * d) / ps.d));
+            // el punto entre los dedos se queda bajo los dedos (y se desplaza con ellos)
+            const mx = (a.x + b.x) / 2 - r.left - r.width / 2;
+            const my = (a.y + b.y) / 2 - r.top - r.height / 2;
+            const f = k / ps.k;
+            setView({ k, x: mx - (ps.mx - ps.vx) * f, y: my - (ps.my - ps.vy) * f });
             return;
           }
           const d = drag.current;
@@ -161,6 +173,17 @@ export function PlanView({ fitNonce }: { fitNonce: number }) {
             if (p && tool === 'comentar') setDraft({ p, room: layout.rooms.find((r) => r.levelId === levelId && pointInPolygon(p, r.polygon))?.id, text: '' });
             return;
           }
+          if (d && !d.moved && e.pointerType !== 'mouse') {
+            // doble toque: acercar en ese punto
+            const now = performance.now();
+            if (now - lastTap.current < 320) {
+              lastTap.current = 0;
+              const r = e.currentTarget.getBoundingClientRect();
+              zoomAt(2, e.clientX - r.left - r.width / 2, e.clientY - r.top - r.height / 2);
+              return;
+            }
+            lastTap.current = now;
+          }
           if (d && !d.moved) {
             const hit = document.elementFromPoint(e.clientX, e.clientY) as Element | null;
             const op = hit?.closest('[data-opening]');
@@ -175,6 +198,11 @@ export function PlanView({ fitNonce }: { fitNonce: number }) {
             else if (room) select({ kind: 'room', id: room.getAttribute('data-room')! });
             else select(null);
           }
+        }}
+        onDoubleClick={(e) => {
+          if (tool !== 'none') return;
+          const r = e.currentTarget.getBoundingClientRect();
+          zoomAt(e.shiftKey ? 0.5 : 2, e.clientX - r.left - r.width / 2, e.clientY - r.top - r.height / 2);
         }}
         onPointerCancel={(e) => {
           pinch.current.delete(e.pointerId);
@@ -195,6 +223,7 @@ export function PlanView({ fitNonce }: { fitNonce: number }) {
           <button type="button" className={`tool tool-text${bath ? ' active' : ''}`} aria-pressed={bath} onClick={() => { setBath((b) => !b); setView({ k: 1, x: 0, y: 0 }); }} data-action="plan-bano" title="Planta acotada del baño">Baño</button>
         )}
         <button type="button" className="tool" onClick={() => zoomAt(1.25)} aria-label="Acercar"><Icon name="plus" /></button>
+        <button type="button" className="tool tool-text plan-zoom-pct" onClick={() => setView({ k: 1, x: 0, y: 0 })} title="Ver el plano entero" aria-label={`Zoom ${Math.round(view.k * 100)} %; pulsa para ver el plano entero`} data-action="plan-zoom-ajustar">{Math.round(view.k * 100)} %</button>
         <button type="button" className="tool" onClick={() => zoomAt(0.8)} aria-label="Alejar"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" aria-hidden><path d="M4 10h12" /></svg></button>
       </div>
       {tool === 'medir' && (

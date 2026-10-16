@@ -24,7 +24,7 @@
  * sale de 0,60 m y el sofá de 0,85 m de fondo): Y = 0,30 + fracción × 4,10 m.
  */
 import { FOTOS_PARCELA, PARCELA, VISTAS_DRON } from './parcela';
-import type { CameraPreset, DataStatus, DesignReference, Furniture, Opening, Outdoor, PendantGroup, ProjectData, Room, Trace, Vec2, Wall } from './types';
+import type { CameraPreset, DataStatus, DesignReference, Furniture, MesaComedor, Opening, Outdoor, PendantGroup, ProjectData, Room, Trace, Vec2, Wall } from './types';
 
 const r2 = (x: number) => Math.round(x * 100) / 100;
 const rect = (x0: number, y0: number, x1: number, y1: number): Vec2[] => [[r2(x0), r2(y0)], [r2(x1), r2(y0)], [r2(x1), r2(y1)], [r2(x0), r2(y1)]];
@@ -75,6 +75,8 @@ const ALT_X1 = r2(X_ESC + TP / 2); // 6,00 borde del altell
 const ESC: [number, number, number, number] = [ALT_X1, r2(Y_PASILLO + TP / 2), r2(ALT_X1 + 1.2), y1];
 /** cocina bajo la escalera: desde el 8.º peldaño la cara inferior queda por encima de la encimera (0,90 m) */
 const ESC_HUECO = r2(ESC[1] + ((ESC[3] - ESC[1]) * 7) / 15);
+/** con los sofás enfrentados, la mesa del rincón sale con cualquier mesa elegida (no con «sin mesa») */
+const CON_MESA: MesaComedor[] = ['rectangular', 'redonda'];
 /** mesa de comedor entre la isla y el salón */
 const MESA_COM: Vec2 = [11.45, 1.7];
 /** baño: zona húmeda de 1,20 m al fondo (contra el frontal B), con las dos duchas enfrentadas */
@@ -281,10 +283,10 @@ const furniture: Furniture[] = [
   f({ id: 'sofa-enfrentado-2', type: 'sofa', label: 'Sofá enfrentado 2 (variante)', roomId: 'dia', x: 14.0, y: 2.9, w: 2.0, d: 0.9, h: 0.8, rot: 90, status: 'propuesto', onlyIf: { salon: 'enfrentados' } }),
   f({ id: 'alfombra-enfrentados', type: 'alfombra', label: 'Alfombra de yute', roomId: 'dia', x: 12.75, y: 2.9, w: 2.4, d: 1.7, h: 0.012, rot: 90, status: 'propuesto', onlyIf: { salon: 'enfrentados' } }),
   f({ id: 'mesa-baja-enfrentados', type: 'mesa-centro', label: 'Mesa baja de madera 110 × 80', roomId: 'dia', x: 12.75, y: 2.9, w: 1.1, d: 0.6, h: 0.42, rot: 90, status: 'propuesto', color: '#8d5c3c', onlyIf: { salon: 'enfrentados' } }),
-  f({ id: 'mesa-comedor-rincon', type: 'mesa', label: 'Mesa de comedor rectangular (rincón de la cristalera)', roomId: 'dia', x: 15.15, y: 1.2, w: 1.2, d: 0.8, h: 0.75, rot: 90, status: 'propuesto', color: '#8d5c3c', onlyIf: { salon: 'enfrentados' },
+  f({ id: 'mesa-comedor-rincon', type: 'mesa', label: 'Mesa de comedor rectangular (rincón de la cristalera)', roomId: 'dia', x: 15.15, y: 1.2, w: 1.2, d: 0.8, h: 0.75, rot: 90, status: 'propuesto', color: '#8d5c3c', onlyIf: { salon: 'enfrentados', mesaComedor: CON_MESA },
     note: 'Variante: mesa de comedor de 120 × 80 cm en el rincón del lateral derecho junto a la cristalera (sitio de la variante de chimenea), con banco de obra contra el lateral y dos sillas. En esta variante no hay estufa: el fuego tendría que ir a otro sitio (p. ej. al fondo, contra el frontal B entre los sofás).' }),
   f({ id: 'banco-comedor-rincon', type: 'banco', label: 'Banco de obra del comedor', roomId: 'dia', x: r2(x1 - 0.23), y: 1.2, w: 1.5, d: 0.45, h: 0.8, rot: 90, status: 'propuesto', onlyIf: { salon: 'enfrentados' } }),
-  ...[0.9, 1.5].map((y, i) => f({ id: `silla-rincon-${i + 1}`, type: 'silla', label: 'Silla de comedor', roomId: 'dia', x: 14.5, y, w: 0.44, d: 0.44, h: 0.82, rot: 270, status: 'propuesto', onlyIf: { salon: 'enfrentados' } })),
+  ...[0.9, 1.5].map((y, i) => f({ id: `silla-rincon-${i + 1}`, type: 'silla', label: 'Silla de comedor', roomId: 'dia', x: 14.5, y, w: 0.44, d: 0.44, h: 0.82, rot: 270, status: 'propuesto', onlyIf: { salon: 'enfrentados', mesaComedor: CON_MESA } })),
   f({ id: 'alfombra-salon', onlyIf: { salon: 'sofa-l' }, type: 'alfombra', label: 'Alfombra de yute', roomId: 'dia', x: rx(12.85), y: r2(YB - 0.85 - 0.8), w: 2.4, d: 1.7, h: 0.012, rot: 0, status: 'propuesto', note: 'Alfombra de fibra natural con dibujo (referencia 03).' }),
   f({ id: 'mesa-salon', onlyIf: { salon: 'sofa-l' }, type: 'mesa-centro', label: 'Mesa de madera 110 × 80', roomId: 'dia', x: rx(12.85), y: r2(YB - 0.85 - 0.8), w: 1.1, d: 0.8, h: 0.42, rot: 0, status: 'propuesto', color: '#8d5c3c', note: 'Mesa de madera maciza de ≈110 × 80 cm (indicación de la propiedad), baja como en la referencia 03, a 0,40 m del sofá.' }),
   f({ id: 'jarron-salon', onlyIf: { salon: 'sofa-l' }, type: 'jarron', label: 'Cuenco de barro', roomId: 'dia', x: rx(13.15), y: r2(YB - 0.85 - 0.85), w: 0.22, d: 0.22, h: 0.42, rot: 0, status: 'propuesto' }),

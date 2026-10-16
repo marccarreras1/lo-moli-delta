@@ -220,7 +220,8 @@ export interface Furniture {
   /** cocina bajo la escalera: sin salpicadero ni balda encima */
   underStair?: boolean;
   /** solo aparece con esa opción de diseño (p. ej. estufa o chimenea de obra) */
-  onlyIf?: { chimenea?: 'estufa' | 'obra'; mesaComedor?: 'rectangular' | 'redonda'; salon?: 'sofa-l' | 'enfrentados' };
+  /** se muestra solo con estas opciones (una lista admite cualquiera de sus valores) */
+  onlyIf?: { chimenea?: 'estufa' | 'obra'; mesaComedor?: MesaComedor | MesaComedor[]; salon?: 'sofa-l' | 'enfrentados' };
 }
 
 export type RoofType = 'dos-aguas' | 'un-agua' | 'un-agua-teja' | 'plana' | 'plana-peto';
@@ -527,7 +528,7 @@ export interface DesignOptions {
   /** fuego del salón: estufa redonda del boceto o chimenea de obra contra el lateral (variante) */
   chimenea: 'estufa' | 'obra';
   /** mesa de comedor interior: rectangular de 120 × 80 o redonda de Ø 0,90 (variante) */
-  mesaComedor: 'rectangular' | 'redonda';
+  mesaComedor: MesaComedor;
   /** salón: sofá de obra en L (boceto) o dos sofás enfrentados en el centro con el comedor en el rincón (variante) */
   salon: 'sofa-l' | 'enfrentados';
 }
@@ -545,6 +546,9 @@ export const EXTRA_OPENINGS: { key: string; label: string }[] = [
 
 /** propuesta de ventanas completa: fachada sur-suroeste, doble altura, baño, altell y vista al algarrobo */
 export const PROPUESTA_VENTANAS = ['ventilacion-cruzada', 'ventana-dormitorio', 'ventana-bano', 'ventanas-altell', 'ventana-cocina', 'ventanas-altas', 'ventana-algarrobo'];
+
+/** mesa de comedor del interior; «ninguna» la quita (con sus sillas) */
+export type MesaComedor = 'rectangular' | 'redonda' | 'ninguna';
 
 export const DEFAULT_OPTIONS: DesignOptions = { celosia: 'A', lamparas: 'A', lamparasUbicacion: 'isla', puertaEntrada: 'tablones', entradaSaliente: false, ventanal: '7', aberturas: [], lamparaExterior: 'arbol', chimenea: 'estufa', mesaComedor: 'rectangular', salon: 'sofa-l' };
 
