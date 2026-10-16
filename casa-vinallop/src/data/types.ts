@@ -277,7 +277,12 @@ export interface Site {
   /** color del terreno */
   ground: string;
   /** olivar en retícula aproximada; se deja libre la zona `clear` alrededor de la casa */
-  olives: { spacing: number; extent: number; clear: [number, number, number, number]; seed: number };
+  olives: {
+    spacing: number; extent: number; clear: [number, number, number, number]; seed: number;
+    /** olivos reales (de la foto de dron): [x, y, diámetro de copa]; dentro de `zonaFoto` sustituyen a la retícula */
+    fijos?: [number, number, number][];
+    zonaFoto?: Vec2[];
+  };
   /** medido: posición tomada en el terreno por la propiedad (si no, aproximada sobre fotos) */
   trees: { id: string; label: string; c: Vec2; r: number; h: number; note: string; medido?: boolean; kind?: 'algarrobo' | 'olivo'; trunk?: { r: number; h: number; viejo?: boolean };
     /** límites medidos de la copa en planta (coordenadas del proyecto): la copa no pasa de esas líneas */

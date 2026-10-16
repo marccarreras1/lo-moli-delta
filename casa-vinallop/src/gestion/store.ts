@@ -5,7 +5,7 @@
  * colaboración multiusuario). Se guarda con retardo tras cada cambio y al ocultar la página.
  */
 import { create } from 'zustand';
-import { ADDED_PARTIDAS, ADDED_TAREAS, DECISION_FOSA, DEP_CODIGO, DEP_DOCUMENTO, FASE_PAC, OFERTA_DEPOSITO, seedGestion, TAREAS_FOSA } from './seed';
+import { ADDED_PARTIDAS, ADDED_TAREAS, DECISION_FOSA, DECISION_PUERTA_FINCA, DEP_CODIGO, DEP_DOCUMENTO, FASE_PAC, OFERTA_DEPOSITO, seedGestion, TAREAS_FOSA } from './seed';
 import type {
   Asignacion, Bloqueo, Comentario, Decision, Documento, Fase, GestionData, Oferta, Pago, Partida, Presupuesto, Reserva, Tarea,
 } from './types';
@@ -167,6 +167,18 @@ function migrate4(data: GestionData): GestionData {
   return { ...data, decisiones, fases };
 }
 
+/** Puerta de la finca elegida por la propiedad (16/10/2026). */
+function migrate5(data: GestionData): GestionData {
+  let done: string[] = [];
+  try { done = JSON.parse(window.localStorage.getItem(MIGRATIONS_KEY) ?? '[]') as string[]; } catch { /* sin almacenamiento */ }
+  const id = '2026-10-16-puerta-finca';
+  if (done.includes(id)) return data;
+  const dec = DECISION_PUERTA_FINCA();
+  const decisiones = data.decisiones.some((d) => d.id === dec.id) ? data.decisiones : [...data.decisiones, dec];
+  try { window.localStorage.setItem(MIGRATIONS_KEY, JSON.stringify([...done, id])); } catch { /* sin almacenamiento */ }
+  return { ...data, decisiones };
+}
+
 function load(): { data: GestionData; aviso: string | null } {
   if (typeof window === 'undefined') return { data: seedGestion(), aviso: null };
   let raw: string | null = null;
@@ -179,7 +191,7 @@ function load(): { data: GestionData; aviso: string | null } {
   try {
     const parsed = JSON.parse(raw) as unknown;
     const base = parseGestion(parsed, false);
-    const data = migrate4(migrate3(migrate2(migrate(base))));
+    const data = migrate5(migrate4(migrate3(migrate2(migrate(base)))));
     // las migraciones se marcan como hechas: hay que guardar ya su resultado o se perderían al recargar sin editar
     if (data !== base) try { window.localStorage.setItem(GESTION_KEY, JSON.stringify(envelope(data))); } catch { /* sin almacenamiento */ }
     let aviso: string | null = null;

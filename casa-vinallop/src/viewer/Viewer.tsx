@@ -290,6 +290,19 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
     const r = rng(site.olives.seed);
     const { spacing: s, extent, clear } = site.olives;
     const out: { x: number; y: number; k: number; rot: number }[] = [];
+    const zona = site.olives.zonaFoto;
+    const inZona = (x: number, y: number) => {
+      if (!zona) return false;
+      let c = false;
+      for (let i = 0, j = zona.length - 1; i < zona.length; j = i++) {
+        const [xi, yi] = zona[i];
+        const [xj, yj] = zona[j];
+        if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c;
+      }
+      return c;
+    };
+    // olivos reales de la foto de dron (posición y tamaño de copa)
+    const candidates: { x: number; y: number; k: number; rot: number; real?: boolean }[] = (site.olives.fijos ?? []).map(([x, y, d], i) => ({ x, y, k: Math.min(1.35, Math.max(0.55, d / 5.6)), rot: ((i * 2.399) % (Math.PI * 2)), real: true }));
     for (let gx = -extent; gx <= extent; gx += s) {
       for (let gy = -extent; gy <= extent; gy += s) {
         const x = cx + gx + (r() - 0.5) * 1.6;
@@ -297,23 +310,28 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
         const k = 0.88 + r() * 0.32;
         const rot = r() * Math.PI * 2;
         if (Math.hypot(gx, gy) > extent) continue;
-        if (x > clear[0] && x < clear[2] && y > clear[1] && y < clear[3]) continue;
-        if (site.trees.some((t) => Math.hypot(t.c[0] - x, t.c[1] - y) < t.r + 1.2)) continue;
-        // ni encima de las cámaras de las vistas preparadas a pie
-        if ((layout.views ?? []).some((v) => v.group === 'exterior' && v.position[2] < 10 && Math.hypot(v.position[0] - x, v.position[1] - y) < 4.2)) continue;
-        // ni sobre la solera actual ni sobre la solera del proyecto
-        const inRect = (rc: [number, number, number, number], m: number) => x > rc[0] - m && x < rc[2] + m && y > rc[1] - m && y < rc[3] + m;
-        if (site.pavements.some((p) => inRect(p.rect, 0.8))) continue;
-        if ((layout.outdoor?.pavements ?? []).some((p) => p.joints > 0 && inRect(p.rect, 1.2))) continue;
-        if ((layout.outdoor?.annexes ?? []).some((a) => inRect(a.rect, 1.5))) continue;
-        if ((layout.outdoor?.tanks ?? []).some((tk) => Math.hypot(tk.c[0] - x, tk.c[1] - y) < Math.max(tk.length, tk.diameter) / 2 + 2.5)) continue;
-        // ni sobre el camino de acceso (es la franja despejada del olivar)
-        if (site.acceso && distToPath(site.acceso.camino, x, y) < site.acceso.anchoCamino / 2 + 2.6) continue;
-        out.push({ x, y, k, rot });
+        if (inZona(x, y)) continue;
+        candidates.push({ x, y, k, rot });
       }
     }
+    for (const { x, y, k, rot, real } of candidates) {
+      // los olivos reales solo se quitan donde de verdad estorban (casa, soleras, anexos, depósito, camino);
+      // los de la retícula, además, dejan libre una franja alrededor de la casa y de las cámaras a pie
+      if (real ? x > minX - 1 && x < maxX + 1 && y > minY - 1 && y < maxY + 1 : x > clear[0] && x < clear[2] && y > clear[1] && y < clear[3]) continue;
+      if (site.trees.some((t) => Math.hypot(t.c[0] - x, t.c[1] - y) < (real ? 2.5 : t.r + 1.2))) continue;
+      if ((layout.views ?? []).some((v) => v.group === 'exterior' && v.position[2] < 10 && Math.hypot(v.position[0] - x, v.position[1] - y) < (real ? 1.5 : 4.2))) continue;
+      // ni sobre la solera actual ni sobre la solera del proyecto
+      const inRect = (rc: [number, number, number, number], m: number) => x > rc[0] - m && x < rc[2] + m && y > rc[1] - m && y < rc[3] + m;
+      if (site.pavements.some((p) => inRect(p.rect, 0.8))) continue;
+      if ((layout.outdoor?.pavements ?? []).some((p) => p.joints > 0 && inRect(p.rect, 1.2))) continue;
+      if ((layout.outdoor?.annexes ?? []).some((a) => inRect(a.rect, 1.5))) continue;
+      if ((layout.outdoor?.tanks ?? []).some((tk) => Math.hypot(tk.c[0] - x, tk.c[1] - y) < Math.max(tk.length, tk.diameter) / 2 + 2.5)) continue;
+      // ni sobre el camino de acceso (es la franja despejada del olivar)
+      if (site.acceso && distToPath(site.acceso.camino, x, y) < site.acceso.anchoCamino / 2 + (real ? 0.6 : 2.6)) continue;
+      out.push({ x, y, k, rot });
+    }
     return out;
-  }, [site, cx, cy, layout.outdoor]);
+  }, [site, cx, cy, layout.outdoor, layout.views, minX, minY, maxX, maxY]);
   // olivos procedurales: tres variantes, cada una con su malla instanciada de madera y de hojas
   const VARIANTS = lite ? 2 : 3;
   const oliveSets = useMemo(() => Array.from({ length: VARIANTS }, (_, v) => {
@@ -669,24 +687,91 @@ function Acceso({ a }: { a: NonNullable<import('../data/types').Site['acceso']> 
   });
   const last = a.camino[a.camino.length - 1];
   const prev = a.camino[a.camino.length - 2];
-  const ang = Math.atan2(last[1] - prev[1], last[0] - prev[0]);
-  const nx = -Math.sin(ang);
-  const ny = Math.cos(ang);
+  // la puerta es perpendicular al último tramo del camino
+  const tx = last[0] - prev[0];
+  const ty = last[1] - prev[1];
+  const tl = Math.hypot(tx, ty) || 1;
+  const nx = -ty / tl;
+  const ny = tx / tl;
   return (
     <group>
       {segs.map((s, i) => (
-        <group key={i}>
-          <mesh position={[s.c[0], -0.108, s.c[1]]} rotation={[-Math.PI / 2, 0, -s.ang]} receiveShadow>
-            <planeGeometry args={[s.len + a.anchoCamino, a.anchoCamino]} />
-            <meshStandardMaterial color="#a8998a" roughness={1} />
+        <mesh key={i} position={[s.c[0], -0.108, s.c[1]]} rotation={[-Math.PI / 2, 0, -s.ang]} receiveShadow>
+          <planeGeometry args={[s.len + a.anchoCamino, a.anchoCamino]} />
+          <meshStandardMaterial color="#a8998a" roughness={1} />
+        </mesh>
+      ))}
+      <group position={[last[0], -0.12, last[1]]} rotation={[0, Math.atan2(-ny, nx), 0]}>
+        <PuertaFinca ancho={a.anchoEntrada} />
+      </group>
+    </group>
+  );
+}
+
+/**
+ * Puerta de la finca (referencia de la propiedad): barrera tradicional de dos hojas de madera de acebuche con largueros
+ * ondulados y tornapunta en diagonal, entre dos pilares de piedra (marès) y con pared seca a los lados.
+ * Coordenadas locales: x a lo largo de la entrada, z hacia el camino.
+ */
+function PuertaFinca({ ancho }: { ancho: number }) {
+  const parts = useMemo(() => {
+    const wood: { p: [number, number, number]; s: [number, number, number]; r: [number, number, number] }[] = [];
+    const half = ancho / 2;
+    const H = 1.35;
+    for (const side of [-1, 1]) {
+      const x0 = side * 0.04; // centro (las dos hojas se tocan)
+      const x1 = side * (half - 0.04); // bisagra junto al pilar
+      // montantes de la hoja
+      wood.push({ p: [x0, H / 2 + 0.05, 0], s: [0.08, H + 0.1, 0.08], r: [0, 0, side * 0.02] });
+      wood.push({ p: [x1, H / 2 + 0.08, 0], s: [0.09, H + 0.16, 0.09], r: [0, 0, -side * 0.015] });
+      // largueros ondulados: tramos cortos con pequeñas ondulaciones, como la madera de acebuche sin escuadrar
+      const rails = 8;
+      for (let k = 0; k < rails; k++) {
+        const y = 0.16 + (k * (H - 0.24)) / (rails - 1);
+        const nSeg = 4;
+        for (let j = 0; j < nSeg; j++) {
+          const u0 = j / nSeg;
+          const u1 = (j + 1) / nSeg;
+          const wave = (u: number) => Math.sin(u * Math.PI * 2 + k * 1.7) * 0.035 + (k === rails - 1 ? Math.sin(u * Math.PI) * 0.08 : 0);
+          const xa = x0 + (x1 - x0) * u0;
+          const xb = x0 + (x1 - x0) * u1;
+          const ya = y + wave(u0);
+          const yb = y + wave(u1);
+          const len = Math.hypot(xb - xa, yb - ya);
+          wood.push({ p: [(xa + xb) / 2, (ya + yb) / 2, 0.06], s: [len + 0.02, 0.06, 0.035], r: [0, 0, Math.atan2(yb - ya, xb - xa)] });
+        }
+      }
+      // tornapunta en diagonal: del pie junto al centro a lo alto junto a la bisagra
+      const bx0 = x0 + side * 0.15;
+      const by0 = 0.2;
+      const bx1 = x1 - side * 0.15;
+      const by1 = H - 0.15;
+      wood.push({ p: [(bx0 + bx1) / 2, (by0 + by1) / 2, -0.04], s: [Math.hypot(bx1 - bx0, by1 - by0), 0.07, 0.04], r: [0, 0, Math.atan2(by1 - by0, bx1 - bx0)] });
+    }
+    return wood;
+  }, [ancho]);
+  const half = ancho / 2;
+  return (
+    <group>
+      {parts.map((w, i) => (
+        <mesh key={i} position={w.p} rotation={w.r} castShadow>
+          <boxGeometry args={w.s} />
+          <meshStandardMaterial color="#9a8662" roughness={0.9} />
+        </mesh>
+      ))}
+      {[-1, 1].map((side) => (
+        <group key={side}>
+          {/* pilar de piedra (marès) */}
+          <mesh position={[side * (half + 0.35), 0.85, 0]} castShadow receiveShadow>
+            <boxGeometry args={[0.7, 1.7, 0.6]} />
+            <meshStandardMaterial color="#cbbd9b" roughness={0.95} />
+          </mesh>
+          {/* pared seca a los lados */}
+          <mesh position={[side * (half + 0.7 + 1.6), 0.55, 0]} castShadow receiveShadow>
+            <boxGeometry args={[3.2, 1.1, 0.6]} />
+            <meshStandardMaterial color="#a39883" roughness={1} />
           </mesh>
         </group>
-      ))}
-      {[-1, 1].map((k) => (
-        <mesh key={k} position={[last[0] + nx * k * a.anchoEntrada / 2, 0.6, last[1] + ny * k * a.anchoEntrada / 2]} castShadow>
-          <cylinderGeometry args={[0.05, 0.05, 1.5, 8]} />
-          <meshStandardMaterial color="#5b5a55" roughness={0.6} metalness={0.4} />
-        </mesh>
       ))}
     </group>
   );

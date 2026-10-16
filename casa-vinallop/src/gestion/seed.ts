@@ -18,6 +18,12 @@ export const DECISION_FOSA = (): Decision => dec('d-fosa-pluviales', 'Fosa sépt
   'Anularla (vaciar, limpiar y rellenar con grava compactada) y recoger la lluvia en un depósito exterior o llevar las bajantes al jardín', 'por comparar',
   'Propuesta de la propiedad (14/10/2026). Depende de la inspección: posición, medidas, capacidad, estado y estanqueidad, y de poder sacar el registro al cuarto técnico. El suelo de la casa sobre la fosa necesita losa calculada por el técnico. Si ahora recibe las aguas del baño, el baño nuevo necesita otra salida (fosa nueva PAC-09, 3.200 €, no seleccionada). Consultar el trámite para anular o cambiar el uso de la fosa. Agua solo para riego (no potable).');
 
+/** Puerta de la finca (también se incorpora a los datos ya guardados). */
+export const DECISION_PUERTA_FINCA = (): Decision => dec('d-puerta-finca', 'Puerta de la entrada de la finca', 'Exterior · entrada de la finca',
+  'Barrera tradicional de dos hojas de madera de acebuche con largueros ondulados y tornapunta en diagonal, entre dos pilares de piedra (marès) y con pared seca a los lados',
+  '', 'elegido por propiedad',
+  'Referencia aportada por la propiedad (16/10/2026). Hueco de 4,70 m: dos hojas de ≈2,35 m. Pendiente: carpintero, madera, herrajes y cerradura, cimentación de los pilares y presupuesto. Dibujada en el modelo en la entrada de la finca.');
+
 /** Comprobaciones previas de la fosa (fase 2). */
 export const TAREAS_FOSA: [string, string][] = [
   ['t-fosa-1', 'Localizar la fosa existente bajo el baño actual y medirla (planta, profundidad y capacidad)'],
@@ -44,6 +50,7 @@ function decisiones(): Decision[] {
     dec('d-aberturas', 'Aberturas adicionales (variantes)', 'Varias', '',
       'Acceso acristalado al comedor exterior; ventana de ventilación cruzada; ventana y contraventana en dormitorio; ventana alta en baño + extracción; abertura alta en altillo', 'por comparar'),
     DECISION_FOSA(),
+    DECISION_PUERTA_FINCA(),
   ];
 }
 

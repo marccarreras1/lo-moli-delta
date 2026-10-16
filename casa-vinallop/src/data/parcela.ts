@@ -7,6 +7,7 @@
  * grava; un algarrobo grande junto al extremo derecho de la casa (lado del frontal A);
  * solera de hormigón a lo largo del frontal B (las puertas) donde se aparca.
  */
+import { CAMINO_FOTO, OLIVOS_FOTO, ZONA_FOTO } from './olivar';
 import type { CameraPreset, Site } from './types';
 
 export const FOTOS_PARCELA = {
@@ -20,7 +21,7 @@ export const PARCELA: Site = {
   sourceId: FOTOS_PARCELA.id,
   note: 'Entorno aproximado a partir de las fotos de dron (no es un levantamiento). Olivos grandes (copas de 6–7 m) en retícula de ≈9 m que llega a 2–3 m de la casa; algarrobo grande junto a la habitación pequeña, cubriendo en parte su cubierta; solera de hormigón a lo largo del frontal B.',
   ground: '#c49c80',
-  olives: { spacing: 9, extent: 70, clear: [-1.8, -1.8, 18.1, 7.0], seed: 11 },
+  olives: { spacing: 9, extent: 70, clear: [-1.8, -1.8, 18.1, 7.0], seed: 11, fijos: OLIVOS_FOTO, zonaFoto: ZONA_FOTO },
   trees: [
     // medido por la propiedad (16/10/2026): el tronco a 2,64 m del lateral derecho (x = 16,33) y a 3,50 m del frontal B
     // (y = 5,22), medidas hasta la cara del tronco; el centro se sitúa sumando su radio (≈0,50 m).
@@ -37,15 +38,13 @@ export const PARCELA: Site = {
     { id: 'olivo-pequeno', label: 'Olivo pequeño', kind: 'olivo', medido: true, c: [8.37, -4.6], r: 2.25, h: 5.0, trunk: { r: 0.09, h: 0.5 },
       note: 'Olivo joven frente a la cristalera: tronco a 4,50 m de la fachada y a 4,60 m del olivo grande, hacia el centro de la casa (medidas de la propiedad hasta el tronco). Según su foto (confirmada por la propiedad): tronco fino que se abre en dos a ≈0,5 m, copa ligera de ≈4,5 m de ancho y ≈5 m de alto.' },
   ],
-  // entrada de la finca (foto de la propiedad: 4,70 m de ancho) y camino de acceso: trazado marcado por la propiedad sobre la
-  // foto de dron (16/10/2026) y pasado a metros proyectando la foto sobre el suelo con las medidas de la casa (16,33 × 5,22 m,
-  // homografía con sus cuatro esquinas). Margen ≈±20 %. El camino sale del lado de la puerta (frontal B), donde se aparca,
-  // sube entre los olivos y llega al camino agrícola junto a un árbol grande, a ≈43 m de la esquina de la casa.
+  // entrada de la finca (foto de la propiedad: 4,70 m de ancho) y camino de acceso marcado por la propiedad sobre la foto de
+  // dron, pasado a metros con la homografía ajustada a la casa y al olivar (src/data/olivar.ts). Margen ≈±15 %.
   acceso: {
-    entrada: [43.8, 36.9], anchoEntrada: 4.7, anchoCamino: 3.0,
-    camino: [[10.4, 11.5], [12.9, 14.7], [15.1, 14.9], [22, 16.7], [24.8, 21.7], [27.5, 26.5], [32.2, 30.9], [36.5, 34.5], [43.8, 36.9]],
+    entrada: CAMINO_FOTO[CAMINO_FOTO.length - 1], anchoEntrada: 4.7, anchoCamino: 3.0,
+    camino: [[10.4, 11.5], ...CAMINO_FOTO],
     status: 'interpretado',
-    note: 'Entrada de la finca de 4,70 m de ancho (medida de la propiedad), con valla de malla y valla metálica móvil, donde el camino agrícola llega al olivar junto a un árbol grande. Camino de tierra y grava de ≈2,5–3 m marcado por la propiedad sobre la foto de dron: sale del lado de la puerta de entrada (frontal B), donde se aparca, y sube entre los olivos ≈41 m hasta la entrada, a ≈43 m de la esquina de la casa. Pasado a metros con las medidas de la casa (margen ≈±20 %).',
+    note: 'Entrada de la finca de 4,70 m de ancho (medida de la propiedad), con valla de malla y valla metálica móvil, donde el camino agrícola llega al olivar junto a un árbol grande. Camino de tierra y grava de ≈3 m marcado por la propiedad sobre la foto de dron: sale del lado de la puerta de entrada (frontal B), donde se aparca, y sube entre los olivos ≈65 m hasta la entrada, a ≈66 m de la esquina de la casa. Pasado a metros con las medidas de la casa y la separación del olivar (margen ≈±15 %).',
   },
   pavements: [
     { id: 'solera', label: 'Solera de hormigón', rect: [-0.3, 5.22, 17.2, 7.8], note: 'Franja de hormigón de ≈2,5 m a lo largo del frontal B (vista cenital).' },
@@ -57,5 +56,8 @@ export const VISTAS_DRON: CameraPreset[] = [
   { id: 'd01-dron-frontal', label: 'Dron · frontal B desde lo alto', group: 'exterior', fixed: true, position: [3.5, 25, 21], target: [9.6, 3.2, 0], fov: 46 },
   { id: 'd02-dron-cenital', label: 'Dron · vista cenital', group: 'exterior', fixed: true, position: [9.4, 8.5, 40], target: [9.4, 2.6, 0], fov: 42 },
   { id: 'd04-algarrobo', label: 'Algarrobo desde el olivar (a pie)', group: 'exterior', fixed: true, position: [23.2, 7.6, 1.6], target: [16.6, 2.2, 2.5], fov: 62 },
+  // mismo punto de vista que la foto de dron con la que se situaron el olivar y el camino (cámara calculada con la homografía)
+  { id: 'd05-dron-foto-olivar', label: 'Dron · como la foto del olivar', group: 'exterior', fixed: true, position: [-22, -18.5, 42], target: [22.4, 20.4, 0], fov: 42 },
+  { id: 'd06-puerta-finca', label: 'Puerta de la finca (desde el camino agrícola)', group: 'exterior', fixed: true, position: [68.6, 63.9, 2.2], target: [59.9, 55.1, 1.1], fov: 46 },
   { id: 'd03-dron-lejana', label: 'Dron · olivar y entorno', group: 'exterior', fixed: true, position: [-6, 78, 46], target: [10, -6, 0], fov: 52 },
 ];
