@@ -8,6 +8,7 @@
  * solera de hormigón a lo largo del frontal B (las puertas) donde se aparca.
  */
 import { EDIFICIO_CATASTRO, PARCELA_CATASTRO } from './catastro';
+import { ajustarFoto, ENTRADA_FINCA } from './ajusteFoto';
 import { CAMINO_FOTO, OLIVOS_FOTO, ZONA_FOTO } from './olivar';
 import type { CameraPreset, Site } from './types';
 
@@ -26,7 +27,7 @@ export const PARCELA: Site = {
     note: 'Lindero de la parcela según el Catastro (GML aportado por la propiedad), situado respecto a la casa con la huella catastral del edificio: el norte sale del eje del edificio (≈20° desde el frontal A) y el centro del edificio catastral coincide con el de la casa del modelo. Precisión de la cartografía catastral: ≈1 m.' },
   edificioCatastro: { ...EDIFICIO_CATASTRO,
     note: 'Huella del edificio en el Catastro (antes de la reforma): ≈16,7 × 5,6 m, 74 m² construidos, año 1980, uso agrario. Retranqueos en los dos extremos del frontal A.' },
-  olives: { spacing: 9, extent: 70, clear: [-1.8, -1.8, 18.1, 7.0], seed: 11, fijos: OLIVOS_FOTO, zonaFoto: ZONA_FOTO },
+  olives: { spacing: 7.5, extent: 70, clear: [-1.8, -1.8, 18.1, 7.0], seed: 11, fijos: OLIVOS_FOTO.map(([x, y, d]) => [...ajustarFoto([x, y]), d] as [number, number, number]), zonaFoto: ZONA_FOTO.map(ajustarFoto) },
   trees: [
     // medido por la propiedad (16/10/2026): el tronco a 2,64 m del lateral derecho (x = 16,33) y a 3,50 m del frontal B
     // (y = 5,22), medidas hasta la cara del tronco; el centro se sitúa sumando su radio (≈0,50 m).
@@ -46,10 +47,12 @@ export const PARCELA: Site = {
   // entrada de la finca (foto de la propiedad: 4,70 m de ancho) y camino de acceso marcado por la propiedad sobre la foto de
   // dron, pasado a metros con la homografía ajustada a la casa y al olivar (src/data/olivar.ts). Margen ≈±15 %.
   acceso: {
-    entrada: CAMINO_FOTO[CAMINO_FOTO.length - 1], anchoEntrada: 4.7, anchoCamino: 3.0,
-    camino: [[10.4, 11.5], ...CAMINO_FOTO],
+    // camino marcado en rojo por la propiedad sobre la foto de dron, corregido con el lindero catastral, hasta la entrada en
+    // la esquina sureste del lindero (indicación de la propiedad: «la esquina superior izquierda» de la foto de la finca completa)
+    entrada: ENTRADA_FINCA, anchoEntrada: 4.7, anchoCamino: 3.0,
+    camino: [[10.4, 11.5], ...CAMINO_FOTO.map(ajustarFoto), ENTRADA_FINCA],
     status: 'interpretado',
-    note: 'Entrada de la finca de 4,70 m de ancho (medida de la propiedad), con valla de malla y valla metálica móvil, donde el camino agrícola llega al olivar junto a un árbol grande. Camino de tierra y grava de ≈3 m marcado por la propiedad sobre la foto de dron: sale del lado de la puerta de entrada (frontal B), donde se aparca, y sube entre los olivos ≈65 m hasta la entrada, a ≈66 m de la esquina de la casa. Pasado a metros con las medidas de la casa y la separación del olivar (margen ≈±15 %).',
+    note: 'Entrada de la finca de 4,70 m de ancho (medida de la propiedad), con valla de malla y valla metálica móvil, en la esquina sureste del lindero catastral (indicación de la propiedad). Camino de tierra y grava de ≈3 m marcado por la propiedad sobre la foto de dron: sale del lado de la puerta de entrada (frontal B), donde se aparca, y baja entre los olivos por la franja más despejada hasta la esquina (≈120 m). La foto se ha corregido con el lindero: el muro de piedra cae sobre el lindero oeste y el borde con los campos sobre el este (desviaciones de ≈±5 m).',
   },
   pavements: [
     { id: 'solera', label: 'Solera de hormigón', rect: [-0.3, 5.22, 17.2, 7.8], note: 'Franja de hormigón de ≈2,5 m a lo largo del frontal B (vista cenital).' },
@@ -63,7 +66,7 @@ export const VISTAS_DRON: CameraPreset[] = [
   { id: 'd04-algarrobo', label: 'Algarrobo desde el olivar (a pie)', group: 'exterior', fixed: true, position: [23.2, 7.6, 1.6], target: [16.6, 2.2, 2.5], fov: 62 },
   // mismo punto de vista que la foto de dron con la que se situaron el olivar y el camino (cámara calculada con la homografía)
   { id: 'd05-dron-foto-olivar', label: 'Dron · como la foto del olivar', group: 'exterior', fixed: true, position: [-22, -18.5, 42], target: [22.4, 20.4, 0], fov: 42 },
-  { id: 'd06-puerta-finca', label: 'Puerta de la finca (desde el camino agrícola)', group: 'exterior', fixed: true, position: [68.6, 63.9, 2.2], target: [59.9, 55.1, 1.1], fov: 46 },
+  { id: 'd06-puerta-finca', label: 'Puerta de la finca (desde fuera, esquina sureste)', group: 'exterior', fixed: true, position: [86.2, 95.3, 2.2], target: [75.2, 82.3, 1.1], fov: 50 },
   // la finca entera según el lindero catastral (centro de la parcela ≈ [33,5, 4,5]); la cenital, con el frontal A arriba como los planos
   { id: 'd07-finca-completa', label: 'Finca completa', group: 'exterior', fixed: true, position: [-85, 165, 150], target: [33.5, 4.5, 0], fov: 45 },
   { id: 'd08-finca-cenital', label: 'Finca · vista cenital', group: 'exterior', fixed: true, position: [33.5, 4.52, 290], target: [33.5, 4.5, 0], fov: 45 },
