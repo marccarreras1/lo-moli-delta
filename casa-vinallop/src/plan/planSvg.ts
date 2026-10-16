@@ -185,6 +185,21 @@ function outdoorSvg(layout: Layout, od: NonNullable<Layout['outdoor']>, labels: 
     g.push(dim([x0, y0], [x0 + w, y0], -0.35, `${fmtM(w)} m`, tk.status));
   }
   for (const d of od.drains ?? []) g.push(`<line x1="${n4(d.a[0])}" y1="${n4(d.a[1])}" x2="${n4(d.b[0])}" y2="${n4(d.b[1])}" stroke="#3a3833" stroke-width="0.08" stroke-dasharray="0.04 0.02"/>`);
+  // camino de acceso a la entrada de la finca (trazado aproximado): sale del dibujo hacia la entrada
+  const acc = layout.site?.acceso;
+  if (acc) {
+    const d = acc.camino.map((p, i) => `${i ? 'L' : 'M'} ${n4(p[0])} ${n4(p[1])}`).join(' ');
+    g.push(`<path d="${d}" fill="none" stroke="#c9b79c" stroke-opacity="0.55" stroke-width="${n4(acc.anchoCamino)}" stroke-linecap="round" stroke-linejoin="round"/>`);
+    g.push(`<path d="${d}" fill="none" stroke="#8c7a5e" stroke-width="0.02" stroke-dasharray="0.3 0.15"/>`);
+    if (labels) {
+      const [a0, a1] = acc.camino;
+      const ang = (Math.atan2(a1[1] - a0[1], a1[0] - a0[0]) * 180) / Math.PI;
+      const mx = a0[0] + (a1[0] - a0[0]) * 0.45;
+      const my = a0[1] + (a1[1] - a0[1]) * 0.45;
+      const total = acc.camino.slice(1).reduce((s2, p, i) => s2 + Math.hypot(p[0] - acc.camino[i][0], p[1] - acc.camino[i][1]), 0);
+      g.push(`<text x="${n4(mx)}" y="${n4(my - 0.1)}" font-size="0.2" fill="#6d5c42" text-anchor="middle" transform="rotate(${n4(ang)} ${n4(mx)} ${n4(my)})">camino a la entrada de la finca (≈${Math.round(total)} m; entrada de ${fmtM(acc.anchoEntrada)} m) · trazado aproximado →</text>`);
+    }
+  }
   for (const t of layout.site?.trees ?? []) {
     // copa: círculo recortado por los límites medidos (si los hay), con la línea del límite marcada
     const k = t.copa;

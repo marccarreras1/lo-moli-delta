@@ -37,6 +37,15 @@ export const PARCELA: Site = {
     { id: 'olivo-pequeno', label: 'Olivo pequeño', kind: 'olivo', medido: true, c: [8.37, -4.6], r: 2.25, h: 5.0, trunk: { r: 0.09, h: 0.5 },
       note: 'Olivo joven frente a la cristalera: tronco a 4,50 m de la fachada y a 4,60 m del olivo grande, hacia el centro de la casa (medidas de la propiedad hasta el tronco). Según su foto (confirmada por la propiedad): tronco fino que se abre en dos a ≈0,5 m, copa ligera de ≈4,5 m de ancho y ≈5 m de alto.' },
   ],
+  // entrada de la finca (foto de la propiedad: 4,70 m de ancho) en la esquina del olivar junto al camino agrícola; posición y
+  // trazado aproximados sobre la foto de dron (16/10/2026): hacia el lado del algarrobo y del frontal B, a ≈55 m de la casa,
+  // por la franja más despejada de árboles. Escala tomada de la retícula de olivos (≈9 m): a confirmar midiendo en el terreno.
+  acceso: {
+    entrada: [62, 34], anchoEntrada: 4.7, anchoCamino: 3.5,
+    camino: [[10.4, 11.5], [22, 17.5], [62, 34]],
+    status: 'interpretado',
+    note: 'Entrada de la finca de 4,70 m de ancho (medida de la propiedad), con valla de malla y valla metálica móvil, en la esquina del olivar junto al camino agrícola. El camino de tierra y grava llega a la casa por la franja más despejada de olivos. Posición y trazado aproximados sobre la foto de dron (≈55 m de la casa): conviene medirlos.',
+  },
   pavements: [
     { id: 'solera', label: 'Solera de hormigón', rect: [-0.3, 5.22, 17.2, 7.8], note: 'Franja de hormigón de ≈2,5 m a lo largo del frontal B (vista cenital).' },
   ],

@@ -283,6 +283,8 @@ export interface Site {
     /** límites medidos de la copa en planta (coordenadas del proyecto): la copa no pasa de esas líneas */
     copa?: { xMin?: number; xMax?: number; yMin?: number; yMax?: number } }[];
   pavements: { id: string; label: string; rect: [number, number, number, number]; note: string }[];
+  /** entrada de la finca y camino de acceso hasta la casa (eje del camino, de la casa a la entrada) */
+  acceso?: { entrada: Vec2; anchoEntrada: number; camino: Vec2[]; anchoCamino: number; status: DataStatus; note: string };
 }
 
 /** Pavimento exterior (solera) con juntas y, si hace falta, una zona permeable alrededor de un árbol. */

@@ -307,6 +307,8 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
         if ((layout.outdoor?.pavements ?? []).some((p) => p.joints > 0 && inRect(p.rect, 1.2))) continue;
         if ((layout.outdoor?.annexes ?? []).some((a) => inRect(a.rect, 1.5))) continue;
         if ((layout.outdoor?.tanks ?? []).some((tk) => Math.hypot(tk.c[0] - x, tk.c[1] - y) < Math.max(tk.length, tk.diameter) / 2 + 2.5)) continue;
+        // ni sobre el camino de acceso (es la franja despejada del olivar)
+        if (site.acceso && distToPath(site.acceso.camino, x, y) < site.acceso.anchoCamino / 2 + 2.6) continue;
         out.push({ x, y, k, rot });
       }
     }
@@ -460,6 +462,7 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
           <meshStandardMaterial color="#bdb6aa" roughness={0.95} />
         </mesh>
       ))}
+      {site.acceso && <Acceso a={site.acceso} />}
       {oliveSets.map((s, i) => <group key={i}><primitive object={s.wood} /><primitive object={s.leaves} /></group>)}
       {blobs && <group userData={{ helper: true }}><primitive object={blobs} /></group>}
       {!lite && <GroundDetail layout={layout} site={site} cx={cx} cy={cy} />}
@@ -589,7 +592,8 @@ function GroundDetail({ layout, site, cx, cy }: { layout: Layout; site: Site; cx
       }),
     ];
     const free = (x: number, y: number, m: number) => !rects.some((rc) => x > rc[0] - m && x < rc[2] + m && y > rc[1] - m && y < rc[3] + m)
-      && !site.trees.some((t) => Math.hypot(t.c[0] - x, t.c[1] - y) < 1.2);
+      && !site.trees.some((t) => Math.hypot(t.c[0] - x, t.c[1] - y) < 1.2)
+      && !(site.acceso && distToPath(site.acceso.camino, x, y) < site.acceso.anchoCamino / 2 + m);
     const pick = (n: number, R: number, m: number) => {
       const out: { x: number; y: number; s: number; rot: number }[] = [];
       for (let i = 0; i < n * 3 && out.length < n; i++) {
@@ -639,6 +643,51 @@ function GroundDetail({ layout, site, cx, cy }: { layout: Layout; site: Site; cx
     <group>
       <primitive object={rocks} />
       <primitive object={tufts} />
+    </group>
+  );
+}
+
+/** distancia de un punto al eje del camino (polilínea) */
+function distToPath(path: [number, number][], x: number, y: number) {
+  let d = Infinity;
+  for (let i = 0; i + 1 < path.length; i++) {
+    const [ax, ay] = path[i];
+    const [bx, by] = path[i + 1];
+    const L2 = (bx - ax) ** 2 + (by - ay) ** 2 || 1;
+    const t = Math.max(0, Math.min(1, ((x - ax) * (bx - ax) + (y - ay) * (by - ay)) / L2));
+    d = Math.min(d, Math.hypot(x - (ax + t * (bx - ax)), y - (ay + t * (by - ay))));
+  }
+  return d;
+}
+
+/** camino de tierra y grava hasta la entrada de la finca, con los postes de la entrada */
+function Acceso({ a }: { a: NonNullable<import('../data/types').Site['acceso']> }) {
+  const segs = a.camino.slice(0, -1).map((p, i) => {
+    const q = a.camino[i + 1];
+    const len = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    return { c: [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2] as [number, number], len, ang: Math.atan2(q[1] - p[1], q[0] - p[0]) };
+  });
+  const last = a.camino[a.camino.length - 1];
+  const prev = a.camino[a.camino.length - 2];
+  const ang = Math.atan2(last[1] - prev[1], last[0] - prev[0]);
+  const nx = -Math.sin(ang);
+  const ny = Math.cos(ang);
+  return (
+    <group>
+      {segs.map((s, i) => (
+        <group key={i}>
+          <mesh position={[s.c[0], -0.108, s.c[1]]} rotation={[-Math.PI / 2, 0, -s.ang]} receiveShadow>
+            <planeGeometry args={[s.len + a.anchoCamino, a.anchoCamino]} />
+            <meshStandardMaterial color="#a8998a" roughness={1} />
+          </mesh>
+        </group>
+      ))}
+      {[-1, 1].map((k) => (
+        <mesh key={k} position={[last[0] + nx * k * a.anchoEntrada / 2, 0.6, last[1] + ny * k * a.anchoEntrada / 2]} castShadow>
+          <cylinderGeometry args={[0.05, 0.05, 1.5, 8]} />
+          <meshStandardMaterial color="#5b5a55" roughness={0.6} metalness={0.4} />
+        </mesh>
+      ))}
     </group>
   );
 }

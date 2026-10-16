@@ -49,4 +49,6 @@ export const CAMBIOS_SEED: CambioEntrada[] = [
     'Medida de la propiedad: por el lado de la cristalera la copa del algarrobo solo sale 2,00 m de la línea de la fachada A. La copa queda recortada en esa línea en el plano y en el 3D, y la mesa redonda se acerca ≈0,5 m al tronco y a la casa para quedar bajo la copa, sin que las sillas pisen el alcorque.'),
   e('c-2026-10-16-entrada-finca', '2026-10-16', 'exterior', 'Entrada de la finca: 4,70 m de ancho',
     'Medida de la propiedad: la entrada de la finca (camino de grava entre la valla de malla, con valla metálica móvil) mide 4,70 m de ancho. Cabe un camión con el depósito de agua potable (Ø 2,45 m) y una grúa pequeña; hay que comprobar el giro y el firme del camino hasta la casa. Foto añadida a Referencias; falta situarla en el plano.'),
+  e('c-2026-10-16-camino-acceso', '2026-10-16', 'exterior', 'Camino de acceso y entrada de la finca',
+    'Con la foto de dron de la propiedad: la entrada de la finca (4,70 m) está en la esquina del olivar junto al camino agrícola, hacia el lado del algarrobo y del frontal B, y el camino llega a la casa por la franja más despejada de olivos. Dibujado en planta y en 3D como trazado aproximado (≈55 m, camino de ≈3,5 m de tierra y grava) a partir de la escala de la retícula de olivos: conviene medir la distancia real.'),
 ];
