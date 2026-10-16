@@ -336,7 +336,7 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
     const porchBoxes = (layout.outdoor?.porches ?? []).map((pc) => [pc.rect[0], pc.rect[1], pc.rect[2], pc.rect[3], Math.max(pc.hWall, pc.hFront) + 0.3] as [number, number, number, number, number]);
     const obstacles = [...houseBoxes, ...porchBoxes].map(([x0, y0, x1, y1, top]) => [x0 - t.c[0], y0 - t.c[1], x1 - t.c[0], y1 - t.c[1], top + 0.12] as [number, number, number, number, number]);
     const kind = t.kind ?? 'algarrobo';
-    const g = buildTree(kind, 7 + i * 13, t.r * 2, t.h, obstacles);
+    const g = buildTree(kind, 7 + i * 13, t.r * 2, t.h, obstacles, t.trunk);
     return { ...g, kind, leafMat: Object.assign(leafMaterial(kind), { userData: { fade: true } }), barkMat: barkMaterial(kind) };
   }), [site.trees, houseBoxes, layout.outdoor?.porches]);
   // sombras lejanas: manchas suaves bajo los olivos que quedan fuera del mapa de sombras

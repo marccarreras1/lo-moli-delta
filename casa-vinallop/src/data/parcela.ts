@@ -27,11 +27,14 @@ export const PARCELA: Site = {
     { id: 'algarrobo', label: 'Algarrobo', c: [19.47, 1.22], r: 5.4, h: 8.0, medido: true, note: 'Algarrobo grande y viejo (fotos de dron y de suelo): tronco muy grueso (≈1 m en la base) y retorcido, con raíces vistas; se abre en ramas gruesas a 2–2,5 m; copa ancha y baja. Posición medida por la propiedad: tronco a 2,64 m del lateral derecho de la casa y a 3,50 m de la fachada de la entrada (frontal B), medidas hasta el tronco; centro supuesto a 0,50 m más (radio del tronco).' },
     // olivos frente a la cristalera (frontal A, y = 0), medidos por la propiedad (16/10/2026) hasta el tronco:
     // el grande a 3,60 m de la fachada y a 2,60 m del extremo de la casa (x = 16,33), medido a lo largo de la fachada;
-    // el pequeño a 4,50 m de la fachada y a 4,60 m del grande, hacia el centro. Radio de tronco supuesto 0,25 / 0,20 m.
-    { id: 'olivo-cristalera', label: 'Olivo de la cristalera', kind: 'olivo', medido: true, c: [13.48, -3.85], r: 2.8, h: 5.0,
-      note: 'Olivo grande frente a la cristalera (frontal A): tronco a 3,60 m de la fachada y a 2,60 m del extremo derecho de la casa, a lo largo de la fachada (medidas de la propiedad hasta el tronco). Queda a ≈0,45 m del borde de la solera y su copa pasa por encima del porche: hay que podar las ramas que toquen la pérgola y cuidar las raíces al hacer la solera.' },
-    { id: 'olivo-pequeno', label: 'Olivo pequeño', kind: 'olivo', medido: true, c: [8.5, -4.7], r: 1.9, h: 3.6,
-      note: 'Olivo pequeño frente a la cristalera: tronco a 4,50 m de la fachada y a 4,60 m del olivo grande, hacia el centro de la casa (medidas de la propiedad hasta el tronco).' },
+    // el pequeño a 4,50 m de la fachada y a 4,60 m del grande, hacia el centro.
+    // Olivo grande según su foto: tronco viejo y retorcido de ≈0,70 m en el pie (radio 0,35), cruz a ≈1,8 m, copa de ≈7 m
+    // de ancho y ≈6,5 m de alto con ramas largas hacia la casa. Olivo pequeño según su foto: tronco fino (radio ≈0,10 m)
+    // que se abre en dos a ≈0,7 m, copa de ≈4 m de ancho y ≈4,5 m de alto.
+    { id: 'olivo-cristalera', label: 'Olivo grande de la cristalera', kind: 'olivo', medido: true, c: [13.38, -3.95], r: 3.5, h: 6.5, trunk: { r: 0.3, h: 1.8, viejo: true },
+      note: 'Olivo viejo frente a la cristalera (frontal A): tronco a 3,60 m de la fachada y a 2,60 m del extremo derecho de la casa, a lo largo de la fachada (medidas de la propiedad hasta el tronco). Según su foto: tronco grueso y retorcido (≈0,70 m en el pie) que se abre a ≈1,8 m, copa de ≈7 m de ancho y ≈6,5 m de alto. Queda a ≈0,55 m del borde de la solera y su copa pasa por encima del porche: hay que podar las ramas que toquen la pérgola y cuidar las raíces al hacer la solera (no excavar ni compactar junto al tronco).' },
+    { id: 'olivo-pequeno', label: 'Olivo pequeño', kind: 'olivo', medido: true, c: [8.37, -4.6], r: 2.0, h: 4.5, trunk: { r: 0.08, h: 0.7 },
+      note: 'Olivo joven frente a la cristalera: tronco a 4,50 m de la fachada y a 4,60 m del olivo grande, hacia el centro de la casa (medidas de la propiedad hasta el tronco). Según su foto: tronco fino que se abre en dos a ≈0,7 m, copa ligera de ≈4 m de ancho y ≈4,5 m de alto.' },
   ],
   pavements: [
     { id: 'solera', label: 'Solera de hormigón', rect: [-0.3, 5.22, 17.2, 7.8], note: 'Franja de hormigón de ≈2,5 m a lo largo del frontal B (vista cenital).' },

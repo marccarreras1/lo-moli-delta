@@ -238,7 +238,10 @@ function cluster(c: THREE.Vector3, size: number, r: () => number, out: THREE.Buf
 /** caja de un volumen de la casa en coordenadas del árbol: [x0, z0, x1, z1, cota superior] */
 export type TreeObstacle = [number, number, number, number, number];
 
-export function buildTree(kind: TreeKind, seed: number, width: number, height: number, obstacles: TreeObstacle[] = []) {
+/** tronco de un árbol concreto (medido o según fotos): radio en el pie y altura hasta la cruz; `viejo` = retorcido y con rebordes */
+export interface TreeTrunk { r: number; h: number; viejo?: boolean }
+
+export function buildTree(kind: TreeKind, seed: number, width: number, height: number, obstacles: TreeObstacle[] = [], trunk?: TreeTrunk) {
   const r = rng(seed);
   // ramas y hojas no pueden entrar en la casa: lo que caería dentro se poda (como se haría en la obra)
   const inside = (p: THREE.Vector3, m: number) => obstacles.some(([x0, z0, x1, z1, top]) => p.x > x0 - m && p.x < x1 + m && p.z > z0 - m && p.z < z1 + m && p.y < top + m);
@@ -246,21 +249,23 @@ export function buildTree(kind: TreeKind, seed: number, width: number, height: n
   const leaves: THREE.BufferGeometry[] = [];
   const olive = kind === 'olivo';
   // algarrobo (fotos): tronco de ≈1 m en la base, retorcido, que se abre en ramas gruesas a 2–2,5 m
-  const trunkH = olive ? height * 0.32 : height * 0.29;
-  const trunkR = olive ? 0.22 + r() * 0.08 : 0.44;
+  const trunkH = trunk?.h ?? (olive ? height * 0.32 : height * 0.29);
+  const trunkR = trunk?.r ?? (olive ? 0.22 + r() * 0.08 : 0.44);
+  // olivo viejo (foto del olivo grande): tronco grueso y retorcido como el del algarrobo
+  const gnarled = !olive || !!trunk?.viejo;
   const base = new THREE.Vector3(0, 0, 0);
   // tronco inclinado y retorcido: varios tramos con desvíos (más en el algarrobo)
-  const steps = olive ? 2 : 4;
+  const steps = gnarled ? 4 : 2;
   let prev = base;
   let rad = trunkR * 1.3;
   for (let i = 1; i <= steps; i++) {
     const t = i / steps;
-    const lean = olive ? 0.18 : 0.32;
+    const lean = gnarled ? 0.32 : 0.18;
     const next = new THREE.Vector3(prev.x + (r() - 0.5) * lean + (olive ? 0 : 0.06), trunkH * t, prev.z + (r() - 0.5) * lean);
     const nr = trunkR * (1.3 - 0.45 * t);
     wood.push(limb(prev, next, rad, nr, 11));
     // rebordes del tronco retorcido: tiras más finas que giran alrededor
-    if (!olive) for (let k = 0; k < 3; k++) {
+    if (gnarled) for (let k = 0; k < 3; k++) {
       const a0 = (k / 3) * Math.PI * 2 + t * 1.4;
       const a1 = a0 + 0.5;
       const o0 = new THREE.Vector3(Math.cos(a0) * rad * 0.8, 0, Math.sin(a0) * rad * 0.8);

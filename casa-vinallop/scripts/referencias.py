@@ -66,6 +66,8 @@ FOTOS = {
     '80d744026544': ('casa-algarrobo-lateral', 'casa', 'Algarrobo junto al lateral de la casa'),
     'a9bdffa46b54': ('algarrobo-tronco', 'casa', 'Tronco y raíces del algarrobo'),
     '6826de6219ba': ('algarrobo-casa', 'casa', 'El algarrobo y la casa'),
+    'd9dd6caa3f3b': ('olivo-cristalera', 'casa', 'Olivo grande frente a la cristalera (tronco a 3,60 m de la fachada A)'),
+    '8142e9856fef': ('olivo-pequeno', 'casa', 'Olivo pequeño frente a la cristalera (tronco a 4,50 m de la fachada A)'),
     'a8ee839867c2': ('parcela-olivar-1', 'parcela', 'Olivar de la parcela'),
     '177057bfe25a': ('parcela-olivar-2', 'parcela', 'Olivar de la parcela (otra toma)'),
     '2e148469ef71': ('parcela-camino', 'parcela', 'Camino de acceso'),
