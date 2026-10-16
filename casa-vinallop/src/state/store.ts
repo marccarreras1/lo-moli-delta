@@ -425,7 +425,7 @@ export const useStore = create<Store>((set, get) => {
     setOpenFraction: (id, f) => set((s) => ({ openFractions: { ...s.openFractions, [id]: Math.max(0, Math.min(1, f)) } })),
     select: (selection) => set({ selection }),
     requestCamera: (id, instant) => {
-      const special = id === 'encajar' || id === 'memoria' || id.startsWith('paso:') || id.startsWith('room:') || id.startsWith('zoom:');
+      const special = id === 'encajar' || id === 'memoria' || id.startsWith('paso:') || id.startsWith('room:') || id.startsWith('zoom:') || id === 'cenital';
       set((s) => ({
         cameraRequest: { id, nonce: nonce++, instant },
         lastPreset: special ? s.lastPreset : { ...s.lastPreset, [s.tab]: id === 'inicio' ? undefined : id },

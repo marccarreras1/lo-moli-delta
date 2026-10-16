@@ -111,6 +111,18 @@ export function CameraRig({ presets, request, tab, eyeHeight, interiorFov, layou
       zoomBy(Number(id.slice(5)));
       return;
     }
+    if (id === 'cenital') {
+      // alterna entre la vista desde arriba (norte del plano hacia arriba) y una vista inclinada a la misma distancia
+      const t = c.target.clone();
+      const off = camera.position.clone().sub(t);
+      const d = Math.max(off.length(), 12);
+      const top = off.y / off.length() > 0.995;
+      if (top) {
+        const az = Math.atan2(off.x, off.z) || Math.PI * 0.25;
+        go(t.clone().add(new THREE.Vector3(Math.sin(az) * d * 0.64, d * 0.77, Math.cos(az) * d * 0.64)), t, camera.fov, false, false);
+      } else go(t.clone().add(new THREE.Vector3(0, d, 0.001)), t, camera.fov, false, false);
+      return;
+    }
     if (id.startsWith('paso:')) {
       // desplazamiento controlado en interiores: solo si se queda dentro de la estancia
       const dir = c.target.clone().sub(camera.position).setY(0).normalize().multiplyScalar(0.5 * Number(id.slice(5)));
@@ -297,7 +309,8 @@ export function CameraRig({ presets, request, tab, eyeHeight, interiorFov, layou
   const clampTarget = () => {
     const c = controls.current;
     if (!c || interior) return;
-    const m = Math.max(R * 0.6, 75);
+    // la finca llega a ≈120 m de la casa
+    const m = Math.max(R * 0.6, 130);
     c.target.x = THREE.MathUtils.clamp(c.target.x, minX - m, maxX + m);
     c.target.z = THREE.MathUtils.clamp(c.target.z, minY - m, maxY + m);
     c.target.y = THREE.MathUtils.clamp(c.target.y, 0, layout.topHeight);
@@ -307,7 +320,7 @@ export function CameraRig({ presets, request, tab, eyeHeight, interiorFov, layou
   interiorRef.current = interior;
   const plan = tab === 'plantas';
   // fuera se puede alejar hasta ver la finca entera (el camino y la entrada quedan a unos 65 m)
-  limits.current = { min: interior ? 0.3 : 1.5, max: interior ? 1 : Math.max(R * 4.5, 160) };
+  limits.current = { min: interior ? 0.3 : 1.5, max: interior ? 1 : Math.max(R * 4.5, 800) };
   return (
     <OrbitControls
       ref={controls}
@@ -319,7 +332,7 @@ export function CameraRig({ presets, request, tab, eyeHeight, interiorFov, layou
       enableZoom={!interior}
       minDistance={anim.current ? 0 : limits.current.min}
       maxDistance={anim.current ? Infinity : limits.current.max}
-      minPolarAngle={plan ? 0 : interior ? 0.25 : 0.05}
+      minPolarAngle={plan || !interior ? 0 : 0.25}
       maxPolarAngle={plan ? 0.0001 : interior ? Math.PI - 0.35 : Math.PI / 2 - 0.04}
       rotateSpeed={interior ? -0.35 : 0.7}
       screenSpacePanning

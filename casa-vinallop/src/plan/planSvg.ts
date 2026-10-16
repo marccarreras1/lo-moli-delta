@@ -200,6 +200,16 @@ function outdoorSvg(layout: Layout, od: NonNullable<Layout['outdoor']>, labels: 
       g.push(`<text x="${n4(mx)}" y="${n4(my - 0.1)}" font-size="0.2" fill="#6d5c42" text-anchor="middle" transform="rotate(${n4(ang)} ${n4(mx)} ${n4(my)})">camino a la entrada de la finca (≈${Math.round(total)} m; entrada de ${fmtM(acc.anchoEntrada)} m) · trazado aproximado →</text>`);
     }
   }
+  // huella del edificio en el Catastro (antes de la reforma): referencia para comparar con el levantamiento
+  const ec = layout.site?.edificioCatastro;
+  if (ec) {
+    g.push(`<polygon points="${ec.poligono.map((p) => `${n4(p[0])},${n4(p[1])}`).join(' ')}" fill="none" stroke="#3d6fa8" stroke-width="0.025" stroke-dasharray="0.18 0.07 0.03 0.07" pointer-events="none" data-catastro="edificio"/>`);
+    if (labels) {
+      const lx = ec.poligono.reduce((a2, p) => a2 + p[0], 0) / ec.poligono.length;
+      const ly = Math.max(...ec.poligono.map((p) => p[1])) + 0.2;
+      g.push(`<text x="${n4(lx)}" y="${n4(ly)}" font-size="0.11" fill="#3d6fa8" text-anchor="middle" pointer-events="none">huella catastral antes de la reforma · ${ec.area} m² construidos</text>`);
+    }
+  }
   for (const t of layout.site?.trees ?? []) {
     // copa: círculo recortado por los límites medidos (si los hay), con la línea del límite marcada
     const k = t.copa;

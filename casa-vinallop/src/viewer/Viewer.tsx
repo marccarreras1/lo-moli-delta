@@ -63,6 +63,30 @@ export function useSun(ambience: Ambience): { az: number; el: number; hdriTurn: 
   return { az, el, hdriTurn: az - a.az };
 }
 
+/** punto dentro de un polígono (par-impar) */
+function inPoly(poly: [number, number][], x: number, y: number) {
+  let c = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i];
+    const [xj, yj] = poly[j];
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c;
+  }
+  return c;
+}
+
+/** La niebla se aleja con la cámara: vista desde muy arriba o muy lejos, la finca no se pierde en la bruma. */
+function FogFollow({ near, far, center }: { near: number; far: number; center: [number, number] }) {
+  const scene = useThree((s) => s.scene);
+  useFrame(({ camera }) => {
+    const f = scene.fog as THREE.Fog | null;
+    if (!f) return;
+    const d = Math.hypot(camera.position.x - center[0], camera.position.y, camera.position.z - center[1]);
+    f.near = Math.max(near, d * 0.9);
+    f.far = Math.max(far, d * 2.6);
+  });
+  return null;
+}
+
 export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void; insets: { bottom: number; right: number }; onEnterRoom: (id: string) => void }) {
   const { layout, cameras, variant } = useModel();
   const tab = useStore((s) => s.tab);
@@ -146,6 +170,7 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
     >
       <color attach="background" args={[amb.bg]} />
       <fog attach="fog" args={[amb.bg, layout.site && v.showSite ? 90 : 60, layout.site && v.showSite ? 420 : 140]} />
+      <FogFollow near={layout.site && v.showSite ? 90 : 60} far={layout.site && v.showSite ? 420 : 140} center={[(layout.bounds.minX + layout.bounds.maxX) / 2, (layout.bounds.minY + layout.bounds.maxY) / 2]} />
       {v.ambience !== 'noche' && tab !== 'plantas' && <SkyDome ambience={v.ambience} />}
       <Environment intensity={amb.env * (tab === 'interior' && quality === 'alta' ? 0.7 : 1)} exposure={amb.exposure} hdri={tab === 'plantas' ? null : hdriFor(v.ambience)} turn={sun.hdriTurn} />
       <Lights layout={layout} intensity={v.lightIntensity} ambience={v.ambience} shadowSize={quality === 'alta' ? 4096 : 2048} interior={tab === 'interior' && quality === 'alta'} wide={!!layout.site && v.showSite && tab === 'exterior'} />
@@ -302,14 +327,20 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
       return c;
     };
     // olivos reales de la foto de dron (posición y tamaño de copa)
-    const candidates: { x: number; y: number; k: number; rot: number; real?: boolean }[] = (site.olives.fijos ?? []).map(([x, y, d], i) => ({ x, y, k: Math.min(1.35, Math.max(0.55, d / 5.6)), rot: ((i * 2.399) % (Math.PI * 2)), real: true }));
-    for (let gx = -extent; gx <= extent; gx += s) {
-      for (let gy = -extent; gy <= extent; gy += s) {
+    // con el lindero catastral, el olivar llena la parcela (a ≥2,5 m del lindero); sin él, un círculo alrededor de la casa
+    const lindero = site.parcela?.poligono;
+    const dentro = (x: number, y: number, m: number) => !lindero || (inPoly(lindero, x, y) && distToPath([...lindero, lindero[0]], x, y) > m);
+    const candidates: { x: number; y: number; k: number; rot: number; real?: boolean }[] = (site.olives.fijos ?? [])
+      .map(([x, y, d], i) => ({ x, y, k: Math.min(1.35, Math.max(0.55, d / 5.6)), rot: ((i * 2.399) % (Math.PI * 2)), real: true }))
+      .filter((o) => dentro(o.x, o.y, 1));
+    const bx = lindero ? lindero.reduce((b, [x, y]) => [Math.min(b[0], x - cx), Math.min(b[1], y - cy), Math.max(b[2], x - cx), Math.max(b[3], y - cy)], [0, 0, 0, 0]) : [-extent, -extent, extent, extent];
+    for (let gx = Math.floor(bx[0] / s) * s; gx <= bx[2]; gx += s) {
+      for (let gy = Math.floor(bx[1] / s) * s; gy <= bx[3]; gy += s) {
         const x = cx + gx + (r() - 0.5) * 1.6;
         const y = cy + gy + (r() - 0.5) * 1.6;
         const k = 0.88 + r() * 0.32;
         const rot = r() * Math.PI * 2;
-        if (Math.hypot(gx, gy) > extent) continue;
+        if (lindero ? !dentro(x, y, 2.5) : Math.hypot(gx, gy) > extent) continue;
         if (inZona(x, y)) continue;
         candidates.push({ x, y, k, rot });
       }
@@ -465,15 +496,17 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
   useEffect(() => () => carobs.forEach((c) => { c.wood.dispose(); c.leaves.dispose(); c.leafMat.dispose(); c.barkMat.dispose(); }), [carobs]);
   return (
     <group>
-      {!lite && <Landscape cx={cx} cy={cy} grove={site.olives.extent} />}
+      {!lite && <Landscape cx={cx} cy={cy} grove={site.parcela ? Math.max(site.olives.extent, cy - Math.min(...site.parcela.poligono.map((q) => q[1])) + 4) : site.olives.extent} />}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[cx, -0.16, cy]} receiveShadow>
         <circleGeometry args={[700, 48]} />
         <meshStandardMaterial color="#c4a688" roughness={1} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[cx, -0.121, cy]} receiveShadow>
-        <circleGeometry args={[site.olives.extent + 12, 96]} />
-        <meshStandardMaterial map={soil} color="#ffffff" roughness={1} />
-      </mesh>
+      {site.parcela ? <Lindero poligono={site.parcela.poligono} /> : (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[cx, -0.121, cy]} receiveShadow>
+          <circleGeometry args={[site.olives.extent + 12, 96]} />
+          <meshStandardMaterial map={soil} color="#ffffff" roughness={1} />
+        </mesh>
+      )}
       {site.pavements.map((p) => (
         <mesh key={p.id} position={[(p.rect[0] + p.rect[2]) / 2, -0.1, (p.rect[1] + p.rect[3]) / 2]} receiveShadow>
           <boxGeometry args={[p.rect[2] - p.rect[0], 0.04, p.rect[3] - p.rect[1]]} />
@@ -679,6 +712,44 @@ function distToPath(path: [number, number][], x: number, y: number) {
 }
 
 /** camino de tierra y grava hasta la entrada de la finca, con los postes de la entrada */
+/** Finca según el lindero catastral: tierra del olivar con la forma de la parcela y el lindero marcado en el suelo. */
+function Lindero({ poligono }: { poligono: [number, number][] }) {
+  const { geo, tex } = useMemo(() => {
+    // la forma se dibuja en el plano XY y se tumba (-90° en X): la Y del plano pasa a −Z, por eso se invierte
+    const shape = new THREE.Shape(poligono.map(([x, y]) => new THREE.Vector2(x, -y)));
+    const g = new THREE.ShapeGeometry(shape);
+    const t = soilTexture().clone();
+    // las UV de la forma van en metros: una tesela cada 7 m, como en el círculo
+    t.repeat.set(1 / 7, 1 / 7);
+    t.needsUpdate = true;
+    return { geo: g, tex: t };
+  }, [poligono]);
+  useEffect(() => () => { geo.dispose(); tex.dispose(); }, [geo, tex]);
+  const lados = poligono.map((p, i) => {
+    const q = poligono[(i + 1) % poligono.length];
+    return { c: [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2] as [number, number], len: Math.hypot(q[0] - p[0], q[1] - p[1]), ang: Math.atan2(q[1] - p[1], q[0] - p[0]) };
+  });
+  return (
+    <group>
+      <mesh geometry={geo} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.121, 0]} receiveShadow>
+        <meshStandardMaterial map={tex} color="#ffffff" roughness={1} />
+      </mesh>
+      {lados.map((l, i) => (
+        <mesh key={i} position={[l.c[0], -0.1, l.c[1]]} rotation={[-Math.PI / 2, 0, -l.ang]}>
+          <planeGeometry args={[l.len + 0.4, 0.4]} />
+          <meshStandardMaterial color="#e9dfc8" roughness={1} />
+        </mesh>
+      ))}
+      {poligono.map(([x, y], i) => (
+        <mesh key={`v${i}`} position={[x, 0.3, y]} castShadow>
+          <boxGeometry args={[0.25, 0.85, 0.25]} />
+          <meshStandardMaterial color="#d8cdb4" roughness={0.9} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function Acceso({ a }: { a: NonNullable<import('../data/types').Site['acceso']> }) {
   const segs = a.camino.slice(0, -1).map((p, i) => {
     const q = a.camino[i + 1];

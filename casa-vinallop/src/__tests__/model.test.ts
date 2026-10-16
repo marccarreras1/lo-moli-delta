@@ -262,7 +262,19 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(x).toBeGreaterThanOrEqual(3.85);
     expect(x + o.width).toBeLessThanOrEqual(6.25);
   });
-  it('norte a ≈22° en sentido horario desde el frontal A (captura de Mapas de Apple)', () => expect(layout.northDeg).toBe(22));
+  it('norte a ≈20° en sentido horario desde el frontal A (eje del edificio catastral; Mapas de Apple daba ≈22°)', () => expect(layout.northDeg).toBe(20));
+  it('lindero catastral: 23.162 m², la casa y el algarrobo dentro y la huella catastral sobre la casa', () => {
+    const site = layout.site!;
+    const poly = site.parcela!.poligono;
+    let a = 0;
+    for (let i = 0; i < poly.length; i++) { const [x0, y0] = poly[i]; const [x1, y1] = poly[(i + 1) % poly.length]; a += x0 * y1 - x1 * y0; }
+    expect(Math.abs(a / 2)).toBeCloseTo(23162, -1);
+    for (const p of [[0, 0], [16.33, 0], [16.33, 5.22], [0, 5.22], site.trees[0].c] as [number, number][]) expect(pointInPolygon(p, poly)).toBe(true);
+    const xs = site.edificioCatastro!.poligono.map((p) => p[0]);
+    const ys = site.edificioCatastro!.poligono.map((p) => p[1]);
+    expect((Math.min(...xs) + Math.max(...xs)) / 2).toBeCloseTo(16.33 / 2, 1);
+    expect((Math.min(...ys) + Math.max(...ys)) / 2).toBeCloseTo(5.22 / 2, 1);
+  });
   it('genera vistas interiores por estancia, incluido el altell a su cota', () => {
     const cams = cameraPresets(layout);
     const alt = cams.find((c) => c.id === 'int-altell');
