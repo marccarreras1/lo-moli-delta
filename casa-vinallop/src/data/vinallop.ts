@@ -401,7 +401,7 @@ const outdoor: Outdoor = {
     {
       id: 'deposito-agua-potable', label: 'Depósito enterrado de agua potable', c: [-6.0, r2(W / 2)], axis: 'y',
       diameter: 2.45, length: 2.94, capacity: 12000, manhole: 0.6, cover: 0.5, status: 'propuesto',
-      note: 'Depósito horizontal para enterrar DE12000 de Hidroserver (presupuesto PN20260783): 12.000 l, Ø 2,45 m × 2,94 m, poliéster reforzado con fibra de vidrio y resina alimentaria, boca de hombre superior de 600 mm con «T» de venteo. Ubicación propuesta junto al cuarto técnico (lado izquierdo), a ≈2,3 m de su cimentación (fuera de las cotas y con sitio para la excavación), para llevar la tubería a la bomba y al termo; a confirmar sobre el terreno según el pozo, el acceso del camión y la grúa (la descarga es a pie de transporte) y las instrucciones de enterrado del fabricante. Tierra encima ≈0,50 m propuesta.',
+      note: 'Depósito horizontal para enterrar DE12000 de Hidroserver (presupuesto PN20260783): 12.000 l, Ø 2,45 m × 2,94 m, poliéster reforzado con fibra de vidrio y resina alimentaria, boca de hombre superior de 600 mm con «T» de venteo. Ubicación propuesta junto al cuarto técnico (lado izquierdo), a ≈2,3 m de su cimentación (fuera de las cotas y con sitio para la excavación), para llevar la tubería a la bomba y al termo; a confirmar sobre el terreno según el pozo, el acceso del camión y la grúa (la descarga es a pie de transporte; la entrada de la finca mide 4,70 m de ancho, suficiente para un camión con el depósito de 2,45 m) y las instrucciones de enterrado del fabricante. Tierra encima ≈0,50 m propuesta.',
     },
   ],
   drains: [

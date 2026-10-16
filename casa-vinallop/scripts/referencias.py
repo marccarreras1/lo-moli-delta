@@ -72,6 +72,7 @@ FOTOS = {
     '177057bfe25a': ('parcela-olivar-2', 'parcela', 'Olivar de la parcela (otra toma)'),
     '2e148469ef71': ('parcela-camino', 'parcela', 'Camino de acceso'),
     'e949de80eb2f': ('parcela-vecinos', 'parcela', 'Margen con amapolas y edificación vecina'),
+    '8c75407dd25c': ('parcela-entrada', 'parcela', 'Entrada de la finca: camino de grava de 4,70 m de ancho entre la valla'),
     '69efdd422079': ('mapa-satelite', 'mapa', 'Captura de Mapas de Apple (vista de satélite)'),
 }
 
