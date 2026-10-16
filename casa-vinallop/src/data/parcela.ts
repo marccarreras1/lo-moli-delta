@@ -23,8 +23,9 @@ export const PARCELA: Site = {
   olives: { spacing: 9, extent: 70, clear: [-1.8, -1.8, 18.1, 7.0], seed: 11 },
   trees: [
     // medido por la propiedad (16/10/2026): el tronco a 2,64 m del lateral derecho (x = 16,33) y a 3,50 m del frontal B
-    // (y = 5,22), medidas hasta la cara del tronco; el centro se sitúa sumando su radio (≈0,50 m)
-    { id: 'algarrobo', label: 'Algarrobo', c: [19.47, 1.22], r: 5.4, h: 8.0, medido: true, note: 'Algarrobo grande y viejo (fotos de dron y de suelo): tronco muy grueso (≈1 m en la base) y retorcido, con raíces vistas; se abre en ramas gruesas a 2–2,5 m; copa ancha y baja. Posición medida por la propiedad: tronco a 2,64 m del lateral derecho de la casa y a 3,50 m de la fachada de la entrada (frontal B), medidas hasta el tronco; centro supuesto a 0,50 m más (radio del tronco).' },
+    // (y = 5,22), medidas hasta la cara del tronco; el centro se sitúa sumando su radio (≈0,50 m).
+    // Por el lado de la cristalera la copa solo sale 2,00 m de la línea de la fachada A (y = 0).
+    { id: 'algarrobo', label: 'Algarrobo', c: [19.47, 1.22], r: 5.4, h: 8.0, medido: true, copa: { yMin: -2.0 }, note: 'Algarrobo grande y viejo (fotos de dron y de suelo): tronco muy grueso (≈1 m en la base) y retorcido, con raíces vistas; se abre en ramas gruesas a 2–2,5 m; copa ancha y baja. Posición medida por la propiedad: tronco a 2,64 m del lateral derecho de la casa y a 3,50 m de la fachada de la entrada (frontal B), medidas hasta el tronco; centro supuesto a 0,50 m más (radio del tronco). Por el lado de la cristalera la copa solo sale 2,00 m de la línea de la fachada A (medida de la propiedad).' },
     // olivos frente a la cristalera (frontal A, y = 0), medidos por la propiedad (16/10/2026) hasta el tronco:
     // el grande a 3,60 m de la fachada y a 2,60 m del extremo de la casa (x = 16,33), medido a lo largo de la fachada;
     // el pequeño a 4,50 m de la fachada y a 4,60 m del grande, hacia el centro.

@@ -279,7 +279,9 @@ export interface Site {
   /** olivar en retícula aproximada; se deja libre la zona `clear` alrededor de la casa */
   olives: { spacing: number; extent: number; clear: [number, number, number, number]; seed: number };
   /** medido: posición tomada en el terreno por la propiedad (si no, aproximada sobre fotos) */
-  trees: { id: string; label: string; c: Vec2; r: number; h: number; note: string; medido?: boolean; kind?: 'algarrobo' | 'olivo'; trunk?: { r: number; h: number; viejo?: boolean } }[];
+  trees: { id: string; label: string; c: Vec2; r: number; h: number; note: string; medido?: boolean; kind?: 'algarrobo' | 'olivo'; trunk?: { r: number; h: number; viejo?: boolean };
+    /** límites medidos de la copa en planta (coordenadas del proyecto): la copa no pasa de esas líneas */
+    copa?: { xMin?: number; xMax?: number; yMin?: number; yMax?: number } }[];
   pavements: { id: string; label: string; rect: [number, number, number, number]; note: string }[];
 }
 

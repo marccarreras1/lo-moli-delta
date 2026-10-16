@@ -319,7 +319,9 @@ const SOL_INV: [number, number, number, number] = [r2(X_PUERTA - 0.2), W, r2(L +
 /** Soleras elevadas 0,18 m sobre el terreno (escalón en el borde) y otro escalón de 0,18 m hasta el suelo interior (+0,36). */
 const SOL_TOP = 0.18;
 /** la mesa va justo bajo el algarrobo (propiedad), entre el tronco y el tramo del frontal A: el alcorque y las sillas no se tocan */
-const MESA_EXT: Vec2 = [r2(L + 2.0), r2(Math.max(ALGARROBO[1] - 3.6, -SOL_TRASERA + 1.5))];
+// por el lado de la cristalera la copa solo sale 2,00 m de la fachada A (medida de la propiedad): la mesa se acerca al
+// tronco lo justo para quedar bajo la copa sin que las sillas pisen el alcorque ni salgan de la solera
+const MESA_EXT: Vec2 = [r2(L + 1.52), r2(Math.max(ALGARROBO[1] - 2.72, -SOL_TRASERA + 1.5))];
 const outdoor: Outdoor = {
   pavements: [
     { id: 'grava-comedor', label: 'Transición de grava', rect: [-3.0, r2(-SOL_TRASERA - 0.5), r2(L + SOL_LATERAL + 0.5), r2(W + 0.5)], joints: 0, status: 'propuesto', note: 'Borde de grava de 0,50 m entre la solera y la tierra; también a lo largo del frontal B y la entrada, que quedan sin solera.' },

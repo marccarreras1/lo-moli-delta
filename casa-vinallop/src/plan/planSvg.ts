@@ -186,7 +186,19 @@ function outdoorSvg(layout: Layout, od: NonNullable<Layout['outdoor']>, labels: 
   }
   for (const d of od.drains ?? []) g.push(`<line x1="${n4(d.a[0])}" y1="${n4(d.a[1])}" x2="${n4(d.b[0])}" y2="${n4(d.b[1])}" stroke="#3a3833" stroke-width="0.08" stroke-dasharray="0.04 0.02"/>`);
   for (const t of layout.site?.trees ?? []) {
-    g.push(`<circle cx="${n4(t.c[0])}" cy="${n4(t.c[1])}" r="${n4(t.r)}" fill="none" stroke="#6f7f52" stroke-width="0.025" stroke-dasharray="0.15 0.08"/><circle cx="${n4(t.c[0])}" cy="${n4(t.c[1])}" r="${t.kind === 'olivo' ? 0.2 : 0.3}" fill="#8a7a64" stroke="none"/>`);
+    // copa: círculo recortado por los límites medidos (si los hay), con la línea del límite marcada
+    const k = t.copa;
+    const clip = k ? `tree-clip-${t.id}` : '';
+    if (k) {
+      const x0 = k.xMin ?? t.c[0] - t.r - 1, x1 = k.xMax ?? t.c[0] + t.r + 1, y0 = k.yMin ?? t.c[1] - t.r - 1, y1 = k.yMax ?? t.c[1] + t.r + 1;
+      g.push(`<clipPath id="${clip}"><rect x="${n4(x0)}" y="${n4(y0)}" width="${n4(x1 - x0)}" height="${n4(y1 - y0)}"/></clipPath>`);
+      for (const yy of [k.yMin, k.yMax]) if (yy != null && Math.abs(yy - t.c[1]) < t.r) {
+        const hw = Math.sqrt(t.r * t.r - (yy - t.c[1]) ** 2);
+        g.push(`<line x1="${n4(t.c[0] - hw)}" y1="${n4(yy)}" x2="${n4(t.c[0] + hw)}" y2="${n4(yy)}" stroke="#6f7f52" stroke-width="0.025" stroke-dasharray="0.15 0.08"/>`);
+        if (labels) g.push(`<text x="${n4(t.c[0] + hw + 0.1)}" y="${n4(yy + 0.05)}" font-size="0.12" fill="#56663f">límite de copa medido</text>`);
+      }
+    }
+    g.push(`<circle cx="${n4(t.c[0])}" cy="${n4(t.c[1])}" r="${n4(t.r)}" fill="none" stroke="#6f7f52" stroke-width="0.025" stroke-dasharray="0.15 0.08"${clip ? ` clip-path="url(#${clip})"` : ''}/><circle cx="${n4(t.c[0])}" cy="${n4(t.c[1])}" r="${t.kind === 'olivo' ? 0.2 : 0.3}" fill="#8a7a64" stroke="none"/>`);
     if (labels) g.push(`<text x="${n4(t.c[0])}" y="${n4(t.c[1] - 0.45)}" font-size="0.16" fill="#56663f" text-anchor="middle">${esc(t.label)} (${t.medido ? 'posición medida' : 'posición aproximada'})</text>`);
   }
   for (const f of od.furniture) {
