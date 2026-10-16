@@ -25,6 +25,13 @@ export const PARCELA: Site = {
     // medido por la propiedad (16/10/2026): el tronco a 2,64 m del lateral derecho (x = 16,33) y a 3,50 m del frontal B
     // (y = 5,22), medidas hasta la cara del tronco; el centro se sitúa sumando su radio (≈0,50 m)
     { id: 'algarrobo', label: 'Algarrobo', c: [19.47, 1.22], r: 5.4, h: 8.0, medido: true, note: 'Algarrobo grande y viejo (fotos de dron y de suelo): tronco muy grueso (≈1 m en la base) y retorcido, con raíces vistas; se abre en ramas gruesas a 2–2,5 m; copa ancha y baja. Posición medida por la propiedad: tronco a 2,64 m del lateral derecho de la casa y a 3,50 m de la fachada de la entrada (frontal B), medidas hasta el tronco; centro supuesto a 0,50 m más (radio del tronco).' },
+    // olivos frente a la cristalera (frontal A, y = 0), medidos por la propiedad (16/10/2026) hasta el tronco:
+    // el grande a 3,60 m de la fachada y a 2,60 m del extremo de la casa (x = 16,33), medido a lo largo de la fachada;
+    // el pequeño a 4,50 m de la fachada y a 4,60 m del grande, hacia el centro. Radio de tronco supuesto 0,25 / 0,20 m.
+    { id: 'olivo-cristalera', label: 'Olivo de la cristalera', kind: 'olivo', medido: true, c: [13.48, -3.85], r: 2.8, h: 5.0,
+      note: 'Olivo grande frente a la cristalera (frontal A): tronco a 3,60 m de la fachada y a 2,60 m del extremo derecho de la casa, a lo largo de la fachada (medidas de la propiedad hasta el tronco). Queda a ≈0,45 m del borde de la solera y su copa pasa por encima del porche: hay que podar las ramas que toquen la pérgola y cuidar las raíces al hacer la solera.' },
+    { id: 'olivo-pequeno', label: 'Olivo pequeño', kind: 'olivo', medido: true, c: [8.5, -4.7], r: 1.9, h: 3.6,
+      note: 'Olivo pequeño frente a la cristalera: tronco a 4,50 m de la fachada y a 4,60 m del olivo grande, hacia el centro de la casa (medidas de la propiedad hasta el tronco).' },
   ],
   pavements: [
     { id: 'solera', label: 'Solera de hormigón', rect: [-0.3, 5.22, 17.2, 7.8], note: 'Franja de hormigón de ≈2,5 m a lo largo del frontal B (vista cenital).' },
