@@ -290,7 +290,11 @@ export interface Site {
     copa?: { xMin?: number; xMax?: number; yMin?: number; yMax?: number } }[];
   pavements: { id: string; label: string; rect: [number, number, number, number]; note: string }[];
   /** entrada de la finca y camino de acceso hasta la casa (eje del camino, de la casa a la entrada) */
-  acceso?: { entrada: Vec2; anchoEntrada: number; camino: Vec2[]; anchoCamino: number; status: DataStatus; note: string };
+  acceso?: { entrada: Vec2; anchoEntrada: number; camino: Vec2[]; anchoCamino: number; status: DataStatus; note: string;
+    /** camino agrícola por fuera del lindero, desde la puerta */
+    exterior?: Vec2[];
+    /** vallas metálicas móviles junto a la puerta, por fuera (número de tramos de ≈2,4 m) */
+    vallasMoviles?: number };
   /** lindero de la finca (Catastro): el olivar llena la parcela y el 3D marca el límite */
   parcela?: { poligono: Vec2[]; area: number; status: DataStatus; note: string };
   /** huella del edificio en el Catastro, antes de la reforma (referencia en planta) */

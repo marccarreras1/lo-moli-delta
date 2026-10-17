@@ -9,7 +9,7 @@ la escala (el borde con los campos quedaba a ≈66 m de la casa y el lindero est
 segunda homografía que deja la casa en su sitio y lleva:
 - el muro de piedra (derecha de la foto) sobre el lindero oeste (vértices 0–1 de la parcela),
 - el borde del olivar con los campos (arriba de la foto) sobre el lindero este (vértices 12–13),
-- el final del camino marcado en rojo a la entrada, en la esquina sureste del lindero (indicación de la propiedad).
+- el final del camino marcado en rojo a la entrada, junto a la esquina sureste del lindero (indicación de la propiedad).
 """
 import json
 import os
@@ -48,12 +48,18 @@ ol = open(os.path.join(ROOT, 'src/data/olivar.ts'), encoding='utf-8').read()
 C = np.array(json.loads(re.search(r'CAMINO_FOTO[^=]*=\s*(\[.*?\]);', ol, re.S).group(1)))
 house = np.array([(0, 0), (16.33, 0), (16.33, 5.22), (0, 5.22)], float)
 
-# entrada: en la esquina sureste (vértice 13), metida 3,5 m por la bisectriz para que quepa la puerta de 4,70 m
-v13, v12, v14 = P[13], P[12], P[14]
-u1 = (v12 - v13) / np.linalg.norm(v12 - v13)
-u2 = (v14 - v13) / np.linalg.norm(v14 - v13)
-bis = (u1 + u2) / np.linalg.norm(u1 + u2)
-ENT = v13 + bis * 3.5
+# entrada (foto de la propiedad desde fuera, 17/10/2026): hueco en la malla del lindero este, junto a la esquina sureste
+# (vértice 13); la puerta va sobre el lindero, a ≈14 m de la esquina (en la foto la malla sigue a la izquierda del hueco, con olivos detrás).
+v13, v12 = P[13], P[12]
+u1 = (v12 - v13) / np.linalg.norm(v12 - v13)  # a lo largo del lindero, hacia el norte
+nin = np.array([u1[1], -u1[0]])  # normal hacia dentro de la parcela
+if (P.mean(0) - v13) @ nin < 0:
+    nin = -nin
+GATE = v13 + u1 * 14.0
+APROX = GATE + nin * 6.0  # el camino llega perpendicular a la puerta
+ENT = APROX
+# camino agrícola por fuera, a lo largo del lindero y hacia el norte (por donde llega en la foto)
+EXT = [GATE - nin * 3.5, GATE - nin * 3.5 + u1 * 45, GATE - nin * 3.5 + u1 * 95]
 
 
 def line_res(pts, a, b):
@@ -77,16 +83,23 @@ G = np.append(h, 1).reshape(3, 3)
 print('casa tras el ajuste', np.round(app(h, house), 2).tolist())
 print('muro → lindero oeste (m)', np.round(line_res(app(h, W), P[0], P[1]), 1).tolist())
 print('campos → lindero este (m)', np.round(line_res(app(h, B), P[12], P[13]), 1).tolist())
-print('final del camino', np.round(app(h, C[-1:]), 1).tolist(), 'entrada', np.round(ENT, 1).tolist())
+print('final del camino', np.round(app(h, C[-1:]), 1).tolist(), 'llegada', np.round(ENT, 1).tolist(), 'puerta', np.round(GATE, 1).tolist())
 out = f"""/**
  * Corrección de la foto de dron con el lindero catastral (scripts/ajuste_catastro.py). Generado: no editar a mano.
- * AJUSTE_FOTO lleva el suelo de la foto (olivar.ts) al del modelo; ENTRADA_FINCA es la puerta, en la esquina sureste.
+ * AJUSTE_FOTO lleva el suelo de la foto (olivar.ts) al del modelo; ENTRADA_FINCA es la puerta, junto a la esquina sureste.
  */
 import type {{ Vec2 }} from './types';
 
 export const AJUSTE_FOTO: number[] = {json.dumps([round(float(v), 7) for v in G.ravel()])};
 
-export const ENTRADA_FINCA: Vec2 = [{ENT[0]:.2f}, {ENT[1]:.2f}];
+/** puerta de la finca, sobre el lindero este junto a la esquina sureste */
+export const ENTRADA_FINCA: Vec2 = [{GATE[0]:.2f}, {GATE[1]:.2f}];
+
+/** punto del camino, por dentro, desde el que se llega perpendicular a la puerta */
+export const APROX_ENTRADA: Vec2 = [{APROX[0]:.2f}, {APROX[1]:.2f}];
+
+/** camino agrícola por fuera del lindero este, de la puerta hacia el norte */
+export const CAMINO_EXTERIOR: Vec2[] = {json.dumps([[round(float(p[0]), 2), round(float(p[1]), 2)] for p in EXT])};
 
 /** aplica AJUSTE_FOTO a un punto de la foto */
 export const ajustarFoto = ([x, y]: Vec2): Vec2 => {{

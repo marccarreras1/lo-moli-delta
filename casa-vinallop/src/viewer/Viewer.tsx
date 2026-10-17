@@ -447,6 +447,10 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
     oliveSets.forEach((s) => {
       s.wood.instanceMatrix.needsUpdate = true;
       s.leaves.instanceMatrix.needsUpdate = true;
+      // la esfera de recorte se calcula con las posiciones reales (si no, se queda en el origen y el olivar
+      // desaparece cuando la casa sale del encuadre)
+      s.wood.computeBoundingSphere();
+      s.leaves.computeBoundingSphere();
     });
   };
   useEffect(() => {
@@ -501,7 +505,7 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
         <circleGeometry args={[700, 48]} />
         <meshStandardMaterial color="#c4a688" roughness={1} />
       </mesh>
-      {site.parcela ? <Lindero poligono={site.parcela.poligono} /> : (
+      {site.parcela ? <Lindero poligono={site.parcela.poligono} hueco={site.acceso ? { c: site.acceso.entrada, r: site.acceso.anchoEntrada / 2 + 4.1 } : undefined} /> : (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[cx, -0.121, cy]} receiveShadow>
           <circleGeometry args={[site.olives.extent + 12, 96]} />
           <meshStandardMaterial map={soil} color="#ffffff" roughness={1} />
@@ -713,7 +717,7 @@ function distToPath(path: [number, number][], x: number, y: number) {
 
 /** camino de tierra y grava hasta la entrada de la finca, con los postes de la entrada */
 /** Finca según el lindero catastral: tierra del olivar con la forma de la parcela y el lindero marcado en el suelo. */
-function Lindero({ poligono }: { poligono: [number, number][] }) {
+function Lindero({ poligono, hueco }: { poligono: [number, number][]; hueco?: { c: [number, number]; r: number } }) {
   const { geo, tex } = useMemo(() => {
     // la forma se dibuja en el plano XY y se tumba (-90° en X): la Y del plano pasa a −Z, por eso se invierte
     const shape = new THREE.Shape(poligono.map(([x, y]) => new THREE.Vector2(x, -y)));
@@ -725,6 +729,33 @@ function Lindero({ poligono }: { poligono: [number, number][] }) {
     return { geo: g, tex: t };
   }, [poligono]);
   useEffect(() => () => { geo.dispose(); tex.dispose(); }, [geo, tex]);
+  // malla de alambre con postes cada ≈3 m por todo el lindero, salvo en el hueco de la puerta
+  const malla = useMemo(() => {
+    const tramos: { c: [number, number]; len: number; ang: number }[] = [];
+    const postes: [number, number][] = [];
+    const fuera = (x: number, y: number) => !hueco || Math.hypot(x - hueco.c[0], y - hueco.c[1]) > hueco.r;
+    poligono.forEach((p, i) => {
+      const q = poligono[(i + 1) % poligono.length];
+      const L = Math.hypot(q[0] - p[0], q[1] - p[1]);
+      const n = Math.max(1, Math.round(L / 3));
+      for (let k = 0; k < n; k++) {
+        const a0: [number, number] = [p[0] + ((q[0] - p[0]) * k) / n, p[1] + ((q[1] - p[1]) * k) / n];
+        const a1: [number, number] = [p[0] + ((q[0] - p[0]) * (k + 1)) / n, p[1] + ((q[1] - p[1]) * (k + 1)) / n];
+        if (fuera(...a0)) postes.push(a0);
+        if (fuera(...a0) && fuera(...a1)) tramos.push({ c: [(a0[0] + a1[0]) / 2, (a0[1] + a1[1]) / 2], len: L / n, ang: Math.atan2(q[1] - p[1], q[0] - p[0]) });
+      }
+    });
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const post = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.025, 0.025, 1.3, 6), new THREE.MeshStandardMaterial({ color: '#6f6a60', roughness: 0.6, metalness: 0.4 }), Math.max(1, postes.length));
+    postes.forEach(([x, y], i) => { m.compose(new THREE.Vector3(x, 0.53, y), q.identity(), new THREE.Vector3(1, 1, 1)); post.setMatrixAt(i, m); });
+    post.count = postes.length;
+    const net = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1.1), new THREE.MeshStandardMaterial({ color: '#8d918c', transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false, roughness: 0.8 }), Math.max(1, tramos.length));
+    tramos.forEach((t, i) => { q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -t.ang); m.compose(new THREE.Vector3(t.c[0], 0.47, t.c[1]), q, new THREE.Vector3(t.len, 1, 1)); net.setMatrixAt(i, m); });
+    net.count = tramos.length;
+    return { post, net };
+  }, [poligono, hueco]);
+  useEffect(() => () => { for (const o of [malla.post, malla.net]) { o.geometry.dispose(); (o.material as THREE.Material).dispose(); } }, [malla]);
   const lados = poligono.map((p, i) => {
     const q = poligono[(i + 1) % poligono.length];
     return { c: [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2] as [number, number], len: Math.hypot(q[0] - p[0], q[1] - p[1]), ang: Math.atan2(q[1] - p[1], q[0] - p[0]) };
@@ -740,6 +771,8 @@ function Lindero({ poligono }: { poligono: [number, number][] }) {
           <meshStandardMaterial color="#e9dfc8" roughness={1} />
         </mesh>
       ))}
+      <primitive object={malla.post} />
+      <primitive object={malla.net} />
       {poligono.map(([x, y], i) => (
         <mesh key={`v${i}`} position={[x, 0.3, y]} castShadow>
           <boxGeometry args={[0.25, 0.85, 0.25]} />
@@ -764,6 +797,20 @@ function Acceso({ a }: { a: NonNullable<import('../data/types').Site['acceso']> 
   const tl = Math.hypot(tx, ty) || 1;
   const nx = -ty / tl;
   const ny = tx / tl;
+  // camino agrícola por fuera, desde la puerta
+  const extPts = a.exterior?.length ? [last, ...a.exterior] : [];
+  const ext = extPts.slice(0, -1).map((p, i) => {
+    const q = extPts[i + 1];
+    return { c: [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2] as [number, number], len: Math.hypot(q[0] - p[0], q[1] - p[1]), ang: Math.atan2(q[1] - p[1], q[0] - p[0]) };
+  });
+  // vallas móviles por fuera de la malla, a continuación de la pared seca, hacia donde va el camino agrícola
+  const sgn = a.exterior && a.exterior.length > 1 ? Math.sign((a.exterior[1][0] - a.exterior[0][0]) * nx + (a.exterior[1][1] - a.exterior[0][1]) * ny) || 1 : 1;
+  const d0 = a.anchoEntrada / 2 + 4.3;
+  const vallas = Array.from({ length: a.vallasMoviles ?? 0 }, (_, i) => {
+    const d = sgn * (d0 + 1.2 + i * 2.4);
+    return [last[0] + nx * d + (tx / tl) * 1.0, last[1] + ny * d + (ty / tl) * 1.0] as [number, number];
+  });
+  const vAng = Math.atan2(-ny, nx);
   return (
     <group>
       {segs.map((s, i) => (
@@ -775,6 +822,32 @@ function Acceso({ a }: { a: NonNullable<import('../data/types').Site['acceso']> 
       <group position={[last[0], -0.12, last[1]]} rotation={[0, Math.atan2(-ny, nx), 0]}>
         <PuertaFinca ancho={a.anchoEntrada} />
       </group>
+      {ext.map((s, i) => (
+        <mesh key={`e${i}`} position={[s.c[0], -0.112, s.c[1]]} rotation={[-Math.PI / 2, 0, -s.ang]} receiveShadow>
+          <planeGeometry args={[s.len + 3.5, 3.5]} />
+          <meshStandardMaterial color="#b9ab97" roughness={1} />
+        </mesh>
+      ))}
+      {vallas.map((v, i) => (
+        <group key={`v${i}`} position={[v[0], -0.12, v[1]]} rotation={[0, vAng, 0]}>
+          <VallaMovil />
+        </group>
+      ))}
+    </group>
+  );
+}
+
+/** Valla metálica móvil (tipo control de público) de 2,4 m: marco de tubo, barrotes y pies. Local: x a lo largo. */
+function VallaMovil() {
+  const bars = useMemo(() => Array.from({ length: 13 }, (_, i) => -1.08 + i * 0.18), []);
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({ color: '#c8cbcc', metalness: 0.6, roughness: 0.35 }), []);
+  useEffect(() => () => mat.dispose(), [mat]);
+  return (
+    <group>
+      {[-1.15, 1.15].map((x) => <mesh key={x} position={[x, 0.6, 0]} material={mat}><boxGeometry args={[0.04, 1.1, 0.04]} /></mesh>)}
+      {[0.15, 1.12].map((y) => <mesh key={y} position={[0, y, 0]} material={mat}><boxGeometry args={[2.3, 0.04, 0.04]} /></mesh>)}
+      {bars.map((x) => <mesh key={x} position={[x, 0.63, 0]} material={mat}><boxGeometry args={[0.018, 0.95, 0.018]} /></mesh>)}
+      {[-1.0, 1.0].map((x) => <mesh key={`p${x}`} position={[x, 0.03, 0]} material={mat}><boxGeometry args={[0.05, 0.04, 0.7]} /></mesh>)}
     </group>
   );
 }
