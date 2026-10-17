@@ -811,6 +811,8 @@ function Acceso({ a }: { a: NonNullable<import('../data/types').Site['acceso']> 
     return [last[0] + nx * d + (tx / tl) * 1.0, last[1] + ny * d + (ty / tl) * 1.0] as [number, number];
   });
   const vAng = Math.atan2(-ny, nx);
+  // lado (local ±x) en el que la esquina del lindero deja sin sitio para la pared seca
+  const sinPared = a.esquina ? (Math.sign((a.esquina[0] - last[0]) * nx + (a.esquina[1] - last[1]) * ny) as -1 | 1) : undefined;
   return (
     <group>
       {segs.map((s, i) => (
@@ -820,7 +822,7 @@ function Acceso({ a }: { a: NonNullable<import('../data/types').Site['acceso']> 
         </mesh>
       ))}
       <group position={[last[0], -0.12, last[1]]} rotation={[0, Math.atan2(-ny, nx), 0]}>
-        <PuertaFinca ancho={a.anchoEntrada} />
+        <PuertaFinca ancho={a.anchoEntrada} sinPared={sinPared} />
       </group>
       {ext.map((s, i) => (
         <mesh key={`e${i}`} position={[s.c[0], -0.112, s.c[1]]} rotation={[-Math.PI / 2, 0, -s.ang]} receiveShadow>
@@ -857,7 +859,7 @@ function VallaMovil() {
  * ondulados y tornapunta en diagonal, entre dos pilares de piedra (marès) y con pared seca a los lados.
  * Coordenadas locales: x a lo largo de la entrada, z hacia el camino.
  */
-function PuertaFinca({ ancho }: { ancho: number }) {
+function PuertaFinca({ ancho, sinPared }: { ancho: number; sinPared?: -1 | 1 }) {
   const parts = useMemo(() => {
     const wood: { p: [number, number, number]; s: [number, number, number]; r: [number, number, number] }[] = [];
     const half = ancho / 2;
@@ -910,11 +912,13 @@ function PuertaFinca({ ancho }: { ancho: number }) {
             <boxGeometry args={[0.7, 1.7, 0.6]} />
             <meshStandardMaterial color="#cbbd9b" roughness={0.95} />
           </mesh>
-          {/* pared seca a los lados */}
-          <mesh position={[side * (half + 0.7 + 1.6), 0.55, 0]} castShadow receiveShadow>
-            <boxGeometry args={[3.2, 1.1, 0.6]} />
-            <meshStandardMaterial color="#a39883" roughness={1} />
-          </mesh>
+          {/* pared seca a los lados (no del lado de la esquina del lindero) */}
+          {side !== sinPared && (
+            <mesh position={[side * (half + 0.7 + 1.6), 0.55, 0]} castShadow receiveShadow>
+              <boxGeometry args={[3.2, 1.1, 0.6]} />
+              <meshStandardMaterial color="#a39883" roughness={1} />
+            </mesh>
+          )}
         </group>
       ))}
     </group>

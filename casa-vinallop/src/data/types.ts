@@ -294,7 +294,9 @@ export interface Site {
     /** camino agrícola por fuera del lindero, desde la puerta */
     exterior?: Vec2[];
     /** vallas metálicas móviles junto a la puerta, por fuera (número de tramos de ≈2,4 m) */
-    vallasMoviles?: number };
+    vallasMoviles?: number;
+    /** esquina del lindero junto a la puerta: de ese lado no va pared seca */
+    esquina?: Vec2 };
   /** lindero de la finca (Catastro): el olivar llena la parcela y el 3D marca el límite */
   parcela?: { poligono: Vec2[]; area: number; status: DataStatus; note: string };
   /** huella del edificio en el Catastro, antes de la reforma (referencia en planta) */
