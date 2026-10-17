@@ -49,13 +49,13 @@ C = np.array(json.loads(re.search(r'CAMINO_FOTO[^=]*=\s*(\[.*?\]);', ol, re.S).g
 house = np.array([(0, 0), (16.33, 0), (16.33, 5.22), (0, 5.22)], float)
 
 # entrada (foto de la propiedad desde fuera, 17/10/2026): hueco en la malla del lindero este, junto a la esquina sureste
-# (vértice 13); la puerta va sobre el lindero lateral, pegada a la esquina («en la esquina lateral»): centro a 4 m, con el pilar junto a la esquina y sin pared seca de ese lado.
+# (vértice 13); la puerta va sobre el lindero lateral a ≈14 m de la esquina, como en el esquema enviado a la propiedad y confirmado por ella (17/10/2026).
 v13, v12 = P[13], P[12]
 u1 = (v12 - v13) / np.linalg.norm(v12 - v13)  # a lo largo del lindero, hacia el norte
 nin = np.array([u1[1], -u1[0]])  # normal hacia dentro de la parcela
 if (P.mean(0) - v13) @ nin < 0:
     nin = -nin
-GATE = v13 + u1 * 4.0
+GATE = v13 + u1 * 14.0
 APROX = GATE + nin * 6.0  # el camino llega perpendicular a la puerta
 ENT = APROX
 # camino agrícola por fuera, a lo largo del lindero y hacia el norte (por donde llega en la foto)
