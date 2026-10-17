@@ -73,4 +73,6 @@ export const CAMBIOS_SEED: CambioEntrada[] = [
     'La propiedad confirma la posición de la puerta del esquema de la parcela que se le envió: sobre el lindero lateral (este), a ≈14 m de la esquina sureste, con pilares y pared seca a los dos lados. Se deshace la prueba intermedia que la pegaba a la esquina.'),
   e('c-2026-10-17-puerta-8m', '2026-10-17', 'exterior', 'Puerta más cerca de la esquina',
     'A petición de la propiedad, la puerta de la finca se acerca a la esquina sureste: centro a ≈8 m de ella sobre el lindero lateral (antes ≈14 m), con pilares y pared seca a los dos lados; la del lado de la esquina acaba a ≈1,7 m. El camino interior, el árbol grande y la vista desde el camino se mueven con ella.'),
+  e('c-2026-10-17-puerta-pegada', '2026-10-17', 'exterior', 'Puerta pegada a la esquina',
+    'A petición de la propiedad, la puerta de la finca queda totalmente pegada a la esquina sureste, sobre el lindero lateral: el pilar toca la esquina y de ese lado no hay pared seca; la pared seca queda solo del otro lado, con las vallas móviles a continuación. El camino interior, el árbol grande y la vista desde el camino se mueven con ella.'),
 ];

@@ -505,7 +505,7 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
         <circleGeometry args={[700, 48]} />
         <meshStandardMaterial color="#c4a688" roughness={1} />
       </mesh>
-      {site.parcela ? <Lindero poligono={site.parcela.poligono} hueco={site.acceso ? { c: site.acceso.entrada, r: site.acceso.anchoEntrada / 2 + 4.1 } : undefined} /> : (
+      {site.parcela ? <Lindero poligono={site.parcela.poligono} hueco={site.acceso ? huecoPuerta(site.acceso) : undefined} /> : (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[cx, -0.121, cy]} receiveShadow>
           <circleGeometry args={[site.olives.extent + 12, 96]} />
           <meshStandardMaterial map={soil} color="#ffffff" roughness={1} />
@@ -716,8 +716,16 @@ function distToPath(path: [number, number][], x: number, y: number) {
 }
 
 /** camino de tierra y grava hasta la entrada de la finca, con los postes de la entrada */
+/** Hueco de la malla en la puerta: a lo largo de la línea de la puerta, hasta el final de los pilares y la pared seca. */
+function huecoPuerta(a: NonNullable<import('../data/types').Site['acceso']>) {
+  const last = a.camino[a.camino.length - 1];
+  const prev = a.camino[a.camino.length - 2];
+  const l = Math.hypot(last[0] - prev[0], last[1] - prev[1]) || 1;
+  return { c: last, r: a.anchoEntrada / 2 + 4.1, dir: [-(last[1] - prev[1]) / l, (last[0] - prev[0]) / l] as [number, number] };
+}
+
 /** Finca según el lindero catastral: tierra del olivar con la forma de la parcela y el lindero marcado en el suelo. */
-function Lindero({ poligono, hueco }: { poligono: [number, number][]; hueco?: { c: [number, number]; r: number } }) {
+function Lindero({ poligono, hueco }: { poligono: [number, number][]; hueco?: { c: [number, number]; r: number; dir: [number, number] } }) {
   const { geo, tex } = useMemo(() => {
     // la forma se dibuja en el plano XY y se tumba (-90° en X): la Y del plano pasa a −Z, por eso se invierte
     const shape = new THREE.Shape(poligono.map(([x, y]) => new THREE.Vector2(x, -y)));
@@ -733,7 +741,13 @@ function Lindero({ poligono, hueco }: { poligono: [number, number][]; hueco?: { 
   const malla = useMemo(() => {
     const tramos: { c: [number, number]; len: number; ang: number }[] = [];
     const postes: [number, number][] = [];
-    const fuera = (x: number, y: number) => !hueco || Math.hypot(x - hueco.c[0], y - hueco.c[1]) > hueco.r;
+    // fuera del hueco: lejos de la puerta a lo largo de su línea, o fuera de esa línea (p. ej. el otro lindero de la esquina)
+    const fuera = (x: number, y: number) => {
+      if (!hueco) return true;
+      const dx = x - hueco.c[0];
+      const dy = y - hueco.c[1];
+      return Math.abs(dx * hueco.dir[0] + dy * hueco.dir[1]) > hueco.r || Math.abs(-dx * hueco.dir[1] + dy * hueco.dir[0]) > 0.8;
+    };
     poligono.forEach((p, i) => {
       const q = poligono[(i + 1) % poligono.length];
       const L = Math.hypot(q[0] - p[0], q[1] - p[1]);

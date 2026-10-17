@@ -4,16 +4,16 @@
  */
 import type { Vec2 } from './types';
 
-export const AJUSTE_FOTO: number[] = [0.9371123, 0.0303455, 0.1438997, 0.0001366, 1.0391288, -0.1728532, -0.0019389, -0.0024104, 1.0];
+export const AJUSTE_FOTO: number[] = [0.9321813, 0.0217201, 0.1982508, 0.0024157, 1.0640657, -0.2568635, -0.0019898, -0.0024722, 1.0];
 
 /** puerta de la finca, sobre el lindero este junto a la esquina sureste */
-export const ENTRADA_FINCA: Vec2 = [84.11, 82.86];
+export const ENTRADA_FINCA: Vec2 = [83.38, 87.70];
 
 /** punto del camino, por dentro, desde el que se llega perpendicular a la puerta */
-export const APROX_ENTRADA: Vec2 = [78.18, 81.97];
+export const APROX_ENTRADA: Vec2 = [77.45, 86.81];
 
 /** camino agrícola por fuera del lindero este, de la puerta hacia el norte */
-export const CAMINO_EXTERIOR: Vec2[] = [[87.57, 83.38], [94.28, 38.88], [101.73, -10.56]];
+export const CAMINO_EXTERIOR: Vec2[] = [[86.84, 88.23], [93.55, 43.73], [101.0, -5.71]];
 
 /** aplica AJUSTE_FOTO a un punto de la foto */
 export const ajustarFoto = ([x, y]: Vec2): Vec2 => {
