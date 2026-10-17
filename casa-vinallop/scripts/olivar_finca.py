@@ -163,8 +163,8 @@ dentro = inside(gx, gy, P) & valid
 suelo = ndi.median_filter(np.where(dentro, lum, np.nan if False else lum), size=61)
 oscuro = (lum < 0.84 * suelo) & dentro
 oscuro = ndi.binary_opening(oscuro, iterations=1)
-# fuera: la casa y su entorno inmediato, la piscina y el algarrobo (ya modelados)
-for (ax, ay, bx, by) in [(-3, -3, 19.5, 8.5)]:
+# fuera: la propia casa (los olivos pegados a ella se conservan), la piscina y el algarrobo (ya modelados)
+for (ax, ay, bx, by) in [(-0.8, -0.8, 17.1, 6.0)]:
     oscuro &= ~((gx > ax) & (gx < bx) & (gy > ay) & (gy < by))
 oscuro &= np.hypot(gx - PISCINA[0], gy - PISCINA[1]) > 2.5
 # árboles medidos por la propiedad (ya en el modelo): algarrobo y los dos olivos de la cristalera
@@ -205,7 +205,7 @@ if CENITAL:
     c_im = np.asarray(Image.open(CENITAL).convert('RGB')).astype(int)
     Rc, Gc = c_im[..., 0], c_im[..., 1]
     veg = ndi.binary_opening(((Gc - Rc) > -6) & (c_im.mean(2) < 175), iterations=2)
-    veg[0:470, 820:1480] = False  # casa
+    veg[40:350, 830:1460] = False  # tejado de la casa (los olivos pegados a ella se conservan)
     veg[0:520, 1380:1900] = False  # algarrobo
     veg[650:770, 1080:1270] = False  # coche
     smc = ndi.gaussian_filter(veg.astype(float), 22)
@@ -236,6 +236,9 @@ if CENITAL:
     z0 = cen2modelo((0, 0), 0) + 3
     z1 = cen2modelo((c_im.shape[1], c_im.shape[0]), 0) - 3
     enz = lambda p: z0[0] < p[0] < z1[0] and z0[1] < p[1] < z1[1]
+    # arbustos pegados a la casa que la detección confunde con el tejado: (píxel, altura de la copa, diámetro)
+    for px, alto, d in [((935, 120), 1.5, 2.6), ((820, 300), 1.0, 2.0)]:
+        nuevos.append([*cen2modelo(px, alto), d])
     antes = len(arb)
     arb = [t for t in arb if not enz(t)] + [[round(float(x), 1), round(float(y), 1), round(d, 1)] for x, y, d in nuevos if enz((x, y))]
     print('foto cenital: zona', np.round(z0, 1).tolist(), '→', np.round(z1, 1).tolist(), '; árboles', antes, '→', len(arb),
