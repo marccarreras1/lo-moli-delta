@@ -2,13 +2,14 @@
 Olivar de la finca entera, el camino y la entrada a partir de la foto de dron de toda la parcela (propiedad, 17/10/2026)
 y del lindero catastral (src/data/catastro.ts). La foto NO está en el repositorio.
 
-    python3 -I scripts/olivar_finca.py <foto-dron-finca.jpg> <carpeta-de-trabajo>
+    python3 -I scripts/olivar_finca.py <foto-dron-finca.jpg> <carpeta-de-trabajo> [<foto-cenital-casa.jpg>]
 
 1. Homografía foto → suelo del modelo, ajustada con elementos a ras de suelo: las dos esquinas reconocibles (la de la
    puerta y la del muro con los invernaderos), los muros de piedra y el pie de los invernaderos sobre sus linderos
    (puntos tomados a mano en la foto, abajo), más la casa, el algarrobo y la piscina como anclajes junto a la casa.
 2. Ortofoto de la parcela a 0,25 m/px y detección de copas (manchas oscuras sobre la tierra).
-3. Puerta pegada a la esquina, en el lindero lateral; camino de la casa a la puerta por donde no hay árboles.
+   Con la foto cenital de alrededor de la casa (opcional, 17/10/2026), los árboles de esa zona se toman de ella (más precisa).
+3. Puerta pegada a la esquina, en el lindero lateral; camino de la zona de aparcamiento a la puerta por donde no hay árboles.
 4. Escribe src/data/olivarFinca.ts.
 Necesita numpy, scipy y Pillow.
 """
@@ -23,6 +24,7 @@ from scipy import ndimage as ndi
 from scipy.optimize import least_squares
 
 FOTO, S = sys.argv[1], sys.argv[2].rstrip('/') + '/'
+CENITAL = sys.argv[3] if len(sys.argv) > 3 else None
 ROOT = os.path.join(os.path.dirname(__file__), '..')
 cat = open(os.path.join(ROOT, 'src/data/catastro.ts'), encoding='utf-8').read()
 P = np.array(json.loads(re.search(r'PARCELA_CATASTRO[^=]*=.*?poligono: (\[\[.*?\]\])', cat).group(1)), float)
@@ -187,6 +189,58 @@ for (cy_, cx_), a in zip(cen, area):
     arb.append([round(float(q[0]), 1), round(float(q[1]), 1), round(d, 1)])
 print('árboles detectados', len(arb))
 json.dump(arb, open(S + 'arboles.json', 'w'))
+# ---------- 3b. foto cenital de alrededor de la casa: árboles de esa zona, más precisos
+# Calibración (foto original 2576 × 1449, tomada en vertical): el alero de la casa ocupa 605 px de largo (16,33 m a ≈3,3 m de
+# altura) y el coche negro 160 px (≈4,55 m): suelo a 0,0291 m/px con el dron a ≈43 m. La casa sale alineada con los ejes de la
+# foto (frontal A arriba, algarrobo a la derecha), y el centro de su tejado está en (1145, 207) px.
+if CENITAL:
+    SC, ALT, NADIR = 0.0291, 43.0, np.array([1288, 724.5])
+    TEJADO = np.array([1145, 207])
+
+    def cen2modelo(px, alto):
+        g = (np.asarray(px, float) - NADIR) * SC * (1 - alto / ALT)
+        g0 = (TEJADO - NADIR) * SC * (1 - 3.3 / ALT)
+        return HOUSE_C + g - g0
+
+    c_im = np.asarray(Image.open(CENITAL).convert('RGB')).astype(int)
+    Rc, Gc = c_im[..., 0], c_im[..., 1]
+    veg = ndi.binary_opening(((Gc - Rc) > -6) & (c_im.mean(2) < 175), iterations=2)
+    veg[0:470, 820:1480] = False  # casa
+    veg[0:520, 1380:1900] = False  # algarrobo
+    veg[650:770, 1080:1270] = False  # coche
+    smc = ndi.gaussian_filter(veg.astype(float), 22)
+    pkc = (smc == ndi.maximum_filter(smc, size=110)) & (smc > 0.3)
+    labc, nc = ndi.label(pkc)
+    cenc = np.array(ndi.center_of_mass(pkc, labc, range(1, nc + 1)))
+    mkc = np.zeros(labc.shape, int)
+    for i, (yy_, xx_) in enumerate(cenc):
+        mkc[int(yy_), int(xx_)] = i + 1
+    ic = ndi.distance_transform_edt(mkc == 0, return_distances=False, return_indices=True)
+    areac = ndi.sum(veg, mkc[ic[0], ic[1]], range(1, nc + 1)) * SC * SC
+    nuevos = [[*cen2modelo((xx_, yy_), 2.5), float(np.clip(2 * np.sqrt(a_ / np.pi), 2.5, 8.0))] for (yy_, xx_), a_ in zip(cenc, areac)]
+    # copas partidas en dos: se juntan las que están a menos de 3,5 m
+    junt = True
+    while junt:
+        junt = False
+        for i in range(len(nuevos)):
+            for j in range(i + 1, len(nuevos)):
+                if np.hypot(nuevos[i][0] - nuevos[j][0], nuevos[i][1] - nuevos[j][1]) < 3.5:
+                    a_, b_ = nuevos[i], nuevos[j]
+                    nuevos[i] = [(a_[0] + b_[0]) / 2, (a_[1] + b_[1]) / 2, min(8.0, max(a_[2], b_[2]) * 1.1)]
+                    del nuevos[j]
+                    junt = True
+                    break
+            if junt:
+                break
+    # zona que cubre la foto (en el suelo), con 3 m de margen para no tomar copas cortadas por el borde
+    z0 = cen2modelo((0, 0), 0) + 3
+    z1 = cen2modelo((c_im.shape[1], c_im.shape[0]), 0) - 3
+    enz = lambda p: z0[0] < p[0] < z1[0] and z0[1] < p[1] < z1[1]
+    antes = len(arb)
+    arb = [t for t in arb if not enz(t)] + [[round(float(x), 1), round(float(y), 1), round(d, 1)] for x, y, d in nuevos if enz((x, y))]
+    print('foto cenital: zona', np.round(z0, 1).tolist(), '→', np.round(z1, 1).tolist(), '; árboles', antes, '→', len(arb),
+          '; coche en', np.round(cen2modelo((1178, 712), 0.8), 1).tolist())
+
 arb_np = np.array(arb)
 print('diámetro de copa: mediana', float(np.median(arb_np[:, 2])), 'm; separación entre vecinos: mediana',
       round(float(np.median(np.sort(np.hypot(*(arb_np[:, None, :2] - arb_np[None, :, :2]).transpose(2, 0, 1)), axis=1)[:, 1])), 1), 'm')
@@ -201,7 +255,7 @@ if (P.mean(0) - v13) @ nin < 0:
 GATE = v13 + u1 * 3.1
 APROX = GATE + nin * 6.0
 EXT = [GATE - nin * 3.5, GATE - nin * 3.5 + u1 * 45, GATE - nin * 3.5 + u1 * 95]
-INICIO = np.array([10.4, 11.5])  # zona de aparcamiento del frontal B
+INICIO = np.array([15.8, 16.2])  # extremo de la zona de aparcamiento (donde deja el coche la propiedad), hacia la puerta
 
 # camino más corto por los pasillos entre árboles (rejilla de 0,5 m; coste mayor cerca de los troncos)
 import heapq
@@ -284,7 +338,7 @@ export const OLIVOS_FINCA: [number, number, number][] = {json.dumps(arb)};
 /** puerta de la finca: pegada a la esquina sureste, sobre el lindero lateral */
 export const ENTRADA_FINCA: Vec2 = {json.dumps(r2(GATE))};
 
-/** camino de la zona de aparcamiento (frontal B) a la puerta, por los pasillos entre árboles */
+/** camino de la zona de aparcamiento a la puerta, por los pasillos entre árboles */
 export const CAMINO_FINCA: Vec2[] = {json.dumps(camino)};
 
 /** camino agrícola por fuera del lindero, de la puerta hacia el norte */

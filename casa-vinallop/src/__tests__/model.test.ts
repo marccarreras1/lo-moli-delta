@@ -378,7 +378,8 @@ describe('Casa Vinallop · estado actual (fotos antes de la reforma)', () => {
     // la reforma conserva el entorno pero sustituye la solera antigua por la solera en L
     expect(layout.site!.pavements.length).toBeGreaterThan(0);
     const reforma = resolveLayout(VINALLOP, baseVariant());
-    expect(reforma.site!.pavements).toEqual([]);
+    // la solera antigua se quita; se mantiene solo la zona de aparcamiento de grava
+    expect(reforma.site!.pavements.map((p) => p.id)).toEqual(['aparcamiento']);
     expect(reforma.site!.trees[0].c).toEqual(layout.site!.trees[0].c);
     expect(layout.phase).toBe('actual');
     expect(VINALLOP.phase).toBe('reforma');

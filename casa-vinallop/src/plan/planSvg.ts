@@ -185,6 +185,12 @@ function outdoorSvg(layout: Layout, od: NonNullable<Layout['outdoor']>, labels: 
     g.push(dim([x0, y0], [x0 + w, y0], -0.35, `${fmtM(w)} m`, tk.status));
   }
   for (const d of od.drains ?? []) g.push(`<line x1="${n4(d.a[0])}" y1="${n4(d.a[1])}" x2="${n4(d.b[0])}" y2="${n4(d.b[1])}" stroke="#3a3833" stroke-width="0.08" stroke-dasharray="0.04 0.02"/>`);
+  // zona de aparcamiento (grava) delante del frontal B
+  for (const pv of (layout.site?.pavements ?? []).filter((x) => x.firme === 'grava')) {
+    const [ax, ay, bx, by] = pv.rect;
+    g.push(`<rect x="${n4(ax)}" y="${n4(ay)}" width="${n4(bx - ax)}" height="${n4(by - ay)}" fill="#e6dccb" stroke="#9c8d74" stroke-width="0.02" stroke-dasharray="0.15 0.08" data-site="${esc(pv.id)}"/>`);
+    if (labels) g.push(`<text x="${n4((ax + bx) / 2)}" y="${n4((ay + by) / 2 + 0.07)}" font-size="0.2" fill="#6d5c42" text-anchor="middle">${esc(pv.label)}</text>`);
+  }
   // camino de acceso a la entrada de la finca (trazado aproximado): sale del dibujo hacia la entrada
   const acc = layout.site?.acceso;
   if (acc) {

@@ -512,10 +512,19 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
         </mesh>
       )}
       {site.pavements.map((p) => (
-        <mesh key={p.id} position={[(p.rect[0] + p.rect[2]) / 2, -0.1, (p.rect[1] + p.rect[3]) / 2]} receiveShadow>
-          <boxGeometry args={[p.rect[2] - p.rect[0], 0.04, p.rect[3] - p.rect[1]]} />
-          <meshStandardMaterial color="#bdb6aa" roughness={0.95} />
-        </mesh>
+        <group key={p.id}>
+          <mesh position={[(p.rect[0] + p.rect[2]) / 2, -0.1, (p.rect[1] + p.rect[3]) / 2]} receiveShadow>
+            <boxGeometry args={[p.rect[2] - p.rect[0], 0.04, p.rect[3] - p.rect[1]]} />
+            <meshStandardMaterial color={p.firme === 'grava' ? '#ddd3c1' : '#bdb6aa'} roughness={p.firme === 'grava' ? 1 : 0.95} />
+          </mesh>
+          {/* la grava se contiene con un bordillo bajo de piedra */}
+          {p.firme === 'grava' && [[p.rect[0], p.rect[1], p.rect[2], p.rect[1]], [p.rect[0], p.rect[3], p.rect[2], p.rect[3]], [p.rect[0], p.rect[1], p.rect[0], p.rect[3]], [p.rect[2], p.rect[1], p.rect[2], p.rect[3]]].map(([ax, ay, bx, by], i) => (
+            <mesh key={i} position={[(ax + bx) / 2, -0.06, (ay + by) / 2]} castShadow receiveShadow>
+              <boxGeometry args={[Math.abs(bx - ax) + 0.15, 0.12, Math.abs(by - ay) + 0.15]} />
+              <meshStandardMaterial color="#a89c88" roughness={1} />
+            </mesh>
+          ))}
+        </group>
       ))}
       {site.acceso && <Acceso a={site.acceso} />}
       {oliveSets.map((s, i) => <group key={i}><primitive object={s.wood} /><primitive object={s.leaves} /></group>)}

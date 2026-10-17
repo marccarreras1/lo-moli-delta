@@ -58,6 +58,9 @@ export const PARCELA: Site = {
     note: 'Entrada de la finca de 4,70 m de ancho (medida de la propiedad) en el lindero lateral, pegada a la esquina sureste (indicación de la propiedad), donde llega por fuera el camino agrícola de grava; ahí va la puerta menorquina. Dentro, camino de tierra y grava de ≈3 m desde la zona de aparcamiento del frontal B hasta la puerta, trazado por los pasillos libres entre los olivos de la foto de dron de la finca entera (≈126 m). Trazado propuesto.',
   },
   pavements: [
+    // donde la propiedad deja el coche (foto cenital, 17/10/2026): pasillo libre entre dos filas de olivos delante del frontal B
+    { id: 'aparcamiento', label: 'Zona de aparcamiento (3 coches)', rect: [1.5, 14.6, 15.5, 17.8], firme: 'grava',
+      note: 'Donde la propiedad quiere dejar los coches: el claro donde aparca hoy, ≈9 m delante del frontal B, entre dos filas de olivos (foto cenital). 14 × 3,2 m de tierra compactada con grava, para tres coches en fila como el de la foto; las copas de los olivos dan sombra por los dos lados. Medidas propuestas.' },
     { id: 'solera', label: 'Solera de hormigón', rect: [-0.3, 5.22, 17.2, 7.8], note: 'Franja de hormigón de ≈2,5 m a lo largo del frontal B (vista cenital).' },
   ],
 };
@@ -73,5 +76,7 @@ export const VISTAS_DRON: CameraPreset[] = [
   // la finca entera según el lindero catastral (centro de la parcela ≈ [33,5, 4,5]); la cenital, con el frontal A arriba como los planos
   { id: 'd07-finca-completa', label: 'Finca completa', group: 'exterior', fixed: true, position: [-85, 165, 150], target: [33.5, 4.5, 0], fov: 45 },
   { id: 'd08-finca-cenital', label: 'Finca · vista cenital', group: 'exterior', fixed: true, position: [33.5, 4.52, 290], target: [33.5, 4.5, 0], fov: 45 },
+  // como la foto cenital de la propiedad (17/10/2026): en vertical sobre el claro del aparcamiento, frontal A arriba
+  { id: 'd09-dron-aparcamiento', label: 'Dron cenital · casa y aparcamiento', group: 'exterior', fixed: true, position: [12.0, 16.52, 62], target: [12.0, 16.5, 0], fov: 50 },
   { id: 'd03-dron-lejana', label: 'Dron · olivar y entorno', group: 'exterior', fixed: true, position: [-6, 78, 46], target: [10, -6, 0], fov: 52 },
 ];

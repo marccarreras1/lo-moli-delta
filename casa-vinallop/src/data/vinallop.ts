@@ -485,7 +485,8 @@ const PROJECT: ProjectData = {
   isTest: false,
   phase: 'reforma',
   // la solera antigua del frontal B se elimina: la solera en L del proyecto va por el frontal A y el lateral
-  site: { ...PARCELA, pavements: [], trees: PARCELA.trees.map((t) => (t.id === 'algarrobo' ? { ...t, c: ALGARROBO } : t)) },
+  // la solera actual se sustituye por la del proyecto; la zona de aparcamiento (grava) se mantiene
+  site: { ...PARCELA, pavements: PARCELA.pavements.filter((p) => p.firme === 'grava'), trees: PARCELA.trees.map((t) => (t.id === 'algarrobo' ? { ...t, c: ALGARROBO } : t)) },
   version: '1.0 · bocetos, respuestas, fotos de la parcela, informe (16,33 × 5,22 m) y referencias de diseño',
   levels: [
     { id: 'pb', name: 'Planta baja', elevation: PB_EL, wallHeight: H_PB, elevationStatus: 'documentado' },
