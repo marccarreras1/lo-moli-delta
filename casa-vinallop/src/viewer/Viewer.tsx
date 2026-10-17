@@ -349,7 +349,7 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
       // los olivos reales solo se quitan donde de verdad estorban (casa, soleras, anexos, depósito, camino);
       // los de la retícula, además, dejan libre una franja alrededor de la casa y de las cámaras a pie
       if (real ? x > minX - 1 && x < maxX + 1 && y > minY - 1 && y < maxY + 1 : x > clear[0] && x < clear[2] && y > clear[1] && y < clear[3]) continue;
-      if (site.trees.some((t) => Math.hypot(t.c[0] - x, t.c[1] - y) < (real ? 2.5 : t.r + 1.2))) continue;
+      if (site.trees.some((t) => Math.hypot(t.c[0] - x, t.c[1] - y) < (real ? Math.max(2.5, t.r * 0.6) : t.r + 1.2))) continue;
       if ((layout.views ?? []).some((v) => v.group === 'exterior' && v.position[2] < 10 && Math.hypot(v.position[0] - x, v.position[1] - y) < (real ? 1.5 : 4.2))) continue;
       // ni sobre la solera actual ni sobre la solera del proyecto
       const inRect = (rc: [number, number, number, number], m: number) => x > rc[0] - m && x < rc[2] + m && y > rc[1] - m && y < rc[3] + m;

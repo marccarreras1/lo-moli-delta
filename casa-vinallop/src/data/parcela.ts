@@ -8,8 +8,7 @@
  * solera de hormigón a lo largo del frontal B (las puertas) donde se aparca.
  */
 import { EDIFICIO_CATASTRO, PARCELA_CATASTRO } from './catastro';
-import { ajustarFoto, APROX_ENTRADA, CAMINO_EXTERIOR, ENTRADA_FINCA } from './ajusteFoto';
-import { CAMINO_FOTO, OLIVOS_FOTO, ZONA_FOTO } from './olivar';
+import { CAMINO_EXTERIOR, CAMINO_FINCA, ENTRADA_FINCA, OLIVOS_FINCA } from './olivarFinca';
 import type { CameraPreset, Site } from './types';
 
 export const FOTOS_PARCELA = {
@@ -27,7 +26,8 @@ export const PARCELA: Site = {
     note: 'Lindero de la parcela según el Catastro (GML aportado por la propiedad), situado respecto a la casa con la huella catastral del edificio: el norte sale del eje del edificio (≈20° desde el frontal A) y el centro del edificio catastral coincide con el de la casa del modelo. Precisión de la cartografía catastral: ≈1 m.' },
   edificioCatastro: { ...EDIFICIO_CATASTRO,
     note: 'Huella del edificio en el Catastro (antes de la reforma): ≈16,7 × 5,6 m, 74 m² construidos, año 1980, uso agrario. Retranqueos en los dos extremos del frontal A.' },
-  olives: { spacing: 7.5, extent: 70, clear: [-1.8, -1.8, 18.1, 7.0], seed: 11, fijos: OLIVOS_FOTO.map(([x, y, d]) => [...ajustarFoto([x, y]), d] as [number, number, number]), zonaFoto: ZONA_FOTO.map(ajustarFoto) },
+  // árboles de la foto de dron de la finca entera, uno a uno; la «zona de la foto» es toda la parcela (sin retícula)
+  olives: { spacing: 7.5, extent: 70, clear: [-1.8, -1.8, 18.1, 7.0], seed: 11, fijos: OLIVOS_FINCA, zonaFoto: PARCELA_CATASTRO.poligono },
   trees: [
     // medido por la propiedad (16/10/2026): el tronco a 2,64 m del lateral derecho (x = 16,33) y a 3,50 m del frontal B
     // (y = 5,22), medidas hasta la cara del tronco; el centro se sitúa sumando su radio (≈0,50 m).
@@ -49,14 +49,13 @@ export const PARCELA: Site = {
   // entrada de la finca (foto de la propiedad: 4,70 m de ancho) y camino de acceso marcado por la propiedad sobre la foto de
   // dron, pasado a metros con la homografía ajustada a la casa y al olivar (src/data/olivar.ts). Margen ≈±15 %.
   acceso: {
-    // camino marcado en rojo por la propiedad sobre la foto de dron, corregido con el lindero catastral, hasta la puerta: en el
-    // hueco de la malla del lindero lateral (este), pegada a la esquina sureste (la propiedad confirmó el esquema y
-    // pidió dejarla totalmente pegada a la esquina, 17/10/2026)
+    // puerta en el hueco de la malla del lindero lateral (este), pegada a la esquina sureste (la propiedad confirmó el esquema
+    // y pidió dejarla totalmente pegada a la esquina, 17/10/2026); camino entre los olivos (scripts/olivar_finca.py)
     entrada: ENTRADA_FINCA, anchoEntrada: 4.7, anchoCamino: 3.0,
-    camino: [[10.4, 11.5], ...CAMINO_FOTO.map(ajustarFoto), APROX_ENTRADA, ENTRADA_FINCA],
+    camino: CAMINO_FINCA,
     exterior: CAMINO_EXTERIOR, vallasMoviles: 5, esquina: PARCELA_CATASTRO.poligono[13],
     status: 'interpretado',
-    note: 'Entrada de la finca de 4,70 m de ancho (medida de la propiedad) en el lindero este, pegada a la esquina sureste (posición indicada por la propiedad sobre el esquema de la parcela; foto de la propiedad desde fuera: el camino agrícola de grava llega por fuera a lo largo de la malla, con vallas metálicas móviles a la derecha y un árbol grande dentro, a la izquierda). Ahí va la puerta menorquina. Dentro, camino de tierra y grava de ≈3 m marcado por la propiedad sobre la foto de dron: sale del lado de la puerta de entrada (frontal B), donde se aparca, y baja entre los olivos por la franja más despejada (≈120 m). La foto se ha corregido con el lindero (±5 m).',
+    note: 'Entrada de la finca de 4,70 m de ancho (medida de la propiedad) en el lindero lateral, pegada a la esquina sureste (indicación de la propiedad), donde llega por fuera el camino agrícola de grava; ahí va la puerta menorquina. Dentro, camino de tierra y grava de ≈3 m desde la zona de aparcamiento del frontal B hasta la puerta, trazado por los pasillos libres entre los olivos de la foto de dron de la finca entera (≈126 m). Trazado propuesto.',
   },
   pavements: [
     { id: 'solera', label: 'Solera de hormigón', rect: [-0.3, 5.22, 17.2, 7.8], note: 'Franja de hormigón de ≈2,5 m a lo largo del frontal B (vista cenital).' },

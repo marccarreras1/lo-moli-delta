@@ -59,6 +59,7 @@ FOTOS = {
     '580ef4d0557c': ('dron-cercana', 'dron', 'Dron: cubiertas de fibrocemento y fachada, de cerca'),
     '8b1264029034': ('dron-horizonte', 'dron', 'Dron: olivar con la sierra al fondo'),
     '61661e7c3aca': ('dron-olivar', 'dron', 'Dron: la casa en el olivar'),
+    '2120f050e772': ('dron-finca', 'dron', 'Dron: la finca entera desde la esquina de la entrada, con los invernaderos al fondo'),
     '01f600ae06c1': ('dron-acceso', 'dron', 'Dron: la casa, el olivar y la entrada de la finca (esquina izquierda, junto al camino)'),
     'b74bb44185aa': ('casa-entre-olivos', 'casa', 'La casa entre olivos'),
     '02340701528f': ('casa-desde-olivar', 'casa', 'La casa desde el olivar'),
