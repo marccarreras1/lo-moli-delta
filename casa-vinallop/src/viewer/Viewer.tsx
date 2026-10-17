@@ -347,7 +347,7 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
     }
     for (const { x, y, k, rot, real } of candidates) {
       // los olivos reales (de las fotos) se conservan (indicación de la propiedad): solo se quitan los que caen sobre la casa,
-      // el camino, el aparcamiento o una cámara de las vistas; los de la retícula dejan además libre el entorno de la casa
+      // el cuarto técnico, el camino, el aparcamiento o una cámara de las vistas; los de la retícula dejan además libre el entorno de la casa
       if (real ? x > minX - 0.3 && x < maxX + 0.3 && y > minY - 0.3 && y < maxY + 0.3 : x > clear[0] && x < clear[2] && y > clear[1] && y < clear[3]) continue;
       if (site.trees.some((t) => Math.hypot(t.c[0] - x, t.c[1] - y) < (real ? Math.max(2.5, t.r * 0.6) : t.r + 1.2))) continue;
       if ((layout.views ?? []).some((v) => v.group === 'exterior' && v.position[2] < 10 && Math.hypot(v.position[0] - x, v.position[1] - y) < (real ? 1.5 : 4.2))) continue;
@@ -355,7 +355,8 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
       const inRect = (rc: [number, number, number, number], m: number) => x > rc[0] - m && x < rc[2] + m && y > rc[1] - m && y < rc[3] + m;
       if (site.pavements.some((p) => inRect(p.rect, 0.8))) continue;
       if (!real && (layout.outdoor?.pavements ?? []).some((p) => p.joints > 0 && inRect(p.rect, 1.2))) continue;
-      if (!real && (layout.outdoor?.annexes ?? []).some((a) => inRect(a.rect, 1.5))) continue;
+      // el olivo que solapa el cuarto técnico se quita (decisión de la propiedad); los demás reales se quedan
+      if ((layout.outdoor?.annexes ?? []).some((a) => inRect(a.rect, real ? 0.3 : 1.5))) continue;
       if (!real && (layout.outdoor?.tanks ?? []).some((tk) => Math.hypot(tk.c[0] - x, tk.c[1] - y) < Math.max(tk.length, tk.diameter) / 2 + 2.5)) continue;
       // ni sobre el camino de acceso (es la franja despejada del olivar)
       if (site.acceso && distToPath(site.acceso.camino, x, y) < site.acceso.anchoCamino / 2 + (real ? 0.6 : 2.6)) continue;
