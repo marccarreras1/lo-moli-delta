@@ -205,6 +205,13 @@ function ProposalsSection() {
           ))}
         </fieldset>
       )}
+      {project.escalonComedor && (
+        <>
+          <Segmented label="Altura de la zona de comedor" id="opt-altura-comedor" value={o.alturaComedor} onChange={(x) => setOption('alturaComedor', x)}
+            options={[{ value: 'baja', label: `Bajada a ${project.escalonComedor.top.toLocaleString('es-ES')} m` }, { value: 'alta', label: 'Toda a 6 m (doble altura)' }]} />
+          {o.alturaComedor === 'baja' && <p className="hint">Propuesta de la propiedad: desde ≈{project.escalonComedor.x.toLocaleString('es-ES')} m (comedor y salón) la casa corona a {project.escalonComedor.top.toLocaleString('es-ES')} m; altell, baño, escalera y cocina siguen a 6 m. Solo con cubierta plana.</p>}
+        </>
+      )}
       {project.furniture.some((f) => f.onlyIf?.salon) && (
         <Segmented label="Salón" id="opt-salon" value={o.salon} onChange={(x) => setOption('salon', x)}
           options={[{ value: 'sofa-l', label: 'Sofá de obra en L' }, { value: 'enfrentados', label: 'Sofás enfrentados' }]} />

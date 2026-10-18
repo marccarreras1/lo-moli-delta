@@ -392,8 +392,10 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
     const segs = layout.roofSegments ?? [];
     if (segs.length) return segs.map((g) => [g.rect[0] - g.overhang, g.rect[1] - g.overhang, g.rect[2] + g.overhang, g.rect[3] + g.overhang, Math.max(g.hy0, g.hy1) + 0.2] as [number, number, number, number, number]);
     const top = Math.max(...layout.walls.filter((w) => w.kind === 'exterior').map((w) => (layout.levels.find((l) => l.id === w.levelId)?.elevation ?? 0) + w.height)) + 0.6;
+    // zona de comedor bajada: dos volúmenes (la copa del algarrobo puede pasar sobre la cubierta baja)
+    if (layout.escalon) return [[minX, minY, layout.escalon.x, maxY, top] as [number, number, number, number, number], [layout.escalon.x, minY, maxX, maxY, layout.escalon.top + 0.6] as [number, number, number, number, number]];
     return [[minX, minY, maxX, maxY, top] as [number, number, number, number, number]];
-  }, [layout.roofSegments, layout.walls, layout.levels, minX, minY, maxX, maxY]);
+  }, [layout.roofSegments, layout.walls, layout.levels, layout.escalon, minX, minY, maxX, maxY]);
   const carobs = useMemo(() => site.trees.map((t, i) => {
     // el grupo del árbol está en (c.x, -0.12, c.y)
     // la casa y los porches: lo que entraría en ellos se poda (las ramas pueden pasar por encima de la pérgola)

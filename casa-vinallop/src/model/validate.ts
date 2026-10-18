@@ -127,7 +127,7 @@ export function validateLayout(layout: Layout): Issue[] {
   };
   for (const r of layout.rooms)
     for (const w of layout.walls)
-      if (wallAtLevel(w, r.levelId) && overlapArea(r.polygon, wallRect(w, 0, wallLength(w))) > 0.03) add('error', r.id, `${r.name} invade el muro ${w.id}.`);
+      if (wallAtLevel(w, r.levelId) && (w.base ?? 0) < 2.1 && overlapArea(r.polygon, wallRect(w, 0, wallLength(w))) > 0.03) add('error', r.id, `${r.name} invade el muro ${w.id}.`);
 
   // Mobiliario
   const swings = layout.openings

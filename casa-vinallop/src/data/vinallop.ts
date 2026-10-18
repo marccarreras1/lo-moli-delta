@@ -446,7 +446,7 @@ const views: CameraPreset[] = [
   view({ id: 'v12d-puerta-ducha', label: '12d · Puerta de vidrio desde la ducha', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: PB_EL, position: [5.2, 3.55, 1.6], target: [5.75, 5.0, 1.05], fov: 78 }),
   view({ id: 'v12c-celosia', label: '12c · Detalle de la celosía', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: PB_EL, position: [4.75, 2.3, 1.6], target: [4.25, 3.6, 1.15], fov: 52 }),
   view({ id: 'v13-altell', label: '13 · Altell, vigas cemento y volta terracota', group: 'interior', eyeLevel: true, roomId: 'altell', elevation: r2(PB_EL + ALTELL), position: [4.9, 2.46, 1.6], target: [12, 2.46, 1.6], fov: 64 }),
-  view({ id: 'v13b-volta', label: '13b · Vigas y volta desde la zona de día', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: PB_EL, position: [12.2, 2.7, 1.6], target: [10.2, 2.46, 5.6], fov: 60 }),
+  view({ id: 'v13b-volta', label: '13b · Vigas y volta desde la zona de día', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: PB_EL, position: [12.5, 2.25, 1.6], target: [8.4, 2.46, 4.4], fov: 64 }),
   view({ id: 'v14-sin-cubierta', label: '14 · Vista sin cubierta', group: 'exterior', hideRoof: true, position: [9.2, 12, 25], target: [9.2, 3.2, 0], fov: 40 }),
   view({ id: 'v18-terraza-altell', label: '18 · Terraza del altell sobre el cuarto técnico', group: 'exterior', position: [-5.6, -2.6, 8.2], target: [-0.6, 2.6, 3.2], fov: 52 }),
   view({ id: 'v17-cuarto-tecnico', label: '17 · Cuarto técnico y terraza del altell', group: 'exterior', position: [-8.2, 8.6, 1.7], target: [-2.4, 3.0, 1.7], fov: 50 }),
@@ -622,6 +622,8 @@ const PROJECT: ProjectData = {
   // norte en sentido horario desde el frontal A: eje del edificio en el Catastro (≈20°; la brújula de Mapas de Apple daba ≈22°)
   northDeg: Math.round(NORTE_CATASTRO),
   situacion: SITUACION,
+  // propuesta de la propiedad (18/10/2026, boceto del alzado): la zona del comedor se ve muy alta; se baja a 4 m
+  escalonComedor: { x: 10.4, top: 4.0, note: 'Boceto de la propiedad: volumen alto de 6 m (altell, baño, escalera y cocina) y zona de comedor y salón bajada a 4 m sobre el terreno, con los muros a esa altura. Posición del escalón (≈10,4 m desde el extremo del dormitorio) medida sobre el boceto: pendiente de fijar. Interior de la zona baja: ≈3,3 m libres bajo la volta. Sin cálculo de estructura ni de impermeabilización del encuentro.' },
   facades: { A: 'Frontal A', B: 'Frontal B', izquierdo: 'Lateral izquierdo', derecho: 'Lateral derecho' },
   notices: ['Geometría de los bocetos fotografiados y de las respuestas de la propiedad. Revisa las preguntas en «Medidas y documentación».'],
 };

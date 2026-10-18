@@ -296,9 +296,19 @@ function Vaults({ layout, mats }: { layout: Layout; mats: MaterialSet }) {
   const yMid = (iy0 + iy1) / 2;
   const tilt = layout.roof?.eaves ? Math.atan2(roofTopAt(layout, iy0) - roofTopAt(layout, iy1), iy1 - iy0) : 0;
   const span = (iy1 - iy0) / Math.cos(tilt);
+  // tramos de bóvedas: uno, o dos si la zona de comedor está bajada (cada uno entre sus muros: el escalón es un apoyo)
+  const esc = layout.escalon;
+  const escT = layout.walls.find((w) => w.id === 'muro-escalon')?.thickness ?? 0.3;
+  const tramos: [number, number][] = esc && esc.x > ix0 && esc.x < ix1 ? [[ix0, esc.x - escT], [esc.x, ix1]] : [[ix0, ix1]];
+  const bays = tramos.flatMap(([a, b]) => {
+    const k = Math.max(1, Math.round((b - a) / c.spacing));
+    return Array.from({ length: k }, (_, i) => ({ x0: a + ((b - a) * i) / k, x1: a + ((b - a) * (i + 1)) / k }));
+  });
   const n = Math.max(1, Math.round((ix1 - ix0) / c.spacing));
   const s = (ix1 - ix0) / n;
   const crown = roofTopAt(layout, yMid) - (layout.roof?.thickness ?? 0.25) / Math.cos(tilt) - 0.01;
+  // con la zona de comedor bajada, las bóvedas de esa zona bajan con la cubierta
+  const bajada = (x: number) => roofTopAt(layout, yMid, x) - roofTopAt(layout, yMid);
   const spring = crown - c.rise;
   const R = (s * s / 4 + c.rise * c.rise) / (2 * c.rise);
   const theta = 2 * Math.asin(Math.min(1, s / 2 / R));
@@ -316,14 +326,14 @@ function Vaults({ layout, mats }: { layout: Layout; mats: MaterialSet }) {
   return (
     <group position={[0, crown, yMid]} rotation={[tilt, 0, 0]}>
     <group position={[0, -crown, -yMid]}>
-      {Array.from({ length: n }, (_, i) => (
-        <group key={`v${i}`} position={[ix0 + s * (i + 0.5), crown - R, (iy0 + iy1) / 2]} rotation={[Math.PI / 2, 0, 0]}>
+      {bays.map((b, i) => (
+        <group key={`v${i}`} position={[(b.x0 + b.x1) / 2, crown - R + bajada((b.x0 + b.x1) / 2), (iy0 + iy1) / 2]} rotation={[Math.PI / 2, 0, 0]} scale={[(b.x1 - b.x0) / s, 1, 1]}>
           <mesh geometry={geo} material={mats.vault} receiveShadow />
           <mesh geometry={outer} material={mats.cut} />
         </group>
       ))}
-      {Array.from({ length: n + 1 }, (_, i) => (
-        <mesh key={`b${i}`} position={[ix0 + s * i, spring - beamH / 2 + 0.02, (iy0 + iy1) / 2]} material={mats.beam} castShadow geometry={uvBox(0.08, beamH, span)} />
+      {[...bays.map((b) => b.x0), ...tramos.map(([, b]) => b)].map((x, i) => (
+        <mesh key={`b${i}`} position={[x, spring - beamH / 2 + 0.02 + bajada(x + (tramos.some(([, b]) => Math.abs(b - x) < 1e-6) ? -0.01 : 0.01)), (iy0 + iy1) / 2]} material={mats.beam} castShadow geometry={uvBox(0.08, beamH, span)} />
       ))}
     </group>
     </group>
@@ -361,19 +371,32 @@ function RoofShape({ layout, mats }: { layout: Layout; mats: MaterialSet }) {
     const t = r.thickness;
     const p = r.parapet ?? 0;
     const pt = 0.3;
-    const edges: [number, number, number, number][] = [[L / 2, pt / 2, L, pt], [L / 2, W - pt / 2, L, pt], [pt / 2, W / 2, pt, W - 2 * pt], [L - pt / 2, W / 2, pt, W - 2 * pt]];
+    // volúmenes de cubierta: uno, o dos si la zona de comedor está bajada (x local desde el borde de la casa)
+    const xe = layout.escalon ? layout.escalon.x - layout.bounds.minX : null;
+    const vols: { x0: number; x1: number; h: number }[] = xe !== null && xe > 0 && xe < L
+      ? [{ x0: 0, x1: xe, h: H }, { x0: xe, x1: L, h: layout.escalon!.top }]
+      : [{ x0: 0, x1: L, h: H }];
     return (
       <group>
-        <mesh position={[L / 2, H - t / 2, W / 2]} castShadow receiveShadow material={mats.roof} geometry={uvBox(L - 0.02, t, W - 0.02)} />
-        {p > 0 && edges.map(([x, y, lx, ly], i) => (
-          <group key={i}>
-            {/* peto encalado con remate redondeado continuo (propuesta) */}
-            <mesh position={[x, H + (p - pt / 2) / 2, y]} material={mats.facade} castShadow receiveShadow geometry={uvBox(lx, p - pt / 2, ly)} />
-            <mesh position={[x, H + p - pt / 2, y]} rotation={lx > ly ? [0, 0, Math.PI / 2] : [Math.PI / 2, 0, 0]} material={mats.facade} castShadow>
-              <cylinderGeometry args={[pt / 2, pt / 2, Math.max(lx, ly), 16, 1, false]} />
-            </mesh>
-          </group>
-        ))}
+        {vols.map((v, k) => {
+          const lv = v.x1 - v.x0;
+          const cxv = (v.x0 + v.x1) / 2;
+          const edges: [number, number, number, number][] = [[cxv, pt / 2, lv, pt], [cxv, W - pt / 2, lv, pt], [v.x0 + pt / 2, W / 2, pt, W - 2 * pt], [v.x1 - pt / 2, W / 2, pt, W - 2 * pt]];
+          return (
+            <group key={k}>
+              <mesh position={[cxv, v.h - t / 2, W / 2]} castShadow receiveShadow material={mats.roof} geometry={uvBox(lv - 0.02, t, W - 0.02)} />
+              {p > 0 && edges.map(([x, y, lx, ly], i) => (
+                <group key={i}>
+                  {/* peto encalado con remate redondeado continuo (propuesta) */}
+                  <mesh position={[x, v.h + (p - pt / 2) / 2, y]} material={mats.facade} castShadow receiveShadow geometry={uvBox(lx, p - pt / 2, ly)} />
+                  <mesh position={[x, v.h + p - pt / 2, y]} rotation={lx > ly ? [0, 0, Math.PI / 2] : [Math.PI / 2, 0, 0]} material={mats.facade} castShadow>
+                    <cylinderGeometry args={[pt / 2, pt / 2, Math.max(lx, ly), 16, 1, false]} />
+                  </mesh>
+                </group>
+              ))}
+            </group>
+          );
+        })}
       </group>
     );
   }

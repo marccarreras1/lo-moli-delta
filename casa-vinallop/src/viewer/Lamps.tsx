@@ -17,7 +17,7 @@ export const WARM = '#ffb46b';
 /** cota del techo sobre un punto: bajo un forjado intermedio o bajo la volta catalana */
 export function ceilingAt(layout: Layout, p: Vec2, fromElev = 0) {
   const elev = (id: string) => layout.levels.find((l) => l.id === id)?.elevation ?? 0;
-  let best = roofUndersideAt(layout, p[1]);
+  let best = roofUndersideAt(layout, p[1], p[0]);
   for (const s of layout.slabs) {
     const bottom = elev(s.levelId) - s.thickness;
     if (bottom > fromElev && bottom < best && pointInPolygon(p, s.polygon)) best = bottom;

@@ -190,9 +190,19 @@ export function elevationSvg(layout: Layout, f: FacadeId, o: { showDims?: boolea
   }
 
   // ---------------------------------------------------------------- muro de fachada
+  // zona de comedor bajada: en los frontales el muro se escalona en x = escalón (u = uE)
+  const escal = layout.escalon;
+  const peto = r?.type === 'plana-peto' ? r.parapet ?? 0 : 0;
+  const uE = escal && front ? u([escal.x, 0]) : null;
+  const xDeU = (uu: number) => (f === 'B' ? minX + uu : maxX - uu);
+  const topFrente = (uu: number) => (escal && uE !== null && xDeU(uu) >= escal.x ? escal.top + peto : wallTop(uu));
   const wallPoly: Vec2[] = [[X(0), 0], [X(len), 0]];
-  const steps = front ? [len, 0] : Array.from({ length: N + 1 }, (_, i) => len - (len * i) / N);
-  for (const uu of steps) wallPoly.push([X(uu), wallTop(uu)]);
+  if (uE !== null && uE > 0 && uE < len) {
+    for (const [uu, lado] of [[len, (uE + len) / 2], [uE, (uE + len) / 2], [uE, uE / 2], [0, uE / 2]] as const) wallPoly.push([X(uu), topFrente(lado)]);
+  } else {
+    const steps = front ? [len, 0] : Array.from({ length: N + 1 }, (_, i) => len - (len * i) / N);
+    for (const uu of steps) wallPoly.push([X(uu), wallTop(uu)]);
+  }
   g.push(`<polygon points="${pts(wallPoly)}" fill="url(#cal-${f})" stroke="none"/>`);
   g.push(...pavBands);
 
@@ -207,7 +217,14 @@ export function elevationSvg(layout: Layout, f: FacadeId, o: { showDims?: boolea
     const slab = layout.slabs.find((s) => s.levelId === altell.id)?.thickness ?? 0.3;
     g.push(hidden(altell.elevation), hidden(altell.elevation - slab));
   }
-  if (!sloped) g.push(hidden(H - t));
+  if (!sloped && uE !== null && escal && uE > 0 && uE < len) {
+    // forjado de cubierta de cada volumen
+    const tramo = (a: number, b: number, h: number) => `<line x1="${n4(X(a) + 0.3)}" y1="${n4(-h)}" x2="${n4(X(b) - 0.3)}" y2="${n4(-h)}" stroke="${LIGHT}" stroke-width="${LW.hidden}" stroke-dasharray="0.12 0.07"/>`;
+    const altoIzq = topFrente(uE / 2) > topFrente((uE + len) / 2);
+    g.push(altoIzq ? tramo(0, uE, H - t) : tramo(uE, len, H - t), altoIzq ? tramo(uE, len, escal.top - t) : tramo(0, uE, escal.top - t));
+  } else if (!sloped) g.push(hidden(H - t));
+  // desde el lateral del comedor se ve delante el muro bajo y detrás el volumen alto: línea del borde de la cubierta baja
+  if (escal && f === 'derecho') g.push(`<line x1="${n4(X(0))}" y1="${n4(-(escal.top + peto))}" x2="${n4(X(len))}" y2="${n4(-(escal.top + peto))}" stroke="${INK}" stroke-width="${LW.opening}"/>`);
 
   // ---------------------------------------------------------------- huecos
   for (const p of ops) {
@@ -299,8 +316,9 @@ export function elevationSvg(layout: Layout, f: FacadeId, o: { showDims?: boolea
 
   // ---------------------------------------------------------------- cubierta
   if (!r || r.type === 'plana') {
-    // coronación del muro (albardilla)
-    g.push(`<rect x="${n4(X(0) - 0.03)}" y="${n4(-H - 0.05)}" width="${n4(len + 0.06)}" height="0.05" fill="#ffffff" stroke="${INK}" stroke-width="${LW.leaf}"/>`);
+    // coronación del muro (albardilla), por volúmenes si la zona de comedor está bajada
+    const tramosAlb: [number, number, number][] = uE !== null && uE > 0 && uE < len ? [[0, uE, topFrente(uE / 2)], [uE, len, topFrente((uE + len) / 2)]] : [[0, len, H]];
+    for (const [a, b, h] of tramosAlb) g.push(`<rect x="${n4(X(a) - 0.03)}" y="${n4(-h - 0.05)}" width="${n4(b - a + 0.06)}" height="0.05" fill="#ffffff" stroke="${INK}" stroke-width="${LW.leaf}"/>`);
   } else if (r.type === 'plana-peto') {
     g.push(`<line x1="${n4(X(0))}" y1="${n4(-H)}" x2="${n4(X(len))}" y2="${n4(-H)}" stroke="${LIGHT}" stroke-width="${LW.hidden}" stroke-dasharray="0.12 0.07"/>`);
   } else if (front) {
@@ -373,6 +391,7 @@ export function elevationSvg(layout: Layout, f: FacadeId, o: { showDims?: boolea
     levelMarks.push({ h: top, text: front && top - wtMin > t + 0.05 ? 'faldón (más alto)' : 'cara superior de cubierta' });
   } else {
     levelMarks.push({ h: top, text: r?.type === 'plana-peto' ? 'coronación del peto' : 'coronación' });
+    if (escal && (uE !== null || f === 'derecho')) levelMarks.push({ h: escal.top + peto, text: 'coronación zona comedor' });
   }
   for (const { an } of annex) {
     levelMarks.push({ h: an.height, text: an.terrace ? 'terraza (cuarto técnico)' : 'cubierta cuarto técnico' });
@@ -414,7 +433,7 @@ export function elevationSvg(layout: Layout, f: FacadeId, o: { showDims?: boolea
     if (front) for (const { a, b } of annex) out.push(dimH(a, b, 0.75, fmtM(b - a)));
     // alturas (derecha): huecos, muro y total
     const xr = X(u1) + 0.45;
-    const hs = [...new Set([0, ...ops.flatMap((p) => [p.o.sill, p.o.sill + p.o.height]), wtMax, top].map((v) => Math.round(v * 100) / 100))].sort((p, q) => p - q);
+    const hs = [...new Set([0, ...ops.flatMap((p) => [p.o.sill, p.o.sill + p.o.height]), wtMax, top, ...(escal && (uE !== null || f === 'derecho') ? [escal.top + peto] : [])].map((v) => Math.round(v * 100) / 100))].sort((p, q) => p - q);
     if (hs.length > 2) for (let i = 0; i < hs.length - 1; i++) if (hs[i + 1] - hs[i] > 0.04) out.push(dimV(xr, hs[i], hs[i + 1], fmtM(hs[i + 1] - hs[i])));
     out.push(dimV(xr + 0.55, 0, top, fmtM(top)));
   }

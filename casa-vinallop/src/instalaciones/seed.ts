@@ -91,7 +91,7 @@ function blockedBy(l: Layout, p: Vec2, levelId: string, test: (f: Furniture) => 
 /** cota del techo (relativa al nivel) sobre un punto: bajo un forjado superior o bajo la cubierta */
 function ceilingAt(l: Layout, p: Vec2, levelId: string): number {
   const from = levelElev(l, levelId);
-  let best = roofUndersideAt(l, p[1]);
+  let best = roofUndersideAt(l, p[1], p[0]);
   for (const s of l.slabs) {
     const bottom = levelElev(l, s.levelId) - s.thickness;
     if (bottom > from + 0.5 && bottom < best && pointInPolygon(p, s.polygon)) best = bottom;

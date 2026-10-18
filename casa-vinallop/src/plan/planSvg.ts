@@ -306,8 +306,8 @@ export function planSvg(layout: Layout, o: PlanOptions): string {
   const roomIds = new Set(rooms.map((r) => r.id));
   const furniture = layout.furniture.filter((f) => roomIds.has(f.roomId));
   const walls = layout.walls.filter((w) => {
-    const b = elevOf(w.levelId);
-    return b <= CUT && CUT < b + w.height;
+    const b = elevOf(w.levelId) + (w.base ?? 0);
+    return b <= CUT && CUT < elevOf(w.levelId) + w.height;
   });
   const shownWall = new Set(walls.map((w) => w.id));
   const openings = layout.openings.filter((op) => {

@@ -133,6 +133,10 @@ export interface Wall {
   facade?: FacadeId;
   status: DataStatus;
   sourceId: string;
+  /** el muro empieza a esta altura sobre su nivel (p. ej. el frente del escalón de cubierta) */
+  base?: number;
+  /** tramo del muro (s0–s1 a lo largo del eje) que se corona más bajo, a `height` sobre su nivel */
+  tope?: { s0: number; s1: number; height: number };
 }
 
 /** paso = hueco de paso sin puerta ni carpintería */
@@ -200,6 +204,8 @@ export interface KitchenModule {
 export interface Furniture {
   id: string;
   type: FurnitureType;
+  /** altura de la cara superior de la cubierta sobre el suelo del mueble (salidas de humos); la calcula la resolución */
+  techo?: number;
   label: string;
   roomId: string;
   x: number;
@@ -502,6 +508,8 @@ export interface ProjectData {
   northDeg: number | null;
   /** situación (grados decimales, WGS84) para el estudio solar */
   situacion?: { lat: number; lon: number; nota: string };
+  /** opción de bajar la zona del comedor: desde x (planta) la cubierta corona a `top` sobre el terreno */
+  escalonComedor?: { x: number; top: number; note: string };
   /** fachadas identificadas: id → nombre visible */
   facades: Record<string, string>;
   notices: string[];
@@ -543,6 +551,8 @@ export interface DesignOptions {
   mesaComedor: MesaComedor;
   /** salón: sofá de obra en L (boceto) o dos sofás enfrentados en el centro con el comedor en el rincón (variante) */
   salon: 'sofa-l' | 'enfrentados';
+  /** zona de comedor: con la casa entera a 6 m (doble altura) o bajada a 4 m (propuesta de la propiedad) */
+  alturaComedor: 'alta' | 'baja';
 }
 
 export const EXTRA_OPENINGS: { key: string; label: string }[] = [
@@ -562,13 +572,15 @@ export const PROPUESTA_VENTANAS = ['ventilacion-cruzada', 'ventana-dormitorio', 
 /** mesa de comedor del interior; «ninguna» la quita (con sus sillas) */
 export type MesaComedor = 'rectangular' | 'redonda' | 'ninguna';
 
-export const DEFAULT_OPTIONS: DesignOptions = { celosia: 'A', lamparas: 'A', lamparasUbicacion: 'isla', puertaEntrada: 'tablones', entradaSaliente: false, ventanal: '7', aberturas: [], lamparaExterior: 'arbol', chimenea: 'estufa', mesaComedor: 'rectangular', salon: 'sofa-l' };
+export const DEFAULT_OPTIONS: DesignOptions = { celosia: 'A', lamparas: 'A', lamparasUbicacion: 'isla', puertaEntrada: 'tablones', entradaSaliente: false, ventanal: '7', aberturas: [], lamparaExterior: 'arbol', chimenea: 'estufa', mesaComedor: 'rectangular', salon: 'sofa-l', alturaComedor: 'baja' };
 
 export interface Layout extends ProjectData {
   options: DesignOptions;
   roof: RoofOption | null;
   /** coronación de los muros exteriores (m) */
   topHeight: number;
+  /** escalón de cubierta: a partir de x la casa corona a `top` (sobre el terreno) en lugar de a topHeight */
+  escalon?: { x: number; top: number };
   bounds: { minX: number; minY: number; maxX: number; maxY: number };
 }
 

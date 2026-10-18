@@ -169,7 +169,8 @@ function Piece({ f, mats, options }: { f: Furniture; mats: MaterialSet; options:
         <>
           <mesh position={[0, 0.03, 0]} material={mats.counter} receiveShadow><cylinderGeometry args={[w / 2, w / 2, 0.06, 40]} /></mesh>
           <Lathe y={0.06} profile={[[0, 0], [w * 0.3, 0], [w * 0.34, 0.15], [w * 0.36, h * 0.6], [w * 0.3, h - 0.06], [0.09, h - 0.06], [0, h - 0.06]]} m={mats.blackMetal} segments={40} />
-          <mesh position={[0, h + 2.45, 0]} material={mats.blackMetal}><cylinderGeometry args={[0.075, 0.075, 4.9, 20]} /></mesh>
+          {/* el tubo atraviesa la cubierta y asoma ≈0,3 m (con la casa a 6 m, hasta 5,90 m sobre el suelo) */}
+          <mesh position={[0, h + ((f.techo ?? h + 4.6) + 0.3 - h) / 2, 0]} material={mats.blackMetal}><cylinderGeometry args={[0.075, 0.075, (f.techo ?? h + 4.6) + 0.3 - h, 20]} /></mesh>
           <B y={0.25} z={w * 0.33} w={0.26} h={0.22} d={0.02} m={mats.lampGlow} shadow={false} />
         </>
       );

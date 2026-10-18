@@ -53,7 +53,10 @@ export function wallPieces(w: Wall, openings: Opening[]): WallPiece[] {
     .filter((o) => o.wallId === w.id)
     .map((o) => ({ s0: Math.max(start, o.offset), s1: Math.min(end, o.offset + o.width), z0: Math.max(0, o.sill), z1: Math.min(w.height, o.sill + o.height) }))
     .filter((o) => o.s1 > o.s0 && o.z1 > o.z0);
-  const cuts = [...new Set([start, end, ...ops.flatMap((o) => [o.s0, o.s1])])].sort((a, b) => a - b);
+  const tope = w.tope;
+  const topeCuts = tope ? [tope.s0, tope.s1].filter((s) => s > start && s < end) : [];
+  const cuts = [...new Set([start, end, ...topeCuts, ...ops.flatMap((o) => [o.s0, o.s1])])].sort((a, b) => a - b);
+  const base = Math.max(0, w.base ?? 0);
   const pieces: WallPiece[] = [];
   for (let i = 0; i < cuts.length - 1; i++) {
     const s0 = cuts[i];
@@ -61,13 +64,15 @@ export function wallPieces(w: Wall, openings: Opening[]): WallPiece[] {
     if (s1 - s0 < 1e-6) continue;
     const mid = (s0 + s1) / 2;
     const holes = ops.filter((o) => o.s0 < mid && o.s1 > mid).sort((a, b) => a.z0 - b.z0);
-    let z = 0;
+    // coronación del tramo: más baja dentro del tramo rebajado
+    const hTop = tope && mid > tope.s0 && mid < tope.s1 ? Math.min(w.height, tope.height) : w.height;
+    let z = base;
     const solids: [number, number][] = [];
     for (const hole of holes) {
-      if (hole.z0 > z) solids.push([z, hole.z0]);
+      if (hole.z0 > z) solids.push([z, Math.min(hole.z0, hTop)]);
       z = Math.max(z, hole.z1);
     }
-    if (z < w.height) solids.push([z, w.height]);
+    if (z < hTop) solids.push([z, hTop]);
     for (const [z0, z1] of solids) {
       // une con la pieza anterior si continúa a la misma altura
       const prev = pieces.find((p) => Math.abs(p.s1 - s0) < 1e-6 && Math.abs(p.z0 - z0) < 1e-6 && Math.abs(p.z1 - z1) < 1e-6);
