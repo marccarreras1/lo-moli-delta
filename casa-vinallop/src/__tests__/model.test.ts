@@ -654,36 +654,38 @@ describe('depósito de agua potable', () => {
   });
 });
 
-describe('zona de comedor bajada a 4 m (propuesta de la propiedad)', () => {
+describe('zona de comedor más baja, interior a 4 m (propuesta de la propiedad)', () => {
   const baja = resolveLayout(VINALLOP, baseVariant());
   const alta = resolveLayout(VINALLOP, { ...baseVariant(), options: { ...baseVariant().options, alturaComedor: 'alta' } });
-  it('por defecto la zona de comedor corona a 4 m desde el escalón; con «alta», toda la casa a 6 m', () => {
-    expect(baja.escalon).toEqual({ x: 10.4, top: 4 });
+  it('por defecto la zona de comedor tiene el techo interior a 4 m del suelo desde el escalón; con «alta», toda la casa a 6 m', () => {
+    expect(baja.escalon).toEqual({ x: 10.4, top: 4.61 });
+    // parte alta del interior (cara inferior de la cubierta) a 4,00 m sobre el suelo interior
+    expect(baja.escalon!.top - baja.roof!.thickness - baja.levels.find((l) => l.id === 'pb')!.elevation).toBeCloseTo(4, 6);
     expect(alta.escalon).toBeUndefined();
     expect(baja.topHeight).toBeCloseTo(6, 6);
     const pb = baja.levels.find((l) => l.id === 'pb')!.elevation;
     for (const id of ['muro-A', 'muro-B']) {
       const w = baja.walls.find((x) => x.id === id)!;
-      expect(w.tope!.height).toBeCloseTo(4 - pb, 6);
+      expect(w.tope!.height).toBeCloseTo(4.61 - pb, 6);
       expect(w.height).toBeCloseTo(6 - pb, 6);
     }
-    expect(baja.walls.find((w) => w.id === 'muro-derecho')!.height).toBeCloseTo(4 - pb, 6);
+    expect(baja.walls.find((w) => w.id === 'muro-derecho')!.height).toBeCloseTo(4.61 - pb, 6);
     expect(baja.walls.find((w) => w.id === 'muro-izquierdo')!.height).toBeCloseTo(6 - pb, 6);
     // frente del escalón: de la cara inferior de la cubierta baja a la coronación
     const e = baja.walls.find((w) => w.id === 'muro-escalon')!;
-    expect(e.base! + pb).toBeCloseTo(4 - baja.roof!.thickness, 6);
+    expect(e.base! + pb).toBeCloseTo(4.61 - baja.roof!.thickness, 6);
     expect(alta.walls.some((w) => w.id === 'muro-escalon')).toBe(false);
   });
   it('los muros se rebajan solo en la zona baja; el ventanal de 7 m cabe bajo la cubierta baja', () => {
     const w = baja.walls.find((x) => x.id === 'muro-A')!;
     const piezas = wallPieces(w, baja.openings);
-    const altas = piezas.filter((p) => p.z1 > 4);
+    const altas = piezas.filter((p) => p.z1 > 4.61);
     expect(altas.length).toBeGreaterThan(0);
     for (const p of altas) expect(p.s1).toBeLessThanOrEqual(w.tope!.s0 + 1e-6);
     expect(baja.openings.some((o) => o.id === 'obertura-7m')).toBe(true);
   });
   it('techo, lámparas e instalaciones bajan con la cubierta en la zona de comedor', () => {
-    expect(roofTopAt(baja, 2.6, 12)).toBe(4);
+    expect(roofTopAt(baja, 2.6, 12)).toBeCloseTo(4.61, 6);
     expect(roofTopAt(baja, 2.6, 8)).toBeCloseTo(6, 6);
     expect(roofTopAt(alta, 2.6, 12)).toBeCloseTo(6, 6);
   });

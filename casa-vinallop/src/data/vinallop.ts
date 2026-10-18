@@ -112,15 +112,17 @@ const walls: Wall[] = [
   { ...tab, id: 'tab-escalera', a: [X_ESC, Y_PASILLO + TP / 2], b: [X_ESC, y1] },
 ];
 
+/** altura de la cristalera (ventanal del frontal A): 2,50 m (propiedad, 18/10/2026; antes ≈3,15 m medidos en el alzado A) */
+const H_VENTANAL = 2.5;
 const onAB = (x: number) => r2(x - h); // offset sobre el eje de los muros A y B (empieza en x = 0,15)
 const openings: Opening[] = [
   {
-    id: 'obertura-7m', label: 'Ventanal de 7 m', wallId: 'muro-A', kind: 'cristalera', offset: onAB(cx(7.4)), width: 7, sill: 0, height: 3.15,
+    id: 'obertura-7m', label: 'Ventanal de 7 m', wallId: 'muro-A', kind: 'cristalera', offset: onAB(cx(7.4)), width: 7, sill: 0, height: H_VENTANAL,
     system: null, status: 'confirmado', sourceId: S.prop, variantKey: 'ventanal-7',
-    note: 'La propiedad vuelve a los 7 m de los bocetos («OBERTURA 7 M»): menos pérdidas por el lado norte, menos coste y menos estructura que el de 9 m. En planta empieza junto a la escalera y en el alzado A termina a ≈1,4 m del extremo. Altura medida en el alzado A (≈3,15 m). Carpintería no definida.',
+    note: 'La propiedad vuelve a los 7 m de los bocetos («OBERTURA 7 M»): menos pérdidas por el lado norte, menos coste y menos estructura que el de 9 m. En planta empieza junto a la escalera y en el alzado A termina a ≈1,4 m del extremo. Altura de 2,50 m (propiedad, 18/10/2026), como la puerta del dormitorio; antes se había tomado ≈3,15 m del alzado A. Carpintería no definida.',
   },
   {
-    id: 'obertura-9m', label: 'Ventanal de 9 m (solicitado)', wallId: 'muro-A', kind: 'cristalera', offset: onAB(r2(ALT_X1 + 0.5)), width: 9, sill: 0, height: 3.15,
+    id: 'obertura-9m', label: 'Ventanal de 9 m (solicitado)', wallId: 'muro-A', kind: 'cristalera', offset: onAB(r2(ALT_X1 + 0.5)), width: 9, sill: 0, height: H_VENTANAL,
     system: null, status: 'propuesto', sourceId: S.prop, variantKey: 'ventanal-9',
     note: 'Solicitado por la propiedad y presupuestado (PAC26-0052: demolición para abertura de 9 m y zuncho de 9 m de 40 × 70 cm con triple armado, propuesta del constructor). Encaje en el modelo: de 6,85 a 15,85 m; deja un machón de 0,50 m junto al borde del altell y 0,48 m en la esquina (0,18 m de jamba interior más el lateral de 0,30 m). Apoyos, machones y zuncho pendientes de cálculo del arquitecto. La estufa queda delante del vidrio.',
   },
@@ -375,9 +377,9 @@ const outdoor: Outdoor = {
   },
   porches: [
     {
-      id: 'porche-cristalera', label: 'Porche de la cristalera', rect: [PORCHE_X0, r2(-SOL_TRASERA + 0.2), L, 0], wallSide: 'y1', hWall: r2(PB_EL + 3.15 + 0.3), hFront: r2(PB_EL + 3.15 + 0.05),
+      id: 'porche-cristalera', label: 'Porche de la cristalera', rect: [PORCHE_X0, r2(-SOL_TRASERA + 0.2), L, 0], wallSide: 'y1', hWall: r2(PB_EL + H_VENTANAL + 0.3), hFront: r2(PB_EL + H_VENTANAL + 0.05),
       posts: [0.4, 3.5, 6.6, 9.85, 13.1, 16.1].map((x) => [x, r2(-SOL_TRASERA + 0.4)] as Vec2), postSize: 0.4, status: 'confirmado',
-      note: 'Porche mediterráneo a lo largo de toda la solera del frontal A, desde el ventanal hasta el dormitorio (indicaciones de la propiedad: porche en la cristalera y «el porche lo haremos de toda la solera, hasta la habitación»): pilares de obra encalados de 40 × 40 cm, viga de madera en el frente y durmiente en la fachada por encima del dintel del ventanal (3,15 m sobre el suelo interior, 3,51 m sobre el terreno), viguetas cada ≈0,6 m y cubierta de cañizo. Medidas, sección de las vigas y anclaje a la fachada propuestos: pendientes de cálculo. Con el norte del Catastro (≈20° desde el frontal A), la cristalera mira al nor-noreste: le da el sol de primera hora en verano y casi nada el resto del día, así que el porche sirve sobre todo de estancia exterior a la sombra en las tardes; la entrada (frontal B) mira al sur-suroeste.',
+      note: 'Porche mediterráneo a lo largo de toda la solera del frontal A, desde el ventanal hasta el dormitorio (indicaciones de la propiedad: porche en la cristalera y «el porche lo haremos de toda la solera, hasta la habitación»): pilares de obra encalados de 40 × 40 cm, viga de madera en el frente y durmiente en la fachada por encima del dintel del ventanal (2,50 m sobre el suelo interior, 2,86 m sobre el terreno), viguetas cada ≈0,6 m y cubierta de cañizo. Medidas, sección de las vigas y anclaje a la fachada propuestos: pendientes de cálculo. Con el norte del Catastro (≈20° desde el frontal A), la cristalera mira al nor-noreste: le da el sol de primera hora en verano y casi nada el resto del día, así que el porche sirve sobre todo de estancia exterior a la sombra en las tardes; la entrada (frontal B) mira al sur-suroeste.',
     },
   ],
   furniture: [
@@ -570,7 +572,7 @@ const PROJECT: ProjectData = {
     { id: 'obertura-9', label: 'Ventanal del frontal A (solicitado)', value: 9, unit: 'm', decimals: 0, sourceId: S.prop, status: 'pendiente', note: 'Solicitado por la propiedad; cabe entre 6,85 y 15,85 m. Pendiente de cálculo estructural.' },
     { id: 'obertura-225', label: 'Oberturas de 2,25 m', value: 2.25, unit: 'm', decimals: 2, sourceId: S.planta, status: 'documentado', note: '«OBERTURA: 225 CM»; «2,25 m» dos veces en el frontal A' },
     { id: 'puerta-70', label: 'Puerta del frontal B', value: 0.7, unit: 'm', decimals: 2, sourceId: S.fb, status: 'documentado', note: '«70 cm»; es una puerta (propiedad)' },
-    { id: 'altura-7m', label: 'Altura de la obertura de 7 m', value: 3.15, unit: 'm', decimals: 2, sourceId: S.fa, status: 'interpretado', note: 'Medida en el alzado A.' },
+    { id: 'altura-7m', label: 'Altura de la obertura de 7 m', value: H_VENTANAL, unit: 'm', decimals: 2, sourceId: S.prop, status: 'confirmado', note: '2,50 m (propiedad, 18/10/2026). En el alzado A se había medido ≈3,15 m.' },
     { id: 'altura-225', label: 'Altura de la obertura de 2,25 m (planta baja)', value: 2.4, unit: 'm', decimals: 2, sourceId: S.prop, status: 'documentado', note: '«Es ok 2,40 m» (propiedad). Queda bajo el forjado del altell (cara inferior a 2,50 m).' },
     { id: 'vigas', label: 'Separación de las vigas de la vuelta catalana', value: 0.55, unit: 'm', decimals: 2, sourceId: S.prop, status: 'documentado', note: '«Tal como las tienes y cada 55 cm» (propiedad): cruzan el ancho de la casa.' },
     { id: 'pasillo', label: 'Fondo del pasillo junto al frontal A', value: 0.85, unit: 'm', decimals: 2, sourceId: S.planta, status: 'interpretado', note: 'Libre entre el frontal A y la línea del pasillo.' },
@@ -622,8 +624,9 @@ const PROJECT: ProjectData = {
   // norte en sentido horario desde el frontal A: eje del edificio en el Catastro (≈20°; la brújula de Mapas de Apple daba ≈22°)
   northDeg: Math.round(NORTE_CATASTRO),
   situacion: SITUACION,
-  // propuesta de la propiedad (18/10/2026, boceto del alzado): la zona del comedor se ve muy alta; se baja a 4 m
-  escalonComedor: { x: 10.4, top: 4.0, note: 'Boceto de la propiedad: volumen alto de 6 m (altell, baño, escalera y cocina) y zona de comedor y salón bajada a 4 m sobre el terreno, con los muros a esa altura. Posición del escalón (≈10,4 m desde el extremo del dormitorio) medida sobre el boceto: pendiente de fijar. Interior de la zona baja: ≈3,3 m libres bajo la volta. Sin cálculo de estructura ni de impermeabilización del encuentro.' },
+  // propuesta de la propiedad (18/10/2026, boceto del alzado): la zona del comedor se ve muy alta y se baja;
+  // la parte alta del interior queda a 4 m del suelo (cara inferior de la cubierta, clave de la volta)
+  escalonComedor: { x: 10.4, libre: 4.0, top: r2(PB_EL + 4.0 + 0.25), note: 'Boceto de la propiedad: volumen alto de 6 m (altell, baño, escalera y cocina) y zona de comedor y salón más baja. La propiedad fija la parte alta del interior de esa zona a 4,00 m sobre el suelo interior (clave de la volta, cara inferior de la cubierta; ≈3,90 m bajo las vigas). Con el suelo interior a +0,36 y la cubierta de 0,25 m, los muros coronan a ≈4,61 m sobre el terreno (más el peto si se elige el remate ibicenco). Posición del escalón (≈10,4 m desde el extremo del dormitorio) medida sobre el boceto: pendiente de fijar. Sin cálculo de estructura ni de impermeabilización del encuentro.' },
   facades: { A: 'Frontal A', B: 'Frontal B', izquierdo: 'Lateral izquierdo', derecho: 'Lateral derecho' },
   notices: ['Geometría de los bocetos fotografiados y de las respuestas de la propiedad. Revisa las preguntas en «Medidas y documentación».'],
 };

@@ -509,7 +509,8 @@ export interface ProjectData {
   /** situación (grados decimales, WGS84) para el estudio solar */
   situacion?: { lat: number; lon: number; nota: string };
   /** opción de bajar la zona del comedor: desde x (planta) la cubierta corona a `top` sobre el terreno */
-  escalonComedor?: { x: number; top: number; note: string };
+  /** escalón de la zona de comedor: desde x la casa corona a `top` (sobre el terreno); `libre`: altura interior hasta la cara inferior de la cubierta */
+  escalonComedor?: { x: number; top: number; libre?: number; note: string };
   /** fachadas identificadas: id → nombre visible */
   facades: Record<string, string>;
   notices: string[];
