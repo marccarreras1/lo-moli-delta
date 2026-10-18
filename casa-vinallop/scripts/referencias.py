@@ -1,9 +1,11 @@
 """
 Prepara las imágenes de la sección «Referencias» para PUBLICAR con la web (autorizado por la propiedad
-el 14/10/2026). Las imágenes NUNCA se guardan en el repositorio: el script las lee de la carpeta de
-archivos aportados por la propiedad y las escribe en la carpeta de publicación.
+el 14/10/2026). Los originales NO se guardan en el repositorio: el script los lee de la carpeta de archivos
+aportados por la propiedad y escribe las versiones publicables en <salida>/referencias. Desde el 18/10/2026 (decisión
+de la propiedad, para que se vean en lomolideldelta.com, que se compila desde el repositorio privado) la salida es
+`public`, así que esas versiones reducidas y sin metadatos sí están en el repositorio.
 
-    python3 scripts/referencias.py <carpeta-con-las-imágenes> <carpeta-de-publicación>
+    python3 -I scripts/referencias.py <carpeta-con-las-imágenes> public
 
 - Las referencias de diseño 01–11 salen del ZIP aportado (Vinallop_prompt_y_fotos_Claude.zip).
 - El resto se identifica por la huella MD5 del archivo original (los duplicados se descartan).

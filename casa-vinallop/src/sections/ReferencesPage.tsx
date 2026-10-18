@@ -2,9 +2,9 @@
  * Sección «Referencias»: cada espacio con su referencia de diseño, qué se ha tomado de ella y las
  * vistas donde se aplica, y la galería de fotos y bocetos aportados por la propiedad.
  *
- * Las imágenes NO están en el repositorio. La propiedad autorizó (14/10/2026) publicarlas con la web:
- * scripts/referencias.py las reduce, les quita los metadatos y escribe referencias/manifest.json en la
- * carpeta de publicación. Sin ese índice (p. ej. en desarrollo) se muestra el estado pendiente, y siempre
+ * La propiedad autorizó (14/10/2026) publicarlas con la web: scripts/referencias.py las reduce, les quita los
+ * metadatos y escribe referencias/manifest.json en public/ (en el repositorio privado desde el 18/10/2026, para el
+ * dominio propio; los originales no se suben). Sin ese índice (p. ej. en desarrollo) se muestra el estado pendiente, y siempre
  * se puede cargar una imagen propia en este navegador (se guarda solo en el dispositivo).
  */
 import { useCallback, useEffect, useRef, useState } from 'react';

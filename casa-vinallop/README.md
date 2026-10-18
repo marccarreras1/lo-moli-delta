@@ -18,7 +18,7 @@ Herramienta para explorar la casa de Vinallop en tres modos (Exterior, Plantas, 
 - **Visor**: vistas preparadas, favoritas, presentación, comparador de variantes (dos vistas sincronizadas), recorrido a pie con colisiones (ojos a 1,60 m, teclado y mando táctil, atajos de estancia), medición en el plano, comentarios con chincheta (plano y 3D), capas de instalaciones, modo fotografía (trazado de rayos del mismo modelo) y estudio solar preparado (se activa solo con norte, situación y fecha).
 - **Gestión**: tabla de decisiones, fases con lista y calendario (fase 1 = presupuesto PAC26-0052), control del presupuesto con exportación CSV y HTML imprimible. No hay precios inventados; lo no valorado aparece como pendiente.
 - **Logo**: el de Canva no se puede descargar desde aquí; se puede cargar el archivo en «Proyecto → Logo» (no se redibuja ni se sustituye).
-- Las imágenes de referencia, las fotos y el presupuesto **no** están en el repositorio ni en la web compilada. En «Referencias» se pueden cargar en el navegador para compararlas con las vistas.
+- Las imágenes de referencia y las fotos se publican con la web en versión reducida (1800 px) y sin metadatos (`public/referencias`, generadas con `scripts/referencias.py`; decisión de la propiedad del 18/10/2026 para el dominio propio). Los originales y las hojas del presupuesto **no** están en el repositorio.
 - Existe además un **modelo de prueba ficticio** (menú ⋯ → «Modelo de prueba»), siempre marcado como tal.
 
 ## Ejecutar

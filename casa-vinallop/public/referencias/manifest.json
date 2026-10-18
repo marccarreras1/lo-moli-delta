@@ -1,0 +1,350 @@
+{
+ "version": 1,
+ "grupos": {
+  "inspiracion": "Imagen de inspiración",
+  "bocetos": "Bocetos de la propiedad",
+  "dron": "Fotos de dron",
+  "casa": "Fotos de la casa y el algarrobo",
+  "parcela": "Fotos de la parcela y el entorno",
+  "mapa": "Mapa"
+ },
+ "refs": {
+  "01": {
+   "src": "referencias/ref-01.jpg",
+   "w": 736,
+   "h": 920
+  },
+  "02": {
+   "src": "referencias/ref-02.jpg",
+   "w": 675,
+   "h": 1200
+  },
+  "03": {
+   "src": "referencias/ref-03.jpg",
+   "w": 735,
+   "h": 696
+  },
+  "04": {
+   "src": "referencias/ref-04.jpg",
+   "w": 736,
+   "h": 920
+  },
+  "05": {
+   "src": "referencias/ref-05.jpg",
+   "w": 720,
+   "h": 1013
+  },
+  "06": {
+   "src": "referencias/ref-06.jpg",
+   "w": 560,
+   "h": 840
+  },
+  "07": {
+   "src": "referencias/ref-07.jpg",
+   "w": 736,
+   "h": 885
+  },
+  "08": {
+   "src": "referencias/ref-08.jpg",
+   "w": 735,
+   "h": 914
+  },
+  "09": {
+   "src": "referencias/ref-09.jpg",
+   "w": 600,
+   "h": 800
+  },
+  "10": {
+   "src": "referencias/ref-10.jpg",
+   "w": 736,
+   "h": 1104
+  },
+  "11": {
+   "src": "referencias/ref-11.jpg",
+   "w": 736,
+   "h": 883
+  }
+ },
+ "galeria": [
+  {
+   "id": "render-referencia",
+   "src": "referencias/render-referencia.jpg",
+   "w": 1774,
+   "h": 887,
+   "grupo": "inspiracion",
+   "titulo": "Render de referencia: casa encalada con porche y cristalera bajo un árbol grande"
+  },
+  {
+   "id": "puerta-finca",
+   "src": "referencias/puerta-finca.jpg",
+   "w": 1125,
+   "h": 1500,
+   "grupo": "inspiracion",
+   "titulo": "Referencia de la puerta de la finca: barrera de madera de acebuche de dos hojas entre pilares de piedra y pared seca"
+  },
+  {
+   "id": "boceto-frontal-a",
+   "src": "referencias/boceto-frontal-a.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "bocetos",
+   "titulo": "Boceto del alzado del frontal A (6,20 m de alto, ventanal de 7 m y huecos de 2,25 m)"
+  },
+  {
+   "id": "boceto-planta-baja",
+   "src": "referencias/boceto-planta-baja.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "bocetos",
+   "titulo": "Boceto de la planta baja (dormitorio, baño, escalera, cocina y aberturas)"
+  },
+  {
+   "id": "boceto-frontal-b",
+   "src": "referencias/boceto-frontal-b.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "bocetos",
+   "titulo": "Boceto del alzado del frontal B (puertas de 70 y 120 cm)"
+  },
+  {
+   "id": "boceto-altell",
+   "src": "referencias/boceto-altell.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "bocetos",
+   "titulo": "Boceto del altell con la escalera"
+  },
+  {
+   "id": "dron-alto",
+   "src": "referencias/dron-alto.jpg",
+   "w": 1012,
+   "h": 1800,
+   "grupo": "dron",
+   "titulo": "Dron: la casa en el olivar, vista alta"
+  },
+  {
+   "id": "dron-entorno-1",
+   "src": "referencias/dron-entorno-1.jpg",
+   "w": 1800,
+   "h": 1013,
+   "grupo": "dron",
+   "titulo": "Dron: entorno de campos e invernaderos"
+  },
+  {
+   "id": "dron-entorno-2",
+   "src": "referencias/dron-entorno-2.jpg",
+   "w": 1800,
+   "h": 1013,
+   "grupo": "dron",
+   "titulo": "Dron: olivar y campos vecinos"
+  },
+  {
+   "id": "dron-oblicua-1",
+   "src": "referencias/dron-oblicua-1.jpg",
+   "w": 1800,
+   "h": 1013,
+   "grupo": "dron",
+   "titulo": "Dron: la casa y el algarrobo, vista oblicua"
+  },
+  {
+   "id": "dron-cenital",
+   "src": "referencias/dron-cenital.jpg",
+   "w": 1800,
+   "h": 1013,
+   "grupo": "dron",
+   "titulo": "Dron: vista cenital de las cubiertas"
+  },
+  {
+   "id": "dron-oblicua-2",
+   "src": "referencias/dron-oblicua-2.jpg",
+   "w": 1800,
+   "h": 1013,
+   "grupo": "dron",
+   "titulo": "Dron: la casa entre olivos"
+  },
+  {
+   "id": "dron-cercana",
+   "src": "referencias/dron-cercana.jpg",
+   "w": 1800,
+   "h": 1013,
+   "grupo": "dron",
+   "titulo": "Dron: cubiertas de fibrocemento y fachada, de cerca"
+  },
+  {
+   "id": "dron-horizonte",
+   "src": "referencias/dron-horizonte.jpg",
+   "w": 1800,
+   "h": 1013,
+   "grupo": "dron",
+   "titulo": "Dron: olivar con la sierra al fondo"
+  },
+  {
+   "id": "dron-olivar",
+   "src": "referencias/dron-olivar.jpg",
+   "w": 1800,
+   "h": 1013,
+   "grupo": "dron",
+   "titulo": "Dron: la casa en el olivar"
+  },
+  {
+   "id": "dron-finca",
+   "src": "referencias/dron-finca.jpg",
+   "w": 1800,
+   "h": 1013,
+   "grupo": "dron",
+   "titulo": "Dron: la finca entera desde la esquina de la entrada, con los invernaderos al fondo"
+  },
+  {
+   "id": "dron-cenital-aparcamiento",
+   "src": "referencias/dron-cenital-aparcamiento.jpg",
+   "w": 1800,
+   "h": 1013,
+   "grupo": "dron",
+   "titulo": "Dron en vertical: la casa, el algarrobo y el claro donde se dejan los coches"
+  },
+  {
+   "id": "dron-acceso",
+   "src": "referencias/dron-acceso.jpg",
+   "w": 1800,
+   "h": 1013,
+   "grupo": "dron",
+   "titulo": "Dron: la casa, el olivar y la entrada de la finca (esquina izquierda, junto al camino)"
+  },
+  {
+   "id": "casa-entre-olivos",
+   "src": "referencias/casa-entre-olivos.jpg",
+   "w": 1800,
+   "h": 1350,
+   "grupo": "casa",
+   "titulo": "La casa entre olivos"
+  },
+  {
+   "id": "casa-desde-olivar",
+   "src": "referencias/casa-desde-olivar.jpg",
+   "w": 1800,
+   "h": 1350,
+   "grupo": "casa",
+   "titulo": "La casa desde el olivar"
+  },
+  {
+   "id": "casa-lateral",
+   "src": "referencias/casa-lateral.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "casa",
+   "titulo": "Fachada lateral entre árboles"
+  },
+  {
+   "id": "casa-frontal-b-1",
+   "src": "referencias/casa-frontal-b-1.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "casa",
+   "titulo": "Frontal B con las puertas"
+  },
+  {
+   "id": "casa-frontal-b-2",
+   "src": "referencias/casa-frontal-b-2.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "casa",
+   "titulo": "Frontal B con las puertas (otra toma)"
+  },
+  {
+   "id": "casa-algarrobo-lateral",
+   "src": "referencias/casa-algarrobo-lateral.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "casa",
+   "titulo": "Algarrobo junto al lateral de la casa"
+  },
+  {
+   "id": "algarrobo-tronco",
+   "src": "referencias/algarrobo-tronco.jpg",
+   "w": 1800,
+   "h": 1350,
+   "grupo": "casa",
+   "titulo": "Tronco y raíces del algarrobo"
+  },
+  {
+   "id": "algarrobo-casa",
+   "src": "referencias/algarrobo-casa.jpg",
+   "w": 1800,
+   "h": 1350,
+   "grupo": "casa",
+   "titulo": "El algarrobo y la casa"
+  },
+  {
+   "id": "olivo-cristalera",
+   "src": "referencias/olivo-cristalera.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "casa",
+   "titulo": "Olivo grande frente a la cristalera (tronco a 3,60 m de la fachada A)"
+  },
+  {
+   "id": "olivo-pequeno",
+   "src": "referencias/olivo-pequeno.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "casa",
+   "titulo": "Olivo pequeño frente a la cristalera (tronco a 4,50 m de la fachada A)"
+  },
+  {
+   "id": "parcela-olivar-1",
+   "src": "referencias/parcela-olivar-1.jpg",
+   "w": 1800,
+   "h": 1350,
+   "grupo": "parcela",
+   "titulo": "Olivar de la parcela"
+  },
+  {
+   "id": "parcela-olivar-2",
+   "src": "referencias/parcela-olivar-2.jpg",
+   "w": 1800,
+   "h": 1350,
+   "grupo": "parcela",
+   "titulo": "Olivar de la parcela (otra toma)"
+  },
+  {
+   "id": "parcela-camino",
+   "src": "referencias/parcela-camino.jpg",
+   "w": 1800,
+   "h": 1350,
+   "grupo": "parcela",
+   "titulo": "Camino de acceso"
+  },
+  {
+   "id": "parcela-vecinos",
+   "src": "referencias/parcela-vecinos.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "parcela",
+   "titulo": "Margen con amapolas y edificación vecina"
+  },
+  {
+   "id": "parcela-entrada",
+   "src": "referencias/parcela-entrada.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "parcela",
+   "titulo": "Entrada de la finca: camino de grava de 4,70 m de ancho entre la valla"
+  },
+  {
+   "id": "parcela-entrada-fuera",
+   "src": "referencias/parcela-entrada-fuera.jpg",
+   "w": 1800,
+   "h": 1013,
+   "grupo": "parcela",
+   "titulo": "Entrada de la finca desde el camino: hueco de la malla donde va la puerta menorquina, con las vallas móviles a la derecha"
+  },
+  {
+   "id": "mapa-satelite",
+   "src": "referencias/mapa-satelite.jpg",
+   "w": 830,
+   "h": 1800,
+   "grupo": "mapa",
+   "titulo": "Captura de Mapas de Apple (vista de satélite)"
+  }
+ ]
+}
