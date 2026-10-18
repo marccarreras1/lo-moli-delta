@@ -18,7 +18,7 @@ import { Effects } from './Effects';
 import { Sky, SoftShadows } from '@react-three/drei';
 import { barkMaterial, blobTexture, buildTree, discAlphaTexture, grassTexture, leafMaterial, litterTexture, rockGeometry, soilTexture } from './Trees';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { conSituacion, modelAzimuth, solarDirection, useSolar } from '../model/solar';
+import { conSituacion, deFechaLocal, modelAzimuth, solarDirection, sunPosition, useAhora, useSolar } from '../model/solar';
 import { Installations3D } from '../instalaciones/Installations3D';
 import { useGestion } from '../gestion/store';
 import { useInstalaciones, useResolvedPoints, useVisibleLayers } from '../instalaciones/store';
@@ -43,13 +43,24 @@ const AMBIENCE: Record<Ambience, { bg: string; sky: string; ground: string; sun:
   noche: { bg: '#161b24', sky: '#27324a', ground: '#141110', sun: '#9fb2d6', sunK: 0.18, hemiK: 0.16, elev: 55, az: 140, geoAz: 160, env: 0.05, exposure: 1.15, lamps: 1 },
 };
 
+/** con el sol real activo, el ambiente sigue al sol: noche bajo el horizonte, luz de tarde con el sol bajo, día el resto */
+function useAmbiente(base: Ambience): Ambience {
+  const { project } = useModel();
+  const ahora = useAhora();
+  const s = conSituacion(useSolar(), project.situacion, ahora);
+  if (!s.active || s.lat === null || s.lon === null || (s.northDeg ?? project.northDeg) === null) return base;
+  const { el } = sunPosition(deFechaLocal(s.datetime!), s.lat, s.lon);
+  return el <= 0 ? 'noche' : el < 12 ? 'tarde' : 'dia';
+}
+
 /**
  * Dirección del sol del visor (acimut del modelo y elevación, en grados): el estudio solar si está
  * activo; si no, la del ambiente, orientada con el norte del proyecto cuando se conoce.
  */
 export function useSun(ambience: Ambience): { az: number; el: number; hdriTurn: number } {
   const { project } = useModel();
-  const s = conSituacion(useSolar(), project.situacion);
+  const ahora = useAhora();
+  const s = conSituacion(useSolar(), project.situacion, ahora);
   const a = AMBIENCE[ambience];
   const d = solarDirection(s, project.northDeg);
   const north = s.northDeg ?? project.northDeg;
@@ -110,8 +121,9 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
   // plano de corte relativo al nivel activo; los niveles superiores se ocultan al seccionar
   const cutAbs = levelElev + (tab === 'plantas' ? Math.min(v.sectionHeight, 1.5) : v.sectionHeight);
   const maxElev = mode === 'corte' || tab === 'plantas' ? levelElev : Infinity;
-  const amb = AMBIENCE[v.ambience];
-  const sun = useSun(v.ambience);
+  const ambiente = useAmbiente(v.ambience);
+  const amb = AMBIENCE[ambiente];
+  const sun = useSun(ambiente);
   const lampLevel = amb.lamps * v.lampDimmer;
   const mats = useMaterials(variant.finishes, mode, cutAbs, section, lampLevel);
   const elevOfLevel = (id: string) => layout.levels.find((l) => l.id === id)?.elevation ?? 0;
@@ -124,7 +136,7 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
   // con la cinta métrica activa, los clics miden y no seleccionan
   const onSelectFurniture = (id: string) => { if (!useTape.getState().on) select({ kind: 'furniture', id }); };
   // las luces artificiales solo se calculan cuando aportan (tarde, noche o interior)
-  const artificial = lampLevel > 0.05 && (tab === 'interior' || v.ambience !== 'dia');
+  const artificial = lampLevel > 0.05 && (tab === 'interior' || ambiente !== 'dia');
   const lite = quality !== 'alta';
   const setVisual = useStore((s) => s.setVisual);
   // las vistas preparadas fijan lo que necesitan ver (corte longitudinal, sin cubierta)
@@ -171,10 +183,10 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
       <color attach="background" args={[amb.bg]} />
       <fog attach="fog" args={[amb.bg, layout.site && v.showSite ? 90 : 60, layout.site && v.showSite ? 420 : 140]} />
       <FogFollow near={layout.site && v.showSite ? 90 : 60} far={layout.site && v.showSite ? 420 : 140} center={[(layout.bounds.minX + layout.bounds.maxX) / 2, (layout.bounds.minY + layout.bounds.maxY) / 2]} />
-      {v.ambience !== 'noche' && tab !== 'plantas' && <SkyDome ambience={v.ambience} />}
-      <Environment intensity={amb.env * (tab === 'interior' && quality === 'alta' ? 0.7 : 1)} exposure={amb.exposure} hdri={tab === 'plantas' ? null : hdriFor(v.ambience)} turn={sun.hdriTurn} />
-      <Lights layout={layout} intensity={v.lightIntensity} ambience={v.ambience} shadowSize={quality === 'alta' ? 4096 : 2048} interior={tab === 'interior' && quality === 'alta'} wide={!!layout.site && v.showSite && tab === 'exterior'} />
-      {layout.site && v.showSite ? <SiteGround layout={layout} site={layout.site} lite={lite} sunAz={v.ambience === 'noche' ? null : sun.az} sunEl={sun.el} /> : <Ground layout={layout} />}
+      {ambiente !== 'noche' && tab !== 'plantas' && <SkyDome ambience={ambiente} />}
+      <Environment intensity={amb.env * (tab === 'interior' && quality === 'alta' ? 0.7 : 1)} exposure={amb.exposure} hdri={tab === 'plantas' ? null : hdriFor(ambiente)} turn={sun.hdriTurn} />
+      <Lights layout={layout} intensity={v.lightIntensity} ambience={ambiente} shadowSize={quality === 'alta' ? 4096 : 2048} interior={tab === 'interior' && quality === 'alta'} wide={!!layout.site && v.showSite && tab === 'exterior'} />
+      {layout.site && v.showSite ? <SiteGround layout={layout} site={layout.site} lite={lite} sunAz={ambiente === 'noche' ? null : sun.az} sunEl={sun.el} /> : <Ground layout={layout} />}
       <House layout={layout} mats={mats} showRoof={showRoof} showCeiling={(tab === 'interior' && mode !== 'corte') || section} mode={mode}
         sectionHeight={cutAbs} selection={selection} openFractions={openFractions} onSelect={(x) => { if (!useTape.getState().on) select(x); }} maxElev={maxElev} />
       {v.showFurniture && <Furniture3D items={furniture} mats={mats} elevationOf={elevationOf} options={layout.options} selectedId={selFurniture} onSelect={onSelectFurniture} />}
@@ -188,7 +200,7 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
       {instLayers.size > 0 && <group userData={{ helper: true }}><Installations3D points={instPoints} visibleLayers={instLayers} elevationOf={(id) => layout.levels.find((l) => l.id === id)?.elevation ?? 0} selectedId={instSel} onSelect={(id) => useInstalaciones.getState().select(id)} /></group>}
       <Annotations layout={layout} showLabels={v.showLabels && tab !== 'interior'} showDims={v.showDims && tab !== 'interior'} showAreas={v.showAreas}
         roomLabelsVisible={roomLabelsVisible} maxElev={maxElev} selectedOpeningId={selection?.kind === 'opening' ? selection.id : null} />
-      {quality === 'alta' && <Effects interior={tab === 'interior'} night={v.ambience !== 'dia'} />}
+      {quality === 'alta' && <Effects interior={tab === 'interior'} night={ambiente !== 'dia'} />}
       {quality === 'alta' && <SoftShadows size={18} samples={10} focus={0.5} />}
       <CameraRig presets={cameras} request={cameraRequest} tab={tab} eyeHeight={v.eyeHeight} interiorFov={v.interiorFov}
         layout={layout} saved={saved} insets={insets} onSave={saveCamera} onEnterRoom={onEnterRoom} onPreset={applyPreset} />

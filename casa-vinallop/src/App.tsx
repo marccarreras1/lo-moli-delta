@@ -15,6 +15,8 @@ import { ConfirmButton } from './ui/controls';
 import { Icon } from './ui/icons';
 import { InfoDialog } from './ui/InfoDialog';
 import { PhotoPanel } from './ui/PhotoPanel';
+import { SolPanel } from './ui/SolPanel';
+import { useSolar } from './model/solar';
 import { PlanView } from './ui/PlanView';
 import { ReferencesDialog } from './ui/ReferencesDialog';
 import { ViewerErrorBoundary, webglAvailable } from './viewer/support';
@@ -141,6 +143,7 @@ export default function App() {
   const presetId = lastPreset ?? defaultPreset(tab, cameras)?.id;
   const camLabel = cameras.find((c) => c.id === presetId)?.label;
   const bottomInset = mobile ? sheetH : 0;
+  const solActive = useSolar((s) => s.active);
   const insets = useMemo(() => ({ bottom: bottomInset, right: mobile ? sideW : 0 }), [bottomInset, sideW, mobile]);
 
   const doExport = async (kind: 'png' | 'png-alta' | 'glb' | 'svg' | 'bano' | 'alzados' | 'juego' | 'json') => {
@@ -372,9 +375,11 @@ export default function App() {
                 <button type="button" className="tool" onClick={() => { useStore.getState().resetView(); setFitNonce((n) => n + 1); }} aria-label="Restablecer vista" title="Restablecer vista (no borra cambios)" data-action="reset-view"><Icon name="reset" /></button>
                 {threeVisible && ready && !mobile && <button type="button" className={`tool tool-text${compare ? ' active' : ''}`} onClick={() => setCompare((c) => (c ? null : 'q:ventanal'))} aria-pressed={!!compare} title="Comparar variantes en dos vistas sincronizadas" data-action="compare">A|B</button>}
                 {threeVisible && ready && <button type="button" className={`tool tool-text${tape.on ? ' active' : ''}`} onClick={tape.toggle} aria-pressed={tape.on} title="Cinta métrica: dos clics sobre el modelo" data-action="tape">Medir</button>}
+                {threeVisible && ready && tab !== 'plantas' && <button type="button" className={`tool tool-text${solActive ? ' active' : ''}`} onClick={() => useSolar.getState().set({ active: !solActive, ...(solActive ? {} : { ahora: true }) })} aria-pressed={solActive} title="Sol real: el del momento en que miras, o el día y la hora que elijas" data-action="sol">Sol</button>}
                 {threeVisible && ready && tab !== 'plantas' && <button type="button" className={`tool${photo ? ' active' : ''}`} onClick={() => setPhoto((p) => !p)} aria-label="Modo fotografía" title="Modo fotografía (trazado de rayos)" data-action="photo-mode"><Icon name="image" /></button>}
                 <button type="button" className="tool" onClick={toggleFullscreen} aria-label={fullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'} title="Pantalla completa"><Icon name={fullscreen ? 'exitFullscreen' : 'fullscreen'} /></button>
               </div>
+              {solActive && threeVisible && tab !== 'plantas' && !tape.on && <SolPanel bottom={bottomInset + 16} onClose={() => useSolar.getState().set({ active: false })} />}
               {tape.on && threeVisible && (
                 <div className="plan-tool-card tape-card" role="status" data-testid="tape-card" style={{ bottom: bottomInset + 64 }}>
                   {tape.pts.length % 2 === 0

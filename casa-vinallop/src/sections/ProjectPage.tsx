@@ -6,7 +6,7 @@
 import { useMemo, useRef, useState } from 'react';
 import type { DataStatus } from '../data/types';
 import { download, exportName } from '../export/export';
-import { conSituacion, solarReady, sunPosition, useSolar } from '../model/solar';
+import { conSituacion, deFechaLocal, solarReady, sunPosition, useSolar } from '../model/solar';
 import { soleraQuantities } from '../model/solera';
 import { bathPlanSvg, bathPlanData } from '../plan/bathPlan';
 import { useModel } from '../state/derived';
@@ -53,7 +53,7 @@ export function ProjectPage() {
   const north = solar.northDeg ?? project.northDeg;
   const solarEf = conSituacion(solar, project.situacion);
   const ready = solarReady(solarEf, project.northDeg);
-  const solarPos = ready ? sunPosition(new Date(solarEf.datetime!), solarEf.lat!, solarEf.lon!) : null;
+  const solarPos = ready ? sunPosition(deFechaLocal(solarEf.datetime!), solarEf.lat!, solarEf.lon!) : null;
 
   const exportAll = async () => {
     try {
@@ -149,12 +149,13 @@ export function ProjectPage() {
 
       <section className="sp-card" data-testid="solar">
         <h2>Estudio solar <span className={`flag${solar.active && ready ? '' : ' flag-phase'}`}>{solar.active && ready ? 'activo' : 'preparado · inactivo'}</span></h2>
-        <p className="hint">Norte: {project.northDeg !== null ? `${project.northDeg}° en sentido horario desde el frontal A, según el eje del edificio en el Catastro (GML aportado por la propiedad; la brújula de Mapas de Apple daba ≈22°). Con él, las luces de día y tarde del visor salen de la orientación real (sol del sur-suroeste a primera hora de la tarde y de poniente al atardecer), aunque sin fecha no reproducen un día concreto.` : 'sin establecer.'} {project.situacion ? `Situación: ${project.situacion.nota} Para el sol exacto solo falta elegir día y hora.` : 'Para el sol exacto de un día y una hora faltan la situación y la fecha: no se han inventado.'}</p>
+        <p className="hint">Norte: {project.northDeg !== null ? `${project.northDeg}° en sentido horario desde el frontal A, según el eje del edificio en el Catastro (GML aportado por la propiedad; la brújula de Mapas de Apple daba ≈22°). Con él, las luces de día y tarde del visor salen de la orientación real (sol del sur-suroeste a primera hora de la tarde y de poniente al atardecer), aunque sin fecha no reproducen un día concreto.` : 'sin establecer.'} {project.situacion ? `Situación: ${project.situacion.nota} El sol real se activa con el botón «Sol» del visor 3D: por defecto, el del momento en que se mira.` : 'Para el sol exacto de un día y una hora faltan la situación y la fecha: no se han inventado.'}</p>
         <div className="sp-form">
           <label>Norte (° en sentido horario desde el frontal A)<input type="number" min={0} max={360} step={1} value={north ?? ''} onChange={(e) => solar.set({ northDeg: e.target.value === '' ? null : Math.max(0, Math.min(360, Number(e.target.value))) })} /></label>
           <label>Latitud<input type="number" min={-90} max={90} step={0.0001} value={solarEf.lat ?? ''} onChange={(e) => solar.set({ lat: e.target.value === '' ? null : Math.max(-90, Math.min(90, Number(e.target.value))) })} /></label>
           <label>Longitud<input type="number" min={-180} max={180} step={0.0001} value={solarEf.lon ?? ''} onChange={(e) => solar.set({ lon: e.target.value === '' ? null : Math.max(-180, Math.min(180, Number(e.target.value))) })} /></label>
-          <label>Fecha y hora<input type="datetime-local" value={solar.datetime ?? ''} onChange={(e) => solar.set({ datetime: e.target.value || null })} /></label>
+          <label>Fecha y hora<input type="datetime-local" value={solarEf.datetime ?? ''} onChange={(e) => solar.set({ datetime: e.target.value || null, ahora: false })} /></label>
+          <label className="toggle-line"><input type="checkbox" checked={solar.ahora} onChange={(e) => solar.set({ ahora: e.target.checked })} /> Ahora (el día y la hora en que se mira)</label>
         </div>
         {solarPos && <p>Sol: acimut {fmt(solarPos.az, 0)}°, elevación {fmt(solarPos.el, 0)}°{solarPos.el <= 0 ? ' (bajo el horizonte)' : ''}.</p>}
         <label className="toggle-line"><input type="checkbox" disabled={!ready} checked={solar.active && ready} onChange={(e) => solar.set({ active: e.target.checked })} /> Usar el sol real en el visor</label>

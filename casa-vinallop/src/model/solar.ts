@@ -3,6 +3,7 @@
  * y fecha-hora. Solo se activa cuando están los tres datos y la orientación del norte respecto a la
  * planta: sin ellos el visor sigue con su luz de visualización (no representa el sol real).
  */
+import { useEffect, useState } from 'react';
 import { create } from 'zustand';
 
 const KEY = 'casa-vinallop/estudio/v2/solar';
@@ -33,9 +34,11 @@ export interface SolarSettings {
   /** fecha y hora local en formato AAAA-MM-DDTHH:MM */
   datetime: string | null;
   active: boolean;
+  /** usar la fecha y la hora del momento en que se mira (se actualiza cada minuto) */
+  ahora: boolean;
 }
 
-const EMPTY: SolarSettings = { northDeg: null, lat: null, lon: null, datetime: null, active: false };
+const EMPTY: SolarSettings = { northDeg: null, lat: null, lon: null, datetime: null, active: false, ahora: true };
 
 function load(): SolarSettings {
   try {
@@ -46,15 +49,62 @@ function load(): SolarSettings {
       northDeg: n(o.northDeg, 0, 360), lat: n(o.lat, -90, 90), lon: n(o.lon, -180, 180),
       datetime: typeof o.datetime === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(o.datetime) ? o.datetime : null,
       active: o.active === true,
+      ahora: o.ahora !== false,
     };
   } catch {
     return EMPTY;
   }
 }
 
-/** ajustes con la situación del proyecto cuando el usuario no ha escrito latitud y longitud */
-export const conSituacion = (s: SolarSettings, sit?: { lat: number; lon: number } | null): SolarSettings =>
-  ({ ...s, lat: s.lat ?? sit?.lat ?? null, lon: s.lon ?? sit?.lon ?? null });
+/** las horas del estudio solar son las de Lo Molí, sea cual sea la zona horaria del dispositivo */
+const TZ = 'Europe/Madrid';
+const FMT = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+const partes = (d: Date) => {
+  const o: Record<string, number> = {};
+  for (const p of FMT.formatToParts(d)) if (p.type !== 'literal') o[p.type] = Number(p.value);
+  return o;
+};
+
+/** fecha y hora de Lo Molí en el formato de los ajustes (AAAA-MM-DDTHH:MM) */
+export const fechaLocal = (d: Date) => {
+  const o = partes(d);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${o.year}-${p(o.month)}-${p(o.day)}T${p(o.hour)}:${p(o.minute)}`;
+};
+
+/** instante que corresponde a una fecha y hora de Lo Molí (AAAA-MM-DDTHH:MM) */
+export function deFechaLocal(s: string): Date {
+  const [y, mo, d, h, mi] = s.split(/[-T:]/).map(Number);
+  const objetivo = Date.UTC(y, mo - 1, d, h, mi);
+  let t = objetivo;
+  for (let i = 0; i < 2; i++) {
+    const o = partes(new Date(t));
+    t -= Date.UTC(o.year, o.month - 1, o.day, o.hour, o.minute) - objetivo;
+  }
+  return new Date(t);
+}
+
+/**
+ * Ajustes efectivos: la situación del proyecto si el usuario no ha escrito latitud y longitud, y la fecha y hora
+ * de ahora si está en «ahora» (o si no hay ninguna).
+ */
+export const conSituacion = (s: SolarSettings, sit?: { lat: number; lon: number } | null, ahora: Date = new Date()): SolarSettings =>
+  ({ ...s, lat: s.lat ?? sit?.lat ?? null, lon: s.lon ?? sit?.lon ?? null, datetime: s.ahora || !s.datetime ? fechaLocal(ahora) : s.datetime });
+
+/** salida y puesta del sol (hora de Lo Molí, minutos desde medianoche) del día AAAA-MM-DD; null si no sale o no se pone */
+export function salidaPuesta(dia: string, lat: number, lon: number): { salida: number | null; puesta: number | null } {
+  const d0 = deFechaLocal(`${dia}T00:00`);
+  let salida: number | null = null;
+  let puesta: number | null = null;
+  let prev = sunPosition(d0, lat, lon).el;
+  for (let m = 2; m <= 24 * 60; m += 2) {
+    const el = sunPosition(new Date(d0.getTime() + m * 60000), lat, lon).el;
+    if (prev <= -0.83 && el > -0.83 && salida === null) salida = m;
+    if (prev > -0.83 && el <= -0.83) puesta = m;
+    prev = el;
+  }
+  return { salida, puesta };
+}
 
 export const solarReady = (s: SolarSettings, projectNorth: number | null = null) => (s.northDeg ?? projectNorth) !== null && s.lat !== null && s.lon !== null && s.datetime !== null;
 
@@ -81,9 +131,19 @@ export const useSolar = create<SolarSettings & { set: (p: Partial<SolarSettings>
 export function solarDirection(s: SolarSettings, projectNorth: number | null = null): { x: number; y: number; z: number; el: number; az: number } | null {
   const north = s.northDeg ?? projectNorth;
   if (!s.active || north === null || s.lat === null || s.lon === null || s.datetime === null) return null;
-  const { az, el } = sunPosition(new Date(s.datetime), s.lat, s.lon);
+  const { az, el } = sunPosition(deFechaLocal(s.datetime), s.lat, s.lon);
   // el norte está girado `north` grados en sentido horario desde el «arriba» de la planta; el este, 90° más
   const th = (az + north) * rad;
   const ce = Math.cos(el * rad);
   return { x: ce * Math.sin(th), y: Math.sin(el * rad), z: -ce * Math.cos(th), el, az };
+}
+
+/** la hora actual, renovada cada minuto (para el sol de «ahora») */
+export function useAhora(): Date {
+  const [d, setD] = useState(() => new Date());
+  useEffect(() => {
+    const t = window.setInterval(() => setD(new Date()), 60000);
+    return () => window.clearInterval(t);
+  }, []);
+  return d;
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { VINALLOP } from '../data/vinallop';
 import { resolveLayout } from '../model/resolve';
 import { blocked, freeSpotIn, walkObstacles, walkStep } from '../model/walk';
-import { conSituacion, modelAzimuth, solarDirection, solarReady, sunPosition } from '../model/solar';
+import { conSituacion, deFechaLocal, modelAzimuth, salidaPuesta, solarDirection, solarReady, sunPosition } from '../model/solar';
 import { bathPlanData, bathPlanSvg } from '../plan/bathPlan';
 import { planSvg } from '../plan/planSvg';
 import { tapeDistance } from '../viewer/tapeStore';
@@ -50,14 +50,14 @@ describe('estudio solar', () => {
     expect(Math.abs(p.az - 180)).toBeLessThan(8);
   });
   it('inactivo sin norte, situación y fecha', () => {
-    expect(solarDirection({ northDeg: null, lat: 40, lon: 0, datetime: '2026-06-21T12:00', active: true })).toBeNull();
-    expect(solarDirection({ northDeg: 0, lat: 40, lon: 0, datetime: '2026-06-21T12:00', active: false })).toBeNull();
-    const d = solarDirection({ northDeg: 0, lat: 40, lon: 0, datetime: '2026-06-21T12:00', active: true })!;
+    expect(solarDirection({ northDeg: null, lat: 40, lon: 0, datetime: '2026-06-21T12:00', active: true, ahora: false })).toBeNull();
+    expect(solarDirection({ northDeg: 0, lat: 40, lon: 0, datetime: '2026-06-21T12:00', active: false, ahora: false })).toBeNull();
+    const d = solarDirection({ northDeg: 0, lat: 40, lon: 0, datetime: '2026-06-21T12:00', active: true, ahora: false })!;
     expect(d.y).toBeGreaterThan(0.8);
   });
   it('orienta el sol con el norte: al mediodía viene del sur (lado del frontal B, girado con el norte)', () => {
     // norte del proyecto (22°) si el usuario no ha puesto otro
-    const d = solarDirection({ northDeg: null, lat: 38.5, lon: -0.8, datetime: '2026-03-20T12:10:00Z', active: true }, 22)!;
+    const d = solarDirection({ northDeg: null, lat: 38.5, lon: -0.8, datetime: '2026-03-20T13:10', active: true, ahora: false }, 22)!;
     const az = (Math.atan2(d.x, d.z) * 180) / Math.PI;
     // sur geográfico = 202° desde el «arriba» de la planta → hacia +Y (frontal B) y un poco hacia −X
     expect(d.z).toBeGreaterThan(0.5);
@@ -129,11 +129,39 @@ describe('selectores estables', () => {
 
 describe('situación del proyecto', () => {
   it('rellena latitud y longitud si el usuario no las ha escrito; las suyas mandan', () => {
-    const base = { northDeg: null, lat: null, lon: null, datetime: '2026-06-21T12:00', active: true };
+    const base = { northDeg: null, lat: null, lon: null, datetime: '2026-06-21T12:00', active: true, ahora: false };
     const sit = { lat: 40.760694, lon: 0.491722 };
     expect(solarReady(base, 20)).toBe(false);
     expect(solarReady(conSituacion(base, sit), 20)).toBe(true);
     expect(conSituacion({ ...base, lat: 41 }, sit).lat).toBe(41);
     expect(VINALLOP.situacion?.lat).toBeCloseTo(40.7607, 3);
+  });
+});
+
+describe('sol de ahora', () => {
+  it('con «ahora» usa la hora en que se mira; sin él, la elegida', () => {
+    const s = { northDeg: null, lat: null, lon: null, datetime: '2026-06-21T12:00', active: true, ahora: true };
+    // 15:05 UTC del 18/10/2026 = 17:05 en Lo Molí (horario de verano)
+    const ahora = new Date(Date.UTC(2026, 9, 18, 15, 5));
+    expect(conSituacion(s, null, ahora).datetime).toBe('2026-10-18T17:05');
+    expect(conSituacion({ ...s, ahora: false }, null, ahora).datetime).toBe('2026-06-21T12:00');
+  });
+  it('salida y puesta en Lo Molí: ≈15 h de sol en el solsticio de verano y ≈9 h 20 en el de invierno', () => {
+    const v = salidaPuesta('2026-06-21', 40.7607, 0.4917);
+    const i = salidaPuesta('2026-12-21', 40.7607, 0.4917);
+    // horas de Lo Molí: en verano sale hacia las 6:30 y en invierno se pone hacia las 17:30
+    expect(Math.abs(v.salida! - (6 * 60 + 28))).toBeLessThan(15);
+    expect(Math.abs(i.puesta! - (17 * 60 + 30))).toBeLessThan(15);
+    expect((v.puesta! - v.salida!) / 60).toBeGreaterThan(14.8);
+    expect((v.puesta! - v.salida!) / 60).toBeLessThan(15.3);
+    expect((i.puesta! - i.salida!) / 60).toBeGreaterThan(9.1);
+    expect((i.puesta! - i.salida!) / 60).toBeLessThan(9.6);
+  });
+});
+
+describe('hora de Lo Molí', () => {
+  it('convierte en los dos sentidos, también con el cambio de hora', () => {
+    expect(deFechaLocal('2026-06-21T12:00').toISOString()).toBe('2026-06-21T10:00:00.000Z');
+    expect(deFechaLocal('2026-12-21T12:00').toISOString()).toBe('2026-12-21T11:00:00.000Z');
   });
 });
