@@ -52,6 +52,10 @@ function load(): SolarSettings {
   }
 }
 
+/** ajustes con la situación del proyecto cuando el usuario no ha escrito latitud y longitud */
+export const conSituacion = (s: SolarSettings, sit?: { lat: number; lon: number } | null): SolarSettings =>
+  ({ ...s, lat: s.lat ?? sit?.lat ?? null, lon: s.lon ?? sit?.lon ?? null });
+
 export const solarReady = (s: SolarSettings, projectNorth: number | null = null) => (s.northDeg ?? projectNorth) !== null && s.lat !== null && s.lon !== null && s.datetime !== null;
 
 /**

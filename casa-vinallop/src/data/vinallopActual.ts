@@ -23,7 +23,8 @@
  * Todo es INTERPRETADO (±0,3 m en planta y ±0,2 m en altura) salvo el muro del frontal B
  * (0,60 m, propiedad) y lo que se marca como pendiente. No hay medidas escritas del estado actual.
  */
-import { FOTOS_PARCELA, PARCELA, VISTAS_DRON } from './parcela';
+import { NORTE_CATASTRO } from './catastro';
+import { FOTOS_PARCELA, PARCELA, SITUACION, VISTAS_DRON } from './parcela';
 import type { Opening, ProjectData, Room, RoofSegment, Vec2, Wall } from './types';
 
 /** informe del arquitecto: 16,33 × 5,22 m exteriores */
@@ -159,8 +160,9 @@ export const VINALLOP_ACTUAL: ProjectData = {
   questions: [
     'Habitación pequeña: se ha situado bajo el tejado bajo del extremo derecho, junto al algarrobo (≈1,5 m de largo, todo el ancho). ¿Es ahí donde está?',
   ],
-  // norte a ≈22° en sentido horario desde el frontal A: brújula de la captura de Mapas de Apple de la propiedad
-  northDeg: 22,
+  // norte en sentido horario desde el frontal A: eje del edificio en el Catastro (como en la reforma)
+  northDeg: Math.round(NORTE_CATASTRO),
+  situacion: SITUACION,
   facades: { B: 'Frontal B (puertas)', A: 'Frontal A', izquierdo: 'Lateral izquierdo', derecho: 'Lateral derecho' },
   notices: ['Estado actual interpretado a partir de fotografías: sin medidas tomadas en obra. Para comparar con la reforma, cambia de fase.'],
 };

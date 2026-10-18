@@ -11,6 +11,9 @@ import { EDIFICIO_CATASTRO, PARCELA_CATASTRO } from './catastro';
 import { CAMINO_EXTERIOR, CAMINO_FINCA, ENTRADA_FINCA, OLIVOS_FINCA } from './olivarFinca';
 import type { CameraPreset, Site } from './types';
 
+/** situación de Lo Molí (propiedad, 18/10/2026: 40°45'38.5" N 0°29'30.2" E); coincide con el edificio del Catastro a ≈19 m */
+export const SITUACION = { lat: 40.760694, lon: 0.491722, nota: 'Coordenadas de la propiedad (40°45\'38.5" N, 0°29\'30.2" E); caen a ≈19 m del centro del edificio en el Catastro.' };
+
 export const FOTOS_PARCELA = {
   id: 'fotos-parcela',
   label: 'Fotos de la parcela y de la casa antes de la reforma (04/10/2026)',

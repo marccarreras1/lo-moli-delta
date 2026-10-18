@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { VINALLOP } from '../data/vinallop';
 import { resolveLayout } from '../model/resolve';
 import { blocked, freeSpotIn, walkObstacles, walkStep } from '../model/walk';
-import { modelAzimuth, solarDirection, sunPosition } from '../model/solar';
+import { conSituacion, modelAzimuth, solarDirection, solarReady, sunPosition } from '../model/solar';
 import { bathPlanData, bathPlanSvg } from '../plan/bathPlan';
 import { planSvg } from '../plan/planSvg';
 import { tapeDistance } from '../viewer/tapeStore';
@@ -124,5 +124,16 @@ describe('selectores estables', () => {
     const { activeVariant } = await import('../state/store');
     const st = { designs: {}, visual: { modelSource: 'reforma' } } as never;
     expect(activeVariant(st)).toBe(activeVariant(st));
+  });
+});
+
+describe('situación del proyecto', () => {
+  it('rellena latitud y longitud si el usuario no las ha escrito; las suyas mandan', () => {
+    const base = { northDeg: null, lat: null, lon: null, datetime: '2026-06-21T12:00', active: true };
+    const sit = { lat: 40.760694, lon: 0.491722 };
+    expect(solarReady(base, 20)).toBe(false);
+    expect(solarReady(conSituacion(base, sit), 20)).toBe(true);
+    expect(conSituacion({ ...base, lat: 41 }, sit).lat).toBe(41);
+    expect(VINALLOP.situacion?.lat).toBeCloseTo(40.7607, 3);
   });
 });

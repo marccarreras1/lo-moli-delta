@@ -18,7 +18,7 @@ import { Effects } from './Effects';
 import { Sky, SoftShadows } from '@react-three/drei';
 import { barkMaterial, blobTexture, buildTree, discAlphaTexture, grassTexture, leafMaterial, litterTexture, rockGeometry, soilTexture } from './Trees';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { modelAzimuth, solarDirection, useSolar } from '../model/solar';
+import { conSituacion, modelAzimuth, solarDirection, useSolar } from '../model/solar';
 import { Installations3D } from '../instalaciones/Installations3D';
 import { useGestion } from '../gestion/store';
 import { useInstalaciones, useResolvedPoints, useVisibleLayers } from '../instalaciones/store';
@@ -49,7 +49,7 @@ const AMBIENCE: Record<Ambience, { bg: string; sky: string; ground: string; sun:
  */
 export function useSun(ambience: Ambience): { az: number; el: number; hdriTurn: number } {
   const { project } = useModel();
-  const s = useSolar();
+  const s = conSituacion(useSolar(), project.situacion);
   const a = AMBIENCE[ambience];
   const d = solarDirection(s, project.northDeg);
   const north = s.northDeg ?? project.northDeg;

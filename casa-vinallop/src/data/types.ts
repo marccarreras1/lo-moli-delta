@@ -500,6 +500,8 @@ export interface ProjectData {
   sources: Source[];
   /** null = orientación no establecida */
   northDeg: number | null;
+  /** situación (grados decimales, WGS84) para el estudio solar */
+  situacion?: { lat: number; lon: number; nota: string };
   /** fachadas identificadas: id → nombre visible */
   facades: Record<string, string>;
   notices: string[];

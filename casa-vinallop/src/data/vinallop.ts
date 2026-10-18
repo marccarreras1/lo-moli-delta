@@ -23,7 +23,7 @@
  * boceto se toman como caras interiores de los muros (con ese criterio la encimera
  * sale de 0,60 m y el sofá de 0,85 m de fondo): Y = 0,30 + fracción × 4,10 m.
  */
-import { FOTOS_PARCELA, PARCELA, VISTAS_DRON } from './parcela';
+import { FOTOS_PARCELA, PARCELA, SITUACION, VISTAS_DRON } from './parcela';
 import { NORTE_CATASTRO } from './catastro';
 import type { CameraPreset, DataStatus, DesignReference, Furniture, MesaComedor, Opening, Outdoor, PendantGroup, ProjectData, Room, Trace, Vec2, Wall } from './types';
 
@@ -621,6 +621,7 @@ const PROJECT: ProjectData = {
   ],
   // norte en sentido horario desde el frontal A: eje del edificio en el Catastro (≈20°; la brújula de Mapas de Apple daba ≈22°)
   northDeg: Math.round(NORTE_CATASTRO),
+  situacion: SITUACION,
   facades: { A: 'Frontal A', B: 'Frontal B', izquierdo: 'Lateral izquierdo', derecho: 'Lateral derecho' },
   notices: ['Geometría de los bocetos fotografiados y de las respuestas de la propiedad. Revisa las preguntas en «Medidas y documentación».'],
 };
