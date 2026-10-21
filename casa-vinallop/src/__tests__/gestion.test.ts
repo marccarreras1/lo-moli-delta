@@ -176,14 +176,15 @@ describe('seguimiento de obra (fotos del 21/10/2026)', () => {
   const obs = g.fases.flatMap((f) => f.seguimiento);
   const codigos = new Set(g.presupuesto.partidas.map((p) => p.codigo));
   it('cada observación va a una partida existente (las sin partida se descartaron), con su motivo y fotos', () => {
-    expect(obs.length).toBe(6);
+    expect(obs.length).toBe(7);
     for (const s of obs) {
       expect(codigos.has(s.partida)).toBe(true);
       expect(s.motivo.length).toBeGreaterThan(10);
-      expect(s.fotos.length).toBeGreaterThan(0);
+      expect(s.fotos.length > 0 || s.motivo.startsWith('Indicado por la propiedad')).toBe(true);
       for (const f of s.fotos) expect(f).toMatch(/^obra-\d{2}-/);
     }
     expect(obs.filter((s) => s.partida === 'PAC-01').length).toBeGreaterThanOrEqual(3);
+    expect(obs.find((s) => s.partida === 'PAC-11')?.estado).toBe('en curso');
   });
   it('la fase 1 está en curso sin inventar avance ni fechas', () => {
     const f1 = g.fases.find((f) => f.id === 'f-pac26')!;
@@ -197,6 +198,6 @@ describe('seguimiento de obra (fotos del 21/10/2026)', () => {
     useGestion.getState().resetGestion();
     const data = exportGestion();
     expect(importGestion(data)).toEqual({ ok: true });
-    expect(useGestion.getState().fases.flatMap((f) => f.seguimiento).length).toBe(6);
+    expect(useGestion.getState().fases.flatMap((f) => f.seguimiento).length).toBe(7);
   });
 });

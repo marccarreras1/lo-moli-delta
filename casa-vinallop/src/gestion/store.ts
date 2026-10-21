@@ -5,7 +5,7 @@
  * colaboración multiusuario). Se guarda con retardo tras cada cambio y al ocultar la página.
  */
 import { create } from 'zustand';
-import { ADDED_PARTIDAS, ADDED_TAREAS, DECISION_FOSA, DECISION_PUERTA_FINCA, DEP_CODIGO, DEP_DOCUMENTO, FASE_PAC, OFERTA_DEPOSITO, SEGUIMIENTO_2026_10_21, SEGUIMIENTO_DESCARTADO, seedGestion, TAREAS_FOSA } from './seed';
+import { ADDED_PARTIDAS, ADDED_TAREAS, DECISION_FOSA, DECISION_PUERTA_FINCA, DEP_CODIGO, DEP_DOCUMENTO, FASE_PAC, OFERTA_DEPOSITO, SEGUIMIENTO_2026_10_21, SEGUIMIENTO_ALZADO_ID, SEGUIMIENTO_DESCARTADO, seedGestion, TAREAS_FOSA } from './seed';
 import type {
   Asignacion, Bloqueo, Comentario, Decision, Documento, Fase, GestionData, Oferta, Pago, Partida, Presupuesto, Reserva, Seguimiento, Tarea,
 } from './types';
@@ -209,6 +209,19 @@ function migrate7(data: GestionData): GestionData {
   return { ...data, fases };
 }
 
+/** La propiedad indica que el incremento de 36 cm del suelo (PAC-11) está en curso (21/10/2026). */
+function migrate8(data: GestionData): GestionData {
+  let done: string[] = [];
+  try { done = JSON.parse(window.localStorage.getItem(MIGRATIONS_KEY) ?? '[]') as string[]; } catch { /* sin almacenamiento */ }
+  const id = '2026-10-21-alzado-36-en-curso';
+  if (done.includes(id)) return data;
+  const obs = SEGUIMIENTO_2026_10_21()[FASE_PAC].find((x) => x.id === SEGUIMIENTO_ALZADO_ID)!;
+  const fases = data.fases.map((f) => (f.id !== FASE_PAC || f.seguimiento.some((x) => x.id === obs.id) ? f
+    : { ...f, estado: f.estado === 'sin empezar' ? 'en curso' as const : f.estado, seguimiento: [...f.seguimiento, obs] }));
+  try { window.localStorage.setItem(MIGRATIONS_KEY, JSON.stringify([...done, id])); } catch { /* sin almacenamiento */ }
+  return { ...data, fases };
+}
+
 function load(): { data: GestionData; aviso: string | null } {
   if (typeof window === 'undefined') return { data: seedGestion(), aviso: null };
   let raw: string | null = null;
@@ -221,7 +234,7 @@ function load(): { data: GestionData; aviso: string | null } {
   try {
     const parsed = JSON.parse(raw) as unknown;
     const base = parseGestion(parsed, false);
-    const data = migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base)))))));
+    const data = migrate8(migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base))))))));
     // las migraciones se marcan como hechas: hay que guardar ya su resultado o se perderían al recargar sin editar
     if (data !== base) try { window.localStorage.setItem(GESTION_KEY, JSON.stringify(envelope(data))); } catch { /* sin almacenamiento */ }
     let aviso: string | null = null;

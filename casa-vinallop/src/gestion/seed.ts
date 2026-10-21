@@ -282,8 +282,13 @@ export const SEGUIMIENTO_2026_10_21 = (): Record<string, Seguimiento[]> => ({
       'Consecuencia de la demolición del techo (PAC-01); se rehace con el recrecido de muros y el cinturón de hormigón (PAC-04). Comprobar que no afecta al muro del anexo.', ['03-anexo-muro-roto', '10-anexo-desde-dentro']),
     seg(7, 'PAC-04', 'pendiente', 'Coronación de los muros a la vista, a la espera del recrecido con bloque y el cinturón de hormigón.',
       'Recrecido de muros (PAC-04 y su ampliación PAC-04.1, hasta 6,00 m). Con la zona de comedor más baja, desde el escalón los muros coronan a ≈4,61 m: revisar el alcance de PAC-04.1.', ['13-coronacion', '05-frontal-b-alto']),
+    seg(10, 'PAC-11', 'en curso', 'Incremento de 36 cm del suelo interior (relleno con la tierra y la piedra de la casa y capa de hormigón).',
+      'Indicado por la propiedad (21/10/2026), sin fotos. PAC-11 incluye el alzado de la casa de 36 cm (propiedad, 10/10/2026); el documento del presupuesto habla de elevar 15 cm: aclarar con el constructor.', []),
   ],
 });
+
+/** Observación añadida después de la primera carga del seguimiento: alzado de 36 cm en curso. */
+export const SEGUIMIENTO_ALZADO_ID = `seg-${SEGUIMIENTO_FECHA}-10`;
 
 // ---------------------------------------------------------------- fases
 
