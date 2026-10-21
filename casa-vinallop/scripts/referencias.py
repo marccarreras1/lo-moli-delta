@@ -97,6 +97,10 @@ FOTOS = {
     '49f5a67ce927': ('obra-13-coronacion', 'obra', 'Coronación del muro después de quitar la cubierta, con el olivar detrás'),
     '4d78c4f9bb10': ('obra-14-apoyo-viguetas', 'obra', 'Apoyo de las viguetas sobre el muro de mampostería'),
     '5c6913dc0597': ('obra-15-retirada-escombro', 'obra', 'Retirada del escombro dentro de la casa'),
+    '45754c85c6c3': ('obra-16-dron-cenital', 'obra', 'Dron en vertical: la parte central de la cubierta ya retirada, los extremos aún cubiertos y el acopio junto al frontal B'),
+    '82625fbb5f21': ('obra-17-dron-cenital-2', 'obra', 'Dron en vertical (otra toma): muros al aire con el escombro dentro y la piscina desmontable al sur'),
+    '768610a4f8bd': ('obra-18-dron-alto', 'obra', 'Dron más alto: la casa en obra entre los olivos'),
+    '721733fc9dea': ('obra-19-dron-finca', 'obra', 'Dron: la finca entera con la casa en obra abajo y los invernaderos al lado'),
 }
 
 

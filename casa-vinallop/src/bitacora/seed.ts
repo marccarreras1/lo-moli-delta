@@ -103,4 +103,6 @@ export const CAMBIOS_SEED: CambioEntrada[] = [
     'Decisión de la propiedad: se quitan del seguimiento las observaciones que no tenían partida en el presupuesto (retirada de alicatados y chimenea antigua, placa ondulada del anexo y trozos grises del escombro). Queda el seguimiento de PAC-01 y PAC-04. Las tareas de la fase 2 sobre el fibrocemento no se han tocado.'),
   e('c-2026-10-21-alzado-36-en-curso', '2026-10-21', 'obra', 'Incremento de 36 cm del suelo en curso',
     'La propiedad indica que el incremento de 36 cm del suelo interior está en curso: queda en el seguimiento de obra de la fase 1 con la partida PAC-11 (relleno interior y elevación). Sin % de avance ni fecha de inicio; la tarea no se marca como terminada.'),
+  e('c-2026-10-21-obra-dron', '2026-10-21', 'obra', 'Fotos de dron de la obra',
+    'Cuatro fotos de dron de la propiedad (21/10/2026) en Referencias → «Situación de la obra»: se ve retirada la cubierta de la parte central de la casa, con los muros al aire y el escombro dentro, y los dos extremos todavía cubiertos con placa ondulada; el acopio de capazos, escaleras y viguetas está junto al frontal B. Quedan en el seguimiento de PAC-01 (demolición del techo).'),
 ];

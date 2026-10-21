@@ -466,6 +466,38 @@
    "h": 1800,
    "grupo": "obra",
    "titulo": "Retirada del escombro dentro de la casa"
+  },
+  {
+   "id": "obra-16-dron-cenital",
+   "src": "referencias/obra-16-dron-cenital.jpg",
+   "w": 1800,
+   "h": 1013,
+   "grupo": "obra",
+   "titulo": "Dron en vertical: la parte central de la cubierta ya retirada, los extremos aún cubiertos y el acopio junto al frontal B"
+  },
+  {
+   "id": "obra-17-dron-cenital-2",
+   "src": "referencias/obra-17-dron-cenital-2.jpg",
+   "w": 1800,
+   "h": 1013,
+   "grupo": "obra",
+   "titulo": "Dron en vertical (otra toma): muros al aire con el escombro dentro y la piscina desmontable al sur"
+  },
+  {
+   "id": "obra-18-dron-alto",
+   "src": "referencias/obra-18-dron-alto.jpg",
+   "w": 1800,
+   "h": 1013,
+   "grupo": "obra",
+   "titulo": "Dron más alto: la casa en obra entre los olivos"
+  },
+  {
+   "id": "obra-19-dron-finca",
+   "src": "referencias/obra-19-dron-finca.jpg",
+   "w": 1800,
+   "h": 1013,
+   "grupo": "obra",
+   "titulo": "Dron: la finca entera con la casa en obra abajo y los invernaderos al lado"
   }
  ]
 }

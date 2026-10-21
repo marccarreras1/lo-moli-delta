@@ -176,7 +176,7 @@ describe('seguimiento de obra (fotos del 21/10/2026)', () => {
   const obs = g.fases.flatMap((f) => f.seguimiento);
   const codigos = new Set(g.presupuesto.partidas.map((p) => p.codigo));
   it('cada observación va a una partida existente (las sin partida se descartaron), con su motivo y fotos', () => {
-    expect(obs.length).toBe(7);
+    expect(obs.length).toBe(8);
     for (const s of obs) {
       expect(codigos.has(s.partida)).toBe(true);
       expect(s.motivo.length).toBeGreaterThan(10);
@@ -198,6 +198,6 @@ describe('seguimiento de obra (fotos del 21/10/2026)', () => {
     useGestion.getState().resetGestion();
     const data = exportGestion();
     expect(importGestion(data)).toEqual({ ok: true });
-    expect(useGestion.getState().fases.flatMap((f) => f.seguimiento).length).toBe(7);
+    expect(useGestion.getState().fases.flatMap((f) => f.seguimiento).length).toBe(8);
   });
 });

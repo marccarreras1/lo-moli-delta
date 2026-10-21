@@ -284,11 +284,14 @@ export const SEGUIMIENTO_2026_10_21 = (): Record<string, Seguimiento[]> => ({
       'Recrecido de muros (PAC-04 y su ampliación PAC-04.1, hasta 6,00 m). Con la zona de comedor más baja, desde el escalón los muros coronan a ≈4,61 m: revisar el alcance de PAC-04.1.', ['13-coronacion', '05-frontal-b-alto']),
     seg(10, 'PAC-11', 'en curso', 'Incremento de 36 cm del suelo interior (relleno con la tierra y la piedra de la casa y capa de hormigón).',
       'Indicado por la propiedad (21/10/2026), sin fotos. PAC-11 incluye el alzado de la casa de 36 cm (propiedad, 10/10/2026); el documento del presupuesto habla de elevar 15 cm: aclarar con el constructor.', []),
+    seg(11, 'PAC-01', 'en curso', 'Vista de dron: retirada la cubierta de la parte central de la casa (muros al aire y escombro dentro); los dos extremos todavía conservan la cubierta de placa ondulada.',
+      'Demolición del techo actual (PAC-01): falta retirar lo que queda en los extremos.', ['16-dron-cenital', '17-dron-cenital-2', '18-dron-alto', '19-dron-finca']),
   ],
 });
 
 /** Observación añadida después de la primera carga del seguimiento: alzado de 36 cm en curso. */
 export const SEGUIMIENTO_ALZADO_ID = `seg-${SEGUIMIENTO_FECHA}-10`;
+export const SEGUIMIENTO_DRON_ID = `seg-${SEGUIMIENTO_FECHA}-11`;
 
 // ---------------------------------------------------------------- fases
 
