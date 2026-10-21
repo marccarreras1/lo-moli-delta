@@ -42,6 +42,7 @@ GRUPOS = {
     'casa': 'Fotos de la casa y el algarrobo',
     'parcela': 'Fotos de la parcela y el entorno',
     'mapa': 'Mapa',
+    'obra': 'Situación de la obra (21/10/2026)',
 }
 
 # fotos sueltas: md5 del original (12 primeros caracteres) → (id, grupo, título)
@@ -81,6 +82,21 @@ FOTOS = {
     '8c75407dd25c': ('parcela-entrada', 'parcela', 'Entrada de la finca: camino de grava de 4,70 m de ancho entre la valla'),
     '3b30a1ef0998': ('parcela-entrada-fuera', 'parcela', 'Entrada de la finca desde el camino: hueco de la malla donde va la puerta menorquina, con las vallas móviles a la derecha'),
     '69efdd422079': ('mapa-satelite', 'mapa', 'Captura de Mapas de Apple (vista de satélite)'),
+    'b8e5d6bd7f21': ('obra-01-cubierta-retirada', 'obra', 'Cubierta ya retirada en parte: muros encalados al aire, viguetas pretensadas aún puestas y escombro dentro'),
+    '3a3a63007c37': ('obra-02-anexo-depositos', 'obra', 'Anexo con depósitos de agua bajo la cubierta ondulada que sigue puesta'),
+    '7278f83a4e06': ('obra-03-anexo-muro-roto', 'obra', 'Anexo: depósitos y muro de mampostería abierto por arriba, con piedra de la demolición'),
+    '98500e66f403': ('obra-04-acopio', 'obra', 'Acopio junto al frontal B: capazos de escombro, viguetas retiradas y escaleras'),
+    '2bd7328cf2bf': ('obra-05-frontal-b-alto', 'obra', 'Frontal B con andamio: coronación de los muros y viguetas que quedan'),
+    '948efc9edc95': ('obra-06-frontal-b', 'obra', 'Frontal B con las puertas de madera y el andamio, hacia el algarrobo'),
+    '94ec0eed678b': ('obra-07-cocina-chimenea', 'obra', 'Interior al descubierto: hueco de la antigua chimenea, ventana pequeña y alicatado de la cocina'),
+    '01109810419c': ('obra-08-lateral', 'obra', 'Muro lateral desde el olivar, con el hueco pequeño y las marcas de obra'),
+    '8407aff99c21': ('obra-09-anexo-puertas', 'obra', 'Fachada del anexo con las puertas metálicas'),
+    '027edcebd6c6': ('obra-10-anexo-desde-dentro', 'obra', 'Desde el anexo: cubierta ondulada que queda y el muro abierto hacia la casa'),
+    '049daa6d9064': ('obra-11-anexo-deposito', 'obra', 'Anexo: depósitos y muro bajo la cubierta ondulada'),
+    '46cc7cfe7dc2': ('obra-12-ventana-escombro', 'obra', 'Interior con la ventana pequeña y el escombro de la cubierta'),
+    '49f5a67ce927': ('obra-13-coronacion', 'obra', 'Coronación del muro después de quitar la cubierta, con el olivar detrás'),
+    '4d78c4f9bb10': ('obra-14-apoyo-viguetas', 'obra', 'Apoyo de las viguetas sobre el muro de mampostería'),
+    '5c6913dc0597': ('obra-15-retirada-escombro', 'obra', 'Retirada del escombro dentro de la casa'),
 }
 
 
@@ -119,6 +135,13 @@ def main(src: str, out: str) -> None:
         fid, grupo, titulo = meta
         w, hh = save(Image.open(f), os.path.join(dest, f'{fid}.jpg'))
         galeria.append({'id': fid, 'src': f'referencias/{fid}.jpg', 'w': w, 'h': hh, 'grupo': grupo, 'titulo': titulo})
+    # fotos ya publicadas cuyo original no está en esta carpeta: se conservan tal cual
+    previo = os.path.join(dest, 'manifest.json')
+    if os.path.exists(previo):
+        hechas = {g['id'] for g in galeria}
+        for g in json.load(open(previo, encoding='utf-8')).get('galeria', []):
+            if g['id'] not in hechas and any(v[0] == g['id'] for v in FOTOS.values()) and os.path.exists(os.path.join(out, g['src'])):
+                galeria.append(g)
     orden = list(GRUPOS)
     ids = [v[0] for v in FOTOS.values()]
     galeria.sort(key=lambda g: (orden.index(g['grupo']), ids.index(g['id'])))

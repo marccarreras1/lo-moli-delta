@@ -6,7 +6,8 @@
   "dron": "Fotos de dron",
   "casa": "Fotos de la casa y el algarrobo",
   "parcela": "Fotos de la parcela y el entorno",
-  "mapa": "Mapa"
+  "mapa": "Mapa",
+  "obra": "Situación de la obra (21/10/2026)"
  },
  "refs": {
   "01": {
@@ -345,6 +346,126 @@
    "h": 1800,
    "grupo": "mapa",
    "titulo": "Captura de Mapas de Apple (vista de satélite)"
+  },
+  {
+   "id": "obra-01-cubierta-retirada",
+   "src": "referencias/obra-01-cubierta-retirada.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra",
+   "titulo": "Cubierta ya retirada en parte: muros encalados al aire, viguetas pretensadas aún puestas y escombro dentro"
+  },
+  {
+   "id": "obra-02-anexo-depositos",
+   "src": "referencias/obra-02-anexo-depositos.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra",
+   "titulo": "Anexo con depósitos de agua bajo la cubierta ondulada que sigue puesta"
+  },
+  {
+   "id": "obra-03-anexo-muro-roto",
+   "src": "referencias/obra-03-anexo-muro-roto.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra",
+   "titulo": "Anexo: depósitos y muro de mampostería abierto por arriba, con piedra de la demolición"
+  },
+  {
+   "id": "obra-04-acopio",
+   "src": "referencias/obra-04-acopio.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra",
+   "titulo": "Acopio junto al frontal B: capazos de escombro, viguetas retiradas y escaleras"
+  },
+  {
+   "id": "obra-05-frontal-b-alto",
+   "src": "referencias/obra-05-frontal-b-alto.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra",
+   "titulo": "Frontal B con andamio: coronación de los muros y viguetas que quedan"
+  },
+  {
+   "id": "obra-06-frontal-b",
+   "src": "referencias/obra-06-frontal-b.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra",
+   "titulo": "Frontal B con las puertas de madera y el andamio, hacia el algarrobo"
+  },
+  {
+   "id": "obra-07-cocina-chimenea",
+   "src": "referencias/obra-07-cocina-chimenea.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra",
+   "titulo": "Interior al descubierto: hueco de la antigua chimenea, ventana pequeña y alicatado de la cocina"
+  },
+  {
+   "id": "obra-08-lateral",
+   "src": "referencias/obra-08-lateral.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra",
+   "titulo": "Muro lateral desde el olivar, con el hueco pequeño y las marcas de obra"
+  },
+  {
+   "id": "obra-09-anexo-puertas",
+   "src": "referencias/obra-09-anexo-puertas.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra",
+   "titulo": "Fachada del anexo con las puertas metálicas"
+  },
+  {
+   "id": "obra-10-anexo-desde-dentro",
+   "src": "referencias/obra-10-anexo-desde-dentro.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra",
+   "titulo": "Desde el anexo: cubierta ondulada que queda y el muro abierto hacia la casa"
+  },
+  {
+   "id": "obra-11-anexo-deposito",
+   "src": "referencias/obra-11-anexo-deposito.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra",
+   "titulo": "Anexo: depósitos y muro bajo la cubierta ondulada"
+  },
+  {
+   "id": "obra-12-ventana-escombro",
+   "src": "referencias/obra-12-ventana-escombro.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra",
+   "titulo": "Interior con la ventana pequeña y el escombro de la cubierta"
+  },
+  {
+   "id": "obra-13-coronacion",
+   "src": "referencias/obra-13-coronacion.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra",
+   "titulo": "Coronación del muro después de quitar la cubierta, con el olivar detrás"
+  },
+  {
+   "id": "obra-14-apoyo-viguetas",
+   "src": "referencias/obra-14-apoyo-viguetas.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra",
+   "titulo": "Apoyo de las viguetas sobre el muro de mampostería"
+  },
+  {
+   "id": "obra-15-retirada-escombro",
+   "src": "referencias/obra-15-retirada-escombro.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra",
+   "titulo": "Retirada del escombro dentro de la casa"
   }
  ]
 }
