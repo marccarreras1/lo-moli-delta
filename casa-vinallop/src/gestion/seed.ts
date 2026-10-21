@@ -5,7 +5,7 @@
  * Fechas, responsables, proveedores e importes que no constan quedan vacíos (pendientes).
  * No se incluyen datos de contacto del proveedor ni datos personales del cliente.
  */
-import type { Capitulo, Decision, Fase, GestionData, Oferta, Partida, Seguimiento } from './types';
+import type { Capitulo, Decision, EntregaCuenta, Fase, GestionData, Oferta, Partida, Seguimiento } from './types';
 
 // ---------------------------------------------------------------- decisiones
 
@@ -359,6 +359,18 @@ function fases(): Fase[] {
   ];
 }
 
+/** Entregas a cuenta de la obra indicadas por la propiedad (21/10/2026): no van a ninguna partida. */
+export const ENTREGAS_CUENTA = (): EntregaCuenta[] => [
+  {
+    id: 'ac-2026-08', fecha: '', importe: 6000, emisor: '', documento: '', pagado: true,
+    nota: 'Primera entrega a cuenta de la obra, pagada en agosto de 2026 (día, emisor y justificante sin indicar).',
+  },
+  {
+    id: 'ac-fem26-0031', fecha: '2026-10-19', importe: 3500, emisor: 'Euromed Bat (Narbonne, Francia)', documento: 'Factura FEM26-0031', pagado: false,
+    nota: 'A cuenta de la obra, sin partida. Sin IVA (autoliquidación por inversión del sujeto pasivo). El concepto de la factura no corresponde a la obra y va a nombre de una empresa: revisar con el gestor. Pago sin confirmar.',
+  },
+];
+
 export const AVISO_FASES = 'Secuencia propuesta de planificación, no un calendario de obra aprobado; la secuencia y las fechas las fija el técnico. La sustitución de muros portantes o la retirada de cubierta no son trabajos simples sin secuencia técnica.';
 
 export function seedGestion(): GestionData {
@@ -371,6 +383,7 @@ export function seedGestion(): GestionData {
       ofertas: ofertas(),
       documentos: [{ id: 'doc-pac26-0052', titulo: `Presupuesto ${PAC_REF}`, referencia: `${PAC_PROVEEDOR} · documento en papel con nota manuscrita`, fecha: PAC_FECHA, nota: 'Oferta recibida, no aceptada ni pagada.' }, { ...DEP_DOCUMENTO }],
       reserva: { importe: null, nota: '', asignaciones: [] },
+      aCuenta: ENTREGAS_CUENTA(),
       avisos: [
         'La solera exterior en L no figura valorada en este presupuesto.',
         'Cocina, baño acabado con dos duchas, carpinterías instaladas, equipamiento, domótica, audio y decoración no quedan acreditados como incluidos: costes pendientes.',

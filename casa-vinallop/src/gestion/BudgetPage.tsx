@@ -7,7 +7,7 @@ import { ConfirmButton, Segmented } from '../ui/controls';
 import { Modal } from '../ui/Modal';
 import { Icon } from '../ui/icons';
 import {
-  type Agregado, fmtEur, fmtFecha, fmtNum, importePrevisto, obligacion, ofertaResumen, pagado, partidasCsv, r2, resumenEconomico,
+  type Agregado, aCuentaTotales, fmtEur, fmtFecha, fmtNum, importePrevisto, obligacion, ofertaResumen, pagado, partidasCsv, r2, resumenEconomico,
 } from './calc';
 import { resumenHtml } from './report';
 import { useGestion } from './store';
@@ -101,6 +101,7 @@ function Kpi({ k, v, d, warn }: { k: string; v: string; d: string; warn?: boolea
 
 function EconomicPanel({ r, ofertas, partidas }: { r: ReturnType<typeof resumenEconomico>; ofertas: Oferta[]; partidas: Partida[] }) {
   const fijarBase = useGestion((s) => s.fijarBase);
+  const ac = aCuentaTotales({ aCuenta: useGestion((s) => s.presupuesto.aCuenta) });
   const vivas = ofertas.filter((o) => o.estado !== 'rechazada');
   return (
     <section className="gx-card" aria-label="Panel económico">
@@ -120,7 +121,7 @@ function EconomicPanel({ r, ofertas, partidas }: { r: ReturnType<typeof resumenE
         <Kpi k="Contratado" v={r.contratado.n ? fmtEur(r.contratado.base) : '—'} d={taxLine(r.contratado)} />
         <Kpi k="Extras aprobados" v={r.extras.n ? fmtEur(r.extras.base) : '—'} d={taxLine(r.extras)} />
         <Kpi k="Coste real reconocido" v={r.real.n ? fmtEur(r.real.base) : '—'} d={taxLine(r.real)} />
-        <Kpi k="Pagado" v={fmtEur(r.pagado)} d="pagos registrados (importes pagados, impuestos incluidos)" />
+        <Kpi k="Pagado" v={fmtEur(r2(r.pagado + ac.pagado))} d={ac.n ? `${fmtEur(r.pagado)} por partidas + ${fmtEur(ac.pagado)} a cuenta${ac.porPagar ? ` · ${fmtEur(ac.porPagar)} facturado a cuenta sin pagar` : ''}` : 'pagos registrados (importes pagados, impuestos incluidos)'} warn={ac.porPagar > 0} />
         <Kpi k="Pendiente de pago" v={r.obligaciones.n ? fmtEur(r.pendientePago) : '—'}
           d={r.obligaciones.n ? `sobre obligaciones (contratado + extras) con impuestos${r.pendienteSinTasa ? ` · ${r.pendienteSinTasa} partidas sin tasa no calculadas` : ''}` : 'no hay obligaciones registradas'} warn={r.pendienteSinTasa > 0} />
         <Kpi k="Desviación" v={r.desviacion.n ? fmtEur(r.desviacion.diferencia) : '—'}

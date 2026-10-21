@@ -5,9 +5,9 @@
  * colaboración multiusuario). Se guarda con retardo tras cada cambio y al ocultar la página.
  */
 import { create } from 'zustand';
-import { ADDED_PARTIDAS, ADDED_TAREAS, DECISION_FOSA, DECISION_PUERTA_FINCA, DEP_CODIGO, DEP_DOCUMENTO, FASE_PAC, OFERTA_DEPOSITO, SEGUIMIENTO_2026_10_21, SEGUIMIENTO_ALZADO_ID, SEGUIMIENTO_DESCARTADO, SEGUIMIENTO_DRON_ID, seedGestion, TAREAS_FOSA } from './seed';
+import { ADDED_PARTIDAS, ADDED_TAREAS, DECISION_FOSA, DECISION_PUERTA_FINCA, DEP_CODIGO, DEP_DOCUMENTO, ENTREGAS_CUENTA, FASE_PAC, OFERTA_DEPOSITO, SEGUIMIENTO_2026_10_21, SEGUIMIENTO_ALZADO_ID, SEGUIMIENTO_DESCARTADO, SEGUIMIENTO_DRON_ID, seedGestion, TAREAS_FOSA } from './seed';
 import type {
-  Asignacion, Bloqueo, Comentario, Decision, Documento, Fase, GestionData, Oferta, Pago, Partida, Presupuesto, Reserva, Seguimiento, Tarea,
+  Asignacion, Bloqueo, Comentario, EntregaCuenta, Decision, Documento, Fase, GestionData, Oferta, Pago, Partida, Presupuesto, Reserva, Seguimiento, Tarea,
 } from './types';
 import { envelope, GestionInvalida, parseGestion } from './validate';
 
@@ -63,6 +63,9 @@ export interface GestionState extends GestionData {
   setReserva: (patch: Partial<Omit<Reserva, 'asignaciones'>>) => void;
   addAsignacion: (a: Omit<Asignacion, 'id'>) => void;
   removeAsignacion: (id: string) => void;
+  addEntrega: (e: Omit<EntregaCuenta, 'id'>) => void;
+  updateEntrega: (id: string, patch: Partial<Omit<EntregaCuenta, 'id'>>) => void;
+  removeEntrega: (id: string) => void;
   /** congela el importe previsto actual de cada partida como presupuesto base */
   fijarBase: () => void;
 
@@ -234,6 +237,18 @@ function migrate9(data: GestionData): GestionData {
   return { ...data, fases };
 }
 
+/** Entregas a cuenta indicadas por la propiedad (21/10/2026): 6.000 € en agosto y la factura FEM26-0031. */
+function migrate10(data: GestionData): GestionData {
+  let done: string[] = [];
+  try { done = JSON.parse(window.localStorage.getItem(MIGRATIONS_KEY) ?? '[]') as string[]; } catch { /* sin almacenamiento */ }
+  const id = '2026-10-21-entregas-a-cuenta';
+  if (done.includes(id)) return data;
+  const pr = data.presupuesto;
+  const nuevas = ENTREGAS_CUENTA().filter((e) => !pr.aCuenta.some((x) => x.id === e.id));
+  try { window.localStorage.setItem(MIGRATIONS_KEY, JSON.stringify([...done, id])); } catch { /* sin almacenamiento */ }
+  return nuevas.length ? { ...data, presupuesto: { ...pr, aCuenta: [...pr.aCuenta, ...nuevas] } } : data;
+}
+
 function load(): { data: GestionData; aviso: string | null } {
   if (typeof window === 'undefined') return { data: seedGestion(), aviso: null };
   let raw: string | null = null;
@@ -246,7 +261,7 @@ function load(): { data: GestionData; aviso: string | null } {
   try {
     const parsed = JSON.parse(raw) as unknown;
     const base = parseGestion(parsed, false);
-    const data = migrate9(migrate8(migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base)))))))));
+    const data = migrate10(migrate9(migrate8(migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base))))))))));
     // las migraciones se marcan como hechas: hay que guardar ya su resultado o se perderían al recargar sin editar
     if (data !== base) try { window.localStorage.setItem(GESTION_KEY, JSON.stringify(envelope(data))); } catch { /* sin almacenamiento */ }
     let aviso: string | null = null;
@@ -385,6 +400,9 @@ export const useGestion = create<GestionState>()((set, get) => ({
   setReserva: (patch) => set((s) => mapPres(s, (pr) => ({ reserva: { ...pr.reserva, ...patch } }))),
   addAsignacion: (a) => set((s) => mapPres(s, (pr) => ({ reserva: { ...pr.reserva, asignaciones: [...pr.reserva.asignaciones, { ...a, id: uid('as') }] } }))),
   removeAsignacion: (id) => set((s) => mapPres(s, (pr) => ({ reserva: { ...pr.reserva, asignaciones: pr.reserva.asignaciones.filter((a) => a.id !== id) } }))),
+  addEntrega: (e) => set((s) => mapPres(s, (pr) => ({ aCuenta: [...pr.aCuenta, { ...e, id: uid('ac') }] }))),
+  updateEntrega: (id, patch) => set((s) => mapPres(s, (pr) => ({ aCuenta: pr.aCuenta.map((x) => (x.id === id ? { ...x, ...patch } : x)) }))),
+  removeEntrega: (id) => set((s) => mapPres(s, (pr) => ({ aCuenta: pr.aCuenta.filter((x) => x.id !== id) }))),
   fijarBase: () => set((s) => mapPres(s, (pr) => ({
     partidas: pr.partidas.map((p) => ({ ...p, base: p.cantidad != null && p.precio != null ? Math.round(p.cantidad * p.precio * 100) / 100 : null })),
   }))),

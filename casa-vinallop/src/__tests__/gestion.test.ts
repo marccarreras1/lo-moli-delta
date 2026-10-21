@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { avanceFase, avanceGlobal, importePrevisto, ofertaResumen, partidasCsv, resumenEconomico } from '../gestion/calc';
+import { aCuentaTotales, avanceFase, avanceGlobal, importePrevisto, ofertaResumen, partidasCsv, resumenEconomico } from '../gestion/calc';
 import { PAC_NO_SELECCION, PAC_SELECCION, seedGestion } from '../gestion/seed';
 import { exportGestion, importGestion, useGestion } from '../gestion/store';
 import type { Fase } from '../gestion/types';
@@ -199,5 +199,22 @@ describe('seguimiento de obra (fotos del 21/10/2026)', () => {
     const data = exportGestion();
     expect(importGestion(data)).toEqual({ ok: true });
     expect(useGestion.getState().fases.flatMap((f) => f.seguimiento).length).toBe(8);
+  });
+});
+
+describe('entregas a cuenta (sin partida)', () => {
+  const g = seedGestion();
+  it('6.000 € pagados en agosto (sin fecha exacta) y la factura FEM26-0031 de 3.500 € con el pago sin confirmar', () => {
+    const ac = g.presupuesto.aCuenta;
+    expect(ac.map((x) => [x.importe, x.pagado])).toEqual([[6000, true], [3500, false]]);
+    expect(ac[0].fecha).toBe('');
+    expect(aCuentaTotales(g.presupuesto)).toEqual({ n: 2, pagado: 6000, porPagar: 3500 });
+    // no se reparten por partidas: ninguna partida tiene pagos
+    expect(g.presupuesto.partidas.every((p) => p.pagos.length === 0)).toBe(true);
+  });
+  it('se exportan e importan', () => {
+    useGestion.getState().resetGestion();
+    expect(importGestion(exportGestion())).toEqual({ ok: true });
+    expect(useGestion.getState().presupuesto.aCuenta).toHaveLength(2);
   });
 });

@@ -32,6 +32,12 @@ export function importeRevisado(p: Partida): number | null {
 
 export const pagado = (p: Pick<Partida, 'pagos'>) => sum(p.pagos.map((x) => x.importe));
 
+/** Entregas a cuenta (sin partida): pagado y facturado pendiente de pago, impuestos incluidos. */
+export function aCuentaTotales(pr: Pick<Presupuesto, 'aCuenta'>) {
+  const xs = pr.aCuenta ?? [];
+  return { n: xs.length, pagado: sum(xs.filter((x) => x.pagado).map((x) => x.importe)), porPagar: sum(xs.filter((x) => !x.pagado).map((x) => x.importe)) };
+}
+
 export function impuestoDe(base: number | null, tasa: number | null): number | null {
   if (base == null || tasa == null) return null;
   return r2((base * tasa) / 100);

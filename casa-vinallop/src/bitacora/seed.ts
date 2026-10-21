@@ -105,4 +105,6 @@ export const CAMBIOS_SEED: CambioEntrada[] = [
     'La propiedad indica que el incremento de 36 cm del suelo interior está en curso: queda en el seguimiento de obra de la fase 1 con la partida PAC-11 (relleno interior y elevación). Sin % de avance ni fecha de inicio; la tarea no se marca como terminada.'),
   e('c-2026-10-21-obra-dron', '2026-10-21', 'obra', 'Fotos de dron de la obra',
     'Cuatro fotos de dron de la propiedad (21/10/2026) en Referencias → «Situación de la obra»: se ve retirada la cubierta de la parte central de la casa, con los muros al aire y el escombro dentro, y los dos extremos todavía cubiertos con placa ondulada; el acopio de capazos, escaleras y viguetas está junto al frontal B. Quedan en el seguimiento de PAC-01 (demolición del techo).'),
+  e('c-2026-10-21-entregas-cuenta', '2026-10-21', 'presupuesto', 'Entregas a cuenta de la obra',
+    'Nuevo apartado «Entregas a cuenta» en Situación de la obra para pagos que no van a ninguna partida. Indicado por la propiedad: 6.000 € pagados en agosto de 2026 (día y justificante sin indicar) y la factura FEM26-0031 del 19/10/2026 por 3.500 € (sin IVA, inversión del sujeto pasivo), con el pago sin confirmar. Suman en «Pagado» pero no en las partidas. La factura lleva un concepto que no es el de la obra: revisar con el gestor.'),
 ];

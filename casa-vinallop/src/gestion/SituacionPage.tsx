@@ -4,7 +4,7 @@ import { download } from '../export/export';
 import { ConfirmButton } from '../ui/controls';
 import { Modal } from '../ui/Modal';
 import { Icon } from '../ui/icons';
-import { fmtEur, fmtFecha, fmtNum, fmtPct } from './calc';
+import { aCuentaTotales, fmtEur, fmtFecha, fmtNum, fmtPct, r2 } from './calc';
 import { situacionCsv, situacionPdf } from './situacionPdf';
 import { pagosObra, situacionObra, type SituacionPartida } from './situacion';
 import { useGestion } from './store';
@@ -31,6 +31,7 @@ export function SituacionPage() {
   const s = useMemo(() => situacionObra(pres, fases), [pres, fases]);
   const t = s.totales;
   const pagos = useMemo(() => pagosObra(pres), [pres]);
+  const ac = aCuentaTotales(pres);
   const match = (f: SituacionPartida) => (!soloAlertas || f.alertas.length > 0)
     && (!q.trim() || `${f.p.codigo} ${f.p.descripcion} ${f.p.proveedor}`.toLowerCase().includes(q.trim().toLowerCase()));
   const grupos = s.grupos.filter((g) => fase === TODAS || g.fase === fase).map((g) => ({ ...g, filas: g.filas.filter(match) })).filter((g) => g.filas.length);
@@ -59,13 +60,14 @@ export function SituacionPage() {
           <Kpi k="Coste a término" v={fmtEur(t.aTermino)} d="real, o comprometido, o presupuesto si aún no hay ninguno" />
           <Kpi k="Desviación" v={t.nDesviacion ? fmtEur(t.desviacion) : '—'} d={t.nDesviacion ? `${pct(t.referencia ? t.desviacion / t.referencia : null)} sobre la referencia · ${t.nDesviacion} partidas con coste conocido` : 'sin partidas contratadas o con coste real'} tone={t.desviacion > 0.005 ? 'warn' : undefined} />
           <Kpi k="Obra ejecutada" v={fmtEur(t.ejecutado)} d={`avance económico ${fmtPct(t.avance)} del coste a término`} />
-          <Kpi k="Pagado" v={fmtEur(t.pagado)} d={`${pagos.length} ${pagos.length === 1 ? 'pago' : 'pagos'} · impuestos incluidos`} />
+          <Kpi k="Pagado" v={fmtEur(r2(t.pagado + ac.pagado))} d={ac.n ? `${fmtEur(t.pagado)} por partidas + ${fmtEur(ac.pagado)} a cuenta · impuestos incluidos` : `${pagos.length} ${pagos.length === 1 ? 'pago' : 'pagos'} · impuestos incluidos`} />
+          {ac.porPagar > 0 && <Kpi k="Facturado a cuenta sin pagar" v={fmtEur(ac.porPagar)} d="facturas a cuenta con el pago sin confirmar" tone="warn" />}
           <Kpi k="Pendiente de pago" v={t.nComprometido ? fmtEur(t.pendiente) : '—'} d={t.nComprometido ? `de lo comprometido, con impuestos${t.pendienteSinTasa ? ` · ${t.pendienteSinTasa} sin tasa` : ''}` : 'sin importes comprometidos'} tone={t.pendienteSinTasa ? 'warn' : undefined} />
           <Kpi k="Alertas" v={String(t.alertas)} d={t.alertas ? 'partidas a revisar (ver tabla)' : 'sin incidencias detectadas'} tone={t.alertas ? 'warn' : undefined} />
         </div>
         <div className="sit-bars">
           <span>Avance de obra</span><ProgressBar ratio={t.avance} label="Avance económico de la obra" /><b>{fmtPct(t.avance)}</b>
-          <span>Pagado sobre coste a término (con impuestos)</span><ProgressBar ratio={ivaTotal > 0 ? Math.min(1, t.pagado / ivaTotal) : null} label="Pagado sobre coste a término" /><b>{ivaTotal > 0 ? fmtPct(t.pagado / ivaTotal) : '—'}</b>
+          <span>Pagado sobre coste a término (con impuestos)</span><ProgressBar ratio={ivaTotal > 0 ? Math.min(1, (t.pagado + ac.pagado) / ivaTotal) : null} label="Pagado sobre coste a término" /><b>{ivaTotal > 0 ? fmtPct((t.pagado + ac.pagado) / ivaTotal) : '—'}</b>
         </div>
         {s.noSeleccionadas > 0 && <p className="hint">No se incluyen {s.noSeleccionadas} partidas no seleccionadas (solo referencia en Presupuesto).</p>}
         <details className="advanced">
@@ -109,6 +111,7 @@ export function SituacionPage() {
       </div>
 
       <PagosCard pagos={pagos} onEdit={setEdit} />
+      <EntregasCard />
       {edit && <SeguimientoDialog id={edit} onClose={() => setEdit(null)} />}
       {msg && <p className="gx-flash" role="status">{msg}</p>}
     </PageShell>
@@ -174,6 +177,57 @@ function PagosCard({ pagos, onEdit }: { pagos: ReturnType<typeof pagosObra>; onE
           </table>
         </div>
       ) : <p className="hint">No hay pagos registrados.</p>}
+    </section>
+  );
+}
+
+function EntregasCard() {
+  const xs = useGestion((s) => s.presupuesto.aCuenta);
+  const st = useGestion.getState;
+  const [n, setN] = useState<{ fecha: string; importe: number | null; emisor: string; documento: string; pagado: boolean; nota: string }>({ fecha: hoy(), importe: null, emisor: '', documento: '', pagado: true, nota: '' });
+  const [k, setK] = useState(0);
+  const ac = aCuentaTotales({ aCuenta: xs });
+  const orden = [...xs].sort((a, b) => (a.fecha || '0').localeCompare(b.fecha || '0'));
+  return (
+    <section className="gx-card" aria-label="Entregas a cuenta" data-testid="entregas-cuenta">
+      <h2>Entregas a cuenta</h2>
+      <p className="hint">Pagos y facturas a cuenta de la obra que no se reparten por partidas (impuestos incluidos, tal como salen de la factura o del banco). Suman en «Pagado», pero no en las partidas: el pendiente de cada partida no las descuenta.</p>
+      {orden.length ? (
+        <div className="tbl-wrap as-cards">
+          <table className="tbl cards" style={{ minWidth: 720 }}>
+            <thead><tr><th>Fecha</th><th>Justificante</th><th>Nota</th><th>Estado</th><th className="num">Importe</th><th><span className="sr-only">Acciones</span></th></tr></thead>
+            <tbody>
+              {orden.map((x) => (
+                <tr key={x.id} data-entrega={x.id}>
+                  <td data-label="Fecha" className="half">{fmtFecha(x.fecha) || <Pendiente>sin fecha</Pendiente>}</td>
+                  <td data-label="Justificante">{x.documento || <Pendiente>sin justificante</Pendiente>}{x.emisor && <small style={{ display: 'block' }} className="gx-muted">{x.emisor}</small>}</td>
+                  <td data-label="Nota">{x.nota}</td>
+                  <td data-label="Estado">
+                    <label className="sit-check"><input type="checkbox" checked={x.pagado} onChange={(e) => st().updateEntrega(x.id, { pagado: e.target.checked })} /> {x.pagado ? 'pagado' : <Badge tone="warn">pago sin confirmar</Badge>}</label>
+                  </td>
+                  <td className="num" data-label="Importe">{fmtEur(x.importe)}</td>
+                  <td className="actions"><ConfirmButton className="tool" confirmLabel="¿Borrar?" onConfirm={() => st().removeEntrega(x.id)}><Icon name="trash" size={16} /></ConfirmButton></td>
+                </tr>
+              ))}
+              <tr className="sub"><td colSpan={4}>Pagado a cuenta{ac.porPagar ? ` · ${fmtEur(ac.porPagar)} facturado sin pagar` : ''}</td><td className="num">{fmtEur(ac.pagado)}</td><td /></tr>
+            </tbody>
+          </table>
+        </div>
+      ) : <p className="hint">No hay entregas a cuenta.</p>}
+      <div className="gx-form" key={k}>
+        <DateField label="Fecha" value={n.fecha} onChange={(v) => setN({ ...n, fecha: v })} />
+        <NumField label="Importe" value={n.importe} onCommit={(v) => setN({ ...n, importe: v })} unit="€" placeholder="" />
+        <TextField label="Justificante" value={n.documento} onChange={(v) => setN({ ...n, documento: v })} placeholder="p. ej. Factura 12/2026" />
+        <TextField label="Emisor" value={n.emisor} onChange={(v) => setN({ ...n, emisor: v })} />
+        <TextField label="Nota" value={n.nota} onChange={(v) => setN({ ...n, nota: v })} />
+        <label className="sit-check"><input type="checkbox" checked={n.pagado} onChange={(e) => setN({ ...n, pagado: e.target.checked })} /> Pagado</label>
+      </div>
+      <div className="row">
+        <button type="button" className="btn" disabled={n.importe == null}
+          onClick={() => { st().addEntrega({ ...n, importe: n.importe! }); setN({ fecha: hoy(), importe: null, emisor: '', documento: '', pagado: true, nota: '' }); setK(k + 1); }}>
+          <Icon name="plus" size={16} /> Añadir entrega a cuenta
+        </button>
+      </div>
     </section>
   );
 }

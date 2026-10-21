@@ -1,5 +1,5 @@
 /** Resumen económico imprimible: archivo HTML autónomo con estilos en línea (sin dependencias). */
-import { avanceFase, avanceGlobal, fmtEur, fmtFecha, fmtNum, fmtPct, importePrevisto, obligacion, ofertaResumen, pagado, resumenEconomico } from './calc';
+import { aCuentaTotales, avanceFase, avanceGlobal, fmtEur, fmtFecha, fmtNum, fmtPct, importePrevisto, obligacion, ofertaResumen, pagado, resumenEconomico } from './calc';
 import type { GestionData } from './types';
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -41,7 +41,9 @@ export function resumenHtml(d: GestionData, titulo = 'Casa Vinallop · Resumen e
   parts.push(row(['Contratado', ag(r.contratado)]));
   parts.push(row(['Extras aprobados', ag(r.extras)]));
   parts.push(row(['Coste real reconocido', ag(r.real)]));
-  parts.push(row(['Pagado (importes pagados, impuestos incluidos)', esc(fmtEur(r.pagado))]));
+  parts.push(row(['Pagado por partidas (importes pagados, impuestos incluidos)', esc(fmtEur(r.pagado))]));
+  const ac = aCuentaTotales(d.presupuesto);
+  if (ac.n) parts.push(row(['Entregas a cuenta (sin partida, impuestos incluidos)', `${esc(fmtEur(ac.pagado))} pagado${ac.porPagar ? ` · <span style="${S.pend}">${esc(fmtEur(ac.porPagar))} facturado sin pagar</span>` : ''}`]));
   parts.push(row(['Pendiente de pago sobre obligaciones (contratado + extras, con impuestos)', `${esc(fmtEur(r.pendientePago))}${r.pendienteSinTasa ? ` <span style="${S.pend}">(${r.pendienteSinTasa} partidas sin tasa no calculadas)</span>` : ''}`]));
   parts.push(row(['Desviación frente a lo previsto (partidas comparables)', r.desviacion.n ? `${esc(fmtEur(r.desviacion.diferencia))} sobre ${r.desviacion.n} partidas` : 'sin partidas comparables']));
   parts.push(row(['Reserva para imprevistos disponible', r.reserva.disponible == null ? `<span style="${S.pend}">reserva sin definir</span>` : `${esc(fmtEur(r.reserva.disponible))} de ${esc(fmtEur(r.reserva.importe))}`]));

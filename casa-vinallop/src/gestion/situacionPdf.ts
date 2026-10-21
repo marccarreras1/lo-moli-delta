@@ -1,6 +1,6 @@
 /** Exportaciones de la situación de obra: PDF (A4 apaisado) y CSV. */
 import { pdfText } from '../bitacora/pdf';
-import { fmtEur, fmtFecha, fmtNum, fmtPct, r2 } from './calc';
+import { aCuentaTotales, fmtEur, fmtFecha, fmtNum, fmtPct, r2 } from './calc';
 import { pagosObra, situacionObra, type SituacionPartida, type TotalesSituacion } from './situacion';
 import type { Fase, Presupuesto } from './types';
 
@@ -41,7 +41,7 @@ export async function situacionPdf(pres: Presupuesto, fases: Fase[], proyecto = 
     ['Coste a término', eur(t.aTermino), 'real / comprometido / previsto'],
     ['Desviación', t.nDesviacion ? eur(t.desviacion) : '—', t.nDesviacion ? pct(t.referencia ? t.desviacion / t.referencia : null) : 'sin costes conocidos'],
     ['Obra ejecutada', eur(t.ejecutado), `avance ${fmtPct(t.avance)}`],
-    ['Pagado', eur(t.pagado), `${pagosObra(pres).length} ${pagosObra(pres).length === 1 ? 'pago' : 'pagos'}`],
+    ['Pagado', eur(r2(t.pagado + aCuentaTotales(pres).pagado)), aCuentaTotales(pres).n ? `${eur(aCuentaTotales(pres).pagado)} a cuenta` : `${pagosObra(pres).length} ${pagosObra(pres).length === 1 ? 'pago' : 'pagos'}`],
     ['Pendiente de pago', t.nComprometido ? eur(t.pendiente) : '—', t.pendienteSinTasa ? `${t.pendienteSinTasa} sin tasa` : 'de lo comprometido'],
   ];
   const kw = (W - 2 * M - 6 * 3) / 7;
@@ -129,6 +129,30 @@ export async function situacionPdf(pres: Presupuesto, fases: Fase[], proyecto = 
     prow(['Fecha', 'Partida', 'Concepto', 'Importe'], true, 232);
     pagos.forEach((x) => prow([fmtFecha(x.fecha) || '—', `${x.partida.codigo} · ${x.partida.descripcion}`, x.nota, fmtEur(x.importe)]));
     prow(['', '', 'Total pagado', fmtEur(r2(pagos.reduce((a, x) => a + x.importe, 0)))], true, 245);
+  }
+
+  // entregas a cuenta (sin partida)
+  const ent = pres.aCuenta ?? [];
+  if (ent.length) {
+    y += 8;
+    if (y + 20 > H - 14) { doc.addPage(); y = M; }
+    font(11, 'bold', 25);
+    txt('Entregas a cuenta (sin partida)', M, y);
+    y += 3;
+    const ec = [24, 70, 150, 29];
+    const erow = (v: string[], bold = false, fill?: number) => {
+      if (y + 5.6 > H - 14) { doc.addPage(); y = M; }
+      if (fill != null) { doc.setFillColor(fill, fill, fill); doc.rect(M, y, ec.reduce((a, b) => a + b, 0), 5.6, 'F'); }
+      font(7.5, bold ? 'bold' : 'normal', 30);
+      let x = M;
+      v.forEach((s2, i) => { if (i === 3) txt(s2, x + ec[i] - 1.5, y + 3.8, 'right'); else txt(clip(s2, ec[i] - 3), x + 1.5, y + 3.8); x += ec[i]; });
+      doc.setDrawColor(225); doc.line(M, y + 5.6, M + ec.reduce((a, b) => a + b, 0), y + 5.6);
+      y += 5.6;
+    };
+    erow(['Fecha', 'Justificante', 'Nota', 'Importe'], true, 232);
+    [...ent].sort((a, b) => (a.fecha || '0').localeCompare(b.fecha || '0')).forEach((x) => erow([fmtFecha(x.fecha) || '—', `${x.documento || 'sin justificante'}${x.pagado ? '' : ' (pago sin confirmar)'}`, x.nota, fmtEur(x.importe)]));
+    const ac = aCuentaTotales(pres);
+    erow(['', '', `Pagado a cuenta${ac.porPagar ? ` · ${fmtEur(ac.porPagar)} facturado sin pagar` : ''}`, fmtEur(ac.pagado)], true, 245);
   }
   y += 5;
   if (y + 8 > H - 11) { doc.addPage(); y = M; }

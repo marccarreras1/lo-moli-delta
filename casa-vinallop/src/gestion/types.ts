@@ -205,12 +205,29 @@ export interface Reserva {
   asignaciones: Asignacion[];
 }
 
+/** Entrega a cuenta de la obra: pago o factura que no se reparte por partidas. */
+export interface EntregaCuenta {
+  id: string;
+  /** fecha ISO o vacía (si solo se sabe el mes, va en la nota) */
+  fecha: string;
+  /** importe tal como sale de la factura o del banco (impuestos incluidos) */
+  importe: number;
+  emisor: string;
+  /** factura u otro justificante */
+  documento: string;
+  /** false = factura recibida, pago sin confirmar */
+  pagado: boolean;
+  nota: string;
+}
+
 export interface Presupuesto {
   capitulos: Capitulo[];
   partidas: Partida[];
   ofertas: Oferta[];
   documentos: Documento[];
   reserva: Reserva;
+  /** entregas a cuenta de la obra, sin repartir por partidas */
+  aCuenta: EntregaCuenta[];
   avisos: string[];
 }
 
