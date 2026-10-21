@@ -98,6 +98,15 @@ export function resumenHtml(d: GestionData, titulo = 'Casa Vinallop · Resumen e
   }
   parts.push('</table>');
 
+  const obs = d.fases.flatMap((f) => f.seguimiento.map((x) => ({ x, f })));
+  if (obs.length) {
+    parts.push(`<h2 style="${S.h2}">Seguimiento de obra por partida</h2><p style="${S.meta}">Lo que se ve en la obra y la partida del presupuesto que lo cubre («sin partida» = por valorar o aclarar). No cambia el avance ni los importes.</p>`);
+    parts.push(`<table style="${S.table}">${head(['Fecha', 'Partida', 'Estado', 'Qué se ve', 'Por qué esta partida'])}`);
+    const ord = [...obs].sort((a, b) => (a.x.partida || '~').localeCompare(b.x.partida || '~', 'es', { numeric: true }) || a.x.fecha.localeCompare(b.x.fecha));
+    for (const { x } of ord) parts.push(row([esc(fmtFecha(x.fecha)), x.partida ? esc(x.partida) : `<span style="${S.pend}">sin partida</span>`, esc(x.estado), esc(x.texto), esc(x.motivo)]));
+    parts.push('</table>');
+  }
+
   return `<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(titulo)}</title>
 <style>@media print { body { padding: 0 !important; } h2 { break-after: avoid; } tr { break-inside: avoid; } }</style></head>

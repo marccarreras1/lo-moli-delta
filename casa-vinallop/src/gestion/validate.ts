@@ -5,9 +5,9 @@
  * Los campos ausentes toman su valor por defecto (vacío/pendiente); un tipo incorrecto es un error.
  */
 import {
-  CONDICIONES, DECISION_ESTADOS, FASE_ESTADOS, OFERTA_ESTADOS, UNIDADES,
+  CONDICIONES, DECISION_ESTADOS, FASE_ESTADOS, OFERTA_ESTADOS, SEGUIMIENTO_ESTADOS, UNIDADES,
   type Asignacion, type Bloqueo, type Capitulo, type Comentario, type Decision, type Documento, type Fase, type GestionData,
-  type Oferta, type Pago, type Partida, type Presupuesto, type Tarea, type TotalesImpresos,
+  type Oferta, type Pago, type Partida, type Presupuesto, type Seguimiento, type Tarea, type TotalesImpresos,
 } from './types';
 
 export const GESTION_APP = 'casa-vinallop-gestion';
@@ -114,6 +114,13 @@ function bloqueo(x: unknown, p: string): Bloqueo {
   const o = obj(x, p);
   return { id: reqStr(o, 'id', p), texto: str(o, 'texto', p, 2000), fecha: fecha(o, 'fecha', p), resuelto: bool(o, 'resuelto', p) };
 }
+function seguimiento(x: unknown, p: string): Seguimiento {
+  const o = obj(x, p);
+  return {
+    id: reqStr(o, 'id', p), fecha: fecha(o, 'fecha', p), texto: str(o, 'texto', p, 2000), partida: str(o, 'partida', p, 60), motivo: str(o, 'motivo', p, 2000),
+    estado: pick(o, 'estado', p, SEGUIMIENTO_ESTADOS, 'a comprobar'), fotos: strList(o, 'fotos', p).map((f) => f.slice(0, 120)),
+  };
+}
 const faseOf = (strict: boolean) => (x: unknown, p: string): Fase => {
   const o = obj(x, p);
   return {
@@ -122,6 +129,7 @@ const faseOf = (strict: boolean) => (x: unknown, p: string): Fase => {
     previstoInicio: fecha(o, 'previstoInicio', p), previstoFin: fecha(o, 'previstoFin', p), realInicio: fecha(o, 'realInicio', p), realFin: fecha(o, 'realFin', p),
     responsable: str(o, 'responsable', p, 200), estado: pick(o, 'estado', p, FASE_ESTADOS, 'sin empezar'),
     documentos: strList(o, 'documentos', p), observaciones: str(o, 'observaciones', p), bloqueos: list(o, 'bloqueos', p, strict, bloqueo), avisos: strList(o, 'avisos', p),
+    seguimiento: list(o, 'seguimiento', p, strict, seguimiento),
   };
 };
 

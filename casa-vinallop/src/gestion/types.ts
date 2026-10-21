@@ -39,6 +39,24 @@ export interface Bloqueo {
   resuelto: boolean;
 }
 
+export const SEGUIMIENTO_ESTADOS = ['hecho', 'en curso', 'pendiente', 'a comprobar'] as const;
+export type SeguimientoEstado = (typeof SEGUIMIENTO_ESTADOS)[number];
+
+/** Observación de obra (visita o fotos de la propiedad): qué se ve, a qué partida va y por qué. */
+export interface Seguimiento {
+  id: string;
+  /** fecha ISO de la observación */
+  fecha: string;
+  texto: string;
+  /** código de la partida a la que corresponde (vacío = no hay partida que lo cubra) */
+  partida: string;
+  /** por qué se asigna a esa partida (o por qué no hay ninguna) */
+  motivo: string;
+  estado: SeguimientoEstado;
+  /** ids de las fotos publicadas en Referencias (referencias/<id>.jpg) */
+  fotos: string[];
+}
+
 export interface Fase {
   id: string;
   nombre: string;
@@ -60,6 +78,8 @@ export interface Fase {
   bloqueos: Bloqueo[];
   /** avisos fijos visibles en la fase */
   avisos: string[];
+  /** seguimiento de la obra: observaciones con su partida */
+  seguimiento: Seguimiento[];
 }
 
 export const UNIDADES = ['m²', 'm', 'ud', 'PA'] as const;

@@ -170,3 +170,35 @@ describe('fosa existente como aljibe de pluviales', () => {
     expect(pres.partidas.some((p) => /fosa existente/i.test(p.descripcion))).toBe(false);
   });
 });
+
+describe('seguimiento de obra (fotos del 21/10/2026)', () => {
+  const g = seedGestion();
+  const obs = g.fases.flatMap((f) => f.seguimiento);
+  const codigos = new Set(g.presupuesto.partidas.map((p) => p.codigo));
+  it('cada observación va a una partida existente o queda explícitamente sin partida, con su motivo y fotos', () => {
+    expect(obs.length).toBe(9);
+    for (const s of obs) {
+      expect(s.partida === '' || codigos.has(s.partida)).toBe(true);
+      expect(s.motivo.length).toBeGreaterThan(10);
+      expect(s.fotos.length).toBeGreaterThan(0);
+      for (const f of s.fotos) expect(f).toMatch(/^obra-\d{2}-/);
+    }
+    expect(obs.filter((s) => s.partida === 'PAC-01').length).toBeGreaterThanOrEqual(3);
+  });
+  it('la fase 1 está en curso sin inventar avance ni fechas; el fibrocemento queda a comprobar en la fase 2', () => {
+    const f1 = g.fases.find((f) => f.id === 'f-pac26')!;
+    expect(f1.estado).toBe('en curso');
+    expect(f1.realInicio).toBe('');
+    expect(f1.tareas.every((t) => !t.hecha)).toBe(true);
+    expect(g.presupuesto.partidas.every((p) => p.ejecutado === undefined)).toBe(true);
+    const f2 = g.fases.find((f) => f.id === 'f02')!;
+    expect(f2.seguimiento.length).toBe(2);
+    expect(f2.seguimiento.every((s) => s.estado === 'a comprobar' && s.partida === '')).toBe(true);
+  });
+  it('se exporta e importa con el resto de datos', () => {
+    useGestion.getState().resetGestion();
+    const data = exportGestion();
+    expect(importGestion(data)).toEqual({ ok: true });
+    expect(useGestion.getState().fases.flatMap((f) => f.seguimiento).length).toBe(9);
+  });
+});

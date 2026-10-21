@@ -6,10 +6,11 @@ import { Icon } from '../ui/icons';
 import { avanceFase, avanceGlobal, economicoFase, fmtEur, fmtFecha, fmtPct, importePrevisto, obligacion, pagado, rangoFechas } from './calc';
 import { AVISO_FASES } from './seed';
 import { useGestion } from './store';
-import { FASE_ESTADOS, type Fase, type FaseEstado } from './types';
+import { FASE_ESTADOS, SEGUIMIENTO_ESTADOS, type Fase, type FaseEstado, type Partida, type Seguimiento, type SeguimientoEstado } from './types';
 import { Badge, DateField, DeleteButton, PageShell, Pendiente, ProgressBar, SelectField, StringList, TextField } from './ui';
 
 const TONE: Record<FaseEstado, 'ok' | 'warn' | 'danger' | 'neutral'> = { 'sin empezar': 'neutral', 'en curso': 'warn', bloqueada: 'danger', terminada: 'ok' };
+const TONE_SEG: Record<SeguimientoEstado, 'ok' | 'warn' | 'danger' | 'neutral'> = { hecho: 'ok', 'en curso': 'warn', pendiente: 'neutral', 'a comprobar': 'danger' };
 
 export function PhasesPage() {
   const fases = useGestion((s) => s.fases);
@@ -34,9 +35,12 @@ export function PhasesPage() {
         <p className="hint">Criterio: avance global = {g.hechas} de {g.total} tareas terminadas, sumando las tareas de todas las fases. Mide la finalización física (tareas), no el estado económico.</p>
       </section>
 
+      <ResumenSeguimiento fases={fases} onOpen={(id) => { setAbierta(id); setVista('lista'); }} />
+
       {vista === 'lista'
         ? <div className="gx-panel">{fases.map((f, i) => <PhaseItem key={f.id} fase={f} index={i} total={fases.length} open={abierta === f.id} onToggle={(o) => setAbierta(o ? f.id : abierta === f.id ? null : abierta)} />)}</div>
         : <Gantt fases={fases} onOpen={(id) => { setAbierta(id); setVista('lista'); }} />}
+
     </PageShell>
   );
 }
@@ -147,6 +151,11 @@ function PhaseEditor({ fase: f, index, total }: { fase: Fase; index: number; tot
         <button type="submit" className="btn" disabled={!nuevoBloqueo.trim()}><Icon name="alert" size={16} /> Registrar bloqueo</button>
       </form>
 
+      <h3>Seguimiento de obra</h3>
+      {f.seguimiento.length
+        ? <ul className="gx-seg">{f.seguimiento.map((x) => <SeguimientoItem key={x.id} faseId={f.id} s={x} partidas={partidas} />)}</ul>
+        : <p className="hint">Sin observaciones de obra en esta fase.</p>}
+
       <StringList label="Documentos (referencia de texto o enlace)" items={f.documentos} onChange={(v) => set({ documentos: v })} />
       <TextField label="Observaciones" value={f.observaciones} onChange={(v) => set({ observaciones: v })} multiline />
 
@@ -186,6 +195,86 @@ function PhaseEditor({ fase: f, index, total }: { fase: Fase; index: number; tot
       </div>
       {dividir && <SplitDialog fase={f} onClose={() => setDividir(false)} />}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------- seguimiento
+
+const fotoSrc = (id: string) => `./referencias/${id}.jpg`;
+
+function Fotos({ ids }: { ids: string[] }) {
+  if (!ids.length) return null;
+  return (
+    <div className="gx-seg-fotos">
+      {ids.map((id) => (
+        <a key={id} href={fotoSrc(id)} target="_blank" rel="noreferrer" title="Abrir la foto (Referencias → Situación de la obra)">
+          <img src={fotoSrc(id)} alt={`Foto de obra ${id.replace(/^obra-/, '')}`} loading="lazy" onError={(e) => { (e.currentTarget.parentElement as HTMLElement).hidden = true; }} />
+        </a>
+      ))}
+    </div>
+  );
+}
+
+function SeguimientoItem({ faseId, s, partidas }: { faseId: string; s: Seguimiento; partidas: Partida[] }) {
+  const st = useGestion.getState;
+  const set = (patch: Partial<Omit<Seguimiento, 'id'>>) => st().updateSeguimiento(faseId, s.id, patch);
+  const codigos = [...new Set(partidas.map((p) => p.codigo).filter(Boolean))];
+  if (s.partida && !codigos.includes(s.partida)) codigos.push(s.partida);
+  return (
+    <li className="gx-seg-item">
+      <div className="row wrap">
+        <small className="gx-muted">{fmtFecha(s.fecha)}</small>
+        <Badge tone={TONE_SEG[s.estado]}>{s.estado}</Badge>
+        <span className="code">{s.partida || 'sin partida'}</span>
+      </div>
+      <div className="gx-form">
+        <TextField label="Qué se ve" value={s.texto} onChange={(v) => set({ texto: v })} multiline />
+        <SelectField label="Partida" value={s.partida} options={[{ value: '', label: 'Sin partida' }, ...codigos.map((c) => ({ value: c, label: `${c} · ${partidas.find((p) => p.codigo === c)?.descripcion.slice(0, 60) ?? ''}` }))]} onChange={(v) => set({ partida: v })} />
+        <SelectField label="Estado" value={s.estado} options={SEGUIMIENTO_ESTADOS} onChange={(v) => set({ estado: v })} />
+        <TextField label="Por qué esta partida" value={s.motivo} onChange={(v) => set({ motivo: v })} multiline />
+      </div>
+      <Fotos ids={s.fotos} />
+      <div className="row" style={{ justifyContent: 'flex-end' }}><DeleteButton label="Borrar observación" onConfirm={() => st().removeSeguimiento(faseId, s.id)} /></div>
+    </li>
+  );
+}
+
+/** Todas las observaciones de obra agrupadas por partida (las que no tienen partida, al final). */
+function ResumenSeguimiento({ fases, onOpen }: { fases: Fase[]; onOpen: (faseId: string) => void }) {
+  const partidas = useGestion((s) => s.presupuesto.partidas);
+  const obs = fases.flatMap((f) => f.seguimiento.map((s) => ({ s, f })));
+  if (!obs.length) return null;
+  const grupos = new Map<string, typeof obs>();
+  for (const o of obs) grupos.set(o.s.partida, [...(grupos.get(o.s.partida) ?? []), o]);
+  const orden = [...grupos.keys()].sort((a, b) => (a === '' ? 1 : b === '' ? -1 : a.localeCompare(b, 'es', { numeric: true })));
+  const fechas = [...new Set(obs.map((o) => o.s.fecha))].sort();
+  const comprobar = obs.filter((o) => o.s.estado === 'a comprobar').length;
+  return (
+    <section className="gx-card" aria-label="Seguimiento de obra por partida" data-testid="seguimiento-obra">
+      <h2>Seguimiento de obra por partida</h2>
+      <p className="hint">{obs.length} observaciones ({fechas.map(fmtFecha).join(', ')}){comprobar ? ` · ${comprobar} a comprobar` : ''}. Cada cosa que se ve en la obra va a la partida del presupuesto que la cubre; si no hay ninguna, queda «sin partida» para valorarla o aclararla. No cambia el avance ni los importes: las tareas se marcan a mano.</p>
+      {orden.map((k) => {
+        const p = partidas.find((x) => x.codigo === k);
+        return (
+          <div key={k || 'sin'} className="gx-seg-grupo">
+            <h3>{k ? <>{k} <small className="gx-muted">· {p?.descripcion ?? 'partida no encontrada en el presupuesto'}</small></> : 'Sin partida en el presupuesto'}</h3>
+            <ul className="gx-seg">
+              {grupos.get(k)!.map(({ s, f }) => (
+                <li key={s.id} className="gx-seg-item">
+                  <div className="row wrap">
+                    <Badge tone={TONE_SEG[s.estado]}>{s.estado}</Badge>
+                    <span>{s.texto}</span>
+                  </div>
+                  <p className="hint">{s.motivo}</p>
+                  <Fotos ids={s.fotos} />
+                  <button type="button" className="btn ghost" onClick={() => onOpen(f.id)}>{f.nombre}</button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+    </section>
   );
 }
 

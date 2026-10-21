@@ -5,9 +5,9 @@
  * colaboración multiusuario). Se guarda con retardo tras cada cambio y al ocultar la página.
  */
 import { create } from 'zustand';
-import { ADDED_PARTIDAS, ADDED_TAREAS, DECISION_FOSA, DECISION_PUERTA_FINCA, DEP_CODIGO, DEP_DOCUMENTO, FASE_PAC, OFERTA_DEPOSITO, seedGestion, TAREAS_FOSA } from './seed';
+import { ADDED_PARTIDAS, ADDED_TAREAS, DECISION_FOSA, DECISION_PUERTA_FINCA, DEP_CODIGO, DEP_DOCUMENTO, FASE_PAC, OFERTA_DEPOSITO, SEGUIMIENTO_2026_10_21, seedGestion, TAREAS_FOSA } from './seed';
 import type {
-  Asignacion, Bloqueo, Comentario, Decision, Documento, Fase, GestionData, Oferta, Pago, Partida, Presupuesto, Reserva, Tarea,
+  Asignacion, Bloqueo, Comentario, Decision, Documento, Fase, GestionData, Oferta, Pago, Partida, Presupuesto, Reserva, Seguimiento, Tarea,
 } from './types';
 import { envelope, GestionInvalida, parseGestion } from './validate';
 
@@ -42,6 +42,8 @@ export interface GestionState extends GestionData {
   addBloqueo: (faseId: string, texto: string, fecha?: string) => void;
   updateBloqueo: (faseId: string, bloqueoId: string, patch: Partial<Omit<Bloqueo, 'id'>>) => void;
   removeBloqueo: (faseId: string, bloqueoId: string) => void;
+  updateSeguimiento: (faseId: string, id: string, patch: Partial<Omit<Seguimiento, 'id'>>) => void;
+  removeSeguimiento: (faseId: string, id: string) => void;
 
   // presupuesto
   addPartida: (p?: Partial<Partida>) => string;
@@ -179,6 +181,22 @@ function migrate5(data: GestionData): GestionData {
   return { ...data, decisiones };
 }
 
+/** Fotos de la obra del 21/10/2026: observaciones de seguimiento por partida y fase 1 en curso. */
+function migrate6(data: GestionData): GestionData {
+  let done: string[] = [];
+  try { done = JSON.parse(window.localStorage.getItem(MIGRATIONS_KEY) ?? '[]') as string[]; } catch { /* sin almacenamiento */ }
+  const id = '2026-10-21-seguimiento-obra';
+  if (done.includes(id)) return data;
+  const seg = SEGUIMIENTO_2026_10_21();
+  const fases = data.fases.map((f) => {
+    const nuevos = (seg[f.id] ?? []).filter((x) => !f.seguimiento.some((y) => y.id === x.id));
+    const estado = f.id === FASE_PAC && f.estado === 'sin empezar' ? 'en curso' : f.estado;
+    return nuevos.length || estado !== f.estado ? { ...f, estado, seguimiento: [...f.seguimiento, ...nuevos] } : f;
+  });
+  try { window.localStorage.setItem(MIGRATIONS_KEY, JSON.stringify([...done, id])); } catch { /* sin almacenamiento */ }
+  return { ...data, fases };
+}
+
 function load(): { data: GestionData; aviso: string | null } {
   if (typeof window === 'undefined') return { data: seedGestion(), aviso: null };
   let raw: string | null = null;
@@ -191,7 +209,7 @@ function load(): { data: GestionData; aviso: string | null } {
   try {
     const parsed = JSON.parse(raw) as unknown;
     const base = parseGestion(parsed, false);
-    const data = migrate5(migrate4(migrate3(migrate2(migrate(base)))));
+    const data = migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base))))));
     // las migraciones se marcan como hechas: hay que guardar ya su resultado o se perderían al recargar sin editar
     if (data !== base) try { window.localStorage.setItem(GESTION_KEY, JSON.stringify(envelope(data))); } catch { /* sin almacenamiento */ }
     let aviso: string | null = null;
@@ -223,7 +241,7 @@ function move<T extends { id: string }>(xs: T[], id: string, dir: -1 | 1): T[] {
 export const nuevaFase = (f: Partial<Fase> = {}): Fase => ({
   id: uid('f'), nombre: 'Nueva fase', descripcion: '', tareas: [], dependencias: [], requisitos: [],
   previstoInicio: '', previstoFin: '', realInicio: '', realFin: '', responsable: '', estado: 'sin empezar',
-  documentos: [], observaciones: '', bloqueos: [], avisos: [], ...f,
+  documentos: [], observaciones: '', bloqueos: [], avisos: [], seguimiento: [], ...f,
 });
 
 export const nuevaPartida = (p: Partial<Partida> = {}): Partida => ({
@@ -288,6 +306,8 @@ export const useGestion = create<GestionState>()((set, get) => ({
   addBloqueo: (faseId, texto, fecha = '') => set((s) => ({ fases: mapFase(s.fases, faseId, (f) => ({ ...f, bloqueos: [...f.bloqueos, { id: uid('b'), texto, fecha, resuelto: false }] })) })),
   updateBloqueo: (faseId, bloqueoId, patch) => set((s) => ({ fases: mapFase(s.fases, faseId, (f) => ({ ...f, bloqueos: f.bloqueos.map((b) => (b.id === bloqueoId ? { ...b, ...patch } : b)) })) })),
   removeBloqueo: (faseId, bloqueoId) => set((s) => ({ fases: mapFase(s.fases, faseId, (f) => ({ ...f, bloqueos: f.bloqueos.filter((b) => b.id !== bloqueoId) })) })),
+  updateSeguimiento: (faseId, id, patch) => set((s) => ({ fases: mapFase(s.fases, faseId, (f) => ({ ...f, seguimiento: f.seguimiento.map((x) => (x.id === id ? { ...x, ...patch } : x)) })) })),
+  removeSeguimiento: (faseId, id) => set((s) => ({ fases: mapFase(s.fases, faseId, (f) => ({ ...f, seguimiento: f.seguimiento.filter((x) => x.id !== id) })) })),
 
   addPartida: (p = {}) => {
     const np = nuevaPartida(p);
