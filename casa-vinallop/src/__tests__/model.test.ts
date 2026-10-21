@@ -695,3 +695,22 @@ describe('zona de comedor más baja, interior a 4 m (propuesta de la propiedad)'
     expect(elevationSvg(alta, 'B')).not.toContain('coronación zona comedor');
   });
 });
+
+describe('cadena de lluvia de tejas (frontal B)', () => {
+  const layout = resolveLayout(VINALLOP, baseVariant());
+  const rc = layout.outdoor!.rainChains![0];
+  it('va en la fachada de la entrada, sale de la coronación y no pisa ningún hueco', () => {
+    expect(rc.face).toEqual({ axis: 'y', at: layout.bounds.maxY, outward: 1 });
+    expect(rc.top).toBeCloseTo(roofTopAt(layout, layout.bounds.maxY, rc.at), 6);
+    const half = (rc.tile * Math.cos(rc.tilt)) / 2 + 0.1;
+    const wb = layout.walls.find((w) => w.id === 'muro-B')!;
+    for (const o of layout.openings.filter((x) => x.wallId === 'muro-B')) {
+      const a = wb.a[0] + o.offset;
+      expect(rc.at + half <= a || rc.at - half >= a + o.width).toBe(true);
+    }
+  });
+  it('se dibuja en el alzado B y en la planta', () => {
+    expect(elevationSvg(layout, 'B')).toContain('data-rain-chain="cadena-tejas"');
+    expect(elevationSvg(layout, 'A')).not.toContain('data-rain-chain');
+  });
+});

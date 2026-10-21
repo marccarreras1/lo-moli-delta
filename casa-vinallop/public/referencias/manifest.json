@@ -76,6 +76,14 @@
    "titulo": "Render de referencia: casa encalada con porche y cristalera bajo un árbol grande"
   },
   {
+   "id": "cadena-lluvia-tejas",
+   "src": "referencias/cadena-lluvia-tejas.jpg",
+   "w": 1170,
+   "h": 1540,
+   "grupo": "inspiracion",
+   "titulo": "Referencia de la cadena de lluvia: tejas árabes en zigzag empotradas en la esquina de una fachada encalada"
+  },
+  {
    "id": "puerta-finca",
    "src": "referencias/puerta-finca.jpg",
    "w": 1125,

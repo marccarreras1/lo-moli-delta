@@ -165,6 +165,21 @@ function outdoorSvg(layout: Layout, od: NonNullable<Layout['outdoor']>, labels: 
       g.push(`<text x="${n4(lx)}" y="${n4(ly)}" font-size="0.12" fill="#6d6048" text-anchor="middle" transform="rotate(-90 ${n4(lx)} ${n4(ly)})">${esc(ws.label)} · sube a ${fmtM(ws.top)} m</text>`);
     }
   }
+  // cadenas de lluvia: tejas en planta (vuelan de la fachada) y arqueta al pie
+  for (const rc of od.rainChains ?? []) {
+    const off = (d: number) => rc.face.at + rc.face.outward * d;
+    const [o0, o1] = [Math.min(off(0), off(0.2)), Math.max(off(0), off(0.2))];
+    const [b0, b1] = [Math.min(off(0.05), off(0.05 + rc.basin)), Math.max(off(0.05), off(0.05 + rc.basin))];
+    const half = (rc.tile * Math.cos(rc.tilt)) / 2;
+    if (rc.face.axis === 'y') {
+      g.push(`<rect x="${n4(rc.at - half)}" y="${n4(o0)}" width="${n4(2 * half)}" height="${n4(o1 - o0)}" fill="#d9a47f" stroke="#9a5a3c" stroke-width="0.012"/>`);
+      g.push(`<rect x="${n4(rc.at - rc.basin / 2)}" y="${n4(b0)}" width="${n4(rc.basin)}" height="${n4(b1 - b0)}" fill="none" stroke="#3a3833" stroke-width="0.015" stroke-dasharray="0.05 0.03"/>`);
+      if (labels) g.push(`<text x="${n4(rc.at)}" y="${n4(b1 + 0.2)}" font-size="0.12" fill="#9a5a3c" text-anchor="middle">${esc(rc.label.toLowerCase())} · arqueta al aljibe</text>`);
+    } else {
+      g.push(`<rect x="${n4(o0)}" y="${n4(rc.at - half)}" width="${n4(o1 - o0)}" height="${n4(2 * half)}" fill="#d9a47f" stroke="#9a5a3c" stroke-width="0.012"/>`);
+      g.push(`<rect x="${n4(b0)}" y="${n4(rc.at - rc.basin / 2)}" width="${n4(b1 - b0)}" height="${n4(rc.basin)}" fill="none" stroke="#3a3833" stroke-width="0.015" stroke-dasharray="0.05 0.03"/>`);
+    }
+  }
   for (const p of od.pavements.filter((x) => x.permeable)) {
     const { c, r } = p.permeable!;
     g.push(`<circle cx="${n4(c[0])}" cy="${n4(c[1])}" r="${n4(r)}" fill="#efe9de" stroke="#3a3833" stroke-width="0.02"/>`);

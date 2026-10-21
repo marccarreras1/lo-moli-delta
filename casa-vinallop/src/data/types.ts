@@ -373,6 +373,25 @@ export interface Outdoor {
     status: DataStatus;
     note: string;
   }[];
+  /** cadenas de lluvia: bajante decorativa de tejas curvas en zigzag empotradas en una fachada; el agua cae de teja en teja */
+  rainChains?: {
+    id: string;
+    label: string;
+    /** cara de fachada: x = cte (a lo largo de y) o y = cte (a lo largo de x) */
+    face: { axis: 'x' | 'y'; at: number; outward: 1 | -1 };
+    /** coordenada a lo largo de la fachada (eje de la cadena) */
+    at: number;
+    /** cota de la gárgola (salida de la cubierta) */
+    top: number;
+    /** largo de cada teja, separación vertical entre tejas e inclinación (rad) */
+    tile: number;
+    pitch: number;
+    tilt: number;
+    /** arqueta al pie con rejilla (lado del cuadrado) */
+    basin: number;
+    status: DataStatus;
+    note: string;
+  }[];
   /** escalones volados empotrados en una fachada, en zigzag (escalera de pasos alternos de estilo ibicenco) */
   wallSteps?: {
     id: string;

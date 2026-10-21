@@ -390,6 +390,54 @@ function Annex({ a, mats }: { a: NonNullable<Outdoor['annexes']>[number]; mats: 
   );
 }
 
+/** media caña (teja árabe) a lo largo de x, abierta hacia arriba, algo más estrecha en un extremo */
+function tejaGeometry(len: number, r0: number, r1: number) {
+  const seg = 12;
+  const pos: number[] = [];
+  const idx: number[] = [];
+  for (let j = 0; j <= 1; j++) {
+    const r = j ? r1 : r0;
+    for (let k = 0; k <= seg; k++) {
+      const a = Math.PI + (Math.PI * k) / seg;
+      pos.push((j - 0.5) * len, r * Math.sin(a) * 0.7, r * Math.cos(a));
+    }
+  }
+  for (let k = 0; k < seg; k++) idx.push(k, k + seg + 1, k + 1, k + 1, k + seg + 1, k + seg + 2);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+/** Cadena de lluvia: gárgola arriba, tejas en zigzag empotradas en la fachada y arqueta con rejilla al pie. */
+function RainChain({ c }: { c: NonNullable<Outdoor['rainChains']>[number] }) {
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({ color: '#b8714c', roughness: 0.85, side: THREE.DoubleSide }), []);
+  const dark = useMemo(() => new THREE.MeshStandardMaterial({ color: '#9a5a3c', roughness: 0.9, side: THREE.DoubleSide }), []);
+  const grate = useMemo(() => new THREE.MeshStandardMaterial({ color: '#3a3a38', roughness: 0.6, metalness: 0.5 }), []);
+  const geo = useMemo(() => tejaGeometry(c.tile, 0.085, 0.065), [c.tile]);
+  useEffect(() => () => { mat.dispose(); dark.dispose(); grate.dispose(); geo.dispose(); }, [mat, dark, grate, geo]);
+  // posición en la fachada: (a lo largo, cota, separación de la cara)
+  const P = (along: number, z: number, off: number): [number, number, number] =>
+    c.face.axis === 'y' ? [along, z, c.face.at + c.face.outward * off] : [c.face.at + c.face.outward * off, z, along];
+  const yaw = c.face.axis === 'y' ? 0 : Math.PI / 2;
+  const n = Math.max(1, Math.floor((c.top - 0.55) / c.pitch));
+  const tiles = Array.from({ length: n }, (_, i) => ({ i, z: c.top - 0.35 - i * c.pitch, s: i % 2 === 0 ? 1 : -1 }));
+  return (
+    <group>
+      {/* gárgola: teja perpendicular a la fachada */}
+      <mesh geometry={geo} material={dark} position={P(c.at, c.top - 0.12, 0.2)} rotation={[0, yaw + Math.PI / 2, -0.12]} castShadow />
+      {tiles.map(({ i, z, s }) => (
+        <mesh key={i} geometry={geo} material={i % 4 === 1 ? dark : mat} position={P(c.at, z, 0.1)} rotation={[0, yaw, -s * c.tilt]} castShadow receiveShadow />
+      ))}
+      {/* arqueta con rejilla */}
+      <mesh position={P(c.at, 0.0, c.basin / 2 + 0.05)} material={grate} receiveShadow>
+        <boxGeometry args={c.face.axis === 'y' ? [c.basin, 0.03, c.basin] : [c.basin, 0.03, c.basin]} />
+      </mesh>
+    </group>
+  );
+}
+
 /** Escalones volados en zigzag: piezas de madera empotradas que salen de la fachada, alternas a cada lado. */
 function WallSteps({ s }: { s: NonNullable<Outdoor['wallSteps']>[number] }) {
   const mat = useMemo(() => new THREE.MeshStandardMaterial({ color: '#8f8064', roughness: 0.95 }), []);
@@ -429,6 +477,7 @@ export function Outdoor3D({ outdoor, mats, options, level, selectedId, onSelect 
       {outdoor.garden && <Garden3D garden={outdoor.garden} mats={mats} />}
       {(outdoor.annexes ?? []).map((a) => <Annex key={a.id} a={a} mats={mats} />)}
       {(outdoor.wallSteps ?? []).map((w) => <WallSteps key={w.id} s={w} />)}
+      {(outdoor.rainChains ?? []).map((c) => <RainChain key={c.id} c={c} />)}
       {(outdoor.tanks ?? []).map((t) => <Tank key={t.id} t={t} />)}
       {outdoor.pavements.filter((p) => p.permeable).map((p) => <TreePit key={`al-${p.id}`} c={p.permeable!.c} r={p.permeable!.r} mats={mats} />)}
       {(outdoor.drains ?? []).map((d) => <Drain key={d.id} a={d.a} b={d.b} mats={mats} lift={groundTopAt(outdoor, (d.a[0] + d.b[0]) / 2, (d.a[1] + d.b[1]) / 2)} />)}

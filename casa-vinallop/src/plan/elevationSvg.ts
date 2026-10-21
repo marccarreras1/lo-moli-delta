@@ -374,6 +374,29 @@ export function elevationSvg(layout: Layout, f: FacadeId, o: { showDims?: boolea
     g.push('</g>');
   }
 
+  // ---------------------------------------------------------------- cadenas de lluvia (tejas en zigzag)
+  const chainsHere = (layout.outdoor?.rainChains ?? []).filter((rc) => {
+    const facing = rc.face.axis === 'y' ? (rc.face.outward > 0 ? 'B' : 'A') : rc.face.outward > 0 ? 'derecho' : 'izquierdo';
+    return facing === f;
+  });
+  for (const rc of chainsHere) {
+    const uc = u(rc.face.axis === 'y' ? [rc.at, rc.face.at] : [rc.face.at, rc.at]);
+    const cx = X(uc);
+    const hx = (rc.tile * Math.cos(rc.tilt)) / 2;
+    const hz = (rc.tile * Math.sin(rc.tilt)) / 2;
+    const n = Math.max(1, Math.floor((rc.top - 0.55) / rc.pitch));
+    g.push(`<g data-rain-chain="${esc(rc.id)}">`);
+    g.push(`<rect x="${n4(cx - 0.07)}" y="${n4(-(rc.top - 0.06))}" width="0.14" height="0.12" fill="#d9a47f" stroke="#9a5a3c" stroke-width="${LW.leaf}"/>`);
+    for (let i = 0; i < n; i++) {
+      const z = rc.top - 0.35 - i * rc.pitch;
+      const s = i % 2 === 0 ? 1 : -1;
+      g.push(`<line x1="${n4(cx - hx)}" y1="${n4(-(z + s * hz))}" x2="${n4(cx + hx)}" y2="${n4(-(z - s * hz))}" stroke="#b8714c" stroke-width="0.07" stroke-linecap="round"/>`);
+      g.push(`<line x1="${n4(cx - hx)}" y1="${n4(-(z + s * hz))}" x2="${n4(cx + hx)}" y2="${n4(-(z - s * hz))}" stroke="#9a5a3c" stroke-width="${LW.fine}"/>`);
+    }
+    g.push(`<rect x="${n4(cx - rc.basin / 2)}" y="-0.04" width="${n4(rc.basin)}" height="0.04" fill="#3a3833"/>`);
+    g.push('</g>');
+  }
+
   out.push(`<g clip-path="url(#draw-${f})">${g.join('')}</g>`);
 
   // ---------------------------------------------------------------- marcas de nivel (izquierda)
@@ -454,6 +477,7 @@ export function elevationSvg(layout: Layout, f: FacadeId, o: { showDims?: boolea
     if (door) notes.push({ at: [X((door.a + door.b) / 2), door.o.sill + door.o.height * 0.55], text: 'Puerta de entrada de madera' });
     const win = ops.find((p) => p.o.kind !== 'puerta');
     if (win) notes.push({ at: [X(win.a + (win.b - win.a) * 0.3), win.o.sill + win.o.height * 0.5], text: `Carpintería ${(fin('carpinteria') ?? '').replace(/\s*\(.*\)$/, '').toLowerCase()}` });
+    for (const rc of chainsHere) notes.push({ at: [X(u(rc.face.axis === 'y' ? [rc.at, rc.face.at] : [rc.face.at, rc.at])), rc.top * 0.7], text: 'Cadena de lluvia de tejas (al aljibe)' });
     for (const { an, a, b } of annex) if (an.terrace) notes.push({ at: [X((a + b) / 2), an.height + an.terrace.parapet * 0.6], text: `Peto encalado de la terraza h ${fmtM(an.terrace.parapet)}` });
     // reparto en la banda superior, sin solapes
     const sorted = notes.sort((p, q) => p.at[0] - q.at[0]);

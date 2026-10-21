@@ -48,6 +48,7 @@ GRUPOS = {
 # fotos sueltas: md5 del original (12 primeros caracteres) → (id, grupo, título)
 FOTOS = {
     'f5216fe84aa4': ('render-referencia', 'inspiracion', 'Render de referencia: casa encalada con porche y cristalera bajo un árbol grande'),
+    'c8d1f7e4075e': ('cadena-lluvia-tejas', 'inspiracion', 'Referencia de la cadena de lluvia: tejas árabes en zigzag empotradas en la esquina de una fachada encalada'),
     '183382fd82dc': ('puerta-finca', 'inspiracion', 'Referencia de la puerta de la finca: barrera de madera de acebuche de dos hojas entre pilares de piedra y pared seca'),
     'abcd1162249c': ('boceto-frontal-a', 'bocetos', 'Boceto del alzado del frontal A (6,20 m de alto, ventanal de 7 m y huecos de 2,25 m)'),
     'ea0396e82b01': ('boceto-planta-baja', 'bocetos', 'Boceto de la planta baja (dormitorio, baño, escalera, cocina y aberturas)'),
