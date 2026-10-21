@@ -264,7 +264,10 @@ const seg = (n: number, partida: string, estado: Seguimiento['estado'], texto: s
 /**
  * Fotos de la propiedad del 21/10/2026 (Referencias → «Situación de la obra»): qué se ve y a qué partida va.
  * Lo que no se puede confirmar con fotos queda «a comprobar»; no se anotan avances en % ni fechas de inicio.
+ * Lo que no tenía partida (alicatados y chimenea antigua, placa ondulada del anexo, trozos grises del escombro) lo descartó la propiedad (21/10/2026).
  */
+export const SEGUIMIENTO_DESCARTADO = ['06', '08', '09'].map((n) => `seg-${SEGUIMIENTO_FECHA}-${n}`);
+
 export const SEGUIMIENTO_2026_10_21 = (): Record<string, Seguimiento[]> => ({
   [FASE_PAC]: [
     seg(1, 'PAC-01', 'en curso', 'Cubierta de la casa retirada en buena parte: tejas, tablero cerámico y aislamiento abajo; los muros quedan al aire.',
@@ -272,21 +275,13 @@ export const SEGUIMIENTO_2026_10_21 = (): Record<string, Seguimiento[]> => ({
     seg(2, 'PAC-01', 'en curso', 'Viguetas pretensadas: unas retiradas y acopiadas junto al frontal B; otras todavía apoyadas sobre los muros de mampostería.',
       'Son parte del techo actual que se demuele (PAC-01); la cubierta nueva lleva sus propias vigas (PAC-06).', ['01-cubierta-retirada', '04-acopio', '05-frontal-b-alto', '14-apoyo-viguetas']),
     seg(3, 'PAC-01', 'en curso', 'Escombro de la cubierta dentro de la casa y capazos llenos acopiados fuera.',
-      'Residuos de la demolición del techo (PAC-01). Según el presupuesto, la piedra y la tierra se quedan en la finca y solo va a vertedero controlado lo que no es natural (tejas, ladrillo, aislamiento…). Ver la comprobación del fibrocemento en la fase 2.', ['15-retirada-escombro', '04-acopio', '12-ventana-escombro']),
+      'Residuos de la demolición del techo (PAC-01). Según el presupuesto, la piedra y la tierra se quedan en la finca y solo va a vertedero controlado lo que no es natural (tejas, ladrillo, aislamiento…).', ['15-retirada-escombro', '04-acopio', '12-ventana-escombro']),
     seg(4, 'PAC-01', 'a comprobar', 'Andamio montado en el frontal B.',
       'El presupuesto no tiene partida de medios auxiliares: se entiende incluido en los trabajos (demolición y después recrecido, PAC-04). A confirmar con el constructor.', ['05-frontal-b-alto', '06-frontal-b']),
     seg(5, 'PAC-01', 'a comprobar', 'Coronación del muro de la casa junto al anexo de los depósitos rota al desmontar la cubierta (mampostería al descubierto).',
       'Consecuencia de la demolición del techo (PAC-01); se rehace con el recrecido de muros y el cinturón de hormigón (PAC-04). Comprobar que no afecta al muro del anexo.', ['03-anexo-muro-roto', '10-anexo-desde-dentro']),
-    seg(6, '', 'a comprobar', 'Interior: hueco de la chimenea antigua, alicatado de la cocina y ventana pequeña existentes.',
-      'Sin partida: PAC26-0052 no incluye la retirada de alicatados, de la chimenea antigua ni de las carpinterías existentes. Aclarar si entra en la demolición o se valora aparte. La ventana pequeña se sustituye por las aberturas nuevas (PAC-05).', ['07-cocina-chimenea', '12-ventana-escombro']),
     seg(7, 'PAC-04', 'pendiente', 'Coronación de los muros a la vista, a la espera del recrecido con bloque y el cinturón de hormigón.',
       'Recrecido de muros (PAC-04 y su ampliación PAC-04.1, hasta 6,00 m). Con la zona de comedor más baja, desde el escalón los muros coronan a ≈4,61 m: revisar el alcance de PAC-04.1.', ['13-coronacion', '05-frontal-b-alto']),
-  ],
-  f02: [
-    seg(8, '', 'a comprobar', 'La cubierta de placa ondulada gris del anexo de los depósitos sigue puesta.',
-      'Capítulo «Comprobaciones y gestión de fibrocemento/amianto», sin partida valorada; la demolición del techo (PAC-01) no especifica la retirada de amianto. Comprobar si es fibrocemento con amianto antes de tocarla: si lo es, la retira una empresa inscrita en el RERA con plan de trabajo aprobado.', ['02-anexo-depositos', '10-anexo-desde-dentro', '11-anexo-deposito', '09-anexo-puertas']),
-    seg(9, '', 'a comprobar', 'Trozos grises ondulados mezclados con el escombro de la cubierta de la casa.',
-      'Mismo capítulo, sin partida. Si son fibrocemento con amianto, ese escombro es residuo peligroso: no puede ir con el resto ni quedarse en la finca. Comprobar antes de mover más escombro.', ['15-retirada-escombro', '01-cubierta-retirada', '12-ventana-escombro']),
   ],
 });
 
@@ -321,7 +316,7 @@ function fases(): Fase[] {
       ['Contrastar medidas', 'Contrastar distribución', 'Contrastar estructura', 'Contrastar cubierta', 'Contrastar altillo', 'Contrastar aberturas']),
     fase('f02', '2 · Tramitación y trabajos previos', 'Permisos aplicables, comprobación del fibrocemento y gestión especializada si corresponde.',
       ['Identificar y solicitar los permisos aplicables', 'Comprobar el fibrocemento', 'Gestión especializada del fibrocemento si corresponde'],
-      { dependencias: ['f01'], tareas: [...['Identificar y solicitar los permisos aplicables', 'Comprobar el fibrocemento', 'Gestión especializada del fibrocemento si corresponde'].map((x, i) => t('f02', i + 1, x)), ...TAREAS_FOSA.map(([id, texto]) => ({ id: `f02-${id}`, texto, hecha: false, partida: '' }))], seguimiento: obs.f02 }),
+      { dependencias: ['f01'], tareas: [...['Identificar y solicitar los permisos aplicables', 'Comprobar el fibrocemento', 'Gestión especializada del fibrocemento si corresponde'].map((x, i) => t('f02', i + 1, x)), ...TAREAS_FOSA.map(([id, texto]) => ({ id: `f02-${id}`, texto, hecha: false, partida: '' }))] }),
     fase(FASE_PAC, 'Fase 1 · Estructura, aberturas, cubierta y forjado (presupuesto PAC26-0052)',
       'Partidas seleccionadas del presupuesto PAC26-0052 (oferta recibida, no aceptada) y añadidos de la propiedad: alzado de la casa 36 cm (PAC-11), recrecido de muros hasta 6,00 m, zanja de agua y electricidad desde el pozo y depósito enterrado de agua potable. Cada tarea corresponde a una partida.',
       [],
