@@ -121,6 +121,13 @@ function outdoorSvg(layout: Layout, od: NonNullable<Layout['outdoor']>, labels: 
       const yo = d.side === 'y1' ? ay1 : ay0;
       const sg = d.side === 'y1' ? 1 : -1;
       g.push(`<path d="M ${n4(d.at - d.width / 2)} ${n4(yo)} L ${n4(d.at - d.width / 2)} ${n4(yo + sg * d.width)} A ${n4(d.width)} ${n4(d.width)} 0 0 ${sg > 0 ? 0 : 1} ${n4(d.at + d.width / 2)} ${n4(yo)}" fill="none" stroke="#7d8277" stroke-width="0.012" stroke-dasharray="0.05 0.04"/>`);
+    } else {
+      // puerta en un lateral (x = cte), abre hacia fuera
+      const xw = d.side === 'x0' ? ax0 : ax1 - t;
+      g.push(`<rect x="${n4(xw)}" y="${n4(d.at - d.width / 2)}" width="${n4(t)}" height="${n4(d.width)}" fill="#fefdfb" data-annex-door="${esc(an.id)}"/>`);
+      const xo = d.side === 'x0' ? ax0 : ax1;
+      const sg = d.side === 'x0' ? -1 : 1;
+      g.push(`<path d="M ${n4(xo)} ${n4(d.at + d.width / 2)} L ${n4(xo + sg * d.width)} ${n4(d.at + d.width / 2)} A ${n4(d.width)} ${n4(d.width)} 0 0 ${sg > 0 ? 0 : 1} ${n4(xo)} ${n4(d.at - d.width / 2)}" fill="none" stroke="#7d8277" stroke-width="0.012" stroke-dasharray="0.05 0.04"/>`);
     }
     for (const h of an.hatches ?? []) {
       const hs = h.size / 2;

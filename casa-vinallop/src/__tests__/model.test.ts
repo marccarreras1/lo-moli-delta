@@ -709,8 +709,9 @@ describe('cadena de lluvia de tejas (frontal B)', () => {
     // el agua va al registro del aljibe, no al depósito de agua potable
     const reg = an.hatches!.find((h) => h.id === 'registro-fosa-pluviales')!;
     expect(rc.pipeTo!.at).toEqual(reg.c);
-    const d = an.door;
-    expect(rc.at + (rc.tile * Math.cos(rc.tilt)) / 2 <= d.at - d.width / 2).toBe(true);
+    // la puerta del cuarto técnico está en el lateral exterior: la cara de la entrada queda libre para la cadena
+    expect(an.door.side).toBe('x0');
+    expect(an.door.at + an.door.width / 2).toBeLessThanOrEqual(layout.bounds.maxY - 0.3 - 0.85 + 1e-6);
     const half = (rc.tile * Math.cos(rc.tilt)) / 2 + 0.1;
     const wb = layout.walls.find((w) => w.id === 'muro-B')!;
     for (const o of layout.openings.filter((x) => x.wallId === 'muro-B')) {

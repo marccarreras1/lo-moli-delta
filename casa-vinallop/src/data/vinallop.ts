@@ -356,13 +356,14 @@ const outdoor: Outdoor = {
   annexes: [
     {
       id: 'cuarto-tecnico', label: 'Cuarto técnico y lavadero', rect: [-2.5, 0, 0, W], height: r2(PB_EL + ALTELL - 0.05), wall: 0.3,
-      door: { side: 'y1', at: -1.3, width: 0.9, height: 2.1 }, status: 'confirmado',
+      // puerta en el lateral exterior (propiedad, 22/10/2026), a 0,85 m de la esquina del frontal B por dentro
+      door: { side: 'x0', at: r2(W - 0.3 - 0.85 - 0.45), width: 0.9, height: 2.1 }, status: 'confirmado',
       terrace: { parapet: 1.0, label: 'Terraza del altell', status: 'propuesto' },
       hatches: [{
         id: 'registro-fosa-pluviales', label: 'Registro del aljibe de pluviales (fosa recuperada)', c: [-0.55, 0.85], size: 0.6, status: 'propuesto',
         note: 'Propuesta (propiedad, 14/10/2026): recuperar la fosa séptica que hay bajo el baño actual como aljibe de agua de lluvia para riego y jardín, con el acceso fuera de la vivienda, en el cuarto técnico: tapa de registro estanca de ≈60 × 60 cm junto al lateral de la casa, con la bomba sumergible, el filtro y la salida al riego por goteo en el propio cuarto. Posición, medidas, capacidad y estado de la fosa SIN COMPROBAR: hay que localizarla, vaciarla con gestor autorizado, limpiarla, desinfectarla y probar la estanqueidad; anular la entrada de aguas negras; prever filtro en la bajante, rebosadero al terreno y rejilla antimosquitos. El suelo de la casa sobre la fosa necesita losa calculada por el técnico. Agua no potable.',
       }],
-      note: 'Previsto por la propiedad: 2,50 m de fondo por el ancho total de la casa (5,22 m); con la cubierta 5 cm por debajo del suelo del altell para que la terraza quede enrasada con él (con el interior elevado 0,36 m, ≈3,11 m de alto), con acceso por el exterior. Colocado en el lateral izquierdo (el derecho lo ocupan el algarrobo y el comedor): posición a confirmar. Interior ≈2,20 × 4,62 m para lavadora, termo o aerotermia, cuadro eléctrico y almacén. Puerta exterior de 0,90 m hacia el lado de la entrada (posición propuesta).',
+      note: 'Previsto por la propiedad: 2,50 m de fondo por el ancho total de la casa (5,22 m); con la cubierta 5 cm por debajo del suelo del altell para que la terraza quede enrasada con él (con el interior elevado 0,36 m, ≈3,11 m de alto), con acceso por el exterior. Colocado en el lateral izquierdo (el derecho lo ocupan el algarrobo y el comedor): posición a confirmar. Interior ≈2,20 × 4,62 m para lavadora, termo o aerotermia, cuadro eléctrico y almacén. Puerta exterior de 0,90 m en el lateral exterior, a 0,85 m de la esquina del lado de la entrada (propiedad, 22/10/2026), abriendo hacia fuera; antes estaba en la cara de la entrada. Deja libre la pared corta del frontal B para las bicis y la esquina para la cadena de lluvia.',
     },
   ],
   // jardín seco delante de la fachada de la entrada, hasta los primeros olivos (propiedad; referencia «11 plantes qui
