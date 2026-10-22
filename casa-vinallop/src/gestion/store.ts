@@ -5,7 +5,7 @@
  * colaboración multiusuario). Se guarda con retardo tras cada cambio y al ocultar la página.
  */
 import { create } from 'zustand';
-import { ADDED_PARTIDAS, ADDED_TAREAS, DECISION_FOSA, DECISION_PUERTA_FINCA, DEP_CODIGO, DEP_DOCUMENTO, ENTREGAS_CUENTA, FASE_PAC, OFERTA_DEPOSITO, SEGUIMIENTO_2026_10_21, SEGUIMIENTO_ALZADO_ID, SEGUIMIENTO_DESCARTADO, SEGUIMIENTO_DRON_ID, seedGestion, TAREAS_FOSA } from './seed';
+import { ADDED_PARTIDAS, ADDED_TAREAS, DECISION_FOSA, DECISION_PUERTA_FINCA, DEP_CODIGO, DEP_DOCUMENTO, ENTREGAS_CUENTA, FASE1_FIN, FASE2, FASE2_PARTIDAS, FASE_2, FASE_PAC, OFERTA_DEPOSITO, SEGUIMIENTO_2026_10_21, SEGUIMIENTO_ALZADO_ID, SEGUIMIENTO_DESCARTADO, SEGUIMIENTO_DRON_ID, seedGestion, TAREAS_FOSA } from './seed';
 import type {
   Asignacion, Bloqueo, Comentario, EntregaCuenta, Decision, Documento, Fase, GestionData, Oferta, Pago, Partida, Presupuesto, Reserva, Seguimiento, Tarea,
 } from './types';
@@ -249,6 +249,26 @@ function migrate10(data: GestionData): GestionData {
   return nuevas.length ? { ...data, presupuesto: { ...pr, aCuenta: [...pr.aCuenta, ...nuevas] } } : data;
 }
 
+/** Fase 2 indicada por la propiedad (22/10/2026), previsión de fin de la fase 1 y fosa elegida como aljibe. */
+function migrate11(data: GestionData): GestionData {
+  let done: string[] = [];
+  try { done = JSON.parse(window.localStorage.getItem(MIGRATIONS_KEY) ?? '[]') as string[]; } catch { /* sin almacenamiento */ }
+  const id = '2026-10-22-fase-2';
+  if (done.includes(id)) return data;
+  let fases = data.fases.map((f) => (f.id === FASE_PAC && !f.previstoFin ? { ...f, previstoFin: FASE1_FIN } : f));
+  if (!fases.some((f) => f.id === FASE_2)) {
+    const i = fases.findIndex((f) => f.id === FASE_PAC);
+    const nueva = FASE2();
+    fases = i < 0 ? [...fases, { ...nueva, dependencias: [] }] : [...fases.slice(0, i + 1), nueva, ...fases.slice(i + 1)];
+  }
+  const pr = data.presupuesto;
+  const caps = new Set(pr.capitulos.map((c) => c.id));
+  const nuevas = FASE2_PARTIDAS().filter((p) => !pr.partidas.some((x) => x.id === p.id || x.codigo === p.codigo)).map((p) => (caps.has(p.capitulo) ? p : { ...p, capitulo: '' }));
+  const decisiones = data.decisiones.map((d) => (d.id === 'd-fosa-pluviales' && d.estado === 'por comparar' ? { ...d, estado: 'elegido por propiedad' as const } : d));
+  try { window.localStorage.setItem(MIGRATIONS_KEY, JSON.stringify([...done, id])); } catch { /* sin almacenamiento */ }
+  return { ...data, fases, decisiones, presupuesto: { ...pr, partidas: [...pr.partidas, ...nuevas] } };
+}
+
 function load(): { data: GestionData; aviso: string | null } {
   if (typeof window === 'undefined') return { data: seedGestion(), aviso: null };
   let raw: string | null = null;
@@ -261,7 +281,7 @@ function load(): { data: GestionData; aviso: string | null } {
   try {
     const parsed = JSON.parse(raw) as unknown;
     const base = parseGestion(parsed, false);
-    const data = migrate10(migrate9(migrate8(migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base))))))))));
+    const data = migrate11(migrate10(migrate9(migrate8(migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base)))))))))));
     // las migraciones se marcan como hechas: hay que guardar ya su resultado o se perderían al recargar sin editar
     if (data !== base) try { window.localStorage.setItem(GESTION_KEY, JSON.stringify(envelope(data))); } catch { /* sin almacenamiento */ }
     let aviso: string | null = null;

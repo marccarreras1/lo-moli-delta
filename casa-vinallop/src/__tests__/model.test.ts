@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { planSvg } from '../plan/planSvg';
 import { buildTestModel } from '../data/modeloPrueba';
 import { VINALLOP } from '../data/vinallop';
 import { VINALLOP_ACTUAL } from '../data/vinallopActual';
@@ -699,9 +700,17 @@ describe('zona de comedor más baja, interior a 4 m (propuesta de la propiedad)'
 describe('cadena de lluvia de tejas (frontal B)', () => {
   const layout = resolveLayout(VINALLOP, baseVariant());
   const rc = layout.outdoor!.rainChains![0];
-  it('va en la fachada de la entrada, sale de la coronación y no pisa ningún hueco', () => {
+  it('va en la esquina izquierda de la fachada de la entrada (cuarto técnico), sale a ras de la terraza y no pisa ningún hueco', () => {
     expect(rc.face).toEqual({ axis: 'y', at: layout.bounds.maxY, outward: 1 });
-    expect(rc.top).toBeCloseTo(roofTopAt(layout, layout.bounds.maxY, rc.at), 6);
+    const an = layout.outdoor!.annexes!.find((a) => a.id === 'cuarto-tecnico')!;
+    expect(rc.at - (rc.tile * Math.cos(rc.tilt)) / 2).toBeGreaterThan(an.rect[0]);
+    expect(rc.at - an.rect[0]).toBeLessThan(0.4);
+    expect(rc.top).toBeCloseTo(an.height, 6);
+    // el agua va al registro del aljibe, no al depósito de agua potable
+    const reg = an.hatches!.find((h) => h.id === 'registro-fosa-pluviales')!;
+    expect(rc.pipeTo!.at).toEqual(reg.c);
+    const d = an.door;
+    expect(rc.at + (rc.tile * Math.cos(rc.tilt)) / 2 <= d.at - d.width / 2).toBe(true);
     const half = (rc.tile * Math.cos(rc.tilt)) / 2 + 0.1;
     const wb = layout.walls.find((w) => w.id === 'muro-B')!;
     for (const o of layout.openings.filter((x) => x.wallId === 'muro-B')) {
@@ -712,5 +721,6 @@ describe('cadena de lluvia de tejas (frontal B)', () => {
   it('se dibuja en el alzado B y en la planta', () => {
     expect(elevationSvg(layout, 'B')).toContain('data-rain-chain="cadena-tejas"');
     expect(elevationSvg(layout, 'A')).not.toContain('data-rain-chain');
+    expect(planSvg(layout, { selection: null, showDims: true, showAreas: true, showFurniture: true, showLabels: true, issues: [], openFractions: {}, levelId: 'pb' })).toContain('data-rain-pipe="cadena-tejas"');
   });
 });

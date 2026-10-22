@@ -57,13 +57,15 @@ describe('partidas sin valorar', () => {
     expect(solera.precio).toBeNull();
     expect(importePrevisto(solera)).toBeNull();
     const r = resumenEconomico(pres);
-    expect(r.sinValorar).toBe(1);
+    // la solera y dos partidas de la fase 2 (fosa y vinoteca) están sin valorar
+    expect(r.sinValorar).toBe(3);
     expect(r.parcial).toBe(true);
     // cuentan las 8 partidas seleccionadas, PAC-11 (alzado de 36 cm, 2.500, pasa a la fase 1) y los añadidos de la propiedad
     // (+2.000 recrecido hasta 6 m, 3.500 zanja) y el depósito de agua potable (2.282); las 3 no seleccionadas son referencia
-    expect(r.previsto.n).toBe(12);
-    expect(r.previsto.base).toBe(37900 + 2500 + 2000 + 3500 + 2282);
-    expect(r.revisado.base).toBe(37900 + 2500 + 2000 + 3500 + 2282);
+    // y la caseta de la fase 2 (8.000, importe hablado)
+    expect(r.previsto.n).toBe(13);
+    expect(r.previsto.base).toBe(37900 + 2500 + 2000 + 3500 + 2282 + 8000);
+    expect(r.revisado.base).toBe(37900 + 2500 + 2000 + 3500 + 2282 + 8000);
     expect(r.noSeleccionadas).toEqual({ n: 3, base: 13200 });
     expect(pres.partidas.filter((p) => p.noSeleccionada).map((p) => p.codigo)).toEqual(PAC_NO_SELECCION);
     // el panel parte de 37.900 y aplica el descuento una sola vez hasta 39.930
@@ -162,8 +164,8 @@ describe('depósito de agua potable (PN20260783)', () => {
 });
 
 describe('fosa existente como aljibe de pluviales', () => {
-  it('decisión por comparar y comprobaciones en la fase 2, sin importes', () => {
-    expect(seed.decisiones.find((d) => d.id === 'd-fosa-pluviales')!.estado).toBe('por comparar');
+  it('decisión elegida por la propiedad (22/10/2026) y comprobaciones en la fase 2 de trabajos previos, sin importes', () => {
+    expect(seed.decisiones.find((d) => d.id === 'd-fosa-pluviales')!.estado).toBe('elegido por propiedad');
     const f02 = seed.fases.find((f) => f.id === 'f02')!;
     expect(f02.tareas.length).toBe(3 + 4);
     expect(f02.tareas.filter((t) => t.id.startsWith('f02-t-fosa')).length).toBe(4);
@@ -216,5 +218,22 @@ describe('entregas a cuenta (sin partida)', () => {
     useGestion.getState().resetGestion();
     expect(importGestion(exportGestion())).toEqual({ ok: true });
     expect(useGestion.getState().presupuesto.aCuenta).toHaveLength(2);
+  });
+});
+
+describe('fase 2 (propiedad, 22/10/2026)', () => {
+  const g = seedGestion();
+  it('va después de la fase 1, que termina el 20/12/2026, con sus tres partidas', () => {
+    const i1 = g.fases.findIndex((f) => f.id === 'f-pac26');
+    expect(g.fases[i1].previstoFin).toBe('2026-12-20');
+    const f2 = g.fases[i1 + 1];
+    expect(f2.id).toBe('f-fase2');
+    expect(f2.dependencias).toEqual(['f-pac26']);
+    expect(f2.previstoInicio).toBe('');
+    const ps = g.presupuesto.partidas.filter((p) => p.fase === 'f-fase2');
+    expect(ps.map((p) => [p.codigo, p.precio])).toEqual([['F2-01', 8000], ['F2-02', null], ['F2-03', null]]);
+    expect(ps.every((p) => p.impuesto === null && p.condicion === 'estimación' && !p.pagos.length)).toBe(true);
+    expect(f2.tareas.map((t) => t.partida)).toEqual(['F2-01', 'F2-02', 'F2-03']);
+    expect(g.decisiones.find((d) => d.id === 'd-fosa-pluviales')!.estado).toBe('elegido por propiedad');
   });
 });

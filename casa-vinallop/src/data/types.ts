@@ -389,6 +389,8 @@ export interface Outdoor {
     tilt: number;
     /** arqueta al pie con rejilla (lado del cuadrado) */
     basin: number;
+    /** tubo enterrado desde la arqueta hasta el depósito (punto de llegada en planta) */
+    pipeTo?: { at: Vec2; label: string };
     status: DataStatus;
     note: string;
   }[];

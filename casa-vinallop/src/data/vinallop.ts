@@ -347,9 +347,10 @@ const outdoor: Outdoor = {
   // cadena de lluvia de tejas (referencia de la propiedad, 21/10/2026): en el frontal B, encima del aljibe de pluviales
   rainChains: [
     {
-      id: 'cadena-tejas', label: 'Cadena de lluvia de tejas', face: { axis: 'y', at: W, outward: 1 }, at: 3.6, top: H_TOTAL,
+      id: 'cadena-tejas', label: 'Cadena de lluvia de tejas', face: { axis: 'y', at: W, outward: 1 }, at: -2.3, top: r2(PB_EL + ALTELL - 0.05),
       tile: 0.42, pitch: 0.3, tilt: 0.5, basin: 0.5, status: 'propuesto',
-      note: 'Propuesta de la propiedad (foto de referencia, 21/10/2026): bajante decorativa de tejas árabes empotradas en la fachada en zigzag; el agua de la cubierta sale por una gárgola y cae de teja en teja hasta una arqueta con rejilla al pie. Va en el frontal B (fachada de la entrada) encima del aljibe de pluviales (fosa recuperada), para llevarle el agua. Posición PROVISIONAL a ≈3,6 m del extremo del dormitorio, entre la ventana del dormitorio y la del baño (variantes): pendiente de la posición real de la fosa. En el volumen alto la caída es de ≈6 m (≈19 tejas). La cubierta plana necesita pendientes hacia la gárgola (partida PAC-07); en la arqueta, filtro de hojas y arenero antes del aljibe, y rebosadero. Salpica: franja de grava al pie y paseo de losas algo apartado. Tejas recibidas con mortero en rozas del muro; anclaje y cálculo de caudal sin comprobar.',
+      pipeTo: { at: [-0.55, 0.85], label: 'tubo enterrado al aljibe (registro)' },
+      note: 'Propuesta de la propiedad (foto de referencia, 21–22/10/2026): bajante decorativa de tejas árabes empotradas en la fachada en zigzag; el agua sale por una gárgola y cae de teja en teja hasta una arqueta con rejilla al pie. Va en la esquina izquierda del frontal B (fachada de la entrada), en el cuarto técnico: recoge la terraza del altell (≈13 m²) por una gárgola a ras de su suelo (≈3,1 m), con ≈9 tejas, como en la referencia. Desde la arqueta, tubo enterrado con pendiente (≥1–2 %) por debajo de la solera del cuarto técnico hasta el registro del aljibe de pluviales (fosa recuperada bajo el baño); el depósito de 12.000 l de agua potable no recibe pluviales. Para recoger también la cubierta de la casa haría falta otra salida (gárgola a la terraza o bajante): pendiente de decidir. En la arqueta, filtro de hojas y arenero; rebosadero en el aljibe. Tejas recibidas con mortero en rozas del muro; caudal y anclajes sin comprobar.',
     },
   ],
   annexes: [
@@ -437,7 +438,7 @@ const views: CameraPreset[] = [
   view({ id: 'v01-exterior', label: '1 · Exterior a tres cuartos', group: 'exterior', position: [29, 17.5, 8], target: [10.5, 3, 1.6], fov: 36 }),
   view({ id: 'v02-fachada-delantera', label: '2 · Fachada delantera (frontal B)', group: 'exterior', position: [8.6, 21, 2.0], target: [8.6, 5.2, 2.6], fov: 40 }),
   view({ id: 'v02b-fachada-a', label: '2b · Fachada A y ventanal', group: 'exterior', position: [11.2, -14, 2.0], target: [11, 0, 2.6], fov: 42 }),
-  view({ id: 'v03b-cadena-lluvia', label: '3b · Cadena de lluvia de tejas (frontal B)', group: 'exterior', position: [8.2, 14.2, 1.7], target: [3.6, 5.2, 3.0], fov: 50 }),
+  view({ id: 'v03b-cadena-lluvia', label: '3b · Cadena de lluvia de tejas (frontal B)', group: 'exterior', position: [0.4, 8.6, 1.5], target: [-2.2, 5.2, 1.7], fov: 55 }),
   view({ id: 'v03-entrada', label: '3 · Entrada y puerta de madera', group: 'exterior', position: [12.9, 8.9, 1.6], target: [10.4, 5.2, 1.6], fov: 40 }),
   view({ id: 'v04-solera', label: '4 · Solera completa en L', group: 'exterior', position: [-3.8, -10.5, 4.4], target: [11, -0.8, 0], fov: 46 }),
   view({ id: 'v05-algarrobo', label: '5 · Mesa y lámpara bajo el algarrobo', group: 'exterior', position: [14.6, -8.2, 1.6], target: [MESA_EXT[0] + 0.3, MESA_EXT[1] + 1.0, 1.5], fov: 56 }),

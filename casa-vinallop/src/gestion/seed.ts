@@ -15,7 +15,7 @@ const dec = (id: string, elemento: string, estancia: string, opcion: string, alt
 /** Decisión sobre la fosa existente (también se incorpora a los datos ya guardados). */
 export const DECISION_FOSA = (): Decision => dec('d-fosa-pluviales', 'Fosa séptica existente (bajo el baño actual)', 'Cuarto técnico / exterior',
   'Recuperarla como aljibe de agua de lluvia para riego y jardín, con el registro, la bomba y el filtro en el cuarto técnico',
-  'Anularla (vaciar, limpiar y rellenar con grava compactada) y recoger la lluvia en un depósito exterior o llevar las bajantes al jardín', 'por comparar',
+  'Anularla (vaciar, limpiar y rellenar con grava compactada) y recoger la lluvia en un depósito exterior o llevar las bajantes al jardín', 'elegido por propiedad',
   'Propuesta de la propiedad (14/10/2026). Depende de la inspección: posición, medidas, capacidad, estado y estanqueidad, y de poder sacar el registro al cuarto técnico. El suelo de la casa sobre la fosa necesita losa calculada por el técnico. Si ahora recibe las aguas del baño, el baño nuevo necesita otra salida (fosa nueva PAC-09, 3.200 €, no seleccionada). Consultar el trámite para anular o cambiar el uso de la fosa. Agua solo para riego (no potable).');
 
 /** Puerta de la finca (también se incorpora a los datos ya guardados). */
@@ -121,6 +121,42 @@ const pac = (n: number, descripcion: string, capitulo: string, precio: number, f
 });
 
 /** Partidas añadidas por la propiedad después del presupuesto (también se incorporan a los datos ya guardados). */
+// ---------------------------------------------------------------- fase 2 (propiedad, 22/10/2026)
+
+export const FASE_2 = 'f-fase2';
+export const FASE1_FIN = '2026-12-20';
+const f2 = (n: number, descripcion: string, capitulo: string, precio: number | null, notas: string): Partida => ({
+  id: `p-f2-${String(n).padStart(2, '0')}`, codigo: `F2-${String(n).padStart(2, '0')}`,
+  descripcion, capitulo, fase: FASE_2,
+  cantidad: 1, unidad: 'PA', precio,
+  proveedor: '', referencia: '', contratado: null, extras: null, real: null, pagos: [],
+  notas,
+  origenPrecio: precio == null ? '' : 'Importe hablado, indicado por la propiedad (22/10/2026)', fechaPrecio: precio == null ? '' : '2026-10-22',
+  condicion: 'estimación', impuesto: null, base: null,
+});
+/** Partidas de la fase 2 indicadas por la propiedad: solo lleva importe la caseta (8.000 €, IVA y proveedor sin indicar). */
+export const FASE2_PARTIDAS = (): Partida[] => [
+  f2(1, 'Caseta del cuarto técnico (cuarto de máquinas) con terraza del altell encima', CAP.estructura, 8000,
+    'Importe hablado: 8.000 €. Sin oferta escrita: falta proveedor, alcance (cimentación, muros, cubierta-terraza, puertas, instalaciones interiores, cajón del generador…) y si el importe lleva IVA.'),
+  f2(2, 'Sanear la fosa séptica actual y transformarla en aljibe de pluviales (vaciado por gestor autorizado, limpieza, desinfección, prueba de estanqueidad, anular la entrada de aguas negras, registro, filtro, rebosadero y bomba)', CAP.agua, null,
+    'Sin valorar. Antes: localizar y medir la fosa (fase 2 · trabajos previos). Recibe la cadena de lluvia de la esquina del cuarto técnico. Agua no potable (riego y jardín).'),
+  f2(3, 'Mini vinoteca en el hueco que hay en la cocina', CAP.cocina, null,
+    'Sin valorar. Falta medir el hueco (planta y profundidad) y definir acabado, puerta y si lleva climatización.'),
+];
+export const FASE2_TAREAS: [string, string][] = [
+  ['F2-01', 'Caseta del cuarto técnico: alcance, oferta escrita y obra'],
+  ['F2-02', 'Fosa séptica: vaciar, sanear y convertir en aljibe de pluviales'],
+  ['F2-03', 'Mini vinoteca en el hueco de la cocina'],
+];
+export const FASE2 = (): Fase => ({
+  id: FASE_2, nombre: 'Fase 2 · Caseta técnica, aljibe de pluviales y vinoteca',
+  descripcion: 'Segunda fase indicada por la propiedad (22/10/2026): caseta del cuarto técnico (8.000 €, importe hablado), sanear la fosa séptica actual y convertirla en aljibe de pluviales, y una mini vinoteca en el hueco de la cocina.',
+  tareas: FASE2_TAREAS.map(([codigo, texto], i) => ({ id: `${FASE_2}-t${i + 1}`, texto, hecha: false, partida: codigo })),
+  dependencias: [FASE_PAC], requisitos: ['Fosa localizada, medida e inspeccionada antes de decidir el aljibe', 'Oferta escrita de la caseta con su alcance'],
+  previstoInicio: '', previstoFin: '', realInicio: '', realFin: '', responsable: '', estado: 'sin empezar',
+  documentos: [], observaciones: 'Empieza cuando termine la fase 1 (previsión de fin: 20/12/2026). Fechas sin fijar.', bloqueos: [], avisos: [], seguimiento: [],
+});
+
 export const ADDED_PARTIDAS = (): Partida[] => [
   {
     id: 'p-pac-04-1', codigo: 'PAC-04.1',
@@ -209,6 +245,7 @@ function partidas(): Partida[] {
       'No estaba seleccionada en el presupuesto. Según la propiedad (10/10/2026), esta partida de 2.500 € incluye el alzado de la casa de 36 cm y pasa a la fase 1. El documento habla de elevar 15 cm: aclarar con el constructor.'),
     pac(12, 'Escalera de hormigón sin revestir para conectar el altillo', CAP.estructura, 3000, FASE_PENDIENTE,
       'No seleccionada en el presupuesto: fase pendiente de asignar hasta confirmar.'),
+    ...FASE2_PARTIDAS(),
     {
       id: 'p-solera-l', codigo: SOLERA_CODIGO,
       descripcion: 'Solera continua de cemento en L (frontal A de punta a punta y lateral del algarrobo)',
@@ -336,8 +373,11 @@ function fases(): Fase[] {
         avisos: ['La demolición del techo no incluye de forma especificada la retirada de amianto/fibrocemento: requiere aclaración.'],
         // fotos de la propiedad del 21/10/2026: la retirada de la cubierta ha empezado
         estado: 'en curso',
+        // previsión de fin indicada por la propiedad (22/10/2026)
+        previstoFin: FASE1_FIN,
         seguimiento: obs[FASE_PAC],
       }),
+    FASE2(),
     fase('f03', '3 · Preparación, protección y desmontajes', 'Retirada de cubiertas y demoliciones conforme al proyecto y secuencia técnica.',
       ['Protecciones', 'Retirada de cubiertas conforme al proyecto', 'Demoliciones según secuencia técnica'], { dependencias: ['f02'] }),
     fase('f04', '4 · Estructura', 'Consolidación de muros, apoyos, huecos y solución de cubierta/volta validada.',
