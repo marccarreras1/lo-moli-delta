@@ -138,8 +138,9 @@ const f2 = (n: number, descripcion: string, capitulo: string, precio: number | n
 export const FASE2_PARTIDAS = (): Partida[] => [
   f2(1, 'Caseta del cuarto técnico (cuarto de máquinas) con terraza del altell encima', CAP.estructura, 8000,
     'Importe hablado: 8.000 €. Sin oferta escrita: falta proveedor, alcance (cimentación, muros, cubierta-terraza, puertas, instalaciones interiores, cajón del generador…) y si el importe lleva IVA.'),
-  f2(2, 'Sanear la fosa séptica actual y transformarla en aljibe de pluviales (vaciado por gestor autorizado, limpieza, desinfección, prueba de estanqueidad, anular la entrada de aguas negras, registro, filtro, rebosadero y bomba)', CAP.agua, null,
-    'Sin valorar. Antes: localizar y medir la fosa (fase 2 · trabajos previos). Recibe la cadena de lluvia de la esquina del cuarto técnico. Agua no potable (riego y jardín).'),
+  { ...f2(2, 'Sanear la fosa séptica actual y transformarla en aljibe de pluviales (vaciado por gestor autorizado, limpieza, desinfección, prueba de estanqueidad, anular la entrada de aguas negras, registro, filtro, rebosadero y bomba)', CAP.agua, PEB_F202.precio,
+    `${PEB_F202.notas} Antes: localizar y medir la fosa. Recibe la cadena de lluvia de la esquina del cuarto técnico. Agua no potable (riego y jardín).`),
+    proveedor: PEB_PROVEEDOR, referencia: PEB_REF, origenPrecio: `Presupuesto ${PEB_REF} (importe sin IVA)`, fechaPrecio: PEB_FECHA, condicion: 'oferta recibida', impuesto: 21 },
   f2(3, 'Mini vinoteca en el hueco que hay en la cocina', CAP.cocina, null,
     'Sin valorar. Falta medir el hueco (planta y profundidad) y definir acabado, puerta y si lleva climatización.'),
 ];
@@ -150,11 +151,63 @@ export const FASE2_TAREAS: [string, string][] = [
 ];
 export const FASE2 = (): Fase => ({
   id: FASE_2, nombre: 'Fase 2 · Caseta técnica, aljibe de pluviales y vinoteca',
-  descripcion: 'Segunda fase indicada por la propiedad (22/10/2026): caseta del cuarto técnico (8.000 €, importe hablado), sanear la fosa séptica actual y convertirla en aljibe de pluviales, y una mini vinoteca en el hueco de la cocina.',
-  tareas: FASE2_TAREAS.map(([codigo, texto], i) => ({ id: `${FASE_2}-t${i + 1}`, texto, hecha: false, partida: codigo })),
+  descripcion: 'Segunda fase indicada por la propiedad (22/10/2026): caseta del cuarto técnico (8.000 €, importe hablado), sanear la fosa séptica actual y convertirla en aljibe de pluviales, y una mini vinoteca en el hueco de la cocina. Presupuesto PEB26-0001 (Ebrebuilding, 22/10/2026): fosa séptica nueva, recuperación de la fosa actual, escalera de hormigón y cimentación, muros y losa del porche.',
+  tareas: [...FASE2_TAREAS, ...PEB_TAREAS].map(([codigo, texto], i) => ({ id: `${FASE_2}-t${i + 1}`, texto, hecha: false, partida: codigo })),
   dependencias: [FASE_PAC], requisitos: ['Fosa localizada, medida e inspeccionada antes de decidir el aljibe', 'Oferta escrita de la caseta con su alcance'],
   previstoInicio: '', previstoFin: '', realInicio: '', realFin: '', responsable: '', estado: 'sin empezar',
   documentos: [], observaciones: 'Empieza cuando termine la fase 1 (previsión de fin: 20/12/2026). Fechas sin fijar.', bloqueos: [], avisos: [], seguimiento: [],
+});
+
+// ---------------------------------------------------------------- presupuesto PEB26-0001 (fase 2)
+
+export const PEB_REF = 'PEB26-0001';
+export const PEB_PROVEEDOR = 'Ebrebuilding S.C.C.L. (Santa Bàrbara, Tarragona)';
+export const PEB_FECHA = '2026-10-22';
+const peb = (n: number, descripcion: string, capitulo: string, precio: number, notas = ''): Partida => ({
+  id: `p-peb-${String(n).padStart(2, '0')}`, codigo: `PEB-${String(n).padStart(2, '0')}`,
+  descripcion, capitulo, fase: FASE_2,
+  cantidad: 1, unidad: 'PA', precio,
+  proveedor: PEB_PROVEEDOR, referencia: PEB_REF, contratado: null, extras: null, real: null, pagos: [],
+  notas: `Presupuesto ${PEB_REF}, línea ${n}.${notas ? ` ${notas}` : ''}`,
+  origenPrecio: `Presupuesto ${PEB_REF} (importe sin IVA)`, fechaPrecio: PEB_FECHA,
+  condicion: 'oferta recibida', impuesto: 21, base: null,
+});
+/** Partidas del presupuesto PEB26-0001 (la línea 3, fosa → aljibe, valora la partida F2-02 que ya existía). */
+export const PEB_PARTIDAS = (): Partida[] => [
+  peb(1, 'Hacer el hoyo y las zanjas para la fosa séptica nueva y los tubos de evacuación de aguas grises y negras', CAP.agua, 1300,
+    'Fosa séptica nueva: la actual pasa a ser aljibe de pluviales. Ubicación de la fosa nueva sin definir.'),
+  peb(2, 'Poner la fosa séptica nueva y los tubos de evacuación', CAP.agua, 3000,
+    'Capacidad y modelo de la fosa no indicados en el presupuesto.'),
+  peb(4, 'Escalera de hormigón armado, sin revestir, preparada para revestir de porcelánico, piedra o mármol', CAP.estructura, 3000,
+    'Misma partida que PAC-12 del presupuesto PAC26-0052 (no seleccionada, 3.000 €): queda esa como referencia.'),
+  peb(5, 'Zanjas y cimentación armada para los muros perimetrales de sobreelevación del porche', CAP.exterior, 1800,
+    'Porche y solera elevada: comprobar qué parte de la solera en L (SOL-01, sin valorar) cubre.'),
+  peb(6, 'Muros de la solera del porche', CAP.exterior, 1400),
+  peb(7, 'Losa del porche', CAP.exterior, 1000),
+];
+export const PEB_F202 = { precio: 2400, notas: `Presupuesto ${PEB_REF}, línea 3: recuperación de la fosa séptica actual para convertirla en depósito de agua (2.400 € sin IVA). El presupuesto no detalla vaciado por gestor autorizado, desinfección, prueba de estanqueidad, registro, filtro, rebosadero ni bomba: aclarar el alcance.` };
+export const PEB_TAREAS: [string, string][] = [
+  ['PEB-01', 'Fosa séptica nueva: hoyo y zanjas de evacuación'],
+  ['PEB-02', 'Colocar la fosa séptica nueva y los tubos'],
+  ['PEB-04', 'Escalera de hormigón armado al altell'],
+  ['PEB-05', 'Porche: zanjas y cimentación de los muros perimetrales'],
+  ['PEB-06', 'Porche: muros de la solera'],
+  ['PEB-07', 'Porche: losa'],
+];
+export const PEB_DOCUMENTO = { id: 'doc-peb26-0001', titulo: `Presupuesto ${PEB_REF} · fase 2`, referencia: `${PEB_PROVEEDOR} · documento PDF de la propiedad`, fecha: PEB_FECHA, nota: 'Oferta recibida, no aceptada ni pagada.' };
+export const OFERTA_PEB = (): Oferta => ({
+  id: 'o-peb26-0001', proveedor: PEB_PROVEEDOR, referencia: PEB_REF, fecha: PEB_FECHA,
+  alcance: 'Fase 2: fosa séptica nueva con sus zanjas y tubos, recuperación de la fosa actual como depósito de agua, escalera de hormigón y cimentación, muros y losa del porche (7 líneas).',
+  partidas: ['PEB-01', 'PEB-02', 'F2-02', 'PEB-04', 'PEB-05', 'PEB-06', 'PEB-07'],
+  importeBase: null, descuentoPct: null, ajuste: null, ajusteNota: '', impuestoPct: 21, estado: 'recibida',
+  documentos: [`Presupuesto ${PEB_REF} (${PEB_PROVEEDOR}, 22/10/2026)`],
+  notas: 'Oferta recibida: no aceptada ni pagada. Base 13.900 €, IVA 21 % 2.919 €, total 16.819 €.',
+  totalesImpresos: { subtotal: 13900, descuento: null, base: 13900, impuestos: 2919, total: 16819, nota: 'Totales impresos en el presupuesto.' },
+  condiciones: '',
+  avisos: [
+    'No incluye la caseta del cuarto técnico (F2-01, 8.000 € hablados) ni la mini vinoteca (F2-03).',
+    'La recuperación de la fosa actual no detalla vaciado por gestor autorizado, desinfección, prueba de estanqueidad, filtro, rebosadero ni bomba.',
+  ],
 });
 
 export const ADDED_PARTIDAS = (): Partida[] => [
@@ -246,6 +299,7 @@ function partidas(): Partida[] {
     pac(12, 'Escalera de hormigón sin revestir para conectar el altillo', CAP.estructura, 3000, FASE_PENDIENTE,
       'No seleccionada en el presupuesto: fase pendiente de asignar hasta confirmar.'),
     ...FASE2_PARTIDAS(),
+    ...PEB_PARTIDAS(),
     {
       id: 'p-solera-l', codigo: SOLERA_CODIGO,
       descripcion: 'Solera continua de cemento en L (frontal A de punta a punta y lateral del algarrobo)',
@@ -288,7 +342,7 @@ function ofertas(): Oferta[] {
       'La cubierta plana propuesta difiere del informe (cubierta inclinada con panel sándwich): coordinar documentos antes de obras.',
       'El zuncho de 40 × 70 cm es una característica propuesta por el constructor, no un cálculo estructural validado.',
     ],
-  }, OFERTA_DEPOSITO()];
+  }, OFERTA_DEPOSITO(), OFERTA_PEB()];
 }
 
 // ---------------------------------------------------------------- seguimiento de obra
@@ -421,7 +475,7 @@ export function seedGestion(): GestionData {
       capitulos: capitulos(),
       partidas: partidas(),
       ofertas: ofertas(),
-      documentos: [{ id: 'doc-pac26-0052', titulo: `Presupuesto ${PAC_REF}`, referencia: `${PAC_PROVEEDOR} · documento en papel con nota manuscrita`, fecha: PAC_FECHA, nota: 'Oferta recibida, no aceptada ni pagada.' }, { ...DEP_DOCUMENTO }],
+      documentos: [{ id: 'doc-pac26-0052', titulo: `Presupuesto ${PAC_REF}`, referencia: `${PAC_PROVEEDOR} · documento en papel con nota manuscrita`, fecha: PAC_FECHA, nota: 'Oferta recibida, no aceptada ni pagada.' }, { ...DEP_DOCUMENTO }, { ...PEB_DOCUMENTO }],
       reserva: { importe: null, nota: '', asignaciones: [] },
       aCuenta: ENTREGAS_CUENTA(),
       avisos: [

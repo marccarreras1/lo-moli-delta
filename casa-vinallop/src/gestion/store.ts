@@ -5,7 +5,7 @@
  * colaboración multiusuario). Se guarda con retardo tras cada cambio y al ocultar la página.
  */
 import { create } from 'zustand';
-import { ADDED_PARTIDAS, ADDED_TAREAS, DECISION_FOSA, DECISION_PUERTA_FINCA, DEP_CODIGO, DEP_DOCUMENTO, ENTREGAS_CUENTA, FASE1_FIN, FASE2, FASE2_PARTIDAS, FASE_2, FASE_PAC, OFERTA_DEPOSITO, SEGUIMIENTO_2026_10_21, SEGUIMIENTO_ALZADO_ID, SEGUIMIENTO_DESCARTADO, SEGUIMIENTO_DRON_ID, seedGestion, TAREAS_FOSA } from './seed';
+import { ADDED_PARTIDAS, ADDED_TAREAS, DECISION_FOSA, DECISION_PUERTA_FINCA, DEP_CODIGO, DEP_DOCUMENTO, ENTREGAS_CUENTA, FASE1_FIN, FASE2, FASE2_PARTIDAS, FASE_2, FASE_PAC, OFERTA_PEB, PEB_DOCUMENTO, PEB_F202, PEB_FECHA, PEB_PARTIDAS, PEB_PROVEEDOR, PEB_REF, PEB_TAREAS, OFERTA_DEPOSITO, SEGUIMIENTO_2026_10_21, SEGUIMIENTO_ALZADO_ID, SEGUIMIENTO_DESCARTADO, SEGUIMIENTO_DRON_ID, seedGestion, TAREAS_FOSA } from './seed';
 import type {
   Asignacion, Bloqueo, Comentario, EntregaCuenta, Decision, Documento, Fase, GestionData, Oferta, Pago, Partida, Presupuesto, Reserva, Seguimiento, Tarea,
 } from './types';
@@ -269,6 +269,36 @@ function migrate11(data: GestionData): GestionData {
   return { ...data, fases, decisiones, presupuesto: { ...pr, partidas: [...pr.partidas, ...nuevas] } };
 }
 
+/** Presupuesto PEB26-0001 de la fase 2 (Ebrebuilding, 22/10/2026): oferta, documento, partidas, tareas y precio de F2-02. */
+function migrate12(data: GestionData): GestionData {
+  let done: string[] = [];
+  try { done = JSON.parse(window.localStorage.getItem(MIGRATIONS_KEY) ?? '[]') as string[]; } catch { /* sin almacenamiento */ }
+  const id = '2026-10-23-peb26-0001';
+  if (done.includes(id)) return data;
+  const pr = data.presupuesto;
+  const caps = new Set(pr.capitulos.map((c) => c.id));
+  const hayFase2 = data.fases.some((f) => f.id === FASE_2);
+  const nuevas = PEB_PARTIDAS().filter((p) => !pr.partidas.some((x) => x.id === p.id || x.codigo === p.codigo))
+    .map((p) => ({ ...p, capitulo: caps.has(p.capitulo) ? p.capitulo : '', fase: hayFase2 ? p.fase : '' }));
+  const partidas = pr.partidas.map((p) => (p.codigo === 'F2-02' && p.precio == null
+    ? { ...p, precio: PEB_F202.precio, notas: `${PEB_F202.notas} ${p.notas}`.trim(), proveedor: p.proveedor || PEB_PROVEEDOR, referencia: p.referencia || PEB_REF, origenPrecio: `Presupuesto ${PEB_REF} (importe sin IVA)`, fechaPrecio: PEB_FECHA, condicion: 'oferta recibida' as const, impuesto: p.impuesto ?? 21 }
+    : p));
+  const fases = data.fases.map((f) => {
+    if (f.id !== FASE_2) return f;
+    const tiene = new Set(f.tareas.map((t) => t.partida));
+    const extra = PEB_TAREAS.filter(([c]) => !tiene.has(c)).map(([c, texto], i) => ({ id: `${FASE_2}-t-peb-${i + 1}`, texto, hecha: false, partida: c }));
+    return extra.length ? { ...f, tareas: [...f.tareas, ...extra] } : f;
+  });
+  const presupuesto = {
+    ...pr,
+    partidas: [...partidas, ...nuevas],
+    ofertas: pr.ofertas.some((o) => o.id === OFERTA_PEB().id) ? pr.ofertas : [...pr.ofertas, OFERTA_PEB()],
+    documentos: pr.documentos.some((d) => d.id === PEB_DOCUMENTO.id) ? pr.documentos : [...pr.documentos, { ...PEB_DOCUMENTO }],
+  };
+  try { window.localStorage.setItem(MIGRATIONS_KEY, JSON.stringify([...done, id])); } catch { /* sin almacenamiento */ }
+  return { ...data, fases, presupuesto };
+}
+
 function load(): { data: GestionData; aviso: string | null } {
   if (typeof window === 'undefined') return { data: seedGestion(), aviso: null };
   let raw: string | null = null;
@@ -281,7 +311,7 @@ function load(): { data: GestionData; aviso: string | null } {
   try {
     const parsed = JSON.parse(raw) as unknown;
     const base = parseGestion(parsed, false);
-    const data = migrate11(migrate10(migrate9(migrate8(migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base)))))))))));
+    const data = migrate12(migrate11(migrate10(migrate9(migrate8(migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base))))))))))));
     // las migraciones se marcan como hechas: hay que guardar ya su resultado o se perderían al recargar sin editar
     if (data !== base) try { window.localStorage.setItem(GESTION_KEY, JSON.stringify(envelope(data))); } catch { /* sin almacenamiento */ }
     let aviso: string | null = null;

@@ -57,15 +57,15 @@ describe('partidas sin valorar', () => {
     expect(solera.precio).toBeNull();
     expect(importePrevisto(solera)).toBeNull();
     const r = resumenEconomico(pres);
-    // la solera y dos partidas de la fase 2 (fosa y vinoteca) están sin valorar
-    expect(r.sinValorar).toBe(3);
+    // la solera y la vinoteca de la fase 2 están sin valorar (la fosa → aljibe ya tiene precio en PEB26-0001)
+    expect(r.sinValorar).toBe(2);
     expect(r.parcial).toBe(true);
     // cuentan las 8 partidas seleccionadas, PAC-11 (alzado de 36 cm, 2.500, pasa a la fase 1) y los añadidos de la propiedad
     // (+2.000 recrecido hasta 6 m, 3.500 zanja) y el depósito de agua potable (2.282); las 3 no seleccionadas son referencia
-    // y la caseta de la fase 2 (8.000, importe hablado)
-    expect(r.previsto.n).toBe(13);
-    expect(r.previsto.base).toBe(37900 + 2500 + 2000 + 3500 + 2282 + 8000);
-    expect(r.revisado.base).toBe(37900 + 2500 + 2000 + 3500 + 2282 + 8000);
+    // y la fase 2: caseta (8.000, importe hablado) y el presupuesto PEB26-0001 (13.900 en 7 líneas, una de ellas F2-02)
+    expect(r.previsto.n).toBe(20);
+    expect(r.previsto.base).toBe(37900 + 2500 + 2000 + 3500 + 2282 + 8000 + 13900);
+    expect(r.revisado.base).toBe(37900 + 2500 + 2000 + 3500 + 2282 + 8000 + 13900);
     expect(r.noSeleccionadas).toEqual({ n: 3, base: 13200 });
     expect(pres.partidas.filter((p) => p.noSeleccionada).map((p) => p.codigo)).toEqual(PAC_NO_SELECCION);
     // el panel parte de 37.900 y aplica el descuento una sola vez hasta 39.930
@@ -231,9 +231,21 @@ describe('fase 2 (propiedad, 22/10/2026)', () => {
     expect(f2.dependencias).toEqual(['f-pac26']);
     expect(f2.previstoInicio).toBe('');
     const ps = g.presupuesto.partidas.filter((p) => p.fase === 'f-fase2');
-    expect(ps.map((p) => [p.codigo, p.precio])).toEqual([['F2-01', 8000], ['F2-02', null], ['F2-03', null]]);
-    expect(ps.every((p) => p.impuesto === null && p.condicion === 'estimación' && !p.pagos.length)).toBe(true);
-    expect(f2.tareas.map((t) => t.partida)).toEqual(['F2-01', 'F2-02', 'F2-03']);
+    expect(ps.filter((p) => p.codigo.startsWith('F2')).map((p) => [p.codigo, p.precio])).toEqual([['F2-01', 8000], ['F2-02', 2400], ['F2-03', null]]);
+    expect(ps.find((p) => p.codigo === 'F2-01')!.impuesto).toBeNull();
+    expect(ps.every((p) => !p.pagos.length && p.contratado == null)).toBe(true);
+    expect(f2.tareas.map((t) => t.partida)).toEqual(['F2-01', 'F2-02', 'F2-03', 'PEB-01', 'PEB-02', 'PEB-04', 'PEB-05', 'PEB-06', 'PEB-07']);
     expect(g.decisiones.find((d) => d.id === 'd-fosa-pluviales')!.estado).toBe('elegido por propiedad');
+  });
+});
+
+describe('presupuesto PEB26-0001 (fase 2)', () => {
+  const g = seedGestion();
+  it('suma 13.900 € de base, 2.919 € de IVA y 16.819 € de total, sin aceptar ni pagar', () => {
+    const o = g.presupuesto.ofertas.find((x) => x.id === 'o-peb26-0001')!;
+    const r = ofertaResumen(o, g.presupuesto.partidas);
+    expect([r.seleccion, r.base, r.impuestos, r.total]).toEqual([13900, 13900, 2919, 16819]);
+    expect(o.estado).toBe('recibida');
+    expect(g.presupuesto.partidas.filter((p) => o.partidas.includes(p.codigo)).every((p) => p.fase === 'f-fase2' && p.condicion === 'oferta recibida')).toBe(true);
   });
 });
