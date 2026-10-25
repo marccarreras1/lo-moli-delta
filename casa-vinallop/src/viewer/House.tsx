@@ -9,6 +9,7 @@ import { Opening3D } from './Opening3D';
 import { uvBox } from './textures';
 import { roofTopAt } from '../model/roof';
 import { groundTopAt } from '../model/ground';
+import { vaultBays } from '../model/lighting';
 
 /** plano (x, y) → escena (x, altura, y) */
 export const P = (x: number, y: number, h = 0) => new THREE.Vector3(x, h, y);
@@ -285,27 +286,12 @@ function SectionCaps({ layout, mats, h }: { layout: Layout; mats: MaterialSet; h
  */
 function Vaults({ layout, mats, lampLevel = 0 }: { layout: Layout; mats: MaterialSet; lampLevel?: number }) {
   const c = layout.roof!.ceiling!;
-  const ext = layout.walls.filter((w) => w.kind === 'exterior');
-  // interior libre entre muros exteriores
-  const xs = ext.filter((w) => Math.abs(w.a[0] - w.b[0]) < 1e-6).map((w) => [w.a[0] - w.thickness / 2, w.a[0] + w.thickness / 2]);
-  const ys = ext.filter((w) => Math.abs(w.a[1] - w.b[1]) < 1e-6).map((w) => [w.a[1] - w.thickness / 2, w.a[1] + w.thickness / 2]);
-  const ix0 = Math.min(...xs.map((p) => p[1]));
-  const ix1 = Math.max(...xs.map((p) => p[0]));
-  const iy0 = Math.min(...ys.map((p) => p[1]));
-  const iy1 = Math.max(...ys.map((p) => p[0]));
+  const { ix0, ix1, iy0, iy1, tramos, bays, beamXs } = vaultBays(layout);
   // con cubierta inclinada (aleros a distinta altura) la volta sigue la pendiente: se gira alrededor
   // del eje del centro de la casa
   const yMid = (iy0 + iy1) / 2;
   const tilt = layout.roof?.eaves ? Math.atan2(roofTopAt(layout, iy0) - roofTopAt(layout, iy1), iy1 - iy0) : 0;
   const span = (iy1 - iy0) / Math.cos(tilt);
-  // tramos de bóvedas: uno, o dos si la zona de comedor está bajada (cada uno entre sus muros: el escalón es un apoyo)
-  const esc = layout.escalon;
-  const escT = layout.walls.find((w) => w.id === 'muro-escalon')?.thickness ?? 0.3;
-  const tramos: [number, number][] = esc && esc.x > ix0 && esc.x < ix1 ? [[ix0, esc.x - escT], [esc.x, ix1]] : [[ix0, ix1]];
-  const bays = tramos.flatMap(([a, b]) => {
-    const k = Math.max(1, Math.round((b - a) / c.spacing));
-    return Array.from({ length: k }, (_, i) => ({ x0: a + ((b - a) * i) / k, x1: a + ((b - a) * (i + 1)) / k }));
-  });
   const n = Math.max(1, Math.round((ix1 - ix0) / c.spacing));
   const s = (ix1 - ix0) / n;
   const crown = roofTopAt(layout, yMid) - (layout.roof?.thickness ?? 0.25) / Math.cos(tilt) - 0.01;
@@ -327,7 +313,6 @@ function Vaults({ layout, mats, lampLevel = 0 }: { layout: Layout; mats: Materia
   useEffect(() => () => { geo.dispose(); outer.dispose(); }, [geo, outer]);
   // LED en la cara lateral alta de cada viga (plan de iluminación): tira en perfil y luz hacia la bóveda
   const led = layout.lighting?.beamLeds;
-  const beamXs = [...bays.map((b) => b.x0), ...tramos.map(([, b]) => b)];
   const ledXs = led && !tilt ? beamXs.flatMap((x) => (led.sides === 2 ? [x - 0.045, x + 0.045] : [x + (x + 0.05 < ix1 ? 0.045 : -0.045)])) : [];
   const yOf = (x: number) => spring + 0.0 + bajada(x + 0.01);
   return (
@@ -344,7 +329,7 @@ function Vaults({ layout, mats, lampLevel = 0 }: { layout: Layout; mats: Materia
           <mesh geometry={outer} material={mats.cut} />
         </group>
       ))}
-      {[...bays.map((b) => b.x0), ...tramos.map(([, b]) => b)].map((x, i) => (
+      {beamXs.map((x, i) => (
         <mesh key={`b${i}`} position={[x, spring - beamH / 2 + 0.02 + bajada(x + (tramos.some(([, b]) => Math.abs(b - x) < 1e-6) ? -0.01 : 0.01)), (iy0 + iy1) / 2]} material={mats.beam} castShadow geometry={uvBox(0.08, beamH, span)} />
       ))}
     </group>

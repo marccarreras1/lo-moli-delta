@@ -366,7 +366,14 @@ const BALIZAS: Vec2[] = (() => {
 const lp = (id: string, label: string, zone: string, kind: LightPoint['kind'], c: Vec2, z: number, watts: number, extra: Partial<LightPoint> = {}): LightPoint => ({ id, label, zone, kind, c, z: r2(z), watts, ...extra });
 const ALT_EL = r2(PB_EL + ALTELL);
 const LIGHTING: LightingPlan = {
-  beamLeds: { sides: 1, wattsPerM: 9, kelvin: 2700, note: 'Tira LED de 24 V, 2700 K y CRI ≥ 90 en perfil de aluminio con difusor opal, en la cara lateral alta de cada viga (una cara): baña cada bovedilla de terracota de abajo arriba. Regulable por zonas (salón, comedor, cocina y altell) desde KNX. Hay que dejar tubos y cajas antes de cerrar la cubierta (fase 1).' },
+  beamLeds: { sides: 1, wattsPerM: 9, kelvin: 2700, note: 'Tira LED de 24 V, 2700 K y CRI ≥ 90 en perfil de aluminio con difusor opal, en la cara lateral alta de cada viga (una cara): baña cada bovedilla de terracota de abajo arriba. Regulable por zonas (salón, comedor, cocina y altell) desde KNX. Hay que dejar tubos y cajas antes de cerrar la cubierta (fase 1).',
+    // tramos de vigas por zona (límite comedor/salón propuesto a 12,40 m, entre la mesa y el sofá)
+    zones: [
+      { zone: 'Vigas · altell y dormitorio', x0: 0, x1: 6.0 },
+      { zone: 'Vigas · cocina', x0: 6.0, x1: 10.4 },
+      { zone: 'Vigas · comedor', x0: 10.4, x1: 12.4 },
+      { zone: 'Vigas · salón', x0: 12.4, x1: L },
+    ] },
   points: [
     // interior
     lp('col-comedor', 'Colgante sobre la mesa del comedor', 'Comedor', 'colgante', [11.45, 1.7], PB_EL + 0.75 + 0.7, 12),
@@ -388,6 +395,19 @@ const LIGHTING: LightingPlan = {
     // cadena de lluvia y cuarto técnico
     lp('rasante-cadena', 'Foco rasante a la cadena de tejas', 'Fachada de la entrada', 'rasante', [-2.3, r2(W + 0.35)], 0.05, 5, { aim: r2(PB_EL + ALTELL - 0.05) }),
     lp('estanca-cuarto', 'Luz estanca con sensor sobre la puerta del cuarto técnico', 'Cuarto técnico', 'estanca', [-2.55, 3.62], 2.35, 10),
+  ],
+  // circuitos propuestos (25/10/2026): uno por escena; los LED de 24 V, con su fuente y un canal regulable KNX por zona
+  circuits: [
+    { id: 'A1', label: 'A1 · LED vigas cocina', zones: ['Vigas · cocina'], control: 'Canal KNX regulable (fuente 24 V)' },
+    { id: 'A2', label: 'A2 · LED vigas comedor', zones: ['Vigas · comedor'], control: 'Canal KNX regulable (fuente 24 V)' },
+    { id: 'A3', label: 'A3 · LED vigas salón', zones: ['Vigas · salón'], control: 'Canal KNX regulable (fuente 24 V)' },
+    { id: 'A4', label: 'A4 · LED vigas altell y dormitorio', zones: ['Vigas · altell y dormitorio'], control: 'Canal KNX regulable (fuente 24 V)' },
+    { id: 'A5', label: 'A5 · Colgante y apliques del día', zones: ['Comedor', 'Salón'], control: 'Canal KNX regulable' },
+    { id: 'A6', label: 'A6 · Escalera, altell y espejo del baño', zones: ['Escalera', 'Altell', 'Baño'], control: 'KNX: escalera con detector; altell y espejo con pulsador' },
+    { id: 'E1', label: 'E1 · Porche', zones: ['Porche'], control: 'Canal KNX regulable', exterior: true },
+    { id: 'E2', label: 'E2 · Fachada de la entrada y cuarto técnico', zones: ['Fachada de la entrada', 'Cuarto técnico'], control: 'Crepuscular + reloj; estanca con detector', exterior: true },
+    { id: 'E3', label: 'E3 · Árboles (algarrobo y olivos)', zones: ['Algarrobo', 'Olivos'], control: 'Crepuscular + reloj (apagado a medianoche)', exterior: true },
+    { id: 'E4', label: 'E4 · Balizas del camino', zones: ['Camino'], control: 'Crepuscular + reloj', exterior: true },
   ],
   status: 'propuesto',
   note: 'Propuesta del estudio (25/10/2026), sin precios ni modelos concretos: luz cálida de 2700 K y regulable, sin focos empotrados en la volta, encendido por escenas KNX y exterior sin luz hacia el cielo.',

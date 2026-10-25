@@ -11,6 +11,7 @@ import {
   KINDS_BY_LAYER, KIND_LABEL, LAYERS, LAYER_LABEL, LAYER_SHORT, STATUS_LABEL,
   type InstallKind, type InstallPoint, type InstallStatus, type Layer,
 } from './types';
+import { lightingCircuits } from '../model/lighting';
 import './instalaciones.css';
 
 const fmt = (x: number | null, d = 2) => (x === null ? '—' : x.toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d }));
@@ -129,6 +130,8 @@ export function InstallationsPage({ layout, onLocate }: { layout: Layout; onLoca
           </ul>
         </section>
       </div>
+
+      <LightingCircuitsCard layout={layout} />
 
       <section className="inst-card" aria-labelledby="inst-puntos">
         <div className="inst-card-head">
@@ -299,3 +302,42 @@ function AddPointForm({ layout, roomOptions, levelOptions }: { layout: Layout; r
 }
 
 export default InstallationsPage;
+
+/** circuitos de alumbrado del plan de iluminación: qué entra en cada uno, metros de LED y potencia orientativa */
+function LightingCircuitsCard({ layout }: { layout: Layout }) {
+  const circuits = useMemo(() => lightingCircuits(layout), [layout]);
+  if (!circuits.length) return null;
+  const tot = circuits.reduce((a, c) => ({ n: a.n + c.points.length + c.beams.length, m: a.m + c.meters, w: a.w + c.watts }), { n: 0, m: 0, w: 0 });
+  const kelvin = layout.lighting?.beamLeds.kelvin;
+  return (
+    <section className="inst-card" aria-labelledby="inst-circuitos" data-lighting-circuits>
+      <h3 id="inst-circuitos">Circuitos de iluminación ({circuits.length})</h3>
+      <p className="inst-sub">Reparto propuesto del plan de iluminación ({kelvin} K, regulable): un circuito por escena para el electricista. Potencias orientativas a partir de los vatios del plan; secciones, protecciones, fuentes de 24 V y canales KNX los dimensiona el instalador. Los circuitos exteriores, con diferencial de 30 mA, IP65 y canalización enterrada.</p>
+      <div className="inst-table-wrap">
+        <table className="inst-table">
+          <thead><tr><th>Circuito</th><th>Qué alimenta</th><th>Puntos</th><th>LED (m)</th><th>W orient.</th><th>Mando</th></tr></thead>
+          <tbody>
+            {circuits.map((c) => (
+              <tr key={c.circuit.id} data-circuit={c.circuit.id}>
+                <td>{c.circuit.label}{c.circuit.exterior && <span className="inst-sub">exterior</span>}</td>
+                <td>{[...c.beams.map((b) => `${b.count} vigas`), ...summarize(c.points.map((p) => p.label))].join(' · ') || '—'}</td>
+                <td>{c.points.length + c.beams.length}</td>
+                <td>{c.meters ? fmt(c.meters, 1) : '—'}</td>
+                <td>{c.watts.toLocaleString('es-ES')}</td>
+                <td>{c.circuit.control}</td>
+              </tr>
+            ))}
+            <tr><td><strong>Total</strong></td><td /><td><strong>{tot.n}</strong></td><td><strong>{fmt(tot.m, 1)}</strong></td><td><strong>{tot.w.toLocaleString('es-ES')}</strong></td><td /></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+/** «Baliza del camino ×29» */
+function summarize(labels: string[]): string[] {
+  const m = new Map<string, number>();
+  for (const l of labels) m.set(l, (m.get(l) ?? 0) + 1);
+  return [...m].map(([l, n]) => (n > 1 ? `${l} ×${n}` : l));
+}

@@ -10,6 +10,7 @@
 import type { Furniture, Layout, Opening, Room, Vec2, Wall } from '../data/types';
 import { bbox, centroid, distPointSegment, furnitureFootprint, pointInPolygon, pointOnWall, polygonArea, wallDir, wallLength, wallNormal } from '../model/geometry';
 import { roofUndersideAt } from '../model/roof';
+import { lightingCircuits } from '../model/lighting';
 import type { InstallKind, InstallPoint, Layer } from './types';
 
 const r2 = (x: number) => Math.round(x * 100) / 100;
@@ -335,11 +336,16 @@ export function proposedPoints(layout: Layout): InstallPoint[] {
 
   // ================= ELECTRICIDAD =================
   // --- iluminación ---
+  /** circuito del plan de iluminación que lleva una zona (si lo hay); si no, el alumbrado genérico */
+  const lightCircuit = (zone: string, fallback: string) => {
+    const c = l.lighting?.circuits?.find((x) => x.zones.includes(zone));
+    return c ? `${c.label} (propuesto)` : fallback;
+  };
   const lampRooms = new Set<string>();
   for (const f of l.furniture.filter((x) => x.type === 'aplique')) {
     const lv = furnitureLevel(l, f);
     lampRooms.add(f.roomId);
-    add(ctx, { id: `elec-luz-${f.id}`, ...P('electricidad', 'luz'), label: `${f.label} (${roomName(f.roomId).toLowerCase()})`, roomId: roomById(l, f.roomId) ? f.roomId : null, levelId: lv, x: f.x, y: f.y, height: f.h, circuit: 'C1 · alumbrado (propuesto)', zone: roomName(f.roomId), note: nota('Punto de luz para el aplique dibujado en el modelo.') });
+    add(ctx, { id: `elec-luz-${f.id}`, ...P('electricidad', 'luz'), label: `${f.label} (${roomName(f.roomId).toLowerCase()})`, roomId: roomById(l, f.roomId) ? f.roomId : null, levelId: lv, x: f.x, y: f.y, height: f.h, circuit: f.roomId === 'exterior' ? lightCircuit('Fachada de la entrada', 'C1 · alumbrado (propuesto)') : 'C1 · alumbrado (propuesto)', zone: roomName(f.roomId), note: nota('Punto de luz para el aplique dibujado en el modelo.') });
   }
   const group = (l.pendants ?? []).find((g) => g.location === l.options.lamparasUbicacion);
   if (group) {
@@ -360,15 +366,35 @@ export function proposedPoints(layout: Layout): InstallPoint[] {
     const freeEnd = entrance.swing?.hinge === 'fin' ? entrance.offset : entrance.offset + entrance.width;
     const sign = entrance.swing?.hinge === 'fin' ? -1 : 1;
     const p = pointOnWall(entranceWall, freeEnd + sign * 0.35, outSide * (entranceWall.thickness / 2));
-    add(ctx, { id: 'elec-luz-exterior-entrada', ...P('electricidad', 'luz'), label: 'Luz exterior junto a la puerta de entrada', roomId: null, levelId: entranceWall.levelId, x: p[0], y: p[1], height: Math.min(2.2, entrance.sill + entrance.height - 0.2), circuit: 'C1 · alumbrado (propuesto)', zone: 'Fachada de la entrada', note: nota('Aplique exterior en la fachada de la entrada, del lado de la manilla.') });
+    add(ctx, { id: 'elec-luz-exterior-entrada', ...P('electricidad', 'luz'), label: 'Luz exterior junto a la puerta de entrada', roomId: null, levelId: entranceWall.levelId, x: p[0], y: p[1], height: Math.min(2.2, entrance.sill + entrance.height - 0.2), circuit: lightCircuit('Fachada de la entrada', 'C1 · alumbrado (propuesto)'), zone: 'Fachada de la entrada', note: nota('Aplique exterior en la fachada de la entrada, del lado de la manilla.') });
   }
   if (l.outdoor) {
     const lights = l.outdoor.lights;
     if (lights.length) {
       for (const lt of lights) add(ctx, { id: `elec-luz-${lt.id}`, ...P('electricidad', 'luz'), label: 'Luz del comedor exterior', roomId: null, levelId: groundLevel, x: lt.c[0], y: lt.c[1], height: lt.h, circuit: 'Alumbrado exterior (propuesto)', zone: 'Comedor del algarrobo', note: nota('Alimentación del farol dibujado en el comedor exterior; canalización enterrada por definir.') });
     } else if (l.outdoor.pavements.length) {
-      const [x0, y0] = l.outdoor.pavements[l.outdoor.pavements.length - 1].rect;
+      const pav = l.outdoor.pavements.find((v) => v.id === 'solera-l-lateral') ?? l.outdoor.pavements[l.outdoor.pavements.length - 1];
+      const [x0, y0] = pav.rect;
       add(ctx, { id: 'elec-luz-comedor-exterior', ...P('electricidad', 'luz'), label: 'Luz del comedor exterior', roomId: null, levelId: groundLevel, x: x0 + 0.3, y: y0 + 0.3, height: 2.3, circuit: 'Alumbrado exterior (propuesto)', zone: 'Comedor del algarrobo', note: nota('Punto de luz en el comedor exterior.') });
+    }
+  }
+
+  // --- plan de iluminación: LED de las vigas por zonas y puntos de luz, con su circuito ---
+  for (const c of lightingCircuits(l)) {
+    const circuit = c.circuit.id === '—' ? '' : `${c.circuit.label} (propuesto)`;
+    for (const b of c.beams) {
+      // el nivel más alto con estancia bajo el tramo (el altell, si lo hay): el techo se mide desde su suelo
+      const lv = [...l.levels].sort((a, b2) => b2.elevation - a.elevation).find((v) => roomAt(l, b.center, v.id))?.id ?? groundLevel;
+      const slug = b.zone.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      add(ctx, { id: `elec-ilum-${slug}`, ...P('electricidad', 'luz'), label: `LED de las vigas · ${b.zone.replace(/^Vigas · /, '')} (${b.count} vigas, ${b.meters.toLocaleString('es-ES')} m)`, roomId: roomAt(l, b.center, lv)?.id ?? null, levelId: lv, x: b.center[0], y: b.center[1], height: ceilingAt(l, b.center, lv), circuit, zone: b.zone,
+        note: nota(`Tira LED de 24 V en la cara lateral de cada viga del tramo; fuente de alimentación y canal regulable propios (${c.circuit.control}). Tubos y cajas antes de cerrar la cubierta.`) });
+    }
+    for (const lp of c.points) {
+      const levels = [...l.levels].sort((a, b) => b.elevation - a.elevation);
+      const lv = levels.find((v) => lp.z >= v.elevation - 0.01 && roomAt(l, lp.c, v.id)) ?? levels[levels.length - 1];
+      const room = roomAt(l, lp.c, lv.id);
+      add(ctx, { id: `elec-ilum-${lp.id}`, ...P('electricidad', 'luz'), label: lp.label, roomId: room?.id ?? null, levelId: lv.id, x: lp.c[0], y: lp.c[1], height: Math.max(0, lp.z - lv.elevation), circuit, zone: lp.zone,
+        note: nota(`Plan de iluminación: ${lp.watts} W orientativos; ${c.circuit.control}.${c.circuit.exterior ? ' Exterior: IP65 o superior y canalización enterrada.' : ''}`) });
     }
   }
 

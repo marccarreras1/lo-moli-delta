@@ -627,10 +627,22 @@ export interface LightPoint {
   aim?: number;
   watts: number;
 }
+/** circuito de alumbrado propuesto: agrupa zonas del plan (y tramos de LED de vigas) bajo un mismo mando */
+export interface LightCircuit {
+  id: string;
+  label: string;
+  /** zonas de los puntos (`LightPoint.zone`) y de los tramos de vigas (`beamLeds.zones[].zone`) */
+  zones: string[];
+  /** cómo se enciende (escena KNX, regulación, sensor…) */
+  control: string;
+  exterior?: boolean;
+  note?: string;
+}
 export interface LightingPlan {
-  /** tira LED en la cara lateral de cada viga, luz hacia la bóveda */
-  beamLeds: { sides: 1 | 2; wattsPerM: number; kelvin: number; note: string };
+  /** tira LED en la cara lateral de cada viga, luz hacia la bóveda; `zones` reparte las vigas por tramos en X */
+  beamLeds: { sides: 1 | 2; wattsPerM: number; kelvin: number; note: string; zones?: { zone: string; x0: number; x1: number }[] };
   points: LightPoint[];
+  circuits?: LightCircuit[];
   status: DataStatus;
   note: string;
 }

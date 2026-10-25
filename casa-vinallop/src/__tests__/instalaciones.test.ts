@@ -6,6 +6,7 @@ import { resolveLayout } from '../model/resolve';
 import { baseVariant } from '../state/store';
 import { installationsSvg } from '../instalaciones/planLayer';
 import { proposedPoints } from '../instalaciones/seed';
+import { lightingCircuits, vaultBays } from '../model/lighting';
 import { exportInstalaciones, importInstalaciones, resolvePoints, useInstalaciones } from '../instalaciones/store';
 import { LAYERS, emptyEdits, kindFitsLayer, type Layer } from '../instalaciones/types';
 
@@ -176,5 +177,23 @@ describe('instalaciones: capa SVG del plano', () => {
     const n = (only.match(/data-install=/g) ?? []).length;
     expect(n).toBe(points.filter((p) => p.layer === 'agua' && p.levelId === 'pb' && p.x !== null).length);
     expect(installationsSvg(points, new Set(), 'pb')).not.toContain('data-install');
+  });
+});
+
+describe('instalaciones: circuitos de iluminación', () => {
+  const circuits = lightingCircuits(layout);
+  it('cada luz del plan y cada tramo de vigas tiene circuito y punto en Instalaciones', () => {
+    expect(circuits.some((c) => c.circuit.id === '—')).toBe(false);
+    const n = circuits.reduce((s, c) => s + c.points.length, 0);
+    expect(n).toBe(layout.lighting!.points.length);
+    for (const lp of layout.lighting!.points) {
+      const p = points.find((q) => q.id === `elec-ilum-${lp.id}`);
+      expect(p?.circuit, lp.id).toMatch(/^[AE]\d · /);
+    }
+  });
+  it('los tramos de LED cubren todas las vigas de la volta', () => {
+    const beams = circuits.flatMap((c) => c.beams).reduce((s, b) => s + b.count, 0);
+    expect(beams).toBe(vaultBays(layout).beamXs.length);
+    expect(points.filter((p) => p.id.startsWith('elec-ilum-vigas-'))).toHaveLength(4);
   });
 });
