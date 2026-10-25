@@ -270,6 +270,8 @@ export const OFERTA_DEPOSITO = (): Oferta => ({
 });
 
 /** Tareas de la fase 1 para las partidas añadidas. */
+/** Tarea de la fase 1 para el LED de las vigas (25/10/2026): hay que hacerla antes de cerrar la cubierta. */
+export const TAREA_LED_VIGAS: [string, string] = ['PAC-06', 'Antes de cerrar la cubierta: dejar tubos y cajas registrables para el LED de las vigas (salida en cada viga o cada dos, transformadores accesibles)'];
 export const ADDED_TAREAS: [string, string][] = [
   ['PAC-11', 'Alzado de la casa 36 cm (partida de 2.500 €: relleno interior y elevación)'],
   ['PAC-04.1', 'Recrecido de muros hasta 6,00 m (ampliación del alzado de muros, +2.000 €)'],
@@ -422,7 +424,7 @@ function fases(): Fase[] {
       'Partidas seleccionadas del presupuesto PAC26-0052 (oferta recibida, no aceptada) y añadidos de la propiedad: alzado de la casa 36 cm (PAC-11), recrecido de muros hasta 6,00 m, zanja de agua y electricidad desde el pozo y depósito enterrado de agua potable. Cada tarea corresponde a una partida.',
       [],
       {
-        tareas: [...PAC_TAREAS, ...ADDED_TAREAS].map(([codigo, texto], i) => t(FASE_PAC, i + 1, texto, codigo)),
+        tareas: [...[...PAC_TAREAS, ...ADDED_TAREAS].map(([codigo, texto], i) => t(FASE_PAC, i + 1, texto, codigo)), { id: `${FASE_PAC}-t-led-vigas`, texto: TAREA_LED_VIGAS[1], hecha: false, partida: TAREA_LED_VIGAS[0] }],
         dependencias: ['f01', 'f02'],
         requisitos: ['Permisos aplicables obtenidos', 'Comprobación del fibrocemento/amianto y gestión especializada si corresponde', 'Proyecto validado por el técnico (estructura, cubierta y aberturas)'],
         documentos: [`Presupuesto ${PAC_REF}`],

@@ -12,6 +12,7 @@ import { Furniture3D } from './Furniture3D';
 import { House } from './House';
 import { FixtureLights, Pendants } from './Lamps';
 import { Outdoor3D } from './Outdoor3D';
+import { LightingPlan3D } from './LightingPlan3D';
 import { Landscape } from './Landscape';
 import { hdriFor, loadHdri, type HdriName } from './hdri';
 import { Effects } from './Effects';
@@ -142,6 +143,8 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
   // las vistas preparadas fijan lo que necesitan ver (corte longitudinal, sin cubierta)
   const applyPreset = (p: CameraPreset) => {
     const st = useStore.getState().visual;
+    // escenas con ambiente propio (p. ej. de noche)
+    if (p.ambience && st.ambience !== p.ambience) setVisual('ambience', p.ambience);
     if (p.group === 'interior') {
       // vista cenital 3D: planta cortada por encima de los muebles, sin techos; a pie, de nuevo maciza
       if (p.topDown) {
@@ -187,13 +190,14 @@ export function Viewer({ onReady, insets, onEnterRoom }: { onReady?: () => void;
       <Environment intensity={amb.env * (tab === 'interior' && quality === 'alta' ? 0.7 : 1)} exposure={amb.exposure} hdri={tab === 'plantas' ? null : hdriFor(ambiente)} turn={sun.hdriTurn} />
       <Lights layout={layout} intensity={v.lightIntensity} ambience={ambiente} shadowSize={quality === 'alta' ? 4096 : 2048} interior={tab === 'interior' && quality === 'alta'} wide={!!layout.site && v.showSite && tab === 'exterior'} />
       {layout.site && v.showSite ? <SiteGround layout={layout} site={layout.site} lite={lite} sunAz={ambiente === 'noche' ? null : sun.az} sunEl={sun.el} /> : <Ground layout={layout} />}
-      <House layout={layout} mats={mats} showRoof={showRoof} showCeiling={(tab === 'interior' && mode !== 'corte') || section} mode={mode}
+      <House layout={layout} mats={mats} lampLevel={artificial ? lampLevel : 0} showRoof={showRoof} showCeiling={(tab === 'interior' && mode !== 'corte') || section} mode={mode}
         sectionHeight={cutAbs} selection={selection} openFractions={openFractions} onSelect={(x) => { if (!useTape.getState().on) select(x); }} maxElev={maxElev} />
       {v.showFurniture && <Furniture3D items={furniture} mats={mats} elevationOf={elevationOf} options={layout.options} selectedId={selFurniture} onSelect={onSelectFurniture} />}
       {v.showFurniture && layout.outdoor && tab !== 'plantas' && (
         <Outdoor3D outdoor={layout.outdoor} mats={mats} options={layout.options} level={artificial ? lampLevel : 0} selectedId={selFurniture} onSelect={onSelectFurniture} />
       )}
       {v.showFurniture && maxElev === Infinity && <Pendants layout={layout} mats={mats} level={lampLevel} lights={artificial} />}
+      {v.showFurniture && maxElev === Infinity && tab !== 'plantas' && layout.lighting && <LightingPlan3D plan={layout.lighting} bounds={layout.bounds} mats={mats} level={artificial ? lampLevel : 0} />}
       {v.showFurniture && artificial && <FixtureLights furniture={furniture} elevationOf={elevationOf} level={lampLevel} />}
       <CommentPins levels={layout.levels} />
       <TapeMeasure />

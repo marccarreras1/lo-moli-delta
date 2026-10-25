@@ -25,7 +25,8 @@
  */
 import { FOTOS_PARCELA, PARCELA, SITUACION, VISTAS_DRON } from './parcela';
 import { NORTE_CATASTRO } from './catastro';
-import type { CameraPreset, DataStatus, DesignReference, Furniture, MesaComedor, Opening, Outdoor, PendantGroup, ProjectData, Room, Trace, Vec2, Wall } from './types';
+import { CAMINO_FINCA, OLIVOS_FINCA } from './olivarFinca';
+import type { CameraPreset, DataStatus, LightPoint, LightingPlan, DesignReference, Furniture, MesaComedor, Opening, Outdoor, PendantGroup, ProjectData, Room, Trace, Vec2, Wall } from './types';
 
 const r2 = (x: number) => Math.round(x * 100) / 100;
 const rect = (x0: number, y0: number, x1: number, y1: number): Vec2[] => [[r2(x0), r2(y0)], [r2(x1), r2(y0)], [r2(x1), r2(y1)], [r2(x0), r2(y1)]];
@@ -332,6 +333,66 @@ const SOL_TOP = 0.18;
 // por el lado de la cristalera la copa solo sale 2,00 m de la fachada A (medida de la propiedad): la mesa se acerca al
 // tronco lo justo para quedar bajo la copa sin que las sillas pisen el alcorque ni salgan de la solera
 const MESA_EXT: Vec2 = [r2(L + 1.52), r2(Math.max(ALGARROBO[1] - 2.72, -SOL_TRASERA + 1.5))];
+// ---------------------------------------------------------------- iluminación (propuesta, 25/10/2026)
+/** distancia de un punto al rectángulo de la casa con el cuarto técnico */
+const dCasa = ([x, y]: Vec2) => Math.hypot(Math.max(-2.5 - x, 0, x - L), Math.max(-y, 0, y - W));
+const dSeg = (p: Vec2, a: Vec2, b: Vec2) => {
+  const [dx, dy] = [b[0] - a[0], b[1] - a[1]];
+  const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (dx * dx + dy * dy || 1)));
+  return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
+};
+const dCamino = (p: Vec2) => Math.min(...CAMINO_FINCA.slice(1).map((b, i) => dSeg(p, CAMINO_FINCA[i], b)));
+const APARC: [number, number, number, number] = [1.5, 14.6, 15.5, 17.8];
+const enAparc = ([x, y]: Vec2) => x > APARC[0] - 0.8 && x < APARC[2] + 0.8 && y > APARC[1] - 0.8 && y < APARC[3] + 0.8;
+/** olivos iluminados: los que rodean la casa (≤ 20 m) y los del borde del camino (≤ 6 m), fuera del aparcamiento */
+const OLIVOS_LUZ: Vec2[] = OLIVOS_FINCA.map(([x, y]) => [x, y] as Vec2).filter((p) => dCasa(p) > 0.6 && !enAparc(p) && (dCasa(p) <= 20 || dCamino(p) <= 6));
+/** balizas del camino: cada 4 m, al tresbolillo a 0,8 m del eje */
+const BALIZAS: Vec2[] = (() => {
+  const out: Vec2[] = [];
+  let acc = 0, k = 0;
+  for (let i = 1; i < CAMINO_FINCA.length; i++) {
+    const a = CAMINO_FINCA[i - 1], b = CAMINO_FINCA[i];
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (len < 1e-6) continue;
+    const [ux, uy] = [(b[0] - a[0]) / len, (b[1] - a[1]) / len];
+    for (let s = (4 - acc) % 4; s <= len; s += 4) {
+      const side = k++ % 2 ? 0.8 : -0.8;
+      out.push([r2(a[0] + ux * s - uy * side), r2(a[1] + uy * s + ux * side)]);
+    }
+    acc = (acc + len) % 4;
+  }
+  return out;
+})();
+const lp = (id: string, label: string, zone: string, kind: LightPoint['kind'], c: Vec2, z: number, watts: number, extra: Partial<LightPoint> = {}): LightPoint => ({ id, label, zone, kind, c, z: r2(z), watts, ...extra });
+const ALT_EL = r2(PB_EL + ALTELL);
+const LIGHTING: LightingPlan = {
+  beamLeds: { sides: 1, wattsPerM: 9, kelvin: 2700, note: 'Tira LED de 24 V, 2700 K y CRI ≥ 90 en perfil de aluminio con difusor opal, en la cara lateral alta de cada viga (una cara): baña cada bovedilla de terracota de abajo arriba. Regulable por zonas (salón, comedor, cocina y altell) desde KNX. Hay que dejar tubos y cajas antes de cerrar la cubierta (fase 1).' },
+  points: [
+    // interior
+    lp('col-comedor', 'Colgante sobre la mesa del comedor', 'Comedor', 'colgante', [11.45, 1.7], PB_EL + 0.75 + 0.7, 12),
+    lp('apl-salon-1', 'Aplique de luz hacia arriba', 'Salón', 'aplique', [16.0, 1.3], PB_EL + 1.8, 8),
+    lp('apl-salon-2', 'Aplique de luz hacia arriba', 'Salón', 'aplique', [14.4, 4.6], PB_EL + 1.8, 8),
+    ...[0, 1, 2, 3, 4, 5].map((i) => lp(`bal-esc-${i + 1}`, 'Baliza de escalera', 'Escalera', 'baliza-escalera', [5.97, r2(1.6 + i * 0.5)], PB_EL + 0.3 + i * 0.4, 1)),
+    lp('espejo-bano', 'Línea de luz sobre el espejo', 'Baño', 'tira', [5.86, 2.25], PB_EL + 1.95, 10, { b: [5.86, 3.1] }),
+    lp('apl-altell-1', 'Aplique del altell', 'Altell', 'aplique', [1.6, 4.6], ALT_EL + 1.6, 6),
+    lp('apl-altell-2', 'Aplique del altell', 'Altell', 'aplique', [4.6, 4.6], ALT_EL + 1.6, 6),
+    // porche
+    lp('tira-porche', 'Tira LED oculta en la viga del porche (hacia el cañizo)', 'Porche', 'tira', [0.4, -3.0], H_VENTANAL + PB_EL - 0.02, 9 * 15.7, { b: [16.1, -3.0], aim: H_VENTANAL + PB_EL + 0.3 }),
+    ...[4.4, 8.2, 12.0].map((x, i) => lp(`col-porche-${i + 1}`, 'Colgante de exterior del porche', 'Porche', 'colgante', [x, -1.7], 2.35, 8)),
+    // árboles
+    ...[[-1.2, 0], [0.9, 0.9], [0.6, -1.1]].map(([dx, dy], i) => lp(`pin-algarrobo-${i + 1}`, 'Foco de pincho al algarrobo', 'Algarrobo', 'pincho-arbol', [r2(ALGARROBO[0] + dx), r2(ALGARROBO[1] + dy)], 0.05, 5, { aim: 5.5 })),
+    ...PARCELA.trees.filter((t) => t.id === 'olivo-cristalera' || t.id === 'olivo-pequeno').map((t) => lp(`pin-${t.id}`, 'Foco de pincho al olivo', 'Olivos', 'pincho-arbol', [r2(t.c[0] - 0.7), r2(t.c[1] - 0.5)], 0.23, 5, { aim: (t.h ?? 5) * 0.7 })),
+    ...OLIVOS_LUZ.map((c, i) => lp(`pin-olivo-${i + 1}`, 'Foco de pincho al olivo', 'Olivos', 'pincho-arbol', [r2(c[0] - 0.8), r2(c[1] - 0.4)], 0.05, 5, { aim: 3.2 })),
+    // camino y entrada
+    ...BALIZAS.map((c, i) => lp(`bal-camino-${i + 1}`, 'Baliza del camino', 'Camino', 'baliza-camino', c, 0.05, 3)),
+    // cadena de lluvia y cuarto técnico
+    lp('rasante-cadena', 'Foco rasante a la cadena de tejas', 'Fachada de la entrada', 'rasante', [-2.3, r2(W + 0.35)], 0.05, 5, { aim: r2(PB_EL + ALTELL - 0.05) }),
+    lp('estanca-cuarto', 'Luz estanca con sensor sobre la puerta del cuarto técnico', 'Cuarto técnico', 'estanca', [-2.55, 3.62], 2.35, 10),
+  ],
+  status: 'propuesto',
+  note: 'Propuesta del estudio (25/10/2026), sin precios ni modelos concretos: luz cálida de 2700 K y regulable, sin focos empotrados en la volta, encendido por escenas KNX y exterior sin luz hacia el cielo.',
+};
+
 const outdoor: Outdoor = {
   pavements: [
     { id: 'grava-comedor', label: 'Transición de grava', rect: [-3.0, r2(-SOL_TRASERA - 0.5), r2(L + SOL_LATERAL + 0.5), r2(W + 0.5)], joints: 0, status: 'propuesto', note: 'Borde de grava de 0,50 m entre la solera y la tierra; también a lo largo del frontal B y la entrada, que quedan sin solera.' },
@@ -446,6 +507,10 @@ const views: CameraPreset[] = [
   view({ id: 'v01-exterior', label: '1 · Exterior a tres cuartos', group: 'exterior', position: [29, 17.5, 8], target: [10.5, 3, 1.6], fov: 36 }),
   view({ id: 'v02-fachada-delantera', label: '2 · Fachada delantera (frontal B)', group: 'exterior', position: [8.6, 21, 2.0], target: [8.6, 5.2, 2.6], fov: 40 }),
   view({ id: 'v02b-fachada-a', label: '2b · Fachada A y ventanal', group: 'exterior', position: [11.2, -14, 2.0], target: [11, 0, 2.6], fov: 42 }),
+  view({ id: 'n01-noche-exterior', label: 'Noche · la casa y el olivar iluminados', group: 'exterior', position: [24.5, -15.5, 4.2], target: [8.5, 2.0, 1.6], fov: 52, ambience: 'noche' }),
+  view({ id: 'n02-noche-porche', label: 'Noche · porche y cristalera', group: 'exterior', position: [13.6, -7.4, 1.7], target: [7.0, -0.6, 2.0], fov: 62, fixed: true, ambience: 'noche' }),
+  view({ id: 'n03-noche-entrada', label: 'Noche · entrada, camino y cadena de lluvia', group: 'exterior', position: [9.5, 16.0, 1.7], target: [4.0, 5.0, 1.6], fov: 58, fixed: true, ambience: 'noche' }),
+  view({ id: 'n04-noche-salon', label: 'Noche · salón y comedor con el LED de las vigas', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: PB_EL, position: [15.4, 0.9, 1.6], target: [9.5, 3.0, 2.6], fov: 70, ambience: 'noche' }),
   view({ id: 'v03b-cadena-lluvia', label: '3b · Cadena de lluvia de tejas (frontal B)', group: 'exterior', position: [0.4, 8.6, 1.5], target: [-2.2, 5.2, 1.7], fov: 55 }),
   view({ id: 'v03-entrada', label: '3 · Entrada y puerta de madera', group: 'exterior', position: [12.9, 8.9, 1.6], target: [10.4, 5.2, 1.6], fov: 40 }),
   view({ id: 'v04-solera', label: '4 · Solera completa en L', group: 'exterior', position: [-3.8, -10.5, 4.4], target: [11, -0.8, 0], fov: 46 }),
@@ -644,6 +709,7 @@ const PROJECT: ProjectData = {
   situacion: SITUACION,
   // propuesta de la propiedad (18/10/2026, boceto del alzado): la zona del comedor se ve muy alta y se baja;
   // la parte alta del interior queda a 4 m del suelo (cara inferior de la cubierta, clave de la volta)
+  lighting: LIGHTING,
   escalonComedor: { x: 10.4, libre: 4.0, top: r2(PB_EL + 4.0 + 0.25), note: 'Boceto de la propiedad: volumen alto de 6 m (altell, baño, escalera y cocina) y zona de comedor y salón más baja. La propiedad fija la parte alta del interior de esa zona a 4,00 m sobre el suelo interior (clave de la volta, cara inferior de la cubierta; ≈3,90 m bajo las vigas). Con el suelo interior a +0,36 y la cubierta de 0,25 m, los muros coronan a ≈4,61 m sobre el terreno (más el peto si se elige el remate ibicenco). Posición del escalón (≈10,4 m desde el extremo del dormitorio) medida sobre el boceto: pendiente de fijar. Sin cálculo de estructura ni de impermeabilización del encuentro.' },
   facades: { A: 'Frontal A', B: 'Frontal B', izquierdo: 'Lateral izquierdo', derecho: 'Lateral derecho' },
   notices: ['Geometría de los bocetos fotografiados y de las respuestas de la propiedad. Revisa las preguntas en «Medidas y documentación».'],

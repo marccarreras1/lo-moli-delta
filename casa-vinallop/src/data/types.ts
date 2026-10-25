@@ -549,6 +549,8 @@ export interface ProjectData {
   references?: DesignReference[];
   /** fase de la casa que representa (solo Casa Vinallop) */
   phase?: 'actual' | 'reforma';
+  /** plan de iluminación (propuesta) */
+  lighting?: LightingPlan;
 }
 
 /** Proyecto resuelto con una variante aplicada. */
@@ -608,6 +610,31 @@ export interface Layout extends ProjectData {
   bounds: { minX: number; minY: number; maxX: number; maxY: number };
 }
 
+/** Plan de iluminación (propuesta): LED en las vigas de la volta y puntos de luz interiores y exteriores. */
+export type LightKind = 'pincho-arbol' | 'baliza-camino' | 'baliza-escalera' | 'aplique' | 'colgante' | 'tira' | 'rasante' | 'estanca';
+export interface LightPoint {
+  id: string;
+  label: string;
+  /** zona del plan (agrupa en la leyenda y en los circuitos) */
+  zone: string;
+  kind: LightKind;
+  /** posición en planta y cota sobre el terreno */
+  c: Vec2;
+  z: number;
+  /** otro extremo (tiras) */
+  b?: Vec2;
+  /** cota a la que apunta (focos hacia arriba: copa del árbol, cañizo, pared) */
+  aim?: number;
+  watts: number;
+}
+export interface LightingPlan {
+  /** tira LED en la cara lateral de cada viga, luz hacia la bóveda */
+  beamLeds: { sides: 1 | 2; wattsPerM: number; kelvin: number; note: string };
+  points: LightPoint[];
+  status: DataStatus;
+  note: string;
+}
+
 export interface CameraPreset {
   id: string;
   label: string;
@@ -629,6 +656,8 @@ export interface CameraPreset {
   hideRoof?: boolean;
   /** interiores: vista cenital 3D de la planta cortada (sin techos), con órbita, desplazamiento y zoom */
   topDown?: boolean;
+  /** ambiente con el que se abre la vista (p. ej. escenas de noche) */
+  ambience?: 'dia' | 'tarde' | 'noche';
 }
 
 export interface Finish {

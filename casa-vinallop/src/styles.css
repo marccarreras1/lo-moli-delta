@@ -540,6 +540,7 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.92em;
 }
 /* sol real en el visor */
 .sol-panel { width: min(440px, calc(100% - 32px)); }
+.sol-panel.sol-plegado { width: auto; flex-direction: row; gap: 8px; align-items: center; }
 .sol-fila { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .sol-fila .hint { flex: 1; }
 .sol-dia { display: flex; align-items: center; gap: 6px; }

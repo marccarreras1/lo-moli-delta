@@ -101,7 +101,7 @@ describe('avance', () => {
   });
   it('la fase del presupuesto tiene una tarea por partida seleccionada', () => {
     const fp = seed.fases.find((x) => x.id === 'f-pac26')!;
-    expect(fp.tareas.map((t) => t.partida)).toEqual([...PAC_SELECCION, 'PAC-11', 'PAC-04.1', 'ZAN-01', 'DEP-01']);
+    expect(fp.tareas.map((t) => t.partida)).toEqual([...PAC_SELECCION, 'PAC-11', 'PAC-04.1', 'ZAN-01', 'DEP-01', 'PAC-06']);
     expect(fp.dependencias).toEqual(['f01', 'f02']);
     expect(seed.fases.every((x) => !x.previstoInicio && !x.responsable)).toBe(true);
   });

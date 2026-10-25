@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { conSituacion, deFechaLocal, salidaPuesta, sunPosition, useAhora, useSolar } from '../model/solar';
 import { useModel } from '../state/derived';
 
@@ -13,6 +14,7 @@ export function SolPanel({ bottom, onClose }: { bottom: number; onClose: () => v
   const solar = useSolar();
   const ahora = useAhora();
   const ef = conSituacion(solar, project.situacion, ahora);
+  const [plegado, setPlegado] = useState(false);
   if (ef.lat === null || ef.lon === null || (solar.northDeg ?? project.northDeg) === null) {
     return (
       <div className="plan-tool-card sol-panel" role="status" style={{ bottom }}>
@@ -27,11 +29,23 @@ export function SolPanel({ bottom, onClose }: { bottom: number; onClose: () => v
   const p = sunPosition(deFechaLocal(ef.datetime!), ef.lat, ef.lon);
   const sp = salidaPuesta(dia, ef.lat, ef.lon);
   const poner = (d: string, m: number) => solar.set({ ahora: false, datetime: `${d}T${hm(m)}` });
+  if (plegado) {
+    // plegado: el sol sigue activo y queda una pastilla pequeña para navegar por el 3D
+    return (
+      <div className="plan-tool-card sol-panel sol-plegado" data-testid="sol-panel" style={{ bottom }}>
+        <button type="button" className="btn small" onClick={() => setPlegado(false)} aria-label="Mostrar el panel del sol" data-action="sol-mostrar">
+          Sol · {dia.split('-').reverse().slice(0, 2).join('/')} {hm(min)}{p.el > 0 ? ` · ${Math.round(p.el)}°` : ' · noche'}
+        </button>
+        <button type="button" className="btn small" onClick={onClose} aria-label="Cerrar el sol real">Cerrar</button>
+      </div>
+    );
+  }
   return (
     <div className="plan-tool-card sol-panel" data-testid="sol-panel" style={{ bottom }}>
       <div className="sol-fila">
         <strong>Sol real</strong>
         <span className="hint">{solar.ahora ? 'ahora mismo' : 'día y hora elegidos'} · Lo Molí</span>
+        <button type="button" className="btn small" onClick={() => setPlegado(true)} aria-label="Ocultar el panel del sol" data-action="sol-ocultar">Ocultar</button>
         <button type="button" className="btn small" onClick={onClose} aria-label="Cerrar el sol real">Cerrar</button>
       </div>
       <div className="sol-fila">

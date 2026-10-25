@@ -25,9 +25,11 @@ interface HouseProps {
   onSelect: (s: { kind: 'room' | 'opening' | 'furniture'; id: string }) => void;
   /** niveles con cota superior a esta se ocultan (plantas y corte) */
   maxElev: number;
+  /** nivel de las luces artificiales (LED de las vigas) */
+  lampLevel?: number;
 }
 
-export function House({ layout, mats, showRoof, showCeiling, mode, sectionHeight, selection, openFractions, onSelect, maxElev }: HouseProps) {
+export function House({ layout, mats, showRoof, showCeiling, mode, sectionHeight, selection, openFractions, onSelect, maxElev, lampLevel = 0 }: HouseProps) {
   const b = layout.bounds;
   const center: Vec2 = [(b.minX + b.maxX) / 2, (b.minY + b.maxY) / 2];
   const elev = (id: string) => layout.levels.find((l) => l.id === id)?.elevation ?? 0;
@@ -73,10 +75,10 @@ export function House({ layout, mats, showRoof, showCeiling, mode, sectionHeight
       {layout.roofSegments?.length ? (
         ((showRoof && mode !== 'corte') || (showCeiling && mode === 'solido')) && <RoofSegments segments={layout.roofSegments} mats={mats} />
       ) : null}
-      {!layout.roofSegments?.length && showCeiling && mode === 'solido' && (layout.roof?.ceiling ? <Vaults layout={layout} mats={mats} /> : <Ceiling layout={layout} mats={mats} />)}
+      {!layout.roofSegments?.length && showCeiling && mode === 'solido' && (layout.roof?.ceiling ? <Vaults layout={layout} mats={mats} lampLevel={lampLevel} /> : <Ceiling layout={layout} mats={mats} />)}
       {layout.roof?.eaves && <EavesWalls layout={layout} mats={mats} />}
       {showRoof && mode !== 'corte' && <Roof layout={layout} mats={mats} />}
-      {showRoof && !showCeiling && mode === 'solido' && layout.roof?.ceiling && <Vaults layout={layout} mats={mats} />}
+      {showRoof && !showCeiling && mode === 'solido' && layout.roof?.ceiling && <Vaults layout={layout} mats={mats} lampLevel={lampLevel} />}
     </group>
   );
 }
@@ -281,7 +283,7 @@ function SectionCaps({ layout, mats, h }: { layout: Layout; mats: MaterialSet; h
  * tono exacto sale de una referencia que no se ha podido abrir desde este entorno.
  * La clave queda bajo el forjado de cubierta, dentro de la altura de 6,20 m.
  */
-function Vaults({ layout, mats }: { layout: Layout; mats: MaterialSet }) {
+function Vaults({ layout, mats, lampLevel = 0 }: { layout: Layout; mats: MaterialSet; lampLevel?: number }) {
   const c = layout.roof!.ceiling!;
   const ext = layout.walls.filter((w) => w.kind === 'exterior');
   // interior libre entre muros exteriores
@@ -323,9 +325,19 @@ function Vaults({ layout, mats }: { layout: Layout; mats: MaterialSet }) {
   }, [R, span, theta]);
   const outer = useMemo(() => new THREE.CylinderGeometry(R + 0.04, R + 0.04, span, 14, 1, true, Math.PI - theta / 2, theta), [R, span, theta]);
   useEffect(() => () => { geo.dispose(); outer.dispose(); }, [geo, outer]);
+  // LED en la cara lateral alta de cada viga (plan de iluminación): tira en perfil y luz hacia la bóveda
+  const led = layout.lighting?.beamLeds;
+  const beamXs = [...bays.map((b) => b.x0), ...tramos.map(([, b]) => b)];
+  const ledXs = led && !tilt ? beamXs.flatMap((x) => (led.sides === 2 ? [x - 0.045, x + 0.045] : [x + (x + 0.05 < ix1 ? 0.045 : -0.045)])) : [];
+  const yOf = (x: number) => spring + 0.0 + bajada(x + 0.01);
   return (
     <group position={[0, crown, yMid]} rotation={[tilt, 0, 0]}>
     <group position={[0, -crown, -yMid]}>
+      {ledXs.map((x, i) => <mesh key={`led${i}`} position={[x, yOf(x), (iy0 + iy1) / 2]} material={mats.lampGlow}><boxGeometry args={[0.012, 0.016, span - 0.1]} /></mesh>)}
+      {lampLevel > 0.05 && bays.filter((_, i) => i % 4 === 1).map((b, i) => {
+        const x = (b.x0 + b.x1) / 2;
+        return <pointLight key={`ledl${i}`} position={[x, yOf(x) + c.rise * 0.4, (iy0 + iy1) / 2]} color="#ffb46b" intensity={lampLevel * 2.2} distance={5} decay={2} />;
+      })}
       {bays.map((b, i) => (
         <group key={`v${i}`} position={[(b.x0 + b.x1) / 2, crown - R + bajada((b.x0 + b.x1) / 2), (iy0 + iy1) / 2]} rotation={[Math.PI / 2, 0, 0]} scale={[(b.x1 - b.x0) / s, 1, 1]}>
           <mesh geometry={geo} material={mats.vault} receiveShadow />
