@@ -320,6 +320,8 @@ export interface OutdoorPavement {
   top?: number;
   /** zona sin pavimentar (alcorque) */
   permeable?: { c: Vec2; r: number };
+  /** alcorques interiores (árboles que quedan dentro de la solera, sin tocar su borde) */
+  pits?: { c: Vec2; r: number }[];
   status: DataStatus;
   note: string;
 }

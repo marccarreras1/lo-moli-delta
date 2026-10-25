@@ -315,8 +315,13 @@ const ALGARROBO: Vec2 = [r2(L + 2.64 + ALGARROBO_TRONCO_R), r2(W - 3.5 - ALGARRO
  * y tramo de 4 m en el lateral del algarrobo; sin solera en el frontal B (puerta de entrada).
  */
 const SOL_LATERAL = 4;
-/** fondo del tramo del frontal A, bajo el porche (medida propuesta) */
-const SOL_TRASERA = 3.4;
+/** fondo del tramo del frontal A, el de la cristalera: 5,00 m (propiedad, 25/10/2026; antes 3,40 m) */
+const SOL_TRASERA = 5.0;
+/** fondo del porche de la cristalera: se mantiene en 3,40 m (la solera sigue 1,60 m más allá, al sol) */
+const PORCHE_FONDO = 3.4;
+/** olivos medidos que quedan dentro de la solera de 5 m: alcorque alrededor del tronco */
+const OLIVO_GRANDE = PARCELA.trees.find((t) => t.id === 'olivo-cristalera')!.c;
+const OLIVO_PEQUENO = PARCELA.trees.find((t) => t.id === 'olivo-pequeno')!.c;
 /** el porche cubre toda la solera del frontal A, hasta el dormitorio (propiedad, 10/10/2026) */
 const PORCHE_X0 = 0;
 /** solera de sol de invierno a la derecha de la puerta de entrada, con banco de obra contra la fachada (propiedad) */
@@ -340,7 +345,9 @@ const outdoor: Outdoor = {
     },
     {
       id: 'solera-l-frontal-a', label: 'Solera en L · tramo del frontal A (cristalera)', rect: [0, r2(-SOL_TRASERA), L, 0], joints: 3.3, top: SOL_TOP, status: 'confirmado',
-      note: 'Solera a lo largo de todo el frontal A, de punta a punta de la casa, con el porche delante de la cristalera (indicaciones de la propiedad: «en la parte de la cristalera pon la solera y un porche» y «la solera de punta a punta de la casa y elimina la solera de la parte de la puerta de entrada»). Cemento claro mate, mismo nivel que el tramo lateral, con el que se une en la esquina del algarrobo. Fondo de 3,40 m propuesto; juntas cada ≈3,3 m; pendiente del 1,5–2 % hacia fuera y canaleta en el borde (propuesta de evacuación, pendiente de desarrollo técnico).',
+      // con 5 m de fondo los dos olivos medidos de la cristalera quedan dentro: alcorque alrededor de cada tronco
+      pits: [{ c: OLIVO_GRANDE, r: 1.0 }, { c: OLIVO_PEQUENO, r: 0.35 }],
+      note: 'Fondo de 5,00 m desde la fachada (propiedad, 25/10/2026; antes 3,40 m): el porche sigue cubriendo los primeros 3,40 m y el resto queda al sol. Los dos olivos medidos (el grande a 3,60 m de la fachada y el pequeño a 4,50 m) quedan dentro: alcorques permeables de Ø 2,00 m y Ø 0,70 m alrededor de los troncos; al hormigonar, no cortar raíces gruesas y no subir el nivel del terreno sobre ellas. Solera a lo largo de todo el frontal A, de punta a punta de la casa, con el porche delante de la cristalera (indicaciones de la propiedad: «en la parte de la cristalera pon la solera y un porche» y «la solera de punta a punta de la casa y elimina la solera de la parte de la puerta de entrada»). Cemento claro mate, mismo nivel que el tramo lateral, con el que se une en la esquina del algarrobo. Fondo de 3,40 m propuesto; juntas cada ≈3,3 m; pendiente del 1,5–2 % hacia fuera y canaleta en el borde (propuesta de evacuación, pendiente de desarrollo técnico).',
     },
   ],
   // cuarto técnico previsto por la propiedad: 2,50 m × el ancho de la casa × 3,00 m de alto, con acceso solo por el exterior
@@ -387,8 +394,8 @@ const outdoor: Outdoor = {
   },
   porches: [
     {
-      id: 'porche-cristalera', label: 'Porche de la cristalera', rect: [PORCHE_X0, r2(-SOL_TRASERA + 0.2), L, 0], wallSide: 'y1', hWall: r2(PB_EL + H_VENTANAL + 0.3), hFront: r2(PB_EL + H_VENTANAL + 0.05),
-      posts: [0.4, 3.5, 6.6, 9.85, 13.1, 16.1].map((x) => [x, r2(-SOL_TRASERA + 0.4)] as Vec2), postSize: 0.4, status: 'confirmado',
+      id: 'porche-cristalera', label: 'Porche de la cristalera', rect: [PORCHE_X0, r2(-PORCHE_FONDO + 0.2), L, 0], wallSide: 'y1', hWall: r2(PB_EL + H_VENTANAL + 0.3), hFront: r2(PB_EL + H_VENTANAL + 0.05),
+      posts: [0.4, 3.5, 6.6, 9.85, 13.1, 16.1].map((x) => [x, r2(-PORCHE_FONDO + 0.4)] as Vec2), postSize: 0.4, status: 'confirmado',
       note: 'Porche mediterráneo a lo largo de toda la solera del frontal A, desde el ventanal hasta el dormitorio (indicaciones de la propiedad: porche en la cristalera y «el porche lo haremos de toda la solera, hasta la habitación»): pilares de obra encalados de 40 × 40 cm, viga de madera en el frente y durmiente en la fachada por encima del dintel del ventanal (2,50 m sobre el suelo interior, 2,86 m sobre el terreno), viguetas cada ≈0,6 m y cubierta de cañizo. Medidas, sección de las vigas y anclaje a la fachada propuestos: pendientes de cálculo. Con el norte del Catastro (≈20° desde el frontal A), la cristalera mira al nor-noreste: le da el sol de primera hora en verano y casi nada el resto del día, así que el porche sirve sobre todo de estancia exterior a la sombra en las tardes; la entrada (frontal B) mira al sur-suroeste.',
     },
   ],

@@ -3,6 +3,7 @@
  * Devuelve el SVG como texto: se usa en pantalla y en la exportación.
  * Unidades: metros (viewBox en metros, Y hacia abajo = sentido del papel).
  */
+import { pitsOf } from '../model/pits';
 import type { DataStatus, Layout, Vec2 } from '../data/types';
 import {
   bbox, centroid, doorSwing, fmtM, furnitureFootprint, pointOnWall, polygonArea, wallDir, wallLength, wallNormal, wallPieces, wallSegmentRect,
@@ -193,8 +194,7 @@ function outdoorSvg(layout: Layout, od: NonNullable<Layout['outdoor']>, labels: 
       g.push(`<rect x="${n4(b0)}" y="${n4(rc.at - rc.basin / 2)}" width="${n4(b1 - b0)}" height="${n4(rc.basin)}" fill="none" stroke="#3a3833" stroke-width="0.015" stroke-dasharray="0.05 0.03"/>`);
     }
   }
-  for (const p of od.pavements.filter((x) => x.permeable)) {
-    const { c, r } = p.permeable!;
+  for (const { c, r } of od.pavements.filter((x) => x.joints > 0).flatMap((x) => pitsOf(x))) {
     g.push(`<circle cx="${n4(c[0])}" cy="${n4(c[1])}" r="${n4(r)}" fill="#efe9de" stroke="#3a3833" stroke-width="0.02"/>`);
     if (labels) g.push(`<text x="${n4(c[0])}" y="${n4(c[1] + r + 0.22)}" font-size="0.13" fill="#687066" text-anchor="middle">alcorque permeable Ø ${fmtM(2 * r)}</text>`);
   }

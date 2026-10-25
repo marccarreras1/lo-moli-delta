@@ -13,6 +13,7 @@ import { Garden3D } from './Garden3D';
 import { WARM } from './Lamps';
 import type { MaterialSet } from './materials';
 import { groundTopAt } from '../model/ground';
+import { inPit, pitsOf } from '../model/pits';
 
 /** cota de la cara superior de la solera exterior */
 const TOP = -0.05;
@@ -52,6 +53,8 @@ function Pavement({ p, mats }: { p: OutdoorPavement; mats: MaterialSet }) {
     const pts = gravel ? (() => { const [x0, y0, x1, y1] = p.rect; return [[x0, y0], [x1, y0], [x1, y1], [x0, y1]] as Vec2[]; })() : outline(p);
     pts.forEach(([x, y], i) => (i === 0 ? s.moveTo(x, -y) : s.lineTo(x, -y)));
     s.closePath();
+    // alcorques interiores: agujeros en la losa
+    if (!gravel) for (const h of p.pits ?? []) { const hole = new THREE.Path(); hole.absarc(h.c[0], -h.c[1], h.r, 0, Math.PI * 2, true); s.holes.push(hole); }
     const g = new THREE.ExtrudeGeometry(s, { depth: thick, bevelEnabled: !gravel, bevelThickness: 0.01, bevelSize: 0.01, bevelSegments: 1 });
     g.rotateX(-Math.PI / 2);
     return g;
@@ -61,7 +64,7 @@ function Pavement({ p, mats }: { p: OutdoorPavement; mats: MaterialSet }) {
     if (gravel || p.joints <= 0) return null;
     const [x0, y0, x1, y1] = p.rect;
     const segs: { x: number; y: number; w: number; d: number }[] = [];
-    const inside = (x: number, y: number) => !!p.permeable && Math.hypot(x - p.permeable.c[0], y - p.permeable.c[1]) < p.permeable.r + 0.02;
+    const inside = (x: number, y: number) => inPit(p, x, y, 0.02);
     const piece = 0.1;
     for (let x = x0 + p.joints; x < x1 - 1e-6; x += p.joints)
       for (let y = y0; y < y1 - 1e-6; y += piece) if (!inside(x, y + piece / 2)) segs.push({ x, y: y + piece / 2, w: 0.008, d: piece });
@@ -479,7 +482,7 @@ export function Outdoor3D({ outdoor, mats, options, level, selectedId, onSelect 
       {(outdoor.wallSteps ?? []).map((w) => <WallSteps key={w.id} s={w} />)}
       {(outdoor.rainChains ?? []).map((c) => <RainChain key={c.id} c={c} />)}
       {(outdoor.tanks ?? []).map((t) => <Tank key={t.id} t={t} />)}
-      {outdoor.pavements.filter((p) => p.permeable).map((p) => <TreePit key={`al-${p.id}`} c={p.permeable!.c} r={p.permeable!.r} mats={mats} />)}
+      {outdoor.pavements.filter((p) => p.joints > 0).flatMap((p) => pitsOf(p).map((h, i) => <TreePit key={`al-${p.id}-${i}`} c={h.c} r={h.r} mats={mats} />))}
       {(outdoor.drains ?? []).map((d) => <Drain key={d.id} a={d.a} b={d.b} mats={mats} lift={groundTopAt(outdoor, (d.a[0] + d.b[0]) / 2, (d.a[1] + d.b[1]) / 2)} />)}
       {(outdoor.porches ?? []).map((p) => <Porch key={p.id} p={p} mats={mats} />)}
       {outdoor.domeLamp && <DomeLamp lamp={outdoor.domeLamp} mode={options.lamparaExterior} mats={mats} level={level} />}

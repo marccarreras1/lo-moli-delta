@@ -246,6 +246,8 @@ describe('presupuesto PEB26-0001 (fase 2)', () => {
     const r = ofertaResumen(o, g.presupuesto.partidas);
     expect([r.seleccion, r.base, r.impuestos, r.total]).toEqual([13900, 13900, 2919, 16819]);
     expect(o.estado).toBe('recibida');
+    // Ebrebuilding es la misma empresa que Aconseguit Angamar
+    expect(o.proveedor).toBe(g.presupuesto.ofertas.find((x) => x.id === 'o-pac26-0052')!.proveedor);
     expect(g.presupuesto.partidas.filter((p) => o.partidas.includes(p.codigo)).every((p) => p.fase === 'f-fase2' && p.condicion === 'oferta recibida')).toBe(true);
   });
 });

@@ -3,6 +3,7 @@
  * La superficie es la unión geométrica de los tramos: la esquina se cuenta una sola vez y solo se
  * descuentan las zonas que no se pavimentan (alcorque alrededor del tronco).
  */
+import { pitsOf } from './pits';
 import type { Layout, OutdoorPavement } from '../data/types';
 
 export interface SoleraQuantities {
@@ -33,7 +34,7 @@ export function soleraQuantities(layout: Pick<Layout, 'outdoor'>, step = 0.05): 
   const minY = Math.min(...tramos.map((t) => t.rect[1]));
   const maxX = Math.max(...tramos.map((t) => t.rect[2]));
   const maxY = Math.max(...tramos.map((t) => t.rect[3]));
-  const holes = tramos.flatMap((t) => (t.permeable ? [t.permeable] : []));
+  const holes = tramos.flatMap((t) => pitsOf(t));
   let union = 0;
   let overlapCells = 0;
   let excludedCells = 0;

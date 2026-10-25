@@ -161,7 +161,9 @@ export const FASE2 = (): Fase => ({
 // ---------------------------------------------------------------- presupuesto PEB26-0001 (fase 2)
 
 export const PEB_REF = 'PEB26-0001';
-export const PEB_PROVEEDOR = 'Ebrebuilding S.C.C.L. (Santa Bàrbara, Tarragona)';
+/** Ebrebuilding es la misma empresa que Aconseguit Angamar (propiedad, 25/10/2026) */
+export const PEB_PROVEEDOR_ANTES = 'Ebrebuilding S.C.C.L. (Santa Bàrbara, Tarragona)';
+export const PEB_PROVEEDOR = PAC_PROVEEDOR;
 export const PEB_FECHA = '2026-10-22';
 const peb = (n: number, descripcion: string, capitulo: string, precio: number, notas = ''): Partida => ({
   id: `p-peb-${String(n).padStart(2, '0')}`, codigo: `PEB-${String(n).padStart(2, '0')}`,
@@ -179,7 +181,7 @@ export const PEB_PARTIDAS = (): Partida[] => [
   peb(2, 'Poner la fosa séptica nueva y los tubos de evacuación', CAP.agua, 3000,
     'Capacidad y modelo de la fosa no indicados en el presupuesto.'),
   peb(4, 'Escalera de hormigón armado, sin revestir, preparada para revestir de porcelánico, piedra o mármol', CAP.estructura, 3000,
-    'Misma partida que PAC-12 del presupuesto PAC26-0052 (no seleccionada, 3.000 €): queda esa como referencia.'),
+    'Misma partida y mismo constructor que PAC-12 del presupuesto PAC26-0052 (no seleccionada, 3.000 €): esta la sustituye; PAC-12 queda como referencia y no se suma.'),
   peb(5, 'Zanjas y cimentación armada para los muros perimetrales de sobreelevación del porche', CAP.exterior, 1800,
     'Porche y solera elevada: comprobar qué parte de la solera en L (SOL-01, sin valorar) cubre.'),
   peb(6, 'Muros de la solera del porche', CAP.exterior, 1400),
@@ -194,13 +196,13 @@ export const PEB_TAREAS: [string, string][] = [
   ['PEB-06', 'Porche: muros de la solera'],
   ['PEB-07', 'Porche: losa'],
 ];
-export const PEB_DOCUMENTO = { id: 'doc-peb26-0001', titulo: `Presupuesto ${PEB_REF} · fase 2`, referencia: `${PEB_PROVEEDOR} · documento PDF de la propiedad`, fecha: PEB_FECHA, nota: 'Oferta recibida, no aceptada ni pagada.' };
+export const PEB_DOCUMENTO = { id: 'doc-peb26-0001', titulo: `Presupuesto ${PEB_REF} · fase 2`, referencia: `${PEB_PROVEEDOR} (con el nombre Ebrebuilding S.C.C.L.) · documento PDF de la propiedad`, fecha: PEB_FECHA, nota: 'Oferta recibida, no aceptada ni pagada.' };
 export const OFERTA_PEB = (): Oferta => ({
   id: 'o-peb26-0001', proveedor: PEB_PROVEEDOR, referencia: PEB_REF, fecha: PEB_FECHA,
   alcance: 'Fase 2: fosa séptica nueva con sus zanjas y tubos, recuperación de la fosa actual como depósito de agua, escalera de hormigón y cimentación, muros y losa del porche (7 líneas).',
   partidas: ['PEB-01', 'PEB-02', 'F2-02', 'PEB-04', 'PEB-05', 'PEB-06', 'PEB-07'],
   importeBase: null, descuentoPct: null, ajuste: null, ajusteNota: '', impuestoPct: 21, estado: 'recibida',
-  documentos: [`Presupuesto ${PEB_REF} (${PEB_PROVEEDOR}, 22/10/2026)`],
+  documentos: [`Presupuesto ${PEB_REF} (Ebrebuilding S.C.C.L., la misma empresa que ${PEB_PROVEEDOR}, 22/10/2026)`],
   notas: 'Oferta recibida: no aceptada ni pagada. Base 13.900 €, IVA 21 % 2.919 €, total 16.819 €.',
   totalesImpresos: { subtotal: 13900, descuento: null, base: 13900, impuestos: 2919, total: 16819, nota: 'Totales impresos en el presupuesto.' },
   condiciones: '',
