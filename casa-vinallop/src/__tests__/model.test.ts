@@ -160,7 +160,7 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
   it('acabados de la propiedad por defecto: cal muy clara, carpintería verde-gris, microcemento terracota claro', () => {
     const v = baseVariant();
     expect(v.presetId).toBe('ibicenca-griega');
-    expect(v.finishes.carpinteria).toBe('verde-gris-claro');
+    expect(v.finishes.carpinteria).toBe('smoke-blue');
     expect(v.finishes.suelo).toBe('microcemento-terracota-claro');
     expect(v.finishes.paredes).toBe('cal-muy-clara');
   });

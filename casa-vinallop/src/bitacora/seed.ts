@@ -121,4 +121,8 @@ export const CAMBIOS_SEED: CambioEntrada[] = [
     'La solera del frontal A (cristalera) pasa de 3,40 a 5,00 m de fondo; el tramo lateral del algarrobo llega hasta el mismo borde. El porche mantiene sus 3,40 m y la solera sigue 1,60 m más allá, al sol. Los dos olivos medidos frente a la cristalera quedan dentro: alcorques permeables alrededor de los troncos (Ø 2,00 m el grande y Ø 0,70 m el pequeño). La canaleta del borde y la grava se desplazan con el nuevo borde. La superficie de la partida de la solera (SOL-01) se recalcula sola.'),
   e('c-2026-10-25-mismo-proveedor', '2026-10-25', 'presupuesto', 'Ebrebuilding y Aconseguit Angamar, misma empresa',
     'La propiedad confirma que Ebrebuilding S.C.C.L. (presupuesto PEB26-0001) y Aconseguit Angamar S.L. (PAC26-0052) son la misma empresa: las partidas y la oferta de la fase 2 pasan a constar con el mismo proveedor. La escalera PEB-04 sustituye a la PAC-12 no seleccionada.'),
+  e('c-2026-10-25-demolicion-pagada', '2026-10-25', 'presupuesto', 'Demolición del techo dada por pagada',
+    'Por indicación de la propiedad, la demolición del techo (PAC-01, 1.500 € + IVA = 1.815 €) consta como pagada, imputada de la entrega a cuenta de agosto: esa entrega queda en 4.185 € sin partida y el total pagado no cambia (6.000 €). La factura FEM26-0031 de 3.500 € sigue con el pago sin confirmar hasta que se pague esta semana.'),
+  e('c-2026-10-25-marcos-smoke-blue', '2026-10-25', 'fachadas', 'Marcos en azul humo (Smoke Blue)',
+    'La propiedad elige para los marcos de puertas y ventanas el color Pantone 17-4412 TCX «Smoke Blue» (sRGB 109 137 148, #6D8994). Pasa a ser el acabado de carpintería de los presets de la propiedad y sale en el documento de cristales; el verde-gris claro queda como alternativa.'),
 ];

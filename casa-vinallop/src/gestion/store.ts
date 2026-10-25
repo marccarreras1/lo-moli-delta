@@ -5,7 +5,7 @@
  * colaboración multiusuario). Se guarda con retardo tras cada cambio y al ocultar la página.
  */
 import { create } from 'zustand';
-import { ADDED_PARTIDAS, ADDED_TAREAS, DECISION_FOSA, DECISION_PUERTA_FINCA, DEP_CODIGO, DEP_DOCUMENTO, ENTREGAS_CUENTA, FASE1_FIN, FASE2, FASE2_PARTIDAS, FASE_2, FASE_PAC, OFERTA_PEB, PEB_DOCUMENTO, PEB_F202, PEB_FECHA, PEB_PARTIDAS, PEB_PROVEEDOR, PEB_PROVEEDOR_ANTES, PEB_REF, PEB_TAREAS, OFERTA_DEPOSITO, SEGUIMIENTO_2026_10_21, SEGUIMIENTO_ALZADO_ID, SEGUIMIENTO_DESCARTADO, SEGUIMIENTO_DRON_ID, seedGestion, TAREAS_FOSA } from './seed';
+import { ADDED_PARTIDAS, ADDED_TAREAS, DECISION_FOSA, DECISION_PUERTA_FINCA, DEP_CODIGO, DEMOLICION_PAGADA, DEP_DOCUMENTO, ENTREGAS_CUENTA, PAGO_DEMOLICION, FASE1_FIN, FASE2, FASE2_PARTIDAS, FASE_2, FASE_PAC, OFERTA_PEB, PEB_DOCUMENTO, PEB_F202, PEB_FECHA, PEB_PARTIDAS, PEB_PROVEEDOR, PEB_PROVEEDOR_ANTES, PEB_REF, PEB_TAREAS, OFERTA_DEPOSITO, SEGUIMIENTO_2026_10_21, SEGUIMIENTO_ALZADO_ID, SEGUIMIENTO_DESCARTADO, SEGUIMIENTO_DRON_ID, seedGestion, TAREAS_FOSA } from './seed';
 import type {
   Asignacion, Bloqueo, Comentario, EntregaCuenta, Decision, Documento, Fase, GestionData, Oferta, Pago, Partida, Presupuesto, Reserva, Seguimiento, Tarea,
 } from './types';
@@ -315,6 +315,29 @@ function migrate13(data: GestionData): GestionData {
   return { ...data, presupuesto };
 }
 
+/** Demolición del techo dada por pagada (propiedad, 25/10/2026): pago en PAC-01 imputado de la entrega de agosto. */
+function migrate14(data: GestionData): GestionData {
+  let done: string[] = [];
+  try { done = JSON.parse(window.localStorage.getItem(MIGRATIONS_KEY) ?? '[]') as string[]; } catch { /* sin almacenamiento */ }
+  const id = '2026-10-25-demolicion-pagada';
+  if (done.includes(id)) return data;
+  const pr = data.presupuesto;
+  const ago = pr.aCuenta.find((x) => x.id === 'ac-2026-08');
+  const pac01 = pr.partidas.find((p) => p.codigo === 'PAC-01');
+  try { window.localStorage.setItem(MIGRATIONS_KEY, JSON.stringify([...done, id])); } catch { /* sin almacenamiento */ }
+  // solo si la entrega de agosto sigue como estaba y la partida no tiene ya ese pago
+  if (!ago || ago.importe !== 6000 || !pac01 || pac01.pagos.some((p) => p.id === PAGO_DEMOLICION.id)) return data;
+  const seed = ENTREGAS_CUENTA().find((x) => x.id === 'ac-2026-08')!;
+  return {
+    ...data,
+    presupuesto: {
+      ...pr,
+      partidas: pr.partidas.map((p) => (p.id === pac01.id ? { ...p, pagos: [...p.pagos, { ...PAGO_DEMOLICION }] } : p)),
+      aCuenta: pr.aCuenta.map((x) => (x.id === ago.id ? { ...x, importe: 6000 - DEMOLICION_PAGADA, nota: seed.nota } : x)),
+    },
+  };
+}
+
 function load(): { data: GestionData; aviso: string | null } {
   if (typeof window === 'undefined') return { data: seedGestion(), aviso: null };
   let raw: string | null = null;
@@ -327,7 +350,7 @@ function load(): { data: GestionData; aviso: string | null } {
   try {
     const parsed = JSON.parse(raw) as unknown;
     const base = parseGestion(parsed, false);
-    const data = migrate13(migrate12(migrate11(migrate10(migrate9(migrate8(migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base)))))))))))));
+    const data = migrate14(migrate13(migrate12(migrate11(migrate10(migrate9(migrate8(migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base))))))))))))));
     // las migraciones se marcan como hechas: hay que guardar ya su resultado o se perderían al recargar sin editar
     if (data !== base) try { window.localStorage.setItem(GESTION_KEY, JSON.stringify(envelope(data))); } catch { /* sin almacenamiento */ }
     let aviso: string | null = null;

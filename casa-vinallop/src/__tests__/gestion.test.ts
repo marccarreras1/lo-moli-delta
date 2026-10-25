@@ -45,7 +45,8 @@ describe('presupuesto PAC26-0052', () => {
     for (const p of pres.partidas.filter((x) => x.referencia === 'PAC26-0052')) {
       expect(p.condicion).toBe('oferta recibida');
       expect(p.contratado).toBeNull();
-      expect(p.pagos).toHaveLength(0);
+      // solo la demolición del techo consta como pagada (imputada de la entrega a cuenta de agosto)
+      expect(p.pagos.map((x) => x.importe)).toEqual(p.codigo === 'PAC-01' ? [1815] : []);
       expect(p.impuesto).toBe(21);
     }
   });
@@ -77,7 +78,7 @@ describe('partidas sin valorar', () => {
     expect(r.reserva.disponible).toBeNull();
     // nada contratado ni pagado: no se inventan obligaciones
     expect(r.obligaciones.n).toBe(0);
-    expect(r.pagado).toBe(0);
+    expect(r.pagado).toBe(1815);
   });
   it('no suma previsto, contratado y real como gastos distintos', () => {
     const p = { ...pres.partidas[0], contratado: 1400, extras: 100, real: 1550, pagos: [{ id: 'x', fecha: '2026-06-01', importe: 500, nota: '' }] };
@@ -208,11 +209,12 @@ describe('entregas a cuenta (sin partida)', () => {
   const g = seedGestion();
   it('6.000 € pagados en agosto (sin fecha exacta) y la factura FEM26-0031 de 3.500 € con el pago sin confirmar', () => {
     const ac = g.presupuesto.aCuenta;
-    expect(ac.map((x) => [x.importe, x.pagado])).toEqual([[6000, true], [3500, false]]);
+    // de los 6.000 € de agosto, 1.815 € se imputan a la demolición del techo (PAC-01)
+    expect(ac.map((x) => [x.importe, x.pagado])).toEqual([[4185, true], [3500, false]]);
     expect(ac[0].fecha).toBe('');
-    expect(aCuentaTotales(g.presupuesto)).toEqual({ n: 2, pagado: 6000, porPagar: 3500 });
-    // no se reparten por partidas: ninguna partida tiene pagos
-    expect(g.presupuesto.partidas.every((p) => p.pagos.length === 0)).toBe(true);
+    expect(aCuentaTotales(g.presupuesto)).toEqual({ n: 2, pagado: 4185, porPagar: 3500 });
+    const pagadoPartidas = g.presupuesto.partidas.reduce((a, p) => a + p.pagos.reduce((b, x) => b + x.importe, 0), 0);
+    expect(pagadoPartidas + aCuentaTotales(g.presupuesto).pagado).toBe(6000);
   });
   it('se exportan e importan', () => {
     useGestion.getState().resetGestion();

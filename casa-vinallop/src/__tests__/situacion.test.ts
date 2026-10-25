@@ -12,9 +12,9 @@ const base: Partida = {
 };
 
 describe('situación de la obra', () => {
-  it('sin contratos ni pagos: coste a término = previsto, sin desviación ni pendiente (no se inventan datos)', () => {
+  it('sin contratos: coste a término = previsto, sin desviación ni pendiente (no se inventan datos); solo la demolición consta pagada', () => {
     const s = situacionObra(seed.presupuesto, seed.fases);
-    expect(s.totales.pagado).toBe(0);
+    expect(s.totales.pagado).toBe(1815);
     expect(s.totales.nComprometido).toBe(0);
     expect(s.totales.nDesviacion).toBe(0);
     expect(s.totales.aTermino).toBe(s.totales.referencia);

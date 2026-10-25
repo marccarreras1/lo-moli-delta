@@ -279,8 +279,8 @@ export const ADDED_TAREAS: [string, string][] = [
 
 function partidas(): Partida[] {
   return [
-    pac(1, 'Demolición del techo actual y preparación para el nuevo', CAP.demoliciones, 1500, FASE_PAC,
-      'Alcance de retirada de fibrocemento/amianto no especificado; requiere aclaración.'),
+    { ...pac(1, 'Demolición del techo actual y preparación para el nuevo', CAP.demoliciones, 1500, FASE_PAC,
+      'Alcance de retirada de fibrocemento/amianto no especificado; requiere aclaración.'), pagos: [{ ...PAGO_DEMOLICION }] },
     pac(2, 'Demolición de muros para la abertura de 9 m y comunicación interior entrando por la puerta actual hacia la derecha', CAP.demoliciones, 1000, FASE_PAC),
     pac(3, 'Zuncho de 9 m, sección 40 × 70 cm con triple armado, conectado al cinturón de la casa (cinturón incluido)', CAP.estructura, 5000, FASE_PAC,
       'Característica estructural propuesta por el constructor, no cálculo validado.'),
@@ -455,11 +455,14 @@ function fases(): Fase[] {
   ];
 }
 
+/** Demolición del techo (PAC-01) dada por pagada (propiedad, 25/10/2026): 1.500 € + IVA 21 %, imputados de la entrega de agosto. */
+export const DEMOLICION_PAGADA = 1815;
+export const PAGO_DEMOLICION = { id: 'pg-pac01-imputado', fecha: '', importe: DEMOLICION_PAGADA, nota: 'Demolición del techo dada por pagada por la propiedad (25/10/2026): 1.500 € + IVA 21 %, imputado de la entrega a cuenta de agosto (6.000 €).' };
 /** Entregas a cuenta de la obra indicadas por la propiedad (21/10/2026): no van a ninguna partida. */
 export const ENTREGAS_CUENTA = (): EntregaCuenta[] => [
   {
-    id: 'ac-2026-08', fecha: '', importe: 6000, emisor: '', documento: '', pagado: true,
-    nota: 'Primera entrega a cuenta de la obra, pagada en agosto de 2026 (día, emisor y justificante sin indicar).',
+    id: 'ac-2026-08', fecha: '', importe: 6000 - DEMOLICION_PAGADA, emisor: '', documento: '', pagado: true,
+    nota: `Primera entrega a cuenta de la obra, pagada en agosto de 2026 (día, emisor y justificante sin indicar): 6.000 €, de los que ${DEMOLICION_PAGADA.toLocaleString('es-ES')} € se imputan a la demolición del techo (PAC-01) por indicación de la propiedad (25/10/2026); aquí queda el resto.`,
   },
   {
     id: 'ac-fem26-0031', fecha: '2026-10-19', importe: 3500, emisor: 'Euromed Bat (Narbonne, Francia)', documento: 'Factura FEM26-0031', pagado: false,

@@ -26,7 +26,9 @@ export const FINISHES: Record<FinishSlot, Finish[]> = {
     { id: 'piedra-clara', label: 'Piedra clara (vista)', color: '#cfc3ad', roughness: 1 },
   ],
   carpinteria: [
-    { id: 'verde-gris-claro', label: 'Verde-gris claro (propiedad)', color: '#aab6a6', roughness: 0.5 },
+    // elegido por la propiedad (25/10/2026): Pantone 17-4412 TCX «Smoke Blue» (sRGB 109 137 148)
+    { id: 'smoke-blue', label: 'Azul humo · Pantone 17-4412 TCX Smoke Blue (propiedad)', color: '#6d8994', roughness: 0.5 },
+    { id: 'verde-gris-claro', label: 'Verde-gris claro', color: '#aab6a6', roughness: 0.5 },
     { id: 'madera-natural', label: 'Madera natural', color: '#a77d52', roughness: 0.6 },
     { id: 'roble-claro', label: 'Roble claro', color: '#c4a27a', roughness: 0.6 },
     { id: 'aluminio-arena', label: 'Aluminio tono arena', color: '#b9ab94', roughness: 0.4 },
@@ -87,7 +89,7 @@ export const PRESETS: FinishPreset[] = [
     id: 'ibicenca-griega',
     label: 'Ibicenca y griega · propiedad',
     selection: {
-      fachada: 'cal-muy-clara-ext', carpinteria: 'verde-gris-claro', suelo: 'microcemento-terracota-claro',
+      fachada: 'cal-muy-clara-ext', carpinteria: 'smoke-blue', suelo: 'microcemento-terracota-claro',
       paredes: 'cal-muy-clara', cubierta: 'cubierta-blanca', madera: 'madera-clara-nudos', textiles: 'lino-crudo', boveda: 'terracota-volta', vigas: 'cemento-gris', encimera: 'mineral-claro-enc',
     },
   },
@@ -96,7 +98,7 @@ export const PRESETS: FinishPreset[] = [
     id: 'referencias-calidas',
     label: 'Ibicenca cálida · referencias (propuesta)',
     selection: {
-      fachada: 'cal-muy-clara-ext', carpinteria: 'verde-gris-claro', suelo: 'mineral-claro',
+      fachada: 'cal-muy-clara-ext', carpinteria: 'smoke-blue', suelo: 'mineral-claro',
       paredes: 'arena-muy-clara', cubierta: 'cubierta-blanca', madera: 'madera-clara-nudos', textiles: 'lino-crudo', boveda: 'terracota-volta', vigas: 'cemento-gris', encimera: 'mineral-claro-enc',
     },
   },

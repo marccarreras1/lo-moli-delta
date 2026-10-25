@@ -240,9 +240,9 @@ function ProposalsSection() {
       {hasEntrance && (
         <>
           <Segmented label="Hoja de la puerta de entrada" id="opt-puerta" value={o.puertaEntrada} onChange={(x) => setOption('puertaEntrada', x)}
-            options={[{ value: 'tablones', label: 'Tablones de madera' }, { value: 'verde-gris', label: 'Verde-gris' }]} />
+            options={[{ value: 'tablones', label: 'Tablones de madera' }, { value: 'verde-gris', label: 'Color de los marcos' }]} />
           <Toggle id="opt-entrada" label="Volumen saliente en la entrada (variante)" checked={o.entradaSaliente} onChange={(x) => setOption('entradaSaliente', x)} />
-          <p className="hint">Los marcos verde-gris claro están confirmados por la propiedad; la hoja de tablones y el volumen saliente son propuestas de la referencia.</p>
+          <p className="hint">Los marcos van en azul humo (Pantone 17-4412 TCX Smoke Blue), elegido por la propiedad; la hoja de tablones y el volumen saliente son propuestas de la referencia.</p>
         </>
       )}
     </Section>

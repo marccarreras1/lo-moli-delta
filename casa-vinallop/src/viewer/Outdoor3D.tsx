@@ -13,7 +13,7 @@ import { Garden3D } from './Garden3D';
 import { WARM } from './Lamps';
 import type { MaterialSet } from './materials';
 import { groundTopAt } from '../model/ground';
-import { inPit, pitsOf } from '../model/pits';
+import { inPit } from '../model/pits';
 
 /** cota de la cara superior de la solera exterior */
 const TOP = -0.05;
@@ -53,8 +53,6 @@ function Pavement({ p, mats }: { p: OutdoorPavement; mats: MaterialSet }) {
     const pts = gravel ? (() => { const [x0, y0, x1, y1] = p.rect; return [[x0, y0], [x1, y0], [x1, y1], [x0, y1]] as Vec2[]; })() : outline(p);
     pts.forEach(([x, y], i) => (i === 0 ? s.moveTo(x, -y) : s.lineTo(x, -y)));
     s.closePath();
-    // alcorques interiores: agujeros en la losa
-    if (!gravel) for (const h of p.pits ?? []) { const hole = new THREE.Path(); hole.absarc(h.c[0], -h.c[1], h.r, 0, Math.PI * 2, true); s.holes.push(hole); }
     const g = new THREE.ExtrudeGeometry(s, { depth: thick, bevelEnabled: !gravel, bevelThickness: 0.01, bevelSize: 0.01, bevelSegments: 1 });
     g.rotateX(-Math.PI / 2);
     return g;
@@ -113,9 +111,9 @@ function renderRects(pavements: OutdoorPavement[]): OutdoorPavement[] {
 }
 
 /** Alcorque: zona permeable con grava suelta y pletina de acero en el borde. */
-function TreePit({ c, r, mats }: { c: Vec2; r: number; mats: MaterialSet }) {
+function TreePit({ c, r, mats, lift = 0 }: { c: Vec2; r: number; mats: MaterialSet; lift?: number }) {
   return (
-    <group position={[c[0], TOP, c[1]]}>
+    <group position={[c[0], TOP + lift, c[1]]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.035, 0]} material={mats.gravel} receiveShadow><circleGeometry args={[r, 48]} /></mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.005, 0]} material={mats.blackMetal}><ringGeometry args={[r - 0.012, r + 0.004, 64]} /></mesh>
     </group>
@@ -482,7 +480,9 @@ export function Outdoor3D({ outdoor, mats, options, level, selectedId, onSelect 
       {(outdoor.wallSteps ?? []).map((w) => <WallSteps key={w.id} s={w} />)}
       {(outdoor.rainChains ?? []).map((c) => <RainChain key={c.id} c={c} />)}
       {(outdoor.tanks ?? []).map((t) => <Tank key={t.id} t={t} />)}
-      {outdoor.pavements.filter((p) => p.joints > 0).flatMap((p) => pitsOf(p).map((h, i) => <TreePit key={`al-${p.id}-${i}`} c={h.c} r={h.r} mats={mats} />))}
+      {outdoor.pavements.filter((p) => p.permeable).map((p) => <TreePit key={`al-${p.id}`} c={p.permeable!.c} r={p.permeable!.r} mats={mats} />)}
+      {/* alcorques interiores: disco de grava sobre la losa (recortar la losa con agujeros rompe el sombreado) */}
+      {outdoor.pavements.filter((p) => p.joints > 0).flatMap((p) => (p.pits ?? []).map((h, i) => <TreePit key={`ai-${p.id}-${i}`} c={h.c} r={h.r} mats={mats} lift={(p.top ?? 0) + 0.04} />))}
       {(outdoor.drains ?? []).map((d) => <Drain key={d.id} a={d.a} b={d.b} mats={mats} lift={groundTopAt(outdoor, (d.a[0] + d.b[0]) / 2, (d.a[1] + d.b[1]) / 2)} />)}
       {(outdoor.porches ?? []).map((p) => <Porch key={p.id} p={p} mats={mats} />)}
       {outdoor.domeLamp && <DomeLamp lamp={outdoor.domeLamp} mode={options.lamparaExterior} mats={mats} level={level} />}
