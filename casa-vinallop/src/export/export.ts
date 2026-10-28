@@ -44,7 +44,10 @@ export async function download(name: string, data: Blob | string, type = 'applic
     } catch (e) {
       const code = (e as { code?: string }).code;
       if (code === 'declined') throw new Error('Descarga cancelada.');
-      throw new Error(code === 'rejected_extension' ? 'Este formato no se puede descargar desde esta vista.' : 'No se pudo descargar el archivo en esta vista.');
+      if (code === 'rate_limited') throw new Error('Ya hay una descarga esperando confirmación: acéptala o ciérrala y vuelve a intentarlo en unos segundos.');
+      const ext = name.split('.').pop()?.toUpperCase() ?? '';
+      if (code === 'rejected_extension' || code === 'extension_not_enabled') throw new Error(`El formato ${ext} no se puede descargar desde esta vista.`);
+      throw new Error('No se pudo descargar el archivo en esta vista.');
     }
     return;
   }
@@ -191,23 +194,81 @@ export async function exportSvg(layout: Layout, opts: Omit<PlanOptions, 'forExpo
   await download(exportName(`planta-${(layout.levels.find((l) => l.id === opts.levelId) ?? layout.levels[0])?.name ?? ''}`, layout.name, variantName, 'svg'), `<?xml version="1.0" encoding="UTF-8"?>\n${svg}`, 'image/svg+xml');
 }
 
+/** varios SVG en un solo ZIP: una sola descarga (en claude.ai cada descarga pide confirmación) */
+async function downloadSvgZip(zipName: string, files: { name: string; svg: string }[]) {
+  const enc = new TextEncoder();
+  const zip = makeZip(files.map((f) => ({ name: f.name, data: enc.encode(`<?xml version="1.0" encoding="UTF-8"?>\n${f.svg}`) })));
+  await download(zipName, new Blob([zip], { type: 'application/zip' }));
+}
+
 export async function exportElevationsSvg(layout: Layout, variantName: string, finishes?: Record<string, string>) {
   const { elevationSvg, FACADES } = await import('../plan/elevationSvg');
-  for (const f of FACADES) {
-    const svg = elevationSvg(layout, f.id, { forExport: true, variantName, finishes });
-    // pausa corta entre descargas: algunos navegadores bloquean varias seguidas
-    if (f !== FACADES[0]) await new Promise((r) => setTimeout(r, 400));
-    await download(exportName(`alzado-${f.id === 'A' || f.id === 'B' ? `frontal-${f.id}` : `lateral-${f.id}`}`, layout.name, variantName, 'svg'), `<?xml version="1.0" encoding="UTF-8"?>\n${svg}`, 'image/svg+xml');
-  }
+  await downloadSvgZip(exportName('alzados', layout.name, variantName, 'zip'), FACADES.map((f) => ({
+    name: exportName(`alzado-${f.id === 'A' || f.id === 'B' ? `frontal-${f.id}` : `lateral-${f.id}`}`, layout.name, variantName, 'svg'),
+    svg: elevationSvg(layout, f.id, { forExport: true, variantName, finishes }),
+  })));
 }
 
 export async function exportSheetSet(layout: Layout, variantName: string, finishes?: Record<string, string>) {
   const { sheetSet } = await import('../plan/sheets');
   const sheets = sheetSet(layout, { forExport: true, variantName, finishes });
-  for (const [i, s] of sheets.entries()) {
-    if (i > 0) await new Promise((r) => setTimeout(r, 400));
-    await download(exportName(`${s.id}-${s.name}`, layout.name, variantName, 'svg'), `<?xml version="1.0" encoding="UTF-8"?>\n${s.svg}`, 'image/svg+xml');
+  await downloadSvgZip(exportName('juego-de-planos-svg', layout.name, variantName, 'zip'), sheets.map((s) => ({ name: exportName(`${s.id}-${s.name}`, layout.name, variantName, 'svg'), svg: s.svg })));
+}
+
+/** tamaño de papel de un SVG en mm (atributos width/height en mm; si no, por su viewBox a 1:50) */
+function svgPaper(svg: string): { w: number; h: number } {
+  const head = svg.slice(0, svg.indexOf('>') + 1);
+  const mm = (k: string) => Number(new RegExp(`\\s${k}="([\\d.]+)mm"`).exec(head)?.[1]);
+  const w = mm('width');
+  const h = mm('height');
+  if (w > 0 && h > 0) return { w, h };
+  const vb = /viewBox="([-\d.]+)\s+([-\d.]+)\s+([\d.]+)\s+([\d.]+)"/.exec(head);
+  return vb ? { w: Number(vb[3]) * 20, h: Number(vb[4]) * 20 } : { w: 420, h: 297 };
+}
+
+/** dibuja un SVG en un lienzo a `pxPerMm` sobre fondo blanco y lo devuelve en PNG */
+async function rasterSvg(svg: string, paper: { w: number; h: number }, pxPerMm: number): Promise<string> {
+  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+  try {
+    const img = new Image();
+    await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = () => rej(new Error('No se pudo dibujar el plano.')); img.src = url; });
+    const c = document.createElement('canvas');
+    c.width = Math.round(paper.w * pxPerMm);
+    c.height = Math.round(paper.h * pxPerMm);
+    const ctx = c.getContext('2d');
+    if (!ctx) throw new Error('El navegador no permite dibujar el plano.');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL('image/png');
+  } finally {
+    URL.revokeObjectURL(url);
   }
+}
+
+/**
+ * Juego de planos en un solo PDF: plantas y alzados a escala 1:50 (cada página del tamaño de su
+ * lámina) y la planta acotada del baño. Las láminas se rasterizan a ≈200 ppp.
+ */
+export async function exportPlansPdf(layout: Layout, variantName: string, finishes?: Record<string, string>) {
+  const [{ sheetSet }, { jsPDF }] = await Promise.all([import('../plan/sheets'), import('jspdf')]);
+  const pages = sheetSet(layout, { forExport: true, variantName, finishes }).map((s) => ({ title: `${s.id} · ${s.name}`, svg: s.svg }));
+  const bath = bathPlanSvg(layout, { forExport: true });
+  if (bath) pages.push({ title: 'Baño acotado', svg: bath });
+  if (!pages.length) throw new Error('No hay planos que exportar.');
+  let doc: InstanceType<typeof jsPDF> | null = null;
+  for (const p of pages) {
+    const paper = svgPaper(p.svg);
+    // ≈200 ppp, con un tope de 6000 px por lado para no agotar la memoria en móviles
+    const pxPerMm = Math.min(7.87, 6000 / Math.max(paper.w, paper.h));
+    const png = await rasterSvg(p.svg, paper, pxPerMm);
+    const orientation = paper.w >= paper.h ? 'landscape' : 'portrait';
+    if (!doc) doc = new jsPDF({ unit: 'mm', format: [paper.w, paper.h], orientation, compress: true });
+    else doc.addPage([paper.w, paper.h], orientation);
+    doc.addImage(png, 'PNG', 0, 0, paper.w, paper.h, undefined, 'FAST');
+  }
+  doc!.setProperties({ title: `${layout.name} · planos · ${variantName}`, subject: AVISO, creator: `Estudio v${APP_VERSION}` });
+  await download(exportName('planos', layout.name, variantName, 'pdf'), doc!.output('blob'), 'application/pdf');
 }
 
 export async function exportBathSvg(layout: Layout, variantName: string) {

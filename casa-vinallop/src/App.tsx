@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AVISO, APP_VERSION, detectExport, exportGlb, exportJson, exportPng, exportSvg, exportBathSvg, exportElevationsSvg, exportSheetSet, type ExportMode } from './export/export';
+import { AVISO, APP_VERSION, detectExport, exportGlb, exportJson, exportPng, exportSvg, exportBathSvg, exportElevationsSvg, exportSheetSet, exportPlansPdf, type ExportMode } from './export/export';
 import { useRefs } from './refs/db';
 import { useModel } from './state/derived';
 import { SECTIONS, serializeConfig, useStore, type ViewTab } from './state/store';
@@ -146,7 +146,7 @@ export default function App() {
   const solActive = useSolar((s) => s.active);
   const insets = useMemo(() => ({ bottom: bottomInset, right: mobile ? sideW : 0 }), [bottomInset, sideW, mobile]);
 
-  const doExport = async (kind: 'png' | 'png-alta' | 'glb' | 'svg' | 'bano' | 'alzados' | 'juego' | 'json') => {
+  const doExport = async (kind: ExportKind) => {
     setMenu(null);
     const label = camLabel ? `${viewTitle} · ${camLabel}` : viewTitle;
     try {
@@ -156,12 +156,15 @@ export default function App() {
       } else if (kind === 'glb') {
         setToast({ text: 'Preparando el modelo 3D…' });
         await exportGlb(project.name, variant.name);
+      } else if (kind === 'pdf') {
+        setToast({ text: 'Preparando el PDF de planos…' });
+        await exportPlansPdf(layout, variant.name, variant.finishes);
       } else if (kind === 'bano') await exportBathSvg(layout, variant.name);
       else if (kind === 'alzados') await exportElevationsSvg(layout, variant.name, variant.finishes);
       else if (kind === 'juego') await exportSheetSet(layout, variant.name, variant.finishes);
       else if (kind === 'svg') await exportSvg(layout, { showDims: true, showAreas: true, showFurniture: visual.showFurniture, showLabels: true, issues, openFractions: {}, levelId: visual.levelId }, variant.name);
       else await exportJson(serializeConfig(useStore.getState()), project.name, variant.name);
-      setToast({ text: kind.startsWith('png') ? 'Imagen exportada.' : kind === 'glb' ? 'Modelo 3D exportado (GLB dentro de un ZIP).' : kind === 'alzados' ? 'Alzados exportados (cuatro SVG).' : kind === 'juego' ? 'Juego de planos exportado (plantas y alzados en SVG).' : kind === 'svg' || kind === 'bano' ? 'Plano exportado.' : 'Configuración exportada.' });
+      setToast({ text: kind.startsWith('png') ? 'Imagen exportada.' : kind === 'glb' ? 'Modelo 3D exportado (GLB dentro de un ZIP).' : kind === 'pdf' ? 'Planos exportados en PDF.' : kind === 'alzados' ? 'Alzados exportados (cuatro SVG en un ZIP).' : kind === 'juego' ? 'Juego de planos exportado (plantas y alzados en SVG, en un ZIP).' : kind === 'svg' || kind === 'bano' ? 'Plano exportado.' : 'Configuración exportada.' });
     } catch (e) {
       setToast({ text: e instanceof Error ? e.message : 'No se pudo exportar.', error: true });
     }
@@ -448,16 +451,19 @@ function EmptyState({ refsCount, onAdd, onRefs, onTest }: { refsCount: number; o
   );
 }
 
-function ExportItems({ threeReady, empty, onExport }: { threeReady: boolean; empty: boolean; onExport: (k: 'png' | 'png-alta' | 'glb' | 'svg' | 'bano' | 'alzados' | 'juego' | 'json') => void }) {
+type ExportKind = 'png' | 'png-alta' | 'glb' | 'pdf' | 'svg' | 'bano' | 'alzados' | 'juego' | 'json';
+
+function ExportItems({ threeReady, empty, onExport }: { threeReady: boolean; empty: boolean; onExport: (k: ExportKind) => void }) {
   return (
     <>
+      <button type="button" role="menuitem" disabled={empty} onClick={() => onExport('pdf')} data-action="export-pdf">Planos en PDF: plantas, alzados y baño (1:50)</button>
       <button type="button" role="menuitem" disabled={!threeReady} onClick={() => onExport('png')} data-action="export-png">Imagen PNG de la vista</button>
       <button type="button" role="menuitem" disabled={!threeReady} onClick={() => onExport('png-alta')} data-action="export-png-hq">Imagen de alta resolución (×3)</button>
       <button type="button" role="menuitem" disabled={!threeReady} onClick={() => onExport('glb')} data-action="export-glb">Modelo 3D GLB con materiales (ZIP)</button>
       <button type="button" role="menuitem" disabled={empty} onClick={() => onExport('svg')} data-action="export-svg">Plano SVG</button>
       <button type="button" role="menuitem" disabled={empty} onClick={() => onExport('bano')} data-action="export-bano">Planta acotada del baño (SVG)</button>
-      <button type="button" role="menuitem" disabled={empty} onClick={() => onExport('alzados')} data-action="export-alzados">Alzados de las cuatro fachadas (SVG)</button>
-      <button type="button" role="menuitem" disabled={empty} onClick={() => onExport('juego')} data-action="export-juego">Juego de planos: plantas y alzados (SVG, 1:50)</button>
+      <button type="button" role="menuitem" disabled={empty} onClick={() => onExport('alzados')} data-action="export-alzados">Alzados de las cuatro fachadas (SVG en ZIP)</button>
+      <button type="button" role="menuitem" disabled={empty} onClick={() => onExport('juego')} data-action="export-juego">Juego de planos: plantas y alzados (SVG en ZIP, 1:50)</button>
       <button type="button" role="menuitem" onClick={() => onExport('json')} data-action="export-json">Configuración JSON</button>
     </>
   );
