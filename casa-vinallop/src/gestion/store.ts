@@ -5,7 +5,7 @@
  * colaboración multiusuario). Se guarda con retardo tras cada cambio y al ocultar la página.
  */
 import { create } from 'zustand';
-import { ADDED_PARTIDAS, ADDED_TAREAS, DECISION_FOSA, DECISION_PUERTA_FINCA, DEP_CODIGO, DEMOLICION_PAGADA, DEP_DOCUMENTO, TAREA_LED_VIGAS, ENTREGAS_CUENTA, PAGO_DEMOLICION, FASE1_FIN, FASE2, FASE2_PARTIDAS, FASE_2, FASE_PAC, OFERTA_PEB, PEB_DOCUMENTO, PEB_F202, PEB_FECHA, PEB_PARTIDAS, PEB_PROVEEDOR, PEB_PROVEEDOR_ANTES, PEB_REF, PEB_TAREAS, OFERTA_DEPOSITO, SEGUIMIENTO_2026_10_21, SEGUIMIENTO_ALZADO_ID, SEGUIMIENTO_DESCARTADO, SEGUIMIENTO_DRON_ID, seedGestion, TAREAS_FOSA } from './seed';
+import { ADDED_PARTIDAS, MOTIVO_RECRECIDO, ADDED_TAREAS, DECISION_FOSA, DECISION_PUERTA_FINCA, DEP_CODIGO, DEMOLICION_PAGADA, DEP_DOCUMENTO, TAREA_LED_VIGAS, ENTREGAS_CUENTA, PAGO_DEMOLICION, FASE1_FIN, FASE2, FASE2_PARTIDAS, FASE_2, FASE_PAC, OFERTA_PEB, PEB_DOCUMENTO, PEB_F202, PEB_FECHA, PEB_PARTIDAS, PEB_PROVEEDOR, PEB_PROVEEDOR_ANTES, PEB_REF, PEB_TAREAS, OFERTA_DEPOSITO, SEGUIMIENTO_2026_10_21, SEGUIMIENTO_ALZADO_ID, SEGUIMIENTO_DESCARTADO, SEGUIMIENTO_DRON_ID, seedGestion, TAREAS_FOSA } from './seed';
 import type {
   Asignacion, Bloqueo, Comentario, EntregaCuenta, Decision, Documento, Fase, GestionData, Oferta, Pago, Partida, Presupuesto, Reserva, Seguimiento, Tarea,
 } from './types';
@@ -350,6 +350,18 @@ function migrate15(data: GestionData): GestionData {
   return { ...data, fases };
 }
 
+/** techo plano a 6 m: el seguimiento del recrecido ya no habla del escalón del comedor (solo si no se ha editado) */
+function migrate16(data: GestionData): GestionData {
+  let done: string[] = [];
+  try { done = JSON.parse(window.localStorage.getItem(MIGRATIONS_KEY) ?? '[]') as string[]; } catch { /* sin almacenamiento */ }
+  const id = '2026-10-28-techo-plano-6m';
+  if (done.includes(id)) return data;
+  try { window.localStorage.setItem(MIGRATIONS_KEY, JSON.stringify([...done, id])); } catch { /* sin almacenamiento */ }
+  const viejo = (m: string) => m.startsWith('Recrecido de muros (PAC-04 y su ampliación PAC-04.1, hasta 6,00 m). Con la zona de comedor más baja');
+  if (!data.fases.some((f) => f.seguimiento.some((x) => viejo(x.motivo)))) return data;
+  return { ...data, fases: data.fases.map((f) => ({ ...f, seguimiento: f.seguimiento.map((x) => (viejo(x.motivo) ? { ...x, motivo: MOTIVO_RECRECIDO } : x)) })) };
+}
+
 function load(): { data: GestionData; aviso: string | null } {
   if (typeof window === 'undefined') return { data: seedGestion(), aviso: null };
   let raw: string | null = null;
@@ -362,7 +374,7 @@ function load(): { data: GestionData; aviso: string | null } {
   try {
     const parsed = JSON.parse(raw) as unknown;
     const base = parseGestion(parsed, false);
-    const data = migrate15(migrate14(migrate13(migrate12(migrate11(migrate10(migrate9(migrate8(migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base)))))))))))))));
+    const data = migrate16(migrate15(migrate14(migrate13(migrate12(migrate11(migrate10(migrate9(migrate8(migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base))))))))))))))));
     // las migraciones se marcan como hechas: hay que guardar ya su resultado o se perderían al recargar sin editar
     if (data !== base) try { window.localStorage.setItem(GESTION_KEY, JSON.stringify(envelope(data))); } catch { /* sin almacenamiento */ }
     let aviso: string | null = null;

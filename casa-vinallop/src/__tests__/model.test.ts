@@ -450,11 +450,11 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
     const v = { ...baseVariant(), options: { ...baseVariant().options, aberturas: PROPUESTA_VENTANAS } };
     const l2 = resolveLayout(VINALLOP, v);
     const nuevas = l2.openings.filter((o) => o.variantKey && PROPUESTA_VENTANAS.includes(o.variantKey));
-    // con la zona de comedor bajada, la ventana alta de la doble altura sobre el comedor ya no cabe
+    // con todo a 6 m cabe la ventana alta sobre el comedor; con la zona de comedor bajada, no
     expect(nuevas.length).toBeGreaterThanOrEqual(8);
-    expect(nuevas.some((o) => o.id === 'var-ventana-alta-2')).toBe(false);
-    const alta = resolveLayout(VINALLOP, { ...v, options: { ...v.options, alturaComedor: 'alta' as const } });
-    expect(alta.openings.some((o) => o.id === 'var-ventana-alta-2')).toBe(true);
+    expect(nuevas.some((o) => o.id === 'var-ventana-alta-2')).toBe(true);
+    const baja = resolveLayout(VINALLOP, { ...v, options: { ...v.options, alturaComedor: 'baja' as const } });
+    expect(baja.openings.some((o) => o.id === 'var-ventana-alta-2')).toBe(false);
     expect(nuevas.every((o) => o.status === 'propuesto')).toBe(true);
     const ids = new Set(nuevas.map((o) => o.id));
     expect(validateLayout(l2).filter((i) => ids.has(i.elementId) && i.level !== 'aviso')).toEqual([]);
@@ -655,10 +655,15 @@ describe('depósito de agua potable', () => {
   });
 });
 
-describe('zona de comedor más baja, interior a 4 m (propuesta de la propiedad)', () => {
-  const baja = resolveLayout(VINALLOP, baseVariant());
-  const alta = resolveLayout(VINALLOP, { ...baseVariant(), options: { ...baseVariant().options, alturaComedor: 'alta' } });
-  it('por defecto la zona de comedor tiene el techo interior a 4 m del suelo desde el escalón; con «alta», toda la casa a 6 m', () => {
+describe('techo plano a 6 m (decisión de la propiedad) y variante descartada del comedor a 4 m', () => {
+  const alta = resolveLayout(VINALLOP, baseVariant());
+  const baja = resolveLayout(VINALLOP, { ...baseVariant(), options: { ...baseVariant().options, alturaComedor: 'baja' } });
+  it('por defecto toda la casa corona a 6 m, sin escalón ni muros rebajados', () => {
+    expect(alta.escalon).toBeUndefined();
+    expect(alta.walls.some((w) => w.id === 'muro-escalon' || w.tope)).toBe(false);
+    for (const x of [2, 8, 12, 15.5]) expect(roofTopAt(alta, 2.6, x)).toBeCloseTo(6, 6);
+  });
+  it('variante «baja»: techo interior a 4 m del suelo desde el escalón; con «alta», toda la casa a 6 m', () => {
     expect(baja.escalon).toEqual({ x: 10.4, top: 4.61 });
     // parte alta del interior (cara inferior de la cubierta) a 4,00 m sobre el suelo interior
     expect(baja.escalon!.top - baja.roof!.thickness - baja.levels.find((l) => l.id === 'pb')!.elevation).toBeCloseTo(4, 6);

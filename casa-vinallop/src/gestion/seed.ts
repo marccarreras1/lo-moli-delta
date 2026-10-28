@@ -352,6 +352,8 @@ function ofertas(): Oferta[] {
 // ---------------------------------------------------------------- seguimiento de obra
 
 export const SEGUIMIENTO_FECHA = '2026-10-21';
+/** el techo queda plano a 6 m en toda la casa (propiedad, 28/10/2026): se abandona el escalón del comedor */
+export const MOTIVO_RECRECIDO = 'Recrecido de muros (PAC-04 y su ampliación PAC-04.1) hasta 6,00 m en toda la casa: la propiedad decide el techo todo plano a 6 m (28/10/2026), sin la zona de comedor más baja.';
 const seg = (n: number, partida: string, estado: Seguimiento['estado'], texto: string, motivo: string, fotos: string[]): Seguimiento => ({
   id: `seg-${SEGUIMIENTO_FECHA}-${String(n).padStart(2, '0')}`, fecha: SEGUIMIENTO_FECHA, texto, partida, motivo, estado, fotos: fotos.map((f) => `obra-${f}`),
 });
@@ -376,7 +378,7 @@ export const SEGUIMIENTO_2026_10_21 = (): Record<string, Seguimiento[]> => ({
     seg(5, 'PAC-01', 'a comprobar', 'Coronación del muro de la casa junto al anexo de los depósitos rota al desmontar la cubierta (mampostería al descubierto).',
       'Consecuencia de la demolición del techo (PAC-01); se rehace con el recrecido de muros y el cinturón de hormigón (PAC-04). Comprobar que no afecta al muro del anexo.', ['03-anexo-muro-roto', '10-anexo-desde-dentro']),
     seg(7, 'PAC-04', 'pendiente', 'Coronación de los muros a la vista, a la espera del recrecido con bloque y el cinturón de hormigón.',
-      'Recrecido de muros (PAC-04 y su ampliación PAC-04.1, hasta 6,00 m). Con la zona de comedor más baja, desde el escalón los muros coronan a ≈4,61 m: revisar el alcance de PAC-04.1.', ['13-coronacion', '05-frontal-b-alto']),
+      MOTIVO_RECRECIDO, ['13-coronacion', '05-frontal-b-alto']),
     seg(10, 'PAC-11', 'en curso', 'Incremento de 36 cm del suelo interior (relleno con la tierra y la piedra de la casa y capa de hormigón).',
       'Indicado por la propiedad (21/10/2026), sin fotos. PAC-11 incluye el alzado de la casa de 36 cm (propiedad, 10/10/2026); el documento del presupuesto habla de elevar 15 cm: aclarar con el constructor.', []),
     seg(11, 'PAC-01', 'en curso', 'Vista de dron: retirada la cubierta de la parte central de la casa (muros al aire y escombro dentro); los dos extremos todavía conservan la cubierta de placa ondulada.',

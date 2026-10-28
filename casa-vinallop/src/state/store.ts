@@ -350,9 +350,17 @@ const projectIdOf = (src: ModelSource) => (src === 'prueba' ? 'modelo-prueba' : 
 function load() {
   if (typeof window === 'undefined') return { visual: defaultVisual(), designs: {}, cameras: {}, favorites: [] as Favorite[] };
   const cams = (read('camaras') ?? {}) as Record<string, unknown>;
+  const designs = cleanDesigns(read('diseno'));
+  // migraciones de una sola vez sobre la opción base guardada (las variantes del usuario no se tocan)
+  const done = Array.isArray(read('migraciones')) ? (read('migraciones') as unknown[]).filter((x): x is string => typeof x === 'string') : [];
+  if (!done.includes('techo-plano-6m')) {
+    // propiedad (28/10/2026): el techo, todo plano a 6 m; se abandona la zona de comedor bajada
+    for (const d of Object.values(designs)) d.base.options.alturaComedor = 'alta';
+    try { window.localStorage.setItem(`${KEY}/migraciones`, JSON.stringify([...done, 'techo-plano-6m'])); } catch { /* sin almacenamiento */ }
+  }
   return {
     visual: cleanVisual(read('visual')),
-    designs: cleanDesigns(read('diseno')),
+    designs,
     cameras: { exterior: cleanCamera(cams.exterior), plantas: cleanCamera(cams.plantas), interior: cleanCamera(cams.interior) },
     favorites: cleanFavorites(read('favoritos')),
   };

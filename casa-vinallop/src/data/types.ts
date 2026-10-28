@@ -598,7 +598,7 @@ export const PROPUESTA_VENTANAS = ['ventilacion-cruzada', 'ventana-dormitorio', 
 /** mesa de comedor del interior; «ninguna» la quita (con sus sillas) */
 export type MesaComedor = 'rectangular' | 'redonda' | 'ninguna';
 
-export const DEFAULT_OPTIONS: DesignOptions = { celosia: 'A', lamparas: 'A', lamparasUbicacion: 'isla', puertaEntrada: 'tablones', entradaSaliente: false, ventanal: '7', aberturas: [], lamparaExterior: 'arbol', chimenea: 'estufa', mesaComedor: 'rectangular', salon: 'sofa-l', alturaComedor: 'baja' };
+export const DEFAULT_OPTIONS: DesignOptions = { celosia: 'A', lamparas: 'A', lamparasUbicacion: 'isla', puertaEntrada: 'tablones', entradaSaliente: false, ventanal: '7', aberturas: [], lamparaExterior: 'arbol', chimenea: 'estufa', mesaComedor: 'rectangular', salon: 'sofa-l', alturaComedor: 'alta' };
 
 export interface Layout extends ProjectData {
   options: DesignOptions;

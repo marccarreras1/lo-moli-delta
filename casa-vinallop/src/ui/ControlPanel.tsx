@@ -208,7 +208,8 @@ function ProposalsSection() {
       {project.escalonComedor && (
         <>
           <Segmented label="Altura de la zona de comedor" id="opt-altura-comedor" value={o.alturaComedor} onChange={(x) => setOption('alturaComedor', x)}
-            options={[{ value: 'baja', label: project.escalonComedor.libre ? `Más baja: interior a ${project.escalonComedor.libre.toLocaleString('es-ES')} m` : `Bajada a ${project.escalonComedor.top.toLocaleString('es-ES')} m` }, { value: 'alta', label: 'Toda a 6 m (doble altura)' }]} />
+            options={[{ value: 'alta', label: 'Todo plano a 6 m' }, { value: 'baja', label: project.escalonComedor.libre ? `Más baja: interior a ${project.escalonComedor.libre.toLocaleString('es-ES')} m (descartada)` : `Bajada a ${project.escalonComedor.top.toLocaleString('es-ES')} m (descartada)` }]} />
+          {o.alturaComedor === 'alta' && <p className="hint">Decisión de la propiedad (28/10/2026): cubierta plana a 6 m sobre el terreno en toda la casa, sin escalón en el comedor.</p>}
           {o.alturaComedor === 'baja' && <p className="hint">Propuesta de la propiedad: desde ≈{project.escalonComedor.x.toLocaleString('es-ES')} m (comedor y salón) {project.escalonComedor.libre ? `el techo interior queda a ${project.escalonComedor.libre.toLocaleString('es-ES')} m del suelo y los muros coronan a ${project.escalonComedor.top.toLocaleString('es-ES')} m sobre el terreno` : `la casa corona a ${project.escalonComedor.top.toLocaleString('es-ES')} m`}; altell, baño, escalera y cocina siguen a 6 m. Solo con cubierta plana.</p>}
         </>
       )}
