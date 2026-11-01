@@ -207,19 +207,19 @@ describe('seguimiento de obra (fotos del 21/10/2026)', () => {
 
 describe('entregas a cuenta (sin partida)', () => {
   const g = seedGestion();
-  it('6.000 € pagados en agosto (sin fecha exacta) y la factura FEM26-0031 de 3.500 € con el pago sin confirmar', () => {
+  it('6.000 € pagados en agosto (sin fecha exacta), la FEM26-0031 de 3.500 € pagada y la FEM26-0032 de 10.000 € por pagar', () => {
     const ac = g.presupuesto.aCuenta;
     // de los 6.000 € de agosto, 1.815 € se imputan a la demolición del techo (PAC-01)
-    expect(ac.map((x) => [x.importe, x.pagado])).toEqual([[4185, true], [3500, false]]);
+    expect(ac.map((x) => [x.importe, x.pagado])).toEqual([[4185, true], [3500, true], [10000, false]]);
     expect(ac[0].fecha).toBe('');
-    expect(aCuentaTotales(g.presupuesto)).toEqual({ n: 2, pagado: 4185, porPagar: 3500 });
+    expect(aCuentaTotales(g.presupuesto)).toEqual({ n: 3, pagado: 7685, porPagar: 10000 });
     const pagadoPartidas = g.presupuesto.partidas.reduce((a, p) => a + p.pagos.reduce((b, x) => b + x.importe, 0), 0);
-    expect(pagadoPartidas + aCuentaTotales(g.presupuesto).pagado).toBe(6000);
+    expect(pagadoPartidas + aCuentaTotales(g.presupuesto).pagado).toBe(9500);
   });
   it('se exportan e importan', () => {
     useGestion.getState().resetGestion();
     expect(importGestion(exportGestion())).toEqual({ ok: true });
-    expect(useGestion.getState().presupuesto.aCuenta).toHaveLength(2);
+    expect(useGestion.getState().presupuesto.aCuenta).toHaveLength(3);
   });
 });
 

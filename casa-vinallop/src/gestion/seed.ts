@@ -469,8 +469,12 @@ export const ENTREGAS_CUENTA = (): EntregaCuenta[] => [
     nota: `Primera entrega a cuenta de la obra, pagada en agosto de 2026 (día, emisor y justificante sin indicar): 6.000 €, de los que ${DEMOLICION_PAGADA.toLocaleString('es-ES')} € se imputan a la demolición del techo (PAC-01) por indicación de la propiedad (25/10/2026); aquí queda el resto.`,
   },
   {
-    id: 'ac-fem26-0031', fecha: '2026-10-19', importe: 3500, emisor: 'Euromed Bat (Narbonne, Francia)', documento: 'Factura FEM26-0031', pagado: false,
-    nota: 'A cuenta de la obra, sin partida. Sin IVA (autoliquidación por inversión del sujeto pasivo). El concepto de la factura no corresponde a la obra y va a nombre de una empresa: revisar con el gestor. Pago sin confirmar.',
+    id: 'ac-fem26-0031', fecha: '2026-10-19', importe: 3500, emisor: 'Euromed Bat (Narbonne, Francia)', documento: 'Factura FEM26-0031', pagado: true,
+    nota: 'A cuenta de la obra, sin partida. Sin IVA (autoliquidación por inversión del sujeto pasivo). El concepto de la factura no corresponde a la obra y va a nombre de una empresa: revisar con el gestor. Pagada: el constructor la da por cobrada en su mensaje de fin de octubre («amb els 3.500 € pagats queden 28.000 €»); fecha del pago sin indicar.',
+  },
+  {
+    id: 'ac-fem26-0032', fecha: '2026-11-01', importe: 10000, emisor: 'Euromed Bat (Narbonne, Francia)', documento: 'Factura FEM26-0032', pagado: false,
+    nota: 'A cuenta de la obra, sin partida (indicado por la propiedad: «otra factura para pagar»). Sin IVA (autoliquidación por inversión del sujeto pasivo). Igual que la FEM26-0031, el concepto no corresponde a la obra (mantenimiento del suelo de una nave) y va a nombre de una empresa: revisar con el gestor. Pendiente de pago.',
   },
 ];
 

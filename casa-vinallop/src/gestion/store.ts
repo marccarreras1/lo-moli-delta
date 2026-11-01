@@ -362,6 +362,23 @@ function migrate16(data: GestionData): GestionData {
   return { ...data, fases: data.fases.map((f) => ({ ...f, seguimiento: f.seguimiento.map((x) => (viejo(x.motivo) ? { ...x, motivo: MOTIVO_RECRECIDO } : x)) })) };
 }
 
+/** Factura FEM26-0032 a cuenta (01/11/2026) y FEM26-0031 cobrada según el constructor (solo si no se ha tocado). */
+function migrate17(data: GestionData): GestionData {
+  let done: string[] = [];
+  try { done = JSON.parse(window.localStorage.getItem(MIGRATIONS_KEY) ?? '[]') as string[]; } catch { /* sin almacenamiento */ }
+  const id = '2026-11-01-fem26-0032';
+  if (done.includes(id)) return data;
+  try { window.localStorage.setItem(MIGRATIONS_KEY, JSON.stringify([...done, id])); } catch { /* sin almacenamiento */ }
+  const pr = data.presupuesto;
+  const seed = ENTREGAS_CUENTA();
+  const s31 = seed.find((x) => x.id === 'ac-fem26-0031')!;
+  const viejaNota = (n: string) => n.endsWith('Pago sin confirmar.');
+  const aCuenta = pr.aCuenta.map((x) => (x.id === s31.id && !x.pagado && x.importe === s31.importe && viejaNota(x.nota) ? { ...x, pagado: true, nota: s31.nota } : x));
+  const nueva = seed.find((x) => x.id === 'ac-fem26-0032')!;
+  if (!aCuenta.some((x) => x.id === nueva.id)) aCuenta.push(nueva);
+  return { ...data, presupuesto: { ...pr, aCuenta } };
+}
+
 function load(): { data: GestionData; aviso: string | null } {
   if (typeof window === 'undefined') return { data: seedGestion(), aviso: null };
   let raw: string | null = null;
@@ -374,7 +391,7 @@ function load(): { data: GestionData; aviso: string | null } {
   try {
     const parsed = JSON.parse(raw) as unknown;
     const base = parseGestion(parsed, false);
-    const data = migrate16(migrate15(migrate14(migrate13(migrate12(migrate11(migrate10(migrate9(migrate8(migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base))))))))))))))));
+    const data = migrate17(migrate16(migrate15(migrate14(migrate13(migrate12(migrate11(migrate10(migrate9(migrate8(migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base)))))))))))))))));
     // las migraciones se marcan como hechas: hay que guardar ya su resultado o se perderían al recargar sin editar
     if (data !== base) try { window.localStorage.setItem(GESTION_KEY, JSON.stringify(envelope(data))); } catch { /* sin almacenamiento */ }
     let aviso: string | null = null;
