@@ -188,6 +188,70 @@ export const PEB_PARTIDAS = (): Partida[] => [
   peb(7, 'Losa del porche', CAP.exterior, 1000),
 ];
 export const PEB_F202 = { precio: 2400, notas: `Presupuesto ${PEB_REF}, línea 3: recuperación de la fosa séptica actual para convertirla en depósito de agua (2.400 € sin IVA). El presupuesto no detalla vaciado por gestor autorizado, desinfección, prueba de estanqueidad, registro, filtro, rebosadero ni bomba: aclarar el alcance.` };
+/** Extras pactados con el constructor (WhatsApp, finales de octubre de 2026): sin IVA según la propiedad. */
+export const EXTRAS_CODIGO = 'EXT-01';
+export const EXTRAS_PARTIDAS = (): Partida[] => [{
+  id: 'p-ext-01', codigo: EXTRAS_CODIGO,
+  descripcion: 'Extras pactados: derribo de las paredes actuales, cimentación y muros nuevos de bloque en toda la casa, ampliación de 30 cm por el frontal A, escalera de hormigón, caseta del cuarto técnico y porche elevado a 3 cm del suelo de la casa (≈185–200 m²)',
+  capitulo: CAP.estructura, fase: FASE_PAC,
+  cantidad: 1, unidad: 'PA', precio: 26000,
+  proveedor: PAC_PROVEEDOR, referencia: 'Acuerdo por WhatsApp', contratado: 26000, extras: null, real: null, pagos: [],
+  notas: 'Pactado por mensaje con el constructor: «Pactats 26.000 euros extres». Según su último mensaje quedan 28.000 € de lo pactado + 26.000 € de extras = 54.000 €, todo sin IVA (indicado por la propiedad). Pendiente de aclarar: si los 4.000 € que el constructor añadió al porche al pasar la solera a 6 m están dentro de los 26.000 €; si el muro nuevo lleva pilares y zuncho intermedio; quién calcula el cimiento de 30 × 40 cm. Sustituye a la escalera y al porche del PEB26-0001 (PEB-04 a PEB-07), a la caseta F2-01 y a la solera SOL-01.',
+  origenPrecio: 'Acuerdo con el constructor por mensaje (sin IVA)', fechaPrecio: '2026-10-29',
+  condicion: 'contratado', impuesto: 0, base: null,
+}];
+
+/** Presupuesto PEB26-0005 (31/10/2026): las líneas 1–3 repiten PEB-01, PEB-02 y F2-02 del PEB26-0001 con el mismo precio. */
+export const PEB5_REF = 'PEB26-0005';
+export const PEB5_FECHA = '2026-10-31';
+const peb5 = (n: number, descripcion: string, capitulo: string, precio: number, notas = ''): Partida => ({
+  id: `p-peb5-${String(n).padStart(2, '0')}`, codigo: `PEB5-${String(n).padStart(2, '0')}`,
+  descripcion, capitulo, fase: FASE_2,
+  cantidad: 1, unidad: 'PA', precio,
+  proveedor: PAC_PROVEEDOR, referencia: PEB5_REF, contratado: null, extras: null, real: null, pagos: [],
+  notas: `Presupuesto ${PEB5_REF}, línea ${n}.${notas ? ` ${notas}` : ''}`,
+  origenPrecio: `Presupuesto ${PEB5_REF} (importe sin IVA)`, fechaPrecio: PEB5_FECHA,
+  condicion: 'oferta recibida', impuesto: 0, base: null,
+});
+export const PEB5_PARTIDAS = (): Partida[] => [
+  peb5(4, 'Instalación eléctrica: 38 enchufes, 30 puntos de luz, 20 interruptores, cuadro a normativa con toma de tierra, colocación de lámparas y alimentación de la bomba', CAP.electricidad, 5500, 'Mecanismos y lámparas los aporta la propiedad. No incluye el LED de las vigas ni la iluminación del jardín y el camino.'),
+  peb5(5, 'Instalación de agua fría y caliente y desagües: termo, bomba de presión, duchas del baño, del cuarto técnico y bajo el olivo, cocina, lavabo, lavadora y lavavajillas; montaje de sanitarios', CAP.agua, 4500, 'Termo, bomba, grifería, sanitarios, mueble de lavabo, plato y mampara los aporta la propiedad.'),
+  peb5(6, 'Microcemento en el suelo interior (120 m²)', CAP.pavimentos, 2800, '≈23 €/m², muy por debajo del mercado: confirmar capas, malla, imprimación y sellador.'),
+  peb5(7, 'Microcemento en el suelo exterior (180–200 m²)', CAP.exterior, 4000, '≈21 €/m²: confirmar que es un sistema para exterior (antideslizante, resistente al sol) y con juntas.'),
+  peb5(8, 'Microcemento en las paredes de la cocina (20 m²)', CAP.cocina, 600),
+  peb5(9, 'Microcemento en las paredes del baño y de la ducha del cuarto técnico (máximo 30 m²)', CAP.bano, 800, 'Confirmar la impermeabilización de las duchas bajo el microcemento.'),
+  peb5(10, 'Tabiques de obra de la planta baja: pasillo, dormitorio y baño', CAP.estructura, 1100),
+  peb5(11, 'Tres premarcos para puertas interiores abatibles', CAP.mobiliario, 200),
+  peb5(12, 'Trasdosado con aislamiento de lana de roca en todos los muros perimetrales interiores (salvo el cuarto técnico)', CAP.fachadas, 6500, 'Confirmar grosor de la lana y tipo de trasdosado (si es de placa de yeso, encima no va mortero de cal).'),
+  peb5(13, 'Mortero de cal o monocapa interior, del color que elija la propiedad (salvo el cuarto técnico)', CAP.fachadas, 6600),
+  peb5(14, 'Monocapa exterior con malla e impermeable en toda la fachada, del color que elija la propiedad', CAP.fachadas, 8000, 'No incluye los muretes de contención del porche.'),
+  peb5(15, 'Colocación de tres puertas interiores (las aporta la propiedad)', CAP.mobiliario, 500),
+  peb5(16, 'Colocación de la piedra de remate en el muro de la terraza sobre el cuarto técnico (la aporta la propiedad)', CAP.fachadas, 500),
+  peb5(17, 'Colocación de la piedra de remate en los muros del terrado (la aporta la propiedad)', CAP.cubierta, 900),
+  peb5(18, 'Colocación de las piedras de remate de las ventanas (las aporta la propiedad)', CAP.fachadas, 600),
+  peb5(19, 'Tres bajantes de pluviales: dos en el terrado y una en la terraza', CAP.cubierta, 600, 'El presupuesto las saca al campo desde el muro del porche: pedir que vayan al aljibe.'),
+];
+export const PEB5_DOCUMENTO = { id: 'doc-peb26-0005', titulo: `Presupuesto ${PEB5_REF}`, referencia: `${PAC_PROVEEDOR} · documento PDF de la propiedad`, fecha: PEB5_FECHA, nota: 'Oferta recibida. El documento aplica IVA del 21 % (60.984 €); según la propiedad, todo va sin IVA (50.400 €).' };
+export const OFERTA_PEB5 = (): Oferta => ({
+  id: 'o-peb26-0005', proveedor: PAC_PROVEEDOR, referencia: PEB5_REF, fecha: PEB5_FECHA,
+  alcance: 'Fosa nueva y recuperación de la actual, electricidad, agua, microcemento interior y exterior, tabiques, trasdosado con lana de roca, morteros interior y exterior, colocación de puertas, remates y bajantes (19 líneas).',
+  partidas: ['PEB-01', 'PEB-02', 'F2-02', ...PEB5_PARTIDAS().map((p) => p.codigo)],
+  importeBase: null, descuentoPct: null, ajuste: null, ajusteNota: '', impuestoPct: 0, estado: 'recibida',
+  documentos: [`Presupuesto ${PEB5_REF} (31/10/2026)`],
+  notas: 'Base 50.400 €. El documento suma IVA del 21 % (60.984 €); según la propiedad, todo sin IVA. Las líneas 1–3 son las mismas que PEB-01, PEB-02 y F2-02 del PEB26-0001 (mismo precio): no se duplican.',
+  totalesImpresos: { subtotal: 50400, descuento: null, base: 50400, impuestos: 10584, total: 60984, nota: 'Totales impresos en el presupuesto (con IVA del 21 %).' },
+  condiciones: '',
+  avisos: [
+    'Microcemento a 20–30 €/m², muy por debajo del mercado (50–70 €/m²): confirmar el sistema.',
+    'No incluye ventilación, impermeabilización de duchas, andamio ni el material que aporta la propiedad.',
+  ],
+});
+/** Partidas sustituidas por los extras pactados: quedan como no seleccionadas para no contarlas dos veces. */
+export const SUSTITUIDAS_POR_EXTRAS = ['PEB-04', 'PEB-05', 'PEB-06', 'PEB-07', 'F2-01', 'SOL-01'];
+export const NOTA_SUSTITUIDA = 'Sustituida por los extras pactados (EXT-01, 26.000 €): no se cuenta para no pagarla dos veces.';
+export const sustituir = (p: Partida): Partida => (SUSTITUIDAS_POR_EXTRAS.includes(p.codigo) && !p.noSeleccionada
+  ? { ...p, noSeleccionada: true, notas: `${NOTA_SUSTITUIDA} ${p.notas}`.trim() } : p);
+
 export const PEB_TAREAS: [string, string][] = [
   ['PEB-01', 'Fosa séptica nueva: hoyo y zanjas de evacuación'],
   ['PEB-02', 'Colocar la fosa séptica nueva y los tubos'],
@@ -304,6 +368,8 @@ function partidas(): Partida[] {
       'No seleccionada en el presupuesto: fase pendiente de asignar hasta confirmar.'),
     ...FASE2_PARTIDAS(),
     ...PEB_PARTIDAS(),
+    ...EXTRAS_PARTIDAS(),
+    ...PEB5_PARTIDAS(),
     {
       id: 'p-solera-l', codigo: SOLERA_CODIGO,
       descripcion: 'Solera continua de cemento en L (frontal A de punta a punta y lateral del algarrobo)',
@@ -346,7 +412,7 @@ function ofertas(): Oferta[] {
       'La cubierta plana propuesta difiere del informe (cubierta inclinada con panel sándwich): coordinar documentos antes de obras.',
       'El zuncho de 40 × 70 cm es una característica propuesta por el constructor, no un cálculo estructural validado.',
     ],
-  }, OFERTA_DEPOSITO(), OFERTA_PEB()];
+  }, OFERTA_DEPOSITO(), OFERTA_PEB(), OFERTA_PEB5()];
 }
 
 // ---------------------------------------------------------------- seguimiento de obra
@@ -486,9 +552,9 @@ export function seedGestion(): GestionData {
     fases: fases(),
     presupuesto: {
       capitulos: capitulos(),
-      partidas: partidas(),
+      partidas: partidas().map(sustituir),
       ofertas: ofertas(),
-      documentos: [{ id: 'doc-pac26-0052', titulo: `Presupuesto ${PAC_REF}`, referencia: `${PAC_PROVEEDOR} · documento en papel con nota manuscrita`, fecha: PAC_FECHA, nota: 'Oferta recibida, no aceptada ni pagada.' }, { ...DEP_DOCUMENTO }, { ...PEB_DOCUMENTO }],
+      documentos: [{ id: 'doc-pac26-0052', titulo: `Presupuesto ${PAC_REF}`, referencia: `${PAC_PROVEEDOR} · documento en papel con nota manuscrita`, fecha: PAC_FECHA, nota: 'Oferta recibida, no aceptada ni pagada.' }, { ...DEP_DOCUMENTO }, { ...PEB_DOCUMENTO }, { ...PEB5_DOCUMENTO }],
       reserva: { importe: null, nota: '', asignaciones: [] },
       aCuenta: ENTREGAS_CUENTA(),
       avisos: [

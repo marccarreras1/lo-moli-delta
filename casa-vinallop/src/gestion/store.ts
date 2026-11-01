@@ -5,7 +5,7 @@
  * colaboración multiusuario). Se guarda con retardo tras cada cambio y al ocultar la página.
  */
 import { create } from 'zustand';
-import { ADDED_PARTIDAS, MOTIVO_RECRECIDO, ADDED_TAREAS, DECISION_FOSA, DECISION_PUERTA_FINCA, DEP_CODIGO, DEMOLICION_PAGADA, DEP_DOCUMENTO, TAREA_LED_VIGAS, ENTREGAS_CUENTA, PAGO_DEMOLICION, FASE1_FIN, FASE2, FASE2_PARTIDAS, FASE_2, FASE_PAC, OFERTA_PEB, PEB_DOCUMENTO, PEB_F202, PEB_FECHA, PEB_PARTIDAS, PEB_PROVEEDOR, PEB_PROVEEDOR_ANTES, PEB_REF, PEB_TAREAS, OFERTA_DEPOSITO, SEGUIMIENTO_2026_10_21, SEGUIMIENTO_ALZADO_ID, SEGUIMIENTO_DESCARTADO, SEGUIMIENTO_DRON_ID, seedGestion, TAREAS_FOSA } from './seed';
+import { ADDED_PARTIDAS, EXTRAS_PARTIDAS, MOTIVO_RECRECIDO, OFERTA_PEB5, PEB5_DOCUMENTO, PEB5_PARTIDAS, sustituir, ADDED_TAREAS, DECISION_FOSA, DECISION_PUERTA_FINCA, DEP_CODIGO, DEMOLICION_PAGADA, DEP_DOCUMENTO, TAREA_LED_VIGAS, ENTREGAS_CUENTA, PAGO_DEMOLICION, FASE1_FIN, FASE2, FASE2_PARTIDAS, FASE_2, FASE_PAC, OFERTA_PEB, PEB_DOCUMENTO, PEB_F202, PEB_FECHA, PEB_PARTIDAS, PEB_PROVEEDOR, PEB_PROVEEDOR_ANTES, PEB_REF, PEB_TAREAS, OFERTA_DEPOSITO, SEGUIMIENTO_2026_10_21, SEGUIMIENTO_ALZADO_ID, SEGUIMIENTO_DESCARTADO, SEGUIMIENTO_DRON_ID, seedGestion, TAREAS_FOSA } from './seed';
 import type {
   Asignacion, Bloqueo, Comentario, EntregaCuenta, Decision, Documento, Fase, GestionData, Oferta, Pago, Partida, Presupuesto, Reserva, Seguimiento, Tarea,
 } from './types';
@@ -379,6 +379,29 @@ function migrate17(data: GestionData): GestionData {
   return { ...data, presupuesto: { ...pr, aCuenta } };
 }
 
+/** Extras pactados (EXT-01, 26.000 €), presupuesto PEB26-0005 y partidas sustituidas por los extras (01/11/2026). */
+function migrate18(data: GestionData): GestionData {
+  let done: string[] = [];
+  try { done = JSON.parse(window.localStorage.getItem(MIGRATIONS_KEY) ?? '[]') as string[]; } catch { /* sin almacenamiento */ }
+  const id = '2026-11-01-extras-peb26-0005';
+  if (done.includes(id)) return data;
+  try { window.localStorage.setItem(MIGRATIONS_KEY, JSON.stringify([...done, id])); } catch { /* sin almacenamiento */ }
+  const pr = data.presupuesto;
+  const caps = new Set(pr.capitulos.map((c) => c.id));
+  const fasesIds = new Set(data.fases.map((f) => f.id));
+  const nuevas = [...EXTRAS_PARTIDAS(), ...PEB5_PARTIDAS()].filter((p) => !pr.partidas.some((x) => x.id === p.id || x.codigo === p.codigo))
+    .map((p) => ({ ...p, capitulo: caps.has(p.capitulo) ? p.capitulo : '', fase: fasesIds.has(p.fase) ? p.fase : '' }));
+  return {
+    ...data,
+    presupuesto: {
+      ...pr,
+      partidas: [...pr.partidas.map(sustituir), ...nuevas],
+      ofertas: pr.ofertas.some((o) => o.id === OFERTA_PEB5().id) ? pr.ofertas : [...pr.ofertas, OFERTA_PEB5()],
+      documentos: pr.documentos.some((d) => d.id === PEB5_DOCUMENTO.id) ? pr.documentos : [...pr.documentos, { ...PEB5_DOCUMENTO }],
+    },
+  };
+}
+
 function load(): { data: GestionData; aviso: string | null } {
   if (typeof window === 'undefined') return { data: seedGestion(), aviso: null };
   let raw: string | null = null;
@@ -391,7 +414,7 @@ function load(): { data: GestionData; aviso: string | null } {
   try {
     const parsed = JSON.parse(raw) as unknown;
     const base = parseGestion(parsed, false);
-    const data = migrate17(migrate16(migrate15(migrate14(migrate13(migrate12(migrate11(migrate10(migrate9(migrate8(migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base)))))))))))))))));
+    const data = migrate18(migrate17(migrate16(migrate15(migrate14(migrate13(migrate12(migrate11(migrate10(migrate9(migrate8(migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base))))))))))))))))));
     // las migraciones se marcan como hechas: hay que guardar ya su resultado o se perderían al recargar sin editar
     if (data !== base) try { window.localStorage.setItem(GESTION_KEY, JSON.stringify(envelope(data))); } catch { /* sin almacenamiento */ }
     let aviso: string | null = null;

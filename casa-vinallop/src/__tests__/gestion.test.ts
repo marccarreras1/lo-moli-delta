@@ -58,17 +58,19 @@ describe('partidas sin valorar', () => {
     expect(solera.precio).toBeNull();
     expect(importePrevisto(solera)).toBeNull();
     const r = resumenEconomico(pres);
-    // la solera y la vinoteca de la fase 2 están sin valorar (la fosa → aljibe ya tiene precio en PEB26-0001)
-    expect(r.sinValorar).toBe(2);
+    // la vinoteca de la fase 2 está sin valorar (la solera SOL-01 queda sustituida por los extras pactados)
+    expect(r.sinValorar).toBe(1);
     expect(r.parcial).toBe(true);
     // cuentan las 8 partidas seleccionadas, PAC-11 (alzado de 36 cm, 2.500, pasa a la fase 1) y los añadidos de la propiedad
     // (+2.000 recrecido hasta 6 m, 3.500 zanja) y el depósito de agua potable (2.282); las 3 no seleccionadas son referencia
-    // y la fase 2: caseta (8.000, importe hablado) y el presupuesto PEB26-0001 (13.900 en 7 líneas, una de ellas F2-02)
-    expect(r.previsto.n).toBe(20);
-    expect(r.previsto.base).toBe(37900 + 2500 + 2000 + 3500 + 2282 + 8000 + 13900);
-    expect(r.revisado.base).toBe(37900 + 2500 + 2000 + 3500 + 2282 + 8000 + 13900);
-    expect(r.noSeleccionadas).toEqual({ n: 3, base: 13200 });
-    expect(pres.partidas.filter((p) => p.noSeleccionada).map((p) => p.codigo)).toEqual(PAC_NO_SELECCION);
+    // y la fase 2: el PEB26-0001 sin la escalera ni el porche (13.900 − 7.200), los extras pactados (26.000) y el PEB26-0005
+    // (16 líneas, 43.700; sus 3 primeras son las fosas ya registradas); la caseta F2-01 va dentro de los extras
+    expect(r.previsto.n).toBe(32);
+    expect(r.previsto.base).toBe(37900 + 2500 + 2000 + 3500 + 2282 + (13900 - 7200) + 26000 + 43700);
+    expect(r.revisado.base).toBe(r.previsto.base);
+    // no seleccionadas: las 3 del PAC y las 6 sustituidas por los extras (escalera y porche del PEB, caseta y solera)
+    expect(r.noSeleccionadas).toEqual({ n: 9, base: 13200 + 7200 + 8000 });
+    expect(pres.partidas.filter((p) => p.noSeleccionada).map((p) => p.codigo)).toEqual([...PAC_NO_SELECCION, 'F2-01', 'PEB-04', 'PEB-05', 'PEB-06', 'PEB-07', 'SOL-01']);
     // el panel parte de 37.900 y aplica el descuento una sola vez hasta 39.930
     const o = ofertaResumen(oferta, pres.partidas);
     // la oferta sigue siendo la del documento (8 partidas); los añadidos van aparte
@@ -76,8 +78,9 @@ describe('partidas sin valorar', () => {
     expect([o.descuento, o.trasDescuento, o.ajuste, o.base, o.impuestos, o.total]).toEqual([3790, 34110, -1110, 33000, 6930, 39930]);
     expect(r.capitulosSinValorar.length).toBeGreaterThan(0);
     expect(r.reserva.disponible).toBeNull();
-    // nada contratado ni pagado: no se inventan obligaciones
-    expect(r.obligaciones.n).toBe(0);
+    // solo los extras pactados por mensaje (26.000) están contratados; no se inventan más obligaciones
+    expect(r.obligaciones.n).toBe(1);
+    expect(r.obligaciones.base).toBe(26000);
     expect(r.pagado).toBe(1815);
   });
   it('no suma previsto, contratado y real como gastos distintos', () => {
@@ -145,8 +148,9 @@ describe('CSV', () => {
     const l1 = lines.find((l) => l.startsWith('PAC-01;'))!;
     expect(l1).toContain(';1500,00;');
     expect(l1).toContain('oferta recibida');
-    const sol = lines.find((l) => l.startsWith('SOL-01;'))!;
-    expect(sol).toContain('sin valorar (pendiente)');
+    const vino = lines.find((l) => l.startsWith('F2-03;'))!;
+    expect(vino).toContain('sin valorar (pendiente)');
+    expect(lines.find((l) => l.startsWith('SOL-01;'))).toContain('no seleccionada (no se suma)');
     expect(lines.find((l) => l.startsWith('PAC-09;'))).toContain('no seleccionada (no se suma)');
   });
 });
