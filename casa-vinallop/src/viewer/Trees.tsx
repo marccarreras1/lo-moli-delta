@@ -329,8 +329,9 @@ export function buildTree(kind: TreeKind, seed: number, width: number, height: n
     const size = leafSize * (0.9 + r() * 0.5);
     if (!inside(p, size)) cluster(p, size, r, leaves);
   }
-  const w = mergeGeometries(wood.map((g) => g.toNonIndexed()), false)!;
-  const l = mergeGeometries(leaves.map((g) => g.toNonIndexed()), false)!;
+  // un árbol podado del todo por los obstáculos queda vacío (no hay nada que unir)
+  const w = wood.length ? mergeGeometries(wood.map((g) => g.toNonIndexed()), false)! : new THREE.BufferGeometry();
+  const l = leaves.length ? mergeGeometries(leaves.map((g) => g.toNonIndexed()), false)! : new THREE.BufferGeometry();
   wood.forEach((g) => g.dispose());
   leaves.forEach((g) => g.dispose());
   // normales de las hojas hacia fuera del centro de la copa (sombreado de copa, no de tarjeta)

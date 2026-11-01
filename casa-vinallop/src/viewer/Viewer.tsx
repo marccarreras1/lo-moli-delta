@@ -327,10 +327,12 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
   const { minX, minY, maxX, maxY } = layout.bounds;
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
-  const olives = useMemo(() => {
+  const oliveData = useMemo(() => {
     const r = rng(site.olives.seed);
     const { spacing: s, extent, clear } = site.olives;
     const out: { x: number; y: number; k: number; rot: number }[] = [];
+    /** olivos reales tan pegados a la casa que la copa entraría dentro: se dibujan aparte, podados por el lado de la casa */
+    const podados: { x: number; y: number; k: number }[] = [];
     const zona = site.olives.zonaFoto;
     const inZona = (x: number, y: number) => {
       if (!zona) return false;
@@ -373,13 +375,24 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
       if (!real && (layout.outdoor?.pavements ?? []).some((p) => p.joints > 0 && inRect(p.rect, 1.2))) continue;
       // el olivo que solapa el cuarto técnico se quita (decisión de la propiedad); los demás reales se quedan
       if ((layout.outdoor?.annexes ?? []).some((a) => inRect(a.rect, real ? 0.3 : 1.5))) continue;
+      // un olivo real con el tronco bajo el porche proyectado no puede quedarse (choca con la cubierta de cañizo y la solera)
+      if (real && (layout.outdoor?.porches ?? []).some((pc) => inRect(pc.rect, 0))) continue;
+      if (real) {
+        const d = Math.hypot(Math.max(minX - x, 0, x - maxX), Math.max(minY - y, 0, y - maxY));
+        if (d < 2.8 * k) { podados.push({ x, y, k }); continue; }
+      }
       if (!real && (layout.outdoor?.tanks ?? []).some((tk) => Math.hypot(tk.c[0] - x, tk.c[1] - y) < Math.max(tk.length, tk.diameter) / 2 + 2.5)) continue;
       // ni sobre el camino de acceso (es la franja despejada del olivar)
       if (site.acceso && distToPath(site.acceso.camino, x, y) < site.acceso.anchoCamino / 2 + (real ? 0.6 : 2.6)) continue;
       out.push({ x, y, k, rot });
     }
-    return out;
+    return { out, podados };
   }, [site, cx, cy, layout.outdoor, layout.views, minX, minY, maxX, maxY]);
+  const olives = oliveData.out;
+  // árboles con copa propia (algarrobo, olivos medidos) y los olivos reales podados junto a la casa
+  const arboles = useMemo((): Site['trees'] => [...site.trees, ...oliveData.podados.map((o, i) => ({
+    id: `olivo-podado-${i}`, label: 'Olivo junto a la casa (podado por el lado de la casa)', c: [o.x, o.y] as [number, number], r: 2.8 * o.k, h: 4.8 * o.k, note: '', kind: 'olivo' as const,
+  }))], [site.trees, oliveData.podados]);
   // olivos procedurales: tres variantes, cada una con su malla instanciada de madera y de hojas
   const VARIANTS = lite ? 2 : 3;
   const oliveSets = useMemo(() => Array.from({ length: VARIANTS }, (_, v) => {
@@ -400,7 +413,7 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
     if (layout.escalon) return [[minX, minY, layout.escalon.x, maxY, top] as [number, number, number, number, number], [layout.escalon.x, minY, maxX, maxY, layout.escalon.top + 0.6] as [number, number, number, number, number]];
     return [[minX, minY, maxX, maxY, top] as [number, number, number, number, number]];
   }, [layout.roofSegments, layout.walls, layout.levels, layout.escalon, minX, minY, maxX, maxY]);
-  const carobs = useMemo(() => site.trees.map((t, i) => {
+  const carobs = useMemo(() => arboles.map((t, i) => {
     // el grupo del árbol está en (c.x, -0.12, c.y)
     // la casa y los porches: lo que entraría en ellos se poda (las ramas pueden pasar por encima de la pérgola)
     const porchBoxes = (layout.outdoor?.porches ?? []).map((pc) => [pc.rect[0], pc.rect[1], pc.rect[2], pc.rect[3], Math.max(pc.hWall, pc.hFront) + 0.3] as [number, number, number, number, number]);
@@ -415,7 +428,7 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
     const kind = t.kind ?? 'algarrobo';
     const g = buildTree(kind, 7 + i * 13, t.r * 2, t.h, obstacles, t.trunk);
     return { ...g, kind, leafMat: Object.assign(leafMaterial(kind), { userData: { fade: true } }), barkMat: barkMaterial(kind) };
-  }), [site.trees, houseBoxes, layout.outdoor?.porches]);
+  }), [arboles, houseBoxes, layout.outdoor?.porches]);
   // sombras lejanas: manchas suaves bajo los olivos que quedan fuera del mapa de sombras
   const blobs = useMemo(() => {
     if (sunAz === null) return null;
@@ -500,7 +513,7 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
       hidden.current = next;
       writeMatrices(next);
     }
-    site.trees.forEach((t, i) => {
+    arboles.forEach((t, i) => {
       // solo se aclara desde vistas altas que buscan la casa; a la altura de los ojos el árbol se ve como es
       const fade = !inside && cam.y > 6 && occludes(t.c[0], t.c[1], t.h * 0.6, t.r);
       treeMats[i].opacity = fade ? 0.45 : 1;
@@ -549,7 +562,7 @@ function SiteGround({ layout, site, lite, sunAz = null, sunEl = 45 }: { layout: 
       {oliveSets.map((s, i) => <group key={i}><primitive object={s.wood} /><primitive object={s.leaves} /></group>)}
       {blobs && <group userData={{ helper: true }}><primitive object={blobs} /></group>}
       {!lite && <GroundDetail layout={layout} site={site} cx={cx} cy={cy} />}
-      {site.trees.map((t, i) => (
+      {arboles.map((t, i) => (
         <group key={t.id} position={[t.c[0], -0.12, t.c[1]]}>
           <mesh geometry={carobs[i].wood} material={carobs[i].barkMat} castShadow receiveShadow />
           <mesh geometry={carobs[i].leaves} material={carobs[i].leafMat} castShadow receiveShadow />
