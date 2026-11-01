@@ -142,7 +142,8 @@ export default function App() {
   const viewTitle = TABS.find((t) => t.id === tab)!.label;
   const presetId = lastPreset ?? defaultPreset(tab, cameras)?.id;
   const camLabel = cameras.find((c) => c.id === presetId)?.label;
-  const bottomInset = mobile ? sheetH : 0;
+  const mandos = mobile && visual.section === 'visor' ? visual.mandos : 'normal';
+  const bottomInset = mobile && mandos !== 'ocultos' ? sheetH : 0;
   const solActive = useSolar((s) => s.active);
   const insets = useMemo(() => ({ bottom: bottomInset, right: mobile ? sideW : 0 }), [bottomInset, sideW, mobile]);
 
@@ -182,7 +183,7 @@ export default function App() {
   const views = project.views ?? [];
 
   return (
-    <div className={`app tab-${tab} sec-${visual.section}${mobile ? ' is-mobile' : ''}${tablet ? ' is-tablet' : ''}${presenting ? ' presenting' : ''}`}>
+    <div className={`app tab-${tab} sec-${visual.section}${mobile ? ' is-mobile' : ''}${tablet ? ' is-tablet' : ''}${presenting ? ' presenting' : ''}${mandos !== 'normal' ? ` ui-${mandos}` : ''}`}>
       <header className="topbar">
         <div className="brand">
           <img className="brand-logo" src={logoSrc ?? logoLoMoli} alt="Lo Molí · Delta" />
@@ -371,6 +372,12 @@ export default function App() {
                 </div>
               </div>
               <div className="overlay-tr" role="toolbar" aria-label="Encuadre">
+                {mobile && threeVisible && (
+                  <button type="button" className="tool ui-cycle" onClick={() => setVisual('mandos', mandos === 'normal' ? 'compactos' : 'ocultos')}
+                    aria-label={mandos === 'normal' ? 'Mandos compactos' : 'Ocultar los mandos'} title={mandos === 'normal' ? 'Mandos compactos' : 'Ocultar los mandos'} data-action="mandos">
+                    <Icon name={mandos === 'normal' ? 'compact' : 'eyeOff'} />
+                  </button>
+                )}
                 {tab !== 'interior' && <button type="button" className="tool" onClick={() => (planVisible && tab === 'plantas' ? setFitNonce((n) => n + 1) : useStore.getState().requestCamera('encajar'))} aria-label="Encajar toda la casa" title="Encajar toda la casa" data-action="fit"><Icon name="fit" /></button>}
                 {threeVisible && ready && tab === 'exterior' && <button type="button" className="tool tool-text" onClick={() => useStore.getState().requestCamera('cenital')} title="Vista cenital (desde arriba) y vuelta a la vista inclinada" data-action="cenital">Cenital</button>}
                 {threeVisible && ready && <button type="button" className="tool" onClick={() => useStore.getState().requestCamera('zoom:1.4')} aria-label="Acercar" title="Acercar (también con la rueda o pellizcando)" data-action="zoom-in"><Icon name="plus" /></button>}
@@ -382,6 +389,11 @@ export default function App() {
                 {threeVisible && ready && tab !== 'plantas' && <button type="button" className={`tool${photo ? ' active' : ''}`} onClick={() => setPhoto((p) => !p)} aria-label="Modo fotografía" title="Modo fotografía (trazado de rayos)" data-action="photo-mode"><Icon name="image" /></button>}
                 <button type="button" className="tool" onClick={toggleFullscreen} aria-label={fullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'} title="Pantalla completa"><Icon name={fullscreen ? 'exitFullscreen' : 'fullscreen'} /></button>
               </div>
+              {mandos === 'ocultos' && (
+                <button type="button" className="ui-restore" onClick={() => setVisual('mandos', 'normal')} aria-label="Mostrar los mandos" title="Mostrar los mandos" data-action="mandos-mostrar">
+                  <Icon name="eye" size={18} />
+                </button>
+              )}
               {solActive && threeVisible && tab !== 'plantas' && !tape.on && <SolPanel bottom={bottomInset + 16} onClose={() => useSolar.getState().set({ active: false })} />}
               {tape.on && threeVisible && (
                 <div className="plan-tool-card tape-card" role="status" data-testid="tape-card" style={{ bottom: bottomInset + 64 }}>
@@ -418,7 +430,7 @@ export default function App() {
         </main>
       </div>
 
-      {mobile && !presenting && visual.section === 'visor' && <BottomSheet onHeight={setSheetH} onSide={setSideW}>{panel}</BottomSheet>}
+      {mobile && !presenting && visual.section === 'visor' && mandos !== 'ocultos' && <BottomSheet onHeight={setSheetH} onSide={setSideW}>{panel}</BottomSheet>}
       {presenting && <Presentation views={views} current={lastPreset} onExit={() => setVisual('presentation', false)} />}
       {dialog === 'info' && <InfoDialog onClose={() => setDialog(null)} />}
       {(dialog === 'refs' || dialog === 'refs-add') && <ReferencesDialog autoPick={dialog === 'refs-add'} onClose={() => setDialog(null)} />}

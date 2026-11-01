@@ -26,6 +26,9 @@ const paths: Record<string, ReactNode> = {
   chevronDown: <path d="M5 8l5 5 5-5" />,
   chevronUp: <path d="M5 12l5-5 5 5" />,
   rotate: <><path d="M15 4v4h-4" /><path d="M15 8A6 6 0 1 0 16 12" /></>,
+  eye: <><path d="M2 10s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z" /><circle cx="10" cy="10" r="2.5" /></>,
+  eyeOff: <><path d="M3 3l14 14" /><path d="M8.2 4.3A8 8 0 0 1 10 4c5 0 8 6 8 6a14 14 0 0 1-2.6 3.3M5.4 6.2A13 13 0 0 0 2 10s3 6 8 6a7.7 7.7 0 0 0 3.4-.8" /></>,
+  compact: <><rect x="3" y="3" width="6" height="6" rx="1" /><path d="M13 4h4M13 8h4M3 13h14M3 17h9" /></>,
   sliders: <><path d="M4 6h8M15 6h1M4 14h2M9 14h7" /><circle cx="13.5" cy="6" r="1.5" /><circle cx="7.5" cy="14" r="1.5" /></>,
 };
 

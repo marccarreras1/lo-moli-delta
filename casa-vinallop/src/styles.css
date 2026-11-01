@@ -547,3 +547,26 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.92em;
 .sol-dia input { font: inherit; border: 1px solid var(--border); border-radius: 8px; padding: 3px 6px; }
 .sol-hora { display: flex; flex-direction: column; gap: 2px; }
 .sol-hora input { width: 100%; accent-color: var(--accent, #4f5d47); }
+
+/* móvil: mandos del visor compactos u ocultos */
+.ui-restore {
+  position: absolute; right: 10px; top: calc(10px + env(safe-area-inset-top, 0px)); z-index: 8; width: 36px; height: 36px; display: grid; place-items: center;
+  border-radius: 50%; border: 1px solid rgb(255 255 255 / 0.5); background: rgb(30 32 28 / 0.38); color: #fff; cursor: pointer; backdrop-filter: blur(4px);
+}
+.is-mobile.ui-compactos .view-status, .is-mobile.ui-compactos .help, .is-mobile.ui-compactos .aviso { display: none; }
+.is-mobile.ui-compactos .view-title { font-size: 12.5px; font-weight: 600; background: rgb(254 253 251 / 0.82); padding: 2px 8px; border-radius: 6px; text-shadow: none; align-self: flex-start; }
+.is-mobile.ui-compactos .view-title span { display: none; }
+.is-mobile.ui-compactos .overlay-tl { top: 8px; left: 8px; }
+.is-mobile.ui-compactos .overlay-tr { top: 8px; right: 8px; padding: 1px; gap: 0; border-radius: 8px; background: rgb(254 253 251 / 0.8); }
+.is-mobile.ui-compactos .overlay-tr .tool { width: 32px; height: 32px; }
+.is-mobile.ui-compactos .overlay-tr .tool svg { width: 16px; height: 16px; }
+.is-mobile.ui-compactos .overlay-tr .tool-text { font-size: 10px; width: auto; min-width: 32px; padding: 0 3px; }
+.is-mobile.ui-compactos .overlay-tr [data-action="zoom-in"], .is-mobile.ui-compactos .overlay-tr [data-action="zoom-out"] { display: none; }
+.is-mobile.ui-compactos .overlay-br { left: auto; }
+.is-mobile.ui-compactos .overlay-br .btn { min-height: 32px; padding: 2px 8px; font-size: 12px; }
+.is-mobile.ui-compactos .overlay-br [data-action="step-forward"], .is-mobile.ui-compactos .overlay-br [data-action="step-back"] { display: none; }
+.is-mobile.ui-compactos .walk-grid .tool { width: 34px; height: 34px; font-size: 13px; }
+.is-mobile.ui-compactos .sectionbar-wrap { display: none; }
+.is-mobile.ui-ocultos .topbar, .is-mobile.ui-ocultos .sectionbar-wrap, .is-mobile.ui-ocultos .overlay-tl, .is-mobile.ui-ocultos .overlay-tr,
+.is-mobile.ui-ocultos .overlay-br, .is-mobile.ui-ocultos .walk-pad, .is-mobile.ui-ocultos .help, .is-mobile.ui-ocultos .aviso,
+.is-mobile.ui-ocultos .room-toast { display: none; }

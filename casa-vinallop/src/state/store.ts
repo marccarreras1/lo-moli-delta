@@ -38,6 +38,8 @@ export interface Visual {
   overlayRefId: string | null;
   overlayOpacity: number;
   helpDismissed: boolean;
+  /** móvil: mandos del visor normales, compactos u ocultos (pantalla limpia) */
+  mandos: 'normal' | 'compactos' | 'ocultos';
   modelSource: ModelSource;
   /** nivel activo (plantas y corte); null = el primero */
   levelId: string | null;
@@ -107,6 +109,7 @@ export const defaultVisual = (): Visual => ({
   overlayRefId: null,
   overlayOpacity: 0.5,
   helpDismissed: false,
+  mandos: 'normal',
   modelSource: 'vinallop',
   levelId: null,
   lampDimmer: 0.8,
@@ -203,6 +206,7 @@ function cleanVisual(x: unknown): Visual {
     overlayRefId: typeof o.overlayRefId === 'string' ? o.overlayRefId : null,
     overlayOpacity: num(o.overlayOpacity, 0, 1, d.overlayOpacity),
     helpDismissed: bool(o.helpDismissed, d.helpDismissed),
+    mandos: pick(o.mandos, ['normal', 'compactos', 'ocultos'] as const, d.mandos),
     modelSource: pick(o.modelSource, ['vinallop', 'actual', 'prueba'] as const, d.modelSource),
     levelId: typeof o.levelId === 'string' ? o.levelId.slice(0, 40) : null,
     lampDimmer: num(o.lampDimmer, 0, 1, d.lampDimmer),
