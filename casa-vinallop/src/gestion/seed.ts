@@ -5,7 +5,7 @@
  * Fechas, responsables, proveedores e importes que no constan quedan vacíos (pendientes).
  * No se incluyen datos de contacto del proveedor ni datos personales del cliente.
  */
-import type { Capitulo, Decision, EntregaCuenta, Fase, GestionData, Oferta, Partida, Seguimiento } from './types';
+import type { Capitulo, Decision, EntregaCuenta, Fase, GestionData, Oferta, Partida, Seguimiento, Cargo } from './types';
 
 // ---------------------------------------------------------------- decisiones
 
@@ -544,6 +544,18 @@ export const ENTREGAS_CUENTA = (): EntregaCuenta[] => [
   },
 ];
 
+/** Cuenta con el constructor (debe): lo pactado según sus mensajes; los pagos son el haber. Sin IVA (indicado por la propiedad). */
+export const CARGOS_CONSTRUCTOR = (): Cargo[] => [
+  {
+    id: 'cargo-pactado', fecha: '2026-10-29', concepto: 'Trabajos pactados (presupuesto PAC26-0052 y ampliaciones)', importe: 37500, proveedor: PAC_PROVEEDOR,
+    nota: 'Según el constructor, con los 3.500 € pagados quedan 28.000 € de lo pactado: 9.500 € pagados + 28.000 € = 37.500 €. Las partidas registradas de esa obra suman 42.400 €: aclarar qué no cuenta.',
+  },
+  {
+    id: 'cargo-extras', fecha: '2026-10-29', concepto: 'Extras pactados (cimentación y muros nuevos, ampliación de 30 cm, escalera, caseta y porche elevado)', importe: 26000, proveedor: PAC_PROVEEDOR,
+    nota: 'Sin IVA (propiedad). Pendiente: si incluye los 4.000 € que el constructor añadió al porche con la solera de 6 m.',
+  },
+];
+
 export const AVISO_FASES = 'Secuencia propuesta de planificación, no un calendario de obra aprobado; la secuencia y las fechas las fija el técnico. La sustitución de muros portantes o la retirada de cubierta no son trabajos simples sin secuencia técnica.';
 
 export function seedGestion(): GestionData {
@@ -557,6 +569,7 @@ export function seedGestion(): GestionData {
       documentos: [{ id: 'doc-pac26-0052', titulo: `Presupuesto ${PAC_REF}`, referencia: `${PAC_PROVEEDOR} · documento en papel con nota manuscrita`, fecha: PAC_FECHA, nota: 'Oferta recibida, no aceptada ni pagada.' }, { ...DEP_DOCUMENTO }, { ...PEB_DOCUMENTO }, { ...PEB5_DOCUMENTO }],
       reserva: { importe: null, nota: '', asignaciones: [] },
       aCuenta: ENTREGAS_CUENTA(),
+      cargos: CARGOS_CONSTRUCTOR(),
       avisos: [
         'La solera exterior en L no figura valorada en este presupuesto.',
         'Cocina, baño acabado con dos duchas, carpinterías instaladas, equipamiento, domótica, audio y decoración no quedan acreditados como incluidos: costes pendientes.',

@@ -218,6 +218,20 @@ export interface EntregaCuenta {
   /** false = factura recibida, pago sin confirmar */
   pagado: boolean;
   nota: string;
+  /** reparto del pago entre partidas, marcado por la propiedad (el resto queda sin asignar) */
+  asignaciones?: Asignacion[];
+}
+
+/** Cargo en la cuenta con un proveedor (el «debe»): trabajos pactados que se le deben, aunque no haya factura por partida. */
+export interface Cargo {
+  id: string;
+  /** fecha ISO del acuerdo o vacía */
+  fecha: string;
+  concepto: string;
+  /** importe tal como se pactó (sin IVA si así se acordó) */
+  importe: number;
+  proveedor: string;
+  nota: string;
 }
 
 export interface Presupuesto {
@@ -228,6 +242,8 @@ export interface Presupuesto {
   reserva: Reserva;
   /** entregas a cuenta de la obra, sin repartir por partidas */
   aCuenta: EntregaCuenta[];
+  /** cuenta con el constructor: lo que se le debe (debe); los pagos son el haber */
+  cargos?: Cargo[];
   avisos: string[];
 }
 

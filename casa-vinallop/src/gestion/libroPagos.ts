@@ -29,6 +29,64 @@ export interface Movimiento {
 
 export const A_CUENTA = 'A cuenta de la obra (sin partida)';
 
+/** Línea de la cuenta con el constructor: el debe son los cargos pactados; el haber, los pagos hechos. */
+export interface LineaCuenta {
+  id: string;
+  fecha: string;
+  concepto: string;
+  debe: number;
+  haber: number;
+  /** saldo acumulado = debe − haber hasta esta línea (lo que queda por pagar) */
+  saldo: number;
+  tipo: 'cargo' | 'pago';
+  /** reparto por partidas del pago: código e importe */
+  partidas: { id: string; codigo: string; importe: number; asignacionId?: string }[];
+  /** importe del pago sin asignar a ninguna partida */
+  sinAsignar: number;
+  /** id de la entrega a cuenta (los pagos a cuenta se pueden repartir) */
+  entregaId?: string;
+  nota: string;
+}
+
+/** Cuenta corriente con el constructor (debe y haber) en orden de fecha, con el saldo acumulado. */
+export function cuentaConstructor(pres: Presupuesto) {
+  const cod = new Map(pres.partidas.map((p) => [p.id, p.codigo]));
+  const lineas: Omit<LineaCuenta, 'saldo'>[] = [
+    ...(pres.cargos ?? []).map((c) => ({ id: c.id, fecha: c.fecha, concepto: c.concepto, debe: c.importe, haber: 0, tipo: 'cargo' as const, partidas: [], sinAsignar: 0, nota: c.nota })),
+    ...pres.partidas.flatMap((p) => p.pagos.map((x) => ({
+      id: x.id, fecha: x.fecha, concepto: `Pago · ${p.codigo} · ${p.descripcion}`, debe: 0, haber: x.importe, tipo: 'pago' as const,
+      partidas: [{ id: p.id, codigo: p.codigo, importe: x.importe }], sinAsignar: 0, nota: x.nota,
+    }))),
+    ...(pres.aCuenta ?? []).filter((x) => x.pagado).map((x) => {
+      const asig = (x.asignaciones ?? []).map((a) => ({ id: a.partida, codigo: cod.get(a.partida) ?? a.partida, importe: a.importe, asignacionId: a.id }));
+      return {
+        id: x.id, fecha: x.fecha, concepto: `Pago a cuenta${x.documento ? ` · ${x.documento}` : ''}`, debe: 0, haber: x.importe, tipo: 'pago' as const,
+        partidas: asig, sinAsignar: r2(x.importe - asig.reduce((a, b) => a + b.importe, 0)), entregaId: x.id, nota: x.nota,
+      };
+    }),
+  // primero lo pactado (debe) y después los pagos (haber), cada grupo por fecha: el saldo baja con cada pago
+  ].sort((a, b) => (a.tipo === b.tipo ? 0 : a.tipo === 'cargo' ? -1 : 1) || (a.fecha || '0').localeCompare(b.fecha || '0'));
+  let saldo = 0;
+  const out: LineaCuenta[] = lineas.map((l) => { saldo = r2(saldo + l.debe - l.haber); return { ...l, saldo }; });
+  const debe = r2(out.reduce((a, l) => a + l.debe, 0));
+  const haber = r2(out.reduce((a, l) => a + l.haber, 0));
+  const pendientes = (pres.aCuenta ?? []).filter((x) => !x.pagado);
+  return {
+    lineas: out, debe, haber, saldo: r2(debe - haber),
+    sinAsignar: r2(out.reduce((a, l) => a + l.sinAsignar, 0)),
+    facturasPendientes: pendientes, porPagarFacturado: r2(pendientes.reduce((a, x) => a + x.importe, 0)),
+  };
+}
+
+/** Pagado por partida: pagos directos más lo asignado de las entregas a cuenta. */
+export function pagadoPorPartida(pres: Presupuesto): Map<string, number> {
+  const m = new Map<string, number>();
+  const add = (id: string, v: number) => m.set(id, r2((m.get(id) ?? 0) + v));
+  for (const p of pres.partidas) for (const x of p.pagos) add(p.id, x.importe);
+  for (const x of pres.aCuenta ?? []) if (x.pagado) for (const a of x.asignaciones ?? []) add(a.partida, a.importe);
+  return m;
+}
+
 /** Todos los pagos y facturas, del más antiguo al más reciente (sin fecha al principio). */
 export function movimientos(pres: Presupuesto): Movimiento[] {
   const porPartida: Movimiento[] = pres.partidas.flatMap((p) => p.pagos.map((x) => ({
@@ -95,6 +153,7 @@ export function libroPagos(pres: Presupuesto, fases: Fase[], o: { proyecto: stri
     ['Código', 'Ud', 'Descripción', 'Proveedor', 'Cantidad', 'Precio', 'Presupuesto (base)', 'IVA', 'Comprometido (base)', 'Pagado', 'Pendiente', 'Desviación (base)', 'Pagos', 'Comentarios'].map((v) => ({ v, s: 'head' as const })),
   ];
   const SUMCOLS = [6, 8, 9, 10, 11]; // G, I, J, K, L
+  const pp = pagadoPorPartida(pres);
   const subtotales: number[] = [];
   for (const g of sit.grupos) {
     presRows.push([{ v: g.nombre, s: 'bold' }, ...Array(13).fill({ v: '', s: 'bold' })]);
@@ -106,7 +165,7 @@ export function libroPagos(pres: Presupuesto, fases: Fase[], o: { proyecto: stri
         p.codigo, p.unidad, { v: trunc(p.descripcion, 200), s: 'wrap' }, p.proveedor,
         p.cantidad == null ? null : { v: p.cantidad, s: 'num' }, p.precio == null ? null : { v: p.precio, s: 'eur' },
         f.referencia == null ? null : { v: f.referencia, s: 'eur' }, p.impuesto == null ? null : { v: p.impuesto, s: 'pct' },
-        f.comprometido == null ? null : { v: f.comprometido, s: 'eur' }, f.pagado ? { v: f.pagado, s: 'eur' } : null,
+        f.comprometido == null ? null : { v: f.comprometido, s: 'eur' }, pp.get(p.id) ? { v: pp.get(p.id)!, s: 'eur' } : null,
         f.pendiente == null ? null : { v: f.pendiente, s: 'eur' }, f.desviacion == null ? null : { v: f.desviacion, s: 'eur' },
         { v: pagos, s: 'wrap' }, { v: trunc(p.notas), s: 'wrap' },
       ]);
@@ -163,5 +222,34 @@ export function libroPagos(pres: Presupuesto, fases: Fase[], o: { proyecto: stri
   ];
   const hojaRes: XlsxSheet = { name: 'Resumen', cols: [42, 16, 60], rows: res };
 
-  return [hojaRes, hojaPagos, hojaPres];
+  // ---------- Debe y haber (cuenta con el constructor)
+  const cc = cuentaConstructor(pres);
+  const H3 = 4;
+  const ccRows: XlsxCell[][] = [
+    [{ v: `${o.proyecto} · Cuenta con el constructor (debe y haber)`, s: 'title' }],
+    [{ v: `Exportado el ${o.fecha}. Debe: trabajos pactados. Haber: pagos hechos. Saldo: lo que queda por pagar. Importes tal como se pactaron y pagaron.`, s: 'muted' }],
+    [],
+    ['Fecha', 'Concepto', 'Debe', 'Haber', 'Saldo', 'Asignado a partidas', 'Sin asignar', 'Nota'].map((v) => ({ v, s: 'head' as const })),
+  ];
+  cc.lineas.forEach((l, i) => {
+    const r = H3 + 1 + i;
+    ccRows.push([
+      { date: l.fecha, s: 'date' }, { v: l.concepto, s: 'wrap' }, l.debe ? { v: l.debe } : null, l.haber ? { v: l.haber } : null,
+      { v: l.saldo, f: i === 0 ? `C${r}-D${r}` : `E${r - 1}+C${r}-D${r}` },
+      { v: l.partidas.map((x) => `${x.codigo}: ${x.importe.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`).join(' · '), s: 'wrap' },
+      l.sinAsignar ? { v: l.sinAsignar } : null, { v: trunc(l.nota), s: 'wrap' },
+    ]);
+  });
+  const c0 = H3 + 1;
+  const c1 = H3 + cc.lineas.length;
+  ccRows.push([]);
+  ccRows.push([{ v: 'Total', s: 'bold' }, null, { v: cc.debe, f: `SUM(C${c0}:C${Math.max(c1, c0)})`, s: 'eurBold' }, { v: cc.haber, f: `SUM(D${c0}:D${Math.max(c1, c0)})`, s: 'eurBold' }, { v: cc.saldo, f: `C${c1 + 2}-D${c1 + 2}`, s: 'eurBold' }, null, { v: cc.sinAsignar, f: `SUM(G${c0}:G${Math.max(c1, c0)})`, s: 'eurBold' }]);
+  if (cc.facturasPendientes.length) {
+    ccRows.push([]);
+    ccRows.push([{ v: 'Facturas recibidas pendientes de pago (no cambian el saldo: se pagan a cuenta de él)', s: 'bold' }]);
+    for (const x of cc.facturasPendientes) ccRows.push([{ date: x.fecha, s: 'date' }, x.documento, null, { v: x.importe }]);
+  }
+  const hojaCc: XlsxSheet = { name: 'Debe y haber', cols: [12, 60, 14, 14, 14, 34, 13, 60], rows: ccRows, freeze: H3 };
+
+  return [hojaRes, hojaCc, hojaPagos, hojaPres];
 }

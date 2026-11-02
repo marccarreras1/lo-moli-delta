@@ -6,7 +6,7 @@
  */
 import {
   CONDICIONES, DECISION_ESTADOS, FASE_ESTADOS, OFERTA_ESTADOS, SEGUIMIENTO_ESTADOS, UNIDADES,
-  type Asignacion, type Bloqueo, type EntregaCuenta, type Capitulo, type Comentario, type Decision, type Documento, type Fase, type GestionData,
+  type Asignacion, type Bloqueo, type Cargo, type EntregaCuenta, type Capitulo, type Comentario, type Decision, type Documento, type Fase, type GestionData,
   type Oferta, type Pago, type Partida, type Presupuesto, type Seguimiento, type Tarea, type TotalesImpresos,
 } from './types';
 
@@ -189,7 +189,12 @@ function entrega(x: unknown, p: string): EntregaCuenta {
   return {
     id: reqStr(o, 'id', p), fecha: fecha(o, 'fecha', p), importe: reqNum(o, 'importe', p), emisor: str(o, 'emisor', p, 300),
     documento: str(o, 'documento', p, 300), pagado: bool(o, 'pagado', p), nota: str(o, 'nota', p, 2000),
+    ...(o.asignaciones === undefined || o.asignaciones === null ? {} : { asignaciones: list(o, 'asignaciones', p, true, asignacion, 200) }),
   };
+}
+function cargo(x: unknown, p: string): Cargo {
+  const o = obj(x, p);
+  return { id: reqStr(o, 'id', p), fecha: fecha(o, 'fecha', p), concepto: str(o, 'concepto', p, 500), importe: reqNum(o, 'importe', p), proveedor: str(o, 'proveedor', p, 300), nota: str(o, 'nota', p, 2000) };
 }
 function presupuesto(x: unknown, p: string, strict: boolean): Presupuesto {
   const o = obj(x, p);
@@ -201,6 +206,7 @@ function presupuesto(x: unknown, p: string, strict: boolean): Presupuesto {
     documentos: list(o, 'documentos', p, strict, documento),
     reserva: { importe: num(r, 'importe', `${p}.reserva`), nota: str(r, 'nota', `${p}.reserva`), asignaciones: list(r, 'asignaciones', `${p}.reserva`, strict, asignacion) },
     aCuenta: list(o, 'aCuenta', p, strict, entrega),
+    cargos: list(o, 'cargos', p, strict, cargo, 500),
     avisos: strList(o, 'avisos', p),
   };
 }

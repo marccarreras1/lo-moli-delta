@@ -5,10 +5,11 @@ import { buildXlsx } from '../export/xlsx';
 import { useStore } from '../state/store';
 import { Icon } from '../ui/icons';
 import { fmtEur, fmtFecha, r2 } from './calc';
-import { libroPagos, movimientos, totalesMovimientos } from './libroPagos';
+import { cuentaConstructor, libroPagos, movimientos, totalesMovimientos, type LineaCuenta } from './libroPagos';
 import { situacionObra } from './situacion';
 import { useGestion } from './store';
-import { Badge, PageShell, Pendiente, useFlash } from './ui';
+import { ConfirmButton } from '../ui/controls';
+import { Badge, DateField, NumField, PageShell, Pendiente, SelectField, TextField, useFlash } from './ui';
 
 const hoy = () => new Date().toISOString().slice(0, 10);
 type Filtro = 'todas' | 'pagadas' | 'pendientes';
@@ -68,6 +69,8 @@ export function PagosPage() {
         <p className="hint">El Excel tiene tres hojas: resumen, facturas y pagos (con filtros) y presupuesto con el seguimiento de pagos por partida, como el de un presupuesto de obra. Los totales van con fórmulas.</p>
       </section>
 
+      <CuentaCard />
+
       <section className="gx-card" aria-label="Facturas y pagos" data-testid="pagos-lista">
         <h2>Facturas y pagos ({visibles.length})</h2>
         <div className="row wrap" style={{ gap: 8, alignItems: 'center' }}>
@@ -105,5 +108,110 @@ export function PagosPage() {
         <div className="row"><button type="button" className="btn" onClick={() => useStore.getState().setVisual('section', 'situacion')}>Ir a Situación de obra</button></div>
       </section>
     </PageShell>
+  );
+}
+
+const hoyIso = () => new Date().toISOString().slice(0, 10);
+
+/** Cuenta con el constructor: debe (lo pactado), haber (lo pagado), saldo acumulado y reparto de los pagos por partidas. */
+function CuentaCard() {
+  const pres = useGestion((s) => s.presupuesto);
+  const st = useGestion.getState;
+  const cc = useMemo(() => cuentaConstructor(pres), [pres]);
+  const [asignando, setAsignando] = useState<string | null>(null);
+  const [nuevo, setNuevo] = useState<{ fecha: string; concepto: string; importe: number | null; nota: string }>({ fecha: hoyIso(), concepto: '', importe: null, nota: '' });
+  const [k, setK] = useState(0);
+  return (
+    <section className="gx-card" aria-label="Cuenta con el constructor" data-testid="cuenta-constructor">
+      <h2>Cuenta con el constructor · debe y haber</h2>
+      <p className="hint">Como el constructor no factura por partidas, la cuenta va en global: en el <strong>debe</strong> lo pactado, en el <strong>haber</strong> lo que se le ha pagado, y el <strong>saldo</strong> es lo que queda por pagar. En cada pago a cuenta puedes marcar a qué partidas corresponde (no cambia el saldo; sirve para saber qué está pagado).</p>
+      <div className="gx-kpis">
+        <Kpi k="Debe (pactado)" v={fmtEur(cc.debe)} d={`${(pres.cargos ?? []).length} cargos`} />
+        <Kpi k="Haber (pagado)" v={fmtEur(cc.haber)} d={cc.sinAsignar ? `${fmtEur(cc.sinAsignar)} sin asignar a partidas` : 'todo asignado a partidas'} tone={cc.sinAsignar ? 'warn' : undefined} />
+        <Kpi k="Saldo pendiente" v={fmtEur(cc.saldo)} d="lo que queda por pagar de lo pactado" />
+        <Kpi k="Facturas sin pagar" v={fmtEur(cc.porPagarFacturado)} d={cc.facturasPendientes.length ? `${cc.facturasPendientes.length} recibidas · se pagan a cuenta del saldo` : 'ninguna'} tone={cc.facturasPendientes.length ? 'warn' : undefined} />
+      </div>
+      <div className="tbl-wrap as-cards">
+        <table className="tbl cards" style={{ minWidth: 820 }}>
+          <thead><tr><th>Fecha</th><th>Concepto</th><th className="num">Debe</th><th className="num">Haber</th><th className="num">Saldo</th><th>Partidas</th><th><span className="sr-only">Acciones</span></th></tr></thead>
+          <tbody>
+            {cc.lineas.map((l) => (
+              <LineaRow key={l.id} l={l} abierta={asignando === l.id} onAsignar={() => setAsignando(asignando === l.id ? null : l.id)} />
+            ))}
+            <tr className="sub"><td colSpan={2}>Total</td><td className="num">{fmtEur(cc.debe)}</td><td className="num">{fmtEur(cc.haber)}</td><td className="num"><strong>{fmtEur(cc.saldo)}</strong></td><td colSpan={2} /></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3 style={{ marginTop: 16 }}>Añadir al debe (trabajo pactado)</h3>
+      <div className="gx-form" key={k}>
+        <DateField label="Fecha del acuerdo" value={nuevo.fecha} onChange={(v) => setNuevo({ ...nuevo, fecha: v })} />
+        <TextField label="Concepto" value={nuevo.concepto} onChange={(v) => setNuevo({ ...nuevo, concepto: v })} placeholder="p. ej. Presupuesto PEB26-0005 aceptado" />
+        <NumField label="Importe" value={nuevo.importe} onCommit={(v) => setNuevo({ ...nuevo, importe: v })} unit="€" placeholder="" />
+        <TextField label="Nota" value={nuevo.nota} onChange={(v) => setNuevo({ ...nuevo, nota: v })} />
+      </div>
+      <div className="row">
+        <button type="button" className="btn primary" disabled={!nuevo.concepto.trim() || nuevo.importe == null} data-action="cargo-anadir"
+          onClick={() => { st().addCargo({ fecha: nuevo.fecha, concepto: nuevo.concepto.trim(), importe: nuevo.importe!, proveedor: '', nota: nuevo.nota }); setNuevo({ fecha: hoyIso(), concepto: '', importe: null, nota: '' }); setK(k + 1); }}>
+          <Icon name="plus" size={16} /> Añadir al debe
+        </button>
+      </div>
+      <p className="hint">Los pagos (haber) se registran en «Situación de obra»: por partida, o «a cuenta» si el pago no va a ninguna partida.</p>
+    </section>
+  );
+}
+
+function LineaRow({ l, abierta, onAsignar }: { l: LineaCuenta; abierta: boolean; onAsignar: () => void }) {
+  const st = useGestion.getState;
+  return (
+    <>
+      <tr data-linea={l.id}>
+        <td data-label="Fecha" className="half">{fmtFecha(l.fecha) || <Pendiente>sin fecha</Pendiente>}</td>
+        <td data-label="Concepto" className="wide">{l.concepto}{l.nota && <small style={{ display: 'block' }} className="gx-muted">{l.nota.length > 140 ? `${l.nota.slice(0, 139)}…` : l.nota}</small>}</td>
+        <td className="num" data-label="Debe">{l.debe ? fmtEur(l.debe) : ''}</td>
+        <td className="num" data-label="Haber">{l.haber ? fmtEur(l.haber) : ''}</td>
+        <td className="num" data-label="Saldo">{fmtEur(l.saldo)}</td>
+        <td data-label="Partidas">
+          {l.partidas.map((x) => <Badge key={`${x.codigo}-${x.asignacionId ?? ''}`} tone="info">{x.codigo} · {fmtEur(x.importe)}</Badge>)}
+          {l.sinAsignar > 0 && <Badge tone="warn">sin asignar · {fmtEur(l.sinAsignar)}</Badge>}
+        </td>
+        <td className="actions">
+          {l.entregaId && <button type="button" className="btn ghost" onClick={onAsignar} aria-expanded={abierta} data-action="asignar-pago">{abierta ? 'Cerrar' : 'Asignar'}</button>}
+          {l.tipo === 'cargo' && <ConfirmButton className="tool" confirmLabel="¿Borrar?" onConfirm={() => st().removeCargo(l.id)}><Icon name="trash" size={16} /></ConfirmButton>}
+        </td>
+      </tr>
+      {abierta && l.entregaId && (
+        <tr className="sub-row"><td colSpan={7}><AsignarForm l={l} /></td></tr>
+      )}
+    </>
+  );
+}
+
+function AsignarForm({ l }: { l: LineaCuenta }) {
+  const partidas = useGestion((s) => s.presupuesto.partidas);
+  const st = useGestion.getState;
+  const [partida, setPartida] = useState('');
+  const [importe, setImporte] = useState<number | null>(l.sinAsignar || null);
+  return (
+    <div className="gx-assign">
+      {l.partidas.length > 0 && (
+        <ul className="gx-assign-list">
+          {l.partidas.map((x) => (
+            <li key={x.asignacionId}>{x.codigo} · {fmtEur(x.importe)} <button type="button" className="btn ghost" onClick={() => st().quitarAsignacionEntrega(l.entregaId!, x.asignacionId!)}>Quitar</button></li>
+          ))}
+        </ul>
+      )}
+      <div className="gx-form">
+        <SelectField label="Partida" value={partida} onChange={setPartida}
+          options={[{ value: '', label: 'Elige una partida…' }, ...partidas.filter((p) => !p.noSeleccionada).map((p) => ({ value: p.id, label: `${p.codigo} · ${p.descripcion}`.slice(0, 90) }))]} />
+        <NumField label="Importe" value={importe} onCommit={setImporte} unit="€" placeholder="" />
+      </div>
+      <div className="row">
+        <button type="button" className="btn primary" disabled={!partida || importe == null || importe <= 0} data-action="asignar-guardar"
+          onClick={() => { st().asignarEntrega(l.entregaId!, partida, importe!); setPartida(''); setImporte(null); }}>
+          Asignar {importe ? fmtEur(importe) : ''} a la partida
+        </button>
+        <span className="hint">Sin asignar: {fmtEur(l.sinAsignar)}</span>
+      </div>
+    </div>
   );
 }
