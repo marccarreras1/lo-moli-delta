@@ -18,7 +18,7 @@ export interface Movimiento {
   /** partida o «a cuenta» */
   concepto: string;
   codigo: string;
-  /** importe tal como sale de la factura o del banco (impuestos incluidos) */
+  /** importe pagado tal como sale del banco (sin IVA: los pagos se hacen desde el extranjero) */
   importe: number;
   pagado: boolean;
   origen: 'partida' | 'a cuenta';
@@ -121,13 +121,13 @@ export function libroPagos(pres: Presupuesto, fases: Fase[], o: { proyecto: stri
   const tm = totalesMovimientos(ms);
   const sit = situacionObra(pres, fases);
   const t = sit.totales;
-  const aviso = 'Importes sin IVA salvo «Pagado» y «Pendiente», que van tal como salen de la factura o del banco (impuestos incluidos).';
+  const aviso = 'Todos los importes sin IVA: los pagos se hacen desde el extranjero.';
 
   // ---------- Facturas y pagos
   const H1 = 4;
   const pagosRows: XlsxCell[][] = [
     [{ v: `${o.proyecto} · Facturas y pagos`, s: 'title' }],
-    [{ v: `Exportado el ${o.fecha}. Importes tal como salen de la factura o del banco (impuestos incluidos).`, s: 'muted' }],
+    [{ v: `Exportado el ${o.fecha}. Importes pagados tal como salen del banco, sin IVA (pagos desde el extranjero).`, s: 'muted' }],
     [],
     ['Fecha', 'Factura / justificante', 'Emisor', 'Partida / concepto', 'Importe', 'Estado', 'Origen', 'Nota'].map((v) => ({ v, s: 'head' as const })),
     ...ms.map((m) => [

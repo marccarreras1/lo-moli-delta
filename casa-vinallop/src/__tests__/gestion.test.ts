@@ -16,11 +16,11 @@ describe('presupuesto PAC26-0052', () => {
     expect(r.descuento).toBe(3790);
     expect(r.trasDescuento).toBe(34110);
   });
-  it('ajuste −1.110 → base 33.000, IVA 6.930, total 39.930', () => {
+  it('ajuste −1.110 → base 33.000, sin IVA (pagos desde el extranjero): total 33.000', () => {
     expect(r.ajuste).toBe(-1110);
     expect(r.base).toBe(33000);
-    expect(r.impuestos).toBe(6930);
-    expect(r.total).toBe(39930);
+    expect(r.impuestos).toBe(0);
+    expect(r.total).toBe(33000);
   });
   it('no aplica dos veces el descuento del 10 %', () => {
     expect(r.base).not.toBe(29700); // 33.000 × 0,9
@@ -34,8 +34,9 @@ describe('presupuesto PAC26-0052', () => {
     expect(completo.seleccion).toBe(53600);
     expect(completo.descuento).toBe(5360);
     expect(completo.base).toBe(48240);
-    expect(completo.impuestos).toBe(10130.4);
-    expect(completo.total).toBe(58370.4);
+    // el documento imprime IVA del 21 %; los pagos se hacen desde el extranjero, sin IVA
+    expect(completo.impuestos).toBe(0);
+    expect(completo.total).toBe(48240);
     expect([t.subtotal, t.descuento, t.base, t.impuestos, t.total]).toEqual([53600, 5360, 48240, 10130.4, 58370.4]);
     const noSel = ofertaResumen({ ...oferta, partidas: PAC_NO_SELECCION, descuentoPct: null, ajuste: null }, pres.partidas);
     expect(noSel.seleccion).toBe(13200);
@@ -46,8 +47,8 @@ describe('presupuesto PAC26-0052', () => {
       expect(p.condicion).toBe('oferta recibida');
       expect(p.contratado).toBeNull();
       // solo la demolición del techo consta como pagada (imputada de la entrega a cuenta de agosto)
-      expect(p.pagos.map((x) => x.importe)).toEqual(p.codigo === 'PAC-01' ? [1815] : []);
-      expect(p.impuesto).toBe(21);
+      expect(p.pagos.map((x) => x.importe)).toEqual(p.codigo === 'PAC-01' ? [1500] : []);
+      expect(p.impuesto).toBe(0);
     }
   });
 });
@@ -75,13 +76,13 @@ describe('partidas sin valorar', () => {
     const o = ofertaResumen(oferta, pres.partidas);
     // la oferta sigue siendo la del documento (8 partidas); los añadidos van aparte
     expect(o.seleccion).toBe(37900);
-    expect([o.descuento, o.trasDescuento, o.ajuste, o.base, o.impuestos, o.total]).toEqual([3790, 34110, -1110, 33000, 6930, 39930]);
+    expect([o.descuento, o.trasDescuento, o.ajuste, o.base, o.impuestos, o.total]).toEqual([3790, 34110, -1110, 33000, 0, 33000]);
     expect(r.capitulosSinValorar.length).toBeGreaterThan(0);
     expect(r.reserva.disponible).toBeNull();
     // solo los extras pactados por mensaje (26.000) están contratados; no se inventan más obligaciones
     expect(r.obligaciones.n).toBe(1);
     expect(r.obligaciones.base).toBe(26000);
-    expect(r.pagado).toBe(1815);
+    expect(r.pagado).toBe(1500);
   });
   it('no suma previsto, contratado y real como gastos distintos', () => {
     const p = { ...pres.partidas[0], contratado: 1400, extras: 100, real: 1550, pagos: [{ id: 'x', fecha: '2026-06-01', importe: 500, nota: '' }] };
@@ -89,7 +90,7 @@ describe('partidas sin valorar', () => {
     expect(r.previsto.base).toBe(1500);
     expect(r.revisado.base).toBe(1500); // obligación 1.400 + 100
     expect(r.desviacion).toEqual({ n: 1, previsto: 1500, comparable: 1550, diferencia: 50 });
-    expect(r.pendientePago).toBe(1315); // 1.500 × 1,21 − 500
+    expect(r.pendientePago).toBe(1000); // 1.500 sin IVA − 500
   });
 });
 
@@ -159,12 +160,12 @@ describe('depósito de agua potable (PN20260783)', () => {
   it('partida y oferta con los importes del presupuesto, recibida y sin pagos', () => {
     const p = pres.partidas.find((x) => x.codigo === 'DEP-01')!;
     expect(importePrevisto(p)).toBe(2282);
-    expect(p.impuesto).toBe(21);
+    expect(p.impuesto).toBe(0);
     expect(p.pagos).toHaveLength(0);
     expect(p.contratado).toBeNull();
     const o = pres.ofertas.find((x) => x.referencia === 'PN20260783')!;
     expect(o.estado).toBe('recibida');
-    expect(ofertaResumen(o, pres.partidas)).toMatchObject({ base: 2282, impuestos: 479.22, total: 2761.22 });
+    expect(ofertaResumen(o, pres.partidas)).toMatchObject({ base: 2282, impuestos: 0, total: 2282 });
   });
 });
 
@@ -213,10 +214,10 @@ describe('entregas a cuenta (sin partida)', () => {
   const g = seedGestion();
   it('6.000 € pagados en agosto (sin fecha exacta), la FEM26-0031 de 3.500 € pagada y la FEM26-0032 de 10.000 € por pagar', () => {
     const ac = g.presupuesto.aCuenta;
-    // de los 6.000 € de agosto, 1.815 € se imputan a la demolición del techo (PAC-01)
-    expect(ac.map((x) => [x.importe, x.pagado])).toEqual([[4185, true], [3500, true], [10000, false]]);
+    // de los 6.000 € de agosto, 1.500 € (sin IVA) se imputan a la demolición del techo (PAC-01)
+    expect(ac.map((x) => [x.importe, x.pagado])).toEqual([[4500, true], [3500, true], [10000, false]]);
     expect(ac[0].fecha).toBe('');
-    expect(aCuentaTotales(g.presupuesto)).toEqual({ n: 3, pagado: 7685, porPagar: 10000 });
+    expect(aCuentaTotales(g.presupuesto)).toEqual({ n: 3, pagado: 8000, porPagar: 10000 });
     const pagadoPartidas = g.presupuesto.partidas.reduce((a, p) => a + p.pagos.reduce((b, x) => b + x.importe, 0), 0);
     expect(pagadoPartidas + aCuentaTotales(g.presupuesto).pagado).toBe(9500);
   });
@@ -250,7 +251,7 @@ describe('presupuesto PEB26-0001 (fase 2)', () => {
   it('suma 13.900 € de base, 2.919 € de IVA y 16.819 € de total, sin aceptar ni pagar', () => {
     const o = g.presupuesto.ofertas.find((x) => x.id === 'o-peb26-0001')!;
     const r = ofertaResumen(o, g.presupuesto.partidas);
-    expect([r.seleccion, r.base, r.impuestos, r.total]).toEqual([13900, 13900, 2919, 16819]);
+    expect([r.seleccion, r.base, r.impuestos, r.total]).toEqual([13900, 13900, 0, 13900]);
     expect(o.estado).toBe('recibida');
     // Ebrebuilding es la misma empresa que Aconseguit Angamar
     expect(o.proveedor).toBe(g.presupuesto.ofertas.find((x) => x.id === 'o-pac26-0052')!.proveedor);

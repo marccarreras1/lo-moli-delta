@@ -13,7 +13,7 @@ describe('pagos y facturas', () => {
     expect(t.pagado).toBe(9500);
     expect(t.pendiente).toBe(10000);
     expect(ms.some((m) => m.documento === 'Factura FEM26-0032' && !m.pagado)).toBe(true);
-    expect(ms.some((m) => m.codigo === 'PAC-01' && m.importe === 1815)).toBe(true);
+    expect(ms.some((m) => m.codigo === 'PAC-01' && m.importe === 1500)).toBe(true);
   });
   it('genera un libro de Excel con tres hojas, fórmulas y fechas', () => {
     const sheets = libroPagos(g.presupuesto, g.fases, { proyecto: 'Lo Molí', fecha: '01/11/2026' });

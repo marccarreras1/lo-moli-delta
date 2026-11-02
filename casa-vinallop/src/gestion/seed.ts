@@ -115,7 +115,7 @@ const pac = (n: number, descripcion: string, capitulo: string, precio: number, f
   origenPrecio: `Presupuesto ${PAC_REF} (importe sin descuento ni IVA)`,
   fechaPrecio: PAC_FECHA,
   condicion: 'oferta recibida',
-  impuesto: 21,
+  impuesto: 0,
   base: null,
   ...(fase === FASE_PENDIENTE ? { noSeleccionada: true } : {}),
 });
@@ -140,7 +140,7 @@ export const FASE2_PARTIDAS = (): Partida[] => [
     'Importe hablado: 8.000 €. Sin oferta escrita: falta proveedor, alcance (cimentación, muros, cubierta-terraza, puertas, instalaciones interiores, cajón del generador…) y si el importe lleva IVA.'),
   { ...f2(2, 'Sanear la fosa séptica actual y transformarla en aljibe de pluviales (vaciado por gestor autorizado, limpieza, desinfección, prueba de estanqueidad, anular la entrada de aguas negras, registro, filtro, rebosadero y bomba)', CAP.agua, PEB_F202.precio,
     `${PEB_F202.notas} Antes: localizar y medir la fosa. Recibe la cadena de lluvia de la esquina del cuarto técnico. Agua no potable (riego y jardín).`),
-    proveedor: PEB_PROVEEDOR, referencia: PEB_REF, origenPrecio: `Presupuesto ${PEB_REF} (importe sin IVA)`, fechaPrecio: PEB_FECHA, condicion: 'oferta recibida', impuesto: 21 },
+    proveedor: PEB_PROVEEDOR, referencia: PEB_REF, origenPrecio: `Presupuesto ${PEB_REF} (importe sin IVA)`, fechaPrecio: PEB_FECHA, condicion: 'oferta recibida', impuesto: 0 },
   f2(3, 'Mini vinoteca en el hueco que hay en la cocina', CAP.cocina, null,
     'Sin valorar. Falta medir el hueco (planta y profundidad) y definir acabado, puerta y si lleva climatización.'),
 ];
@@ -172,7 +172,7 @@ const peb = (n: number, descripcion: string, capitulo: string, precio: number, n
   proveedor: PEB_PROVEEDOR, referencia: PEB_REF, contratado: null, extras: null, real: null, pagos: [],
   notas: `Presupuesto ${PEB_REF}, línea ${n}.${notas ? ` ${notas}` : ''}`,
   origenPrecio: `Presupuesto ${PEB_REF} (importe sin IVA)`, fechaPrecio: PEB_FECHA,
-  condicion: 'oferta recibida', impuesto: 21, base: null,
+  condicion: 'oferta recibida', impuesto: 0, base: null,
 });
 /** Partidas del presupuesto PEB26-0001 (la línea 3, fosa → aljibe, valora la partida F2-02 que ya existía). */
 export const PEB_PARTIDAS = (): Partida[] => [
@@ -265,9 +265,9 @@ export const OFERTA_PEB = (): Oferta => ({
   id: 'o-peb26-0001', proveedor: PEB_PROVEEDOR, referencia: PEB_REF, fecha: PEB_FECHA,
   alcance: 'Fase 2: fosa séptica nueva con sus zanjas y tubos, recuperación de la fosa actual como depósito de agua, escalera de hormigón y cimentación, muros y losa del porche (7 líneas).',
   partidas: ['PEB-01', 'PEB-02', 'F2-02', 'PEB-04', 'PEB-05', 'PEB-06', 'PEB-07'],
-  importeBase: null, descuentoPct: null, ajuste: null, ajusteNota: '', impuestoPct: 21, estado: 'recibida',
+  importeBase: null, descuentoPct: null, ajuste: null, ajusteNota: '', impuestoPct: 0, estado: 'recibida',
   documentos: [`Presupuesto ${PEB_REF} (Ebrebuilding S.C.C.L., la misma empresa que ${PEB_PROVEEDOR}, 22/10/2026)`],
-  notas: 'Oferta recibida: no aceptada ni pagada. Base 13.900 €, IVA 21 % 2.919 €, total 16.819 €.',
+  notas: 'Oferta recibida: no aceptada ni pagada. Base 13.900 €. El documento suma IVA del 21 % (16.819 €), pero los pagos se hacen desde el extranjero, sin IVA.',
   totalesImpresos: { subtotal: 13900, descuento: null, base: 13900, impuestos: 2919, total: 16819, nota: 'Totales impresos en el presupuesto.' },
   condiciones: '',
   avisos: [
@@ -285,7 +285,7 @@ export const ADDED_PARTIDAS = (): Partida[] => [
     proveedor: PAC_PROVEEDOR, referencia: '', contratado: null, extras: null, real: null, pagos: [],
     notas: 'Se suma a PAC-04 (recrecido de muros, 4.500 €): +2.000 € para llegar a los 6,00 m de altura (indicación de la propiedad). El alzado de la casa de 36 cm va aparte, en PAC-11 (2.500 €). Importe sin IVA como el resto del presupuesto; pendiente de confirmación escrita del constructor.',
     origenPrecio: 'Indicación de la propiedad (10/10/2026)', fechaPrecio: '2026-10-10',
-    condicion: 'estimación', impuesto: 21, base: null,
+    condicion: 'estimación', impuesto: 0, base: null,
   },
   {
     id: 'p-zanja-pozo', codigo: 'ZAN-01',
@@ -295,7 +295,7 @@ export const ADDED_PARTIDAS = (): Partida[] => [
     proveedor: '', referencia: '', contratado: null, extras: null, real: null, pagos: [],
     notas: 'Presupuesto pasado a la propiedad: 3.500 €. Incluye agua y electricidad (se anota en el capítulo de agua). Proveedor y si el importe lleva IVA, sin indicar: a completar.',
     origenPrecio: 'Presupuesto recibido por la propiedad (10/10/2026)', fechaPrecio: '2026-10-10',
-    condicion: 'oferta recibida', impuesto: 21, base: null,
+    condicion: 'oferta recibida', impuesto: 0, base: null,
   },
   {
     id: 'p-deposito-agua', codigo: DEP_CODIGO,
@@ -305,7 +305,7 @@ export const ADDED_PARTIDAS = (): Partida[] => [
     proveedor: DEP_PROVEEDOR, referencia: DEP_REF, contratado: null, extras: null, real: null, pagos: [],
     notas: 'Solo suministro (depósito y portes). No incluye: descarga (es a pie de transporte: grúa o medios de descarga a cargo de la obra), excavación, cama o losa de apoyo, relleno, colocación, conexiones, bomba ni tratamiento del agua: costes pendientes de valorar. Pago: 50 % al confirmar el pedido y 50 % a la entrega. Garantía de 2 años por defectos de fabricación (no cubre una colocación incorrecta). Distinto de PAC-10 (cisterna de obra de 15 m³ para pluviales, no seleccionada).',
     origenPrecio: `Presupuesto ${DEP_REF} (importe sin IVA)`, fechaPrecio: DEP_FECHA,
-    condicion: 'oferta recibida', impuesto: 21, base: null,
+    condicion: 'oferta recibida', impuesto: 0, base: null,
   },
 ];
 
@@ -321,7 +321,7 @@ export const OFERTA_DEPOSITO = (): Oferta => ({
   descuentoPct: null,
   ajuste: null,
   ajusteNota: '',
-  impuestoPct: 21,
+  impuestoPct: 0,
   estado: 'recibida',
   documentos: [`Presupuesto ${DEP_REF} (${DEP_PROVEEDOR}, 13/10/2026) con hoja técnica del DE12000`],
   notas: 'Oferta recibida: no aceptada ni pagada. Plazo de suministro a convenir.',
@@ -397,8 +397,8 @@ function ofertas(): Oferta[] {
     importeBase: null,
     descuentoPct: 10,
     ajuste: -1110,
-    ajusteNota: 'Ajuste anotado a mano (33.000 € + IVA) pendiente de confirmación escrita.',
-    impuestoPct: 21,
+    ajusteNota: 'Ajuste anotado a mano (33.000 €) pendiente de confirmación escrita. Sin IVA: los pagos se hacen desde el extranjero.',
+    impuestoPct: 0,
     estado: 'recibida',
     documentos: [`Presupuesto ${PAC_REF} (${PAC_PROVEEDOR}, 26/05/2026), con nota manuscrita`],
     notas: 'Oferta recibida: no aceptada ni pagada. El descuento comercial del 10 % se aplica una sola vez sobre la selección; el ajuste a 33.000 € no lleva un segundo descuento.',
@@ -525,9 +525,9 @@ function fases(): Fase[] {
   ];
 }
 
-/** Demolición del techo (PAC-01) dada por pagada (propiedad, 25/10/2026): 1.500 € + IVA 21 %, imputados de la entrega de agosto. */
-export const DEMOLICION_PAGADA = 1815;
-export const PAGO_DEMOLICION = { id: 'pg-pac01-imputado', fecha: '', importe: DEMOLICION_PAGADA, nota: 'Demolición del techo dada por pagada por la propiedad (25/10/2026): 1.500 € + IVA 21 %, imputado de la entrega a cuenta de agosto (6.000 €).' };
+/** Demolición del techo (PAC-01) dada por pagada (propiedad, 25/10/2026): 1.500 €, sin IVA (se paga desde el extranjero), imputados de la entrega de agosto. */
+export const DEMOLICION_PAGADA = 1500;
+export const PAGO_DEMOLICION = { id: 'pg-pac01-imputado', fecha: '', importe: DEMOLICION_PAGADA, nota: 'Demolición del techo dada por pagada por la propiedad (25/10/2026): 1.500 €, sin IVA (todos los pagos se hacen desde el extranjero, sin IVA), imputados de la entrega a cuenta de agosto (6.000 €).' };
 /** Entregas a cuenta de la obra indicadas por la propiedad (21/10/2026): no van a ninguna partida. */
 export const ENTREGAS_CUENTA = (): EntregaCuenta[] => [
   {

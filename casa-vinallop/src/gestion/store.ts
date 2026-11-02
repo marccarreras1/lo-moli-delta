@@ -421,6 +421,29 @@ function migrate19(data: GestionData): GestionData {
   return { ...data, presupuesto: { ...pr, cargos } };
 }
 
+/**
+ * Todo sin IVA (propiedad, 02/11/2026: los pagos se hacen desde el extranjero). La demolición pagada pasa de 1.815 €
+ * (1.500 € + IVA) a 1.500 €, la entrega de agosto queda en 4.500 € (6.000 − 1.500) y las tasas del 21 % pasan a 0 %.
+ * Solo cambia lo que sigue como estaba.
+ */
+function migrate20(data: GestionData): GestionData {
+  let done: string[] = [];
+  try { done = JSON.parse(window.localStorage.getItem(MIGRATIONS_KEY) ?? '[]') as string[]; } catch { /* sin almacenamiento */ }
+  const id = '2026-11-02-sin-iva';
+  if (done.includes(id)) return data;
+  try { window.localStorage.setItem(MIGRATIONS_KEY, JSON.stringify([...done, id])); } catch { /* sin almacenamiento */ }
+  const pr = data.presupuesto;
+  const partidas = pr.partidas.map((p) => ({
+    ...p,
+    impuesto: p.impuesto === 21 ? 0 : p.impuesto,
+    pagos: p.pagos.map((x) => (x.id === PAGO_DEMOLICION.id && x.importe === 1815 ? { ...x, importe: PAGO_DEMOLICION.importe, nota: PAGO_DEMOLICION.nota } : x)),
+  }));
+  const ago = ENTREGAS_CUENTA().find((x) => x.id === 'ac-2026-08')!;
+  const aCuenta = pr.aCuenta.map((x) => (x.id === ago.id && x.importe === 4185 ? { ...x, importe: ago.importe, nota: ago.nota } : x));
+  const ofertas = pr.ofertas.map((o) => (o.impuestoPct === 21 ? { ...o, impuestoPct: 0 } : o));
+  return { ...data, presupuesto: { ...pr, partidas, aCuenta, ofertas } };
+}
+
 function load(): { data: GestionData; aviso: string | null } {
   if (typeof window === 'undefined') return { data: seedGestion(), aviso: null };
   let raw: string | null = null;
@@ -433,7 +456,7 @@ function load(): { data: GestionData; aviso: string | null } {
   try {
     const parsed = JSON.parse(raw) as unknown;
     const base = parseGestion(parsed, false);
-    const data = migrate19(migrate18(migrate17(migrate16(migrate15(migrate14(migrate13(migrate12(migrate11(migrate10(migrate9(migrate8(migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base)))))))))))))))))));
+    const data = migrate20(migrate19(migrate18(migrate17(migrate16(migrate15(migrate14(migrate13(migrate12(migrate11(migrate10(migrate9(migrate8(migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base))))))))))))))))))));
     // las migraciones se marcan como hechas: hay que guardar ya su resultado o se perderían al recargar sin editar
     if (data !== base) try { window.localStorage.setItem(GESTION_KEY, JSON.stringify(envelope(data))); } catch { /* sin almacenamiento */ }
     let aviso: string | null = null;

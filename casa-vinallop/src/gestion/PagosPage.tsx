@@ -63,7 +63,7 @@ export function PagosPage() {
         <div className="gx-kpis">
           <Kpi k="Total pagado" v={fmtEur(tm.pagado)} d={`${tm.nPagados} ${tm.nPagados === 1 ? 'pago' : 'pagos'} · ${fmtEur(tm.porPartida)} por partidas + ${fmtEur(tm.aCuenta)} a cuenta`} />
           <Kpi k="Pendiente de pago" v={fmtEur(tm.pendiente)} d={tm.nPendientes ? `${tm.nPendientes} ${tm.nPendientes === 1 ? 'factura recibida' : 'facturas recibidas'} sin pagar` : 'ninguna factura pendiente'} tone={tm.nPendientes ? 'warn' : undefined} />
-          <Kpi k="Total facturado" v={fmtEur(r2(tm.pagado + tm.pendiente))} d="pagado + pendiente · impuestos incluidos" />
+          <Kpi k="Total facturado" v={fmtEur(r2(tm.pagado + tm.pendiente))} d="pagado + pendiente · sin IVA (pagos desde el extranjero)" />
           <Kpi k="Presupuesto de referencia" v={fmtEur(ref)} d="base sin impuestos de las partidas seleccionadas" />
         </div>
         <p className="hint">El Excel tiene cuatro hojas: resumen, debe y haber con el saldo, facturas y pagos (con filtros) y presupuesto con el seguimiento de pagos por partida. Los totales van con fórmulas.</p>
