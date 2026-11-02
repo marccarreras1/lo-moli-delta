@@ -10,10 +10,8 @@ import { ReferencesPage } from './ReferencesPage';
 const InstallationsPage = lazy(() => import('../instalaciones/InstallationsPage').then((m) => ({ default: m.InstallationsPage })));
 const DecisionsPage = lazy(() => import('../gestion/DecisionsPage').then((m) => ({ default: m.DecisionsPage })));
 const PhasesPage = lazy(() => import('../gestion/PhasesPage').then((m) => ({ default: m.PhasesPage })));
+const EconomiaPage = lazy(() => import('../gestion/EconomiaPage').then((m) => ({ default: m.EconomiaPage })));
 const BitacoraPage = lazy(() => import('../bitacora/BitacoraPage').then((m) => ({ default: m.BitacoraPage })));
-const SituacionPage = lazy(() => import('../gestion/SituacionPage').then((m) => ({ default: m.SituacionPage })));
-const PagosPage = lazy(() => import('../gestion/PagosPage').then((m) => ({ default: m.PagosPage })));
-const BudgetPage = lazy(() => import('../gestion/BudgetPage').then((m) => ({ default: m.BudgetPage })));
 
 export function SectionContent({ section }: { section: Exclude<AppSection, 'visor'> }) {
   const { layout } = useModel();
@@ -34,9 +32,7 @@ export function SectionContent({ section }: { section: Exclude<AppSection, 'viso
         {section === 'instalaciones' && <InstallationsPage layout={layout} onLocate={onLocate} />}
         {section === 'decisiones' && <DecisionsPage />}
         {section === 'fases' && <PhasesPage />}
-        {section === 'presupuesto' && <BudgetPage layout={layout} />}
-        {section === 'situacion' && <SituacionPage />}
-        {section === 'pagos' && <PagosPage />}
+        {section === 'economia' && <EconomiaPage layout={layout} />}
         {section === 'cambios' && <BitacoraPage />}
       </Suspense>
     </div>

@@ -53,12 +53,16 @@ export interface Visual {
   longSection: boolean;
   /** sección de la aplicación (menú principal) */
   section: AppSection;
+  /** pestaña de «Economía de la obra»: pagos y cuenta, presupuesto o situación */
+  economiaTab: EconomiaTab;
 }
 
-export type AppSection = 'proyecto' | 'visor' | 'referencias' | 'instalaciones' | 'decisiones' | 'fases' | 'presupuesto' | 'situacion' | 'pagos' | 'cambios';
+export type AppSection = 'proyecto' | 'visor' | 'referencias' | 'instalaciones' | 'decisiones' | 'fases' | 'economia' | 'cambios';
+/** pestañas de «Economía de la obra» */
+export type EconomiaTab = 'cuenta' | 'presupuesto' | 'situacion';
 export const SECTIONS: { id: AppSection; label: string }[] = [
   { id: 'proyecto', label: 'Proyecto' }, { id: 'visor', label: 'Visor 3D' }, { id: 'referencias', label: 'Referencias' }, { id: 'instalaciones', label: 'Instalaciones' },
-  { id: 'decisiones', label: 'Decisiones' }, { id: 'fases', label: 'Fases de obra' }, { id: 'presupuesto', label: 'Presupuesto' }, { id: 'situacion', label: 'Situación de obra' }, { id: 'pagos', label: 'Pagos y facturas' }, { id: 'cambios', label: 'Cambios' },
+  { id: 'decisiones', label: 'Decisiones' }, { id: 'fases', label: 'Fases de obra' }, { id: 'economia', label: 'Economía de la obra' }, { id: 'cambios', label: 'Cambios' },
 ];
 
 /** Vista favorita guardada por el usuario. */
@@ -117,6 +121,7 @@ export const defaultVisual = (): Visual => ({
   presentation: false,
   longSection: false,
   section: 'visor',
+  economiaTab: 'cuenta',
 });
 
 export const baseVariant = (): Variant => ({
@@ -185,6 +190,8 @@ const pick = <T extends string>(x: unknown, opts: readonly T[], d: T): T => (opt
 const bool = (x: unknown, d: boolean) => (typeof x === 'boolean' ? x : d);
 const str = (x: unknown, d: string, max = 80) => (typeof x === 'string' && x.trim() ? x.slice(0, max) : d);
 
+const ANTIGUAS: Record<string, EconomiaTab> = { presupuesto: 'presupuesto', situacion: 'situacion', pagos: 'cuenta' };
+
 function cleanVisual(x: unknown): Visual {
   const d = defaultVisual();
   const o = (x && typeof x === 'object' ? x : {}) as Partial<Visual>;
@@ -211,7 +218,9 @@ function cleanVisual(x: unknown): Visual {
     levelId: typeof o.levelId === 'string' ? o.levelId.slice(0, 40) : null,
     lampDimmer: num(o.lampDimmer, 0, 1, d.lampDimmer),
     showPassages: bool(o.showPassages, d.showPassages),
-    section: pick(o.section, ['proyecto', 'visor', 'referencias', 'instalaciones', 'decisiones', 'fases', 'presupuesto', 'situacion', 'pagos', 'cambios'] as const, d.section),
+    // presupuesto, situación y pagos eran secciones separadas: ahora son pestañas de «Economía de la obra»
+    section: pick(ANTIGUAS[o.section as string] ? 'economia' : o.section, ['proyecto', 'visor', 'referencias', 'instalaciones', 'decisiones', 'fases', 'economia', 'cambios'] as const, d.section),
+    economiaTab: pick(ANTIGUAS[o.section as string] ?? o.economiaTab, ['cuenta', 'presupuesto', 'situacion'] as const, d.economiaTab),
     presentation: bool(o.presentation, d.presentation),
     longSection: bool(o.longSection, d.longSection),
   };

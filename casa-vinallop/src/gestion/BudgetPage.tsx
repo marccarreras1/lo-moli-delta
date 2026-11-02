@@ -46,11 +46,11 @@ export function BudgetPage({ layout }: { layout: Layout }) {
       <EconomicPanel r={r} ofertas={pres.ofertas} partidas={pres.partidas} />
 
       <Segmented label="Sección del presupuesto" value={tab} onChange={setTab}
-        options={[{ value: 'partidas', label: 'Partidas' }, { value: 'ofertas', label: 'Ofertas' }, { value: 'pagos', label: 'Pagos y documentos' }, { value: 'reserva', label: 'Reserva' }]} />
+        options={[{ value: 'partidas', label: 'Partidas' }, { value: 'ofertas', label: 'Ofertas' }, { value: 'pagos', label: 'Documentos' }, { value: 'reserva', label: 'Reserva' }]} />
 
       {tab === 'partidas' && <PartidasTab onEdit={setEditId} />}
       {tab === 'ofertas' && <OfertasTab />}
-      {tab === 'pagos' && <PagosTab onEdit={(id) => setEditId(id)} />}
+      {tab === 'pagos' && <PagosTab />}
       {tab === 'reserva' && <ReservaTab />}
 
       {editId && <PartidaDialog id={editId} layout={layout} onClose={() => setEditId(null)} />}
@@ -480,33 +480,13 @@ function OfertaDialog({ id, onClose }: { id: string; onClose: () => void }) {
   );
 }
 
-// ---------------------------------------------------------------- pagos y documentos
+// ---------------------------------------------------------------- documentos (los pagos están en «Pagos y cuenta»)
 
-function PagosTab({ onEdit }: { onEdit: (partidaId: string) => void }) {
+function PagosTab() {
   const pres = useGestion((s) => s.presupuesto);
   const st = useGestion.getState;
-  const pagos = pres.partidas.flatMap((p) => p.pagos.map((x) => ({ ...x, partida: p }))).sort((a, b) => b.fecha.localeCompare(a.fecha));
-  const total = r2(pagos.reduce((a, x) => a + x.importe, 0));
   return (
     <div className="gx-panel">
-      <section className="gx-card" aria-label="Registro de pagos">
-        <h2>Registro de pagos</h2>
-        <p className="hint">Los pagos se registran desde cada partida (botón «Editar» → Pagos). Importes pagados, impuestos incluidos. Total registrado: {fmtEur(total)}.</p>
-        {pagos.length ? (
-          <div className="tbl-wrap as-cards">
-            <table className="tbl cards">
-              <thead><tr><th>Fecha</th><th>Partida</th><th className="num">Importe</th><th>Nota</th><th><span className="sr-only">Acciones</span></th></tr></thead>
-              <tbody>
-                {pagos.map((x) => (
-                  <tr key={x.id}><td data-label="Fecha" className="half">{fmtFecha(x.fecha) || '—'}</td><td data-label="Partida" className="wide">{x.partida.codigo} · {x.partida.descripcion}</td><td className="num" data-label="Importe">{fmtEur(x.importe)}</td><td data-label="Nota">{x.nota}</td>
-                    <td className="actions"><button type="button" className="btn ghost" onClick={() => onEdit(x.partida.id)}>Abrir partida</button></td></tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : <p className="hint">No hay pagos registrados.</p>}
-      </section>
-
       <section className="gx-card" aria-label="Documentos">
         <div className="row wrap" style={{ justifyContent: 'space-between' }}>
           <h2>Documentos</h2>

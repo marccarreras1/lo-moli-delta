@@ -28,7 +28,7 @@ await page.goto(`http://localhost:${PORT}/?diagnostico`);
 await page.waitForFunction(() => document.querySelector('canvas') && !document.querySelector('.state-center.loading'), null, { timeout: 90000 });
 await page.evaluate(() => window.__store.getState().setVisual('helpDismissed', true));
 
-for (const s of ['proyecto', 'referencias', 'instalaciones', 'decisiones', 'fases', 'presupuesto']) {
+for (const s of ['proyecto', 'referencias', 'instalaciones', 'decisiones', 'fases', 'economia']) {
   await page.click(`[data-nav="${s}"]`);
   await page.waitForTimeout(900);
   const txt = await page.evaluate(() => document.querySelector('.section-host')?.textContent?.length ?? 0);

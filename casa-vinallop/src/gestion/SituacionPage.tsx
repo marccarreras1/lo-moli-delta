@@ -110,8 +110,7 @@ export function SituacionPage() {
         </table>
       </div>
 
-      <PagosCard pagos={pagos} onEdit={setEdit} />
-      <EntregasCard />
+      <p className="hint">Los pagos y las entregas a cuenta se registran en la pestaña «Pagos y cuenta».</p>
       {edit && <SeguimientoDialog id={edit} onClose={() => setEdit(null)} />}
       {msg && <p className="gx-flash" role="status">{msg}</p>}
     </PageShell>
@@ -142,7 +141,7 @@ function Fila({ f, onEdit }: { f: SituacionPartida; onEdit: () => void }) {
   );
 }
 
-function PagosCard({ pagos, onEdit }: { pagos: ReturnType<typeof pagosObra>; onEdit: (id: string) => void }) {
+export function PagosCard({ pagos, onEdit }: { pagos: ReturnType<typeof pagosObra>; onEdit: (id: string) => void }) {
   const partidas = useGestion((s) => s.presupuesto.partidas);
   const addPago = useGestion((s) => s.addPago);
   const [n, setN] = useState<{ partida: string; fecha: string; importe: number | null; nota: string }>({ partida: '', fecha: hoy(), importe: null, nota: '' });
@@ -181,7 +180,7 @@ function PagosCard({ pagos, onEdit }: { pagos: ReturnType<typeof pagosObra>; onE
   );
 }
 
-function EntregasCard() {
+export function EntregasCard() {
   const xs = useGestion((s) => s.presupuesto.aCuenta);
   const st = useGestion.getState;
   const [n, setN] = useState<{ fecha: string; importe: number | null; emisor: string; documento: string; pagado: boolean; nota: string }>({ fecha: hoy(), importe: null, emisor: '', documento: '', pagado: true, nota: '' });
@@ -232,7 +231,7 @@ function EntregasCard() {
   );
 }
 
-function SeguimientoDialog({ id, onClose }: { id: string; onClose: () => void }) {
+export function SeguimientoDialog({ id, onClose }: { id: string; onClose: () => void }) {
   const p = useGestion((s) => s.presupuesto.partidas.find((x) => x.id === id));
   const fases = useGestion((s) => s.fases);
   const st = useGestion.getState;

@@ -2,11 +2,11 @@
 import { useMemo, useState } from 'react';
 import { download } from '../export/export';
 import { buildXlsx } from '../export/xlsx';
-import { useStore } from '../state/store';
 import { Icon } from '../ui/icons';
 import { fmtEur, fmtFecha, r2 } from './calc';
 import { cuentaConstructor, libroPagos, movimientos, totalesMovimientos, type LineaCuenta } from './libroPagos';
-import { situacionObra } from './situacion';
+import { pagosObra, situacionObra } from './situacion';
+import { EntregasCard, PagosCard, SeguimientoDialog } from './SituacionPage';
 import { useGestion } from './store';
 import { ConfirmButton } from '../ui/controls';
 import { Badge, DateField, NumField, PageShell, Pendiente, SelectField, TextField, useFlash } from './ui';
@@ -52,7 +52,7 @@ export function PagosPage() {
   };
 
   return (
-    <PageShell eyebrow="Gestión del proyecto" titulo="Pagos y facturas" testId="gestion-pagos"
+    <PageShell eyebrow="Gestión del proyecto" titulo="Pagos y cuenta" testId="gestion-pagos"
       acciones={<>
         <button type="button" className="btn" disabled={busy} onClick={() => exportar('csv')}><Icon name="download" size={16} /> CSV</button>
         <button type="button" className="btn primary" disabled={busy} onClick={() => exportar('xlsx')} data-action="pagos-excel"><Icon name="download" size={16} /> {busy ? 'Generando…' : 'Exportar Excel'}</button>
@@ -66,10 +66,12 @@ export function PagosPage() {
           <Kpi k="Total facturado" v={fmtEur(r2(tm.pagado + tm.pendiente))} d="pagado + pendiente · impuestos incluidos" />
           <Kpi k="Presupuesto de referencia" v={fmtEur(ref)} d="base sin impuestos de las partidas seleccionadas" />
         </div>
-        <p className="hint">El Excel tiene tres hojas: resumen, facturas y pagos (con filtros) y presupuesto con el seguimiento de pagos por partida, como el de un presupuesto de obra. Los totales van con fórmulas.</p>
+        <p className="hint">El Excel tiene cuatro hojas: resumen, debe y haber con el saldo, facturas y pagos (con filtros) y presupuesto con el seguimiento de pagos por partida. Los totales van con fórmulas.</p>
       </section>
 
       <CuentaCard />
+
+      <RegistrarPagos />
 
       <section className="gx-card" aria-label="Facturas y pagos" data-testid="pagos-lista">
         <h2>Facturas y pagos ({visibles.length})</h2>
@@ -104,8 +106,6 @@ export function PagosPage() {
             </table>
           </div>
         ) : <p className="hint">No hay facturas con este filtro.</p>}
-        <p className="hint">Los pagos se registran en «Situación de obra»: por partida en «Pagos» y las facturas que no van a ninguna partida en «Entregas a cuenta».</p>
-        <div className="row"><button type="button" className="btn" onClick={() => useStore.getState().setVisual('section', 'situacion')}>Ir a Situación de obra</button></div>
       </section>
     </PageShell>
   );
@@ -155,7 +155,7 @@ function CuentaCard() {
           <Icon name="plus" size={16} /> Añadir al debe
         </button>
       </div>
-      <p className="hint">Los pagos (haber) se registran en «Situación de obra»: por partida, o «a cuenta» si el pago no va a ninguna partida.</p>
+      <p className="hint">Los pagos (haber) se registran más abajo: por partida, o «a cuenta» si el pago no va a ninguna partida.</p>
     </section>
   );
 }
@@ -213,5 +213,19 @@ function AsignarForm({ l }: { l: LineaCuenta }) {
         <span className="hint">Sin asignar: {fmtEur(l.sinAsignar)}</span>
       </div>
     </div>
+  );
+}
+
+/** Registro de pagos: por partida y a cuenta (antes en «Situación de obra»). */
+function RegistrarPagos() {
+  const pres = useGestion((s) => s.presupuesto);
+  const pagos = useMemo(() => pagosObra(pres), [pres]);
+  const [edit, setEdit] = useState<string | null>(null);
+  return (
+    <>
+      <PagosCard pagos={pagos} onEdit={setEdit} />
+      <EntregasCard />
+      {edit && <SeguimientoDialog id={edit} onClose={() => setEdit(null)} />}
+    </>
   );
 }
