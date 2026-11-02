@@ -294,6 +294,12 @@ const furniture: Furniture[] = [
   f({ id: 'alfombra-salon', onlyIf: { salon: 'sofa-l' }, type: 'alfombra', label: 'Alfombra de yute', roomId: 'dia', x: rx(12.85), y: r2(YB - 0.85 - 0.8), w: 2.4, d: 1.7, h: 0.012, rot: 0, status: 'propuesto', note: 'Alfombra de fibra natural con dibujo (referencia 03).' }),
   f({ id: 'mesa-salon', onlyIf: { salon: 'sofa-l' }, type: 'mesa-centro', label: 'Mesa de madera 110 × 80', roomId: 'dia', x: rx(12.85), y: r2(YB - 0.85 - 0.8), w: 1.1, d: 0.8, h: 0.42, rot: 0, status: 'propuesto', color: '#8d5c3c', note: 'Mesa de madera maciza de ≈110 × 80 cm (indicación de la propiedad), baja como en la referencia 03, a 0,40 m del sofá.' }),
   f({ id: 'jarron-salon', onlyIf: { salon: 'sofa-l' }, type: 'jarron', label: 'Cuenco de barro', roomId: 'dia', x: rx(13.15), y: r2(YB - 0.85 - 0.85), w: 0.22, d: 0.22, h: 0.42, rot: 0, status: 'propuesto' }),
+  // propuesta de mobiliario (02/11/2026): piezas que faltaban, orientativas
+  f({ id: 'butaca-salon', onlyIf: { salon: 'sofa-l' }, type: 'butaca', label: 'Butaca de ratán (propuesta)', roomId: 'dia', x: 14.2, y: 2.15, w: 0.72, d: 0.72, h: 0.75, rot: 90, status: 'propuesto', note: 'Propuesta de mobiliario (02/11/2026): pieza orientativa, se puede quitar o mover. Cierra el estar entre la mesa baja y la estufa, de cara al sofá, sin tapar la cristalera ni el paso al comedor.' }),
+  f({ id: 'escritorio-altell', type: 'mesa', label: 'Escritorio de madera 120 × 60 (propuesta)', roomId: 'altell', x: 2.83, y: 0.62, w: 1.2, d: 0.6, h: 0.75, rot: 0, status: 'propuesto', color: '#8d5c3c', note: 'Propuesta de mobiliario (02/11/2026): pieza orientativa, se puede quitar o mover. Bajo la ventana del altell, con luz natural de frente.' }),
+  f({ id: 'silla-escritorio-altell', type: 'silla', label: 'Silla de escritorio (propuesta)', roomId: 'altell', x: 2.83, y: 1.15, w: 0.44, d: 0.44, h: 0.82, rot: 180, status: 'propuesto', note: 'Propuesta de mobiliario (02/11/2026): pieza orientativa, se puede quitar o mover.' }),
+  f({ id: 'butaca-altell', type: 'butaca', label: 'Butaca de lectura (propuesta)', roomId: 'altell', x: 4.95, y: 0.95, w: 0.72, d: 0.72, h: 0.75, rot: 0, status: 'propuesto', note: 'Propuesta de mobiliario (02/11/2026): pieza orientativa, se puede quitar o mover. Rincón de lectura junto a la ventana.' }),
+  f({ id: 'burra-altell', type: 'armario', open: true, label: 'Burra abierta de madera (propuesta)', roomId: 'altell', x: 0.56, y: 2.9, w: 1.5, d: 0.5, h: 1.8, rot: 270, status: 'propuesto', note: 'Propuesta de mobiliario (02/11/2026): pieza orientativa, se puede quitar o mover. Armario abierto contra el lateral izquierdo, al lado de la cama.' }),
 ];
 
 const water = (id: string, levelId: string, p: Vec2, note: string, sourceId = S.planta): Trace => ({ id, levelId, label: 'Punto de agua (×)', cross: p, sourceId, note });
@@ -487,6 +493,10 @@ const outdoor: Outdoor = {
     // banco de obra contra el frontal B en la solera del sol de invierno (propiedad)
     f({ id: 'banco-sol', type: 'banco', label: 'Banco de obra al sol (frontal B)', roomId: 'exterior', x: r2((X_PUERTA + 2.0 + 15.6) / 2), y: r2(W + 0.23), w: r2(15.6 - X_PUERTA - 2.0), d: 0.46, h: 0.45, rot: 0, status: 'propuesto',
       note: 'Banco corrido de obra encalado, pegado a la fachada de la entrada, con asiento de 0,45 m de fondo y alto y remate de piedra o terracota; para tomar el sol de invierno (indicación de la propiedad). Deja libre la tinaja junto a la puerta.' }),
+    // propuesta de mobiliario (02/11/2026): rincón de estar en el porche, delante del muro ciego del baño y la escalera
+    f({ id: 'sofa-porche', type: 'sofa', label: 'Sofá de obra con colchonetas de exterior (propuesta)', roomId: 'exterior', x: 5.6, y: -0.48, w: 2.6, d: 0.8, h: 0.75, rot: 180, status: 'propuesto', note: 'Propuesta de mobiliario (02/11/2026): pieza orientativa, se puede quitar o mover. Banco-sofá de obra encalado contra la fachada, a la sombra del porche.' }),
+    f({ id: 'mesa-baja-porche', type: 'mesa-centro', label: 'Mesa baja de exterior (propuesta)', roomId: 'exterior', x: 5.6, y: -1.5, w: 1.0, d: 0.6, h: 0.4, rot: 0, status: 'propuesto', color: '#8d5c3c', note: 'Propuesta de mobiliario (02/11/2026): pieza orientativa, se puede quitar o mover.' }),
+    ...[4.75, 6.45].map((x, i) => f({ id: `butaca-porche-${i + 1}`, type: 'butaca', label: 'Butaca de exterior (propuesta)', roomId: 'exterior', x, y: -2.25, w: 0.72, d: 0.72, h: 0.75, rot: 0, status: 'propuesto', note: 'Propuesta de mobiliario (02/11/2026): pieza orientativa, se puede quitar o mover.' })),
     f({ id: 'mesa-exterior', type: 'mesa-exterior', label: 'Mesa redonda Ø 1,80', roomId: 'exterior', x: MESA_EXT[0], y: MESA_EXT[1], w: 1.8, d: 1.8, h: 0.75, rot: 0, status: 'propuesto', note: 'Mesa circular de tablero mineral claro grueso (≈10 cm) sobre pie central cilíndrico (referencia 11). Ocho plazas; diámetro orientativo.' }),
     ...Array.from({ length: 8 }, (_, i) => {
       const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
@@ -533,6 +543,7 @@ const views: CameraPreset[] = [
   view({ id: 'n04-noche-salon', label: 'Noche · salón y comedor con el LED de las vigas', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: PB_EL, position: [15.4, 0.9, 1.6], target: [9.5, 3.0, 2.6], fov: 70, ambience: 'noche' }),
   view({ id: 'v03b-cadena-lluvia', label: '3b · Cadena de lluvia de tejas (frontal B)', group: 'exterior', position: [0.4, 8.6, 1.5], target: [-2.2, 5.2, 1.7], fov: 55 }),
   view({ id: 'v03-entrada', label: '3 · Entrada y puerta de madera', group: 'exterior', position: [12.9, 8.9, 1.6], target: [10.4, 5.2, 1.6], fov: 40 }),
+  view({ id: 'v04b-porche-estar', label: '4b · Porche: rincón de estar (propuesta de mobiliario)', group: 'exterior', fixed: true, position: [1.2, -6.0, 1.9], target: [5.6, -0.9, 0.7], fov: 58 }),
   view({ id: 'v04-solera', label: '4 · Solera completa en L', group: 'exterior', position: [-3.8, -10.5, 4.4], target: [11, -0.8, 0], fov: 46 }),
   view({ id: 'v05-algarrobo', label: '5 · Mesa y lámpara bajo el algarrobo', group: 'exterior', position: [14.6, -8.2, 1.6], target: [MESA_EXT[0] + 0.3, MESA_EXT[1] + 1.0, 1.5], fov: 56 }),
   view({ id: 'v06-desde-comedor', label: '6 · La casa desde el comedor exterior', group: 'exterior', position: [21.4, -5.4, 1.6], target: [10, -0.6, 2.2], fov: 56 }),
@@ -551,6 +562,7 @@ const views: CameraPreset[] = [
   view({ id: 'v12d-puerta-ducha', label: '12d · Puerta de vidrio desde la ducha', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: PB_EL, position: [5.2, 3.55, 1.6], target: [5.75, 5.0, 1.05], fov: 78 }),
   view({ id: 'v12c-celosia', label: '12c · Detalle de la celosía', group: 'interior', eyeLevel: true, roomId: 'bano', elevation: PB_EL, position: [4.75, 2.3, 1.6], target: [4.25, 3.6, 1.15], fov: 52 }),
   view({ id: 'v13-altell', label: '13 · Altell, vigas cemento y volta terracota', group: 'interior', eyeLevel: true, roomId: 'altell', elevation: r2(PB_EL + ALTELL), position: [4.9, 2.46, 1.6], target: [12, 2.46, 1.6], fov: 64 }),
+  view({ id: 'v13c-altell-escritorio', label: '13c · Altell: escritorio, lectura y burra (propuesta de mobiliario)', group: 'interior', eyeLevel: true, roomId: 'altell', elevation: r2(PB_EL + ALTELL), position: [5.2, 3.9, 1.6], target: [1.6, 1.2, 0.9], fov: 70 }),
   view({ id: 'v13b-volta', label: '13b · Vigas y volta desde la zona de día', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: PB_EL, position: [12.5, 2.25, 1.6], target: [8.4, 2.46, 4.4], fov: 64 }),
   view({ id: 'v14-sin-cubierta', label: '14 · Vista sin cubierta', group: 'exterior', hideRoof: true, position: [9.2, 12, 25], target: [9.2, 3.2, 0], fov: 40 }),
   view({ id: 'v18-terraza-altell', label: '18 · Terraza del altell sobre el cuarto técnico', group: 'exterior', position: [-5.6, -2.6, 8.2], target: [-0.6, 2.6, 3.2], fov: 52 }),
