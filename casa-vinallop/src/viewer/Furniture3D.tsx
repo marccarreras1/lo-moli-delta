@@ -57,6 +57,40 @@ function B({ x = 0, y = 0, z = 0, w, h, d, m, ry = 0, shadow = true }: { x?: num
   return <mesh position={[x, y + h / 2, z]} rotation={[0, ry, 0]} material={m} geometry={uvBox(w, h, d)} castShadow={shadow} receiveShadow />;
 }
 
+/** contorno ovalado (estadio) de ancho w y fondo d, centrado */
+function stadium(w: number, d: number, inset = 0): THREE.Shape {
+  const r = d / 2 - inset;
+  const hx = Math.max(0, w / 2 - d / 2);
+  const s = new THREE.Shape();
+  s.moveTo(-hx, -r);
+  s.lineTo(hx, -r);
+  s.absarc(hx, 0, r, -Math.PI / 2, Math.PI / 2, false);
+  s.lineTo(-hx, r);
+  s.absarc(-hx, 0, r, Math.PI / 2, Math.PI * 1.5, false);
+  return s;
+}
+
+/** Bañera exenta ovalada: casco con borde fino, fondo interior y lámina de agua. */
+function FreestandingTub({ w, d, h, mats }: { w: number; d: number; h: number; mats: MaterialSet }) {
+  const geos = useMemo(() => {
+    const wall = 0.04;
+    const outer = stadium(w, d);
+    outer.holes.push(stadium(w, d, wall) as unknown as THREE.Path);
+    const shell = new THREE.ExtrudeGeometry(outer, { depth: h, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.01, bevelSegments: 2, curveSegments: 28 }).rotateX(-Math.PI / 2);
+    const floor = new THREE.ExtrudeGeometry(stadium(w, d, wall), { depth: 0.12, bevelEnabled: false, curveSegments: 28 }).rotateX(-Math.PI / 2);
+    const water = new THREE.ShapeGeometry(stadium(w, d, wall + 0.005), 28).rotateX(-Math.PI / 2);
+    return { shell, floor, water };
+  }, [w, d, h]);
+  useEffect(() => () => { geos.shell.dispose(); geos.floor.dispose(); geos.water.dispose(); }, [geos]);
+  return (
+    <>
+      <mesh geometry={geos.shell} material={mats.ceramic} castShadow receiveShadow />
+      <mesh geometry={geos.floor} material={mats.ceramic} receiveShadow />
+      <mesh geometry={geos.water} position={[0, h * 0.62, 0]} material={mats.glass} />
+    </>
+  );
+}
+
 /** Pieza blanda con cantos redondeados (cojines, colchones). */
 function Soft({ x = 0, y = 0, z = 0, w, h, d, r = 0.04, m, rx = 0 }: { x?: number; y?: number; z?: number; w: number; h: number; d: number; r?: number; m: THREE.Material; rx?: number }) {
   return (
@@ -147,13 +181,7 @@ function Piece({ f, mats, options }: { f: Furniture; mats: MaterialSet; options:
     case 'encimera': return <Kitchen w={w} d={d} h={h} modules={f.modules ?? []} mats={mats} underStair={f.underStair} />;
     case 'isla': return <Island w={w} d={d} h={h} mats={mats} modules={f.modules} />;
     case 'taburete': return <Stool h={h} mats={mats} />;
-    case 'banera':
-      return (
-        <>
-          <B w={w} h={h} d={d} m={mats.ceramic} />
-          <B y={h - 0.02} w={w - 0.16} h={0.025} d={d - 0.16} m={mats.glass} />
-        </>
-      );
+    case 'banera': return <FreestandingTub w={w} d={d} h={h} mats={mats} />;
     case 'banco':
       return (
         <>
