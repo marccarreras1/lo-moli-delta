@@ -59,7 +59,8 @@ for (const [id, tab] of ids) {
   if (filter && !id.includes(filter)) continue;
   await page.evaluate(({ id, tab }) => window.__store.getState().goView(id, tab), { id, tab });
   // la primera vista (y el cambio de modo) tarda más con el renderizado por software
-  await page.waitForTimeout(first ? Number((args.find((a) => a.startsWith('--espera=')) ?? '--espera=9000').split('=')[1]) : 2600);
+  // --entre=ms: espera entre vistas (con el renderizado por software la cámara tarda en llegar)
+  await page.waitForTimeout(first ? Number((args.find((a) => a.startsWith('--espera=')) ?? '--espera=9000').split('=')[1]) : Number((args.find((a) => a.startsWith('--entre=')) ?? '--entre=2600').split('=')[1]));
   first = false;
   if (errors.length) console.log('errores en', id, errors.slice(-3).join(' | ').slice(0, 600));
   // con el renderizado por software el bucle continuo no deja capturar: se congela el último fotograma
