@@ -43,6 +43,7 @@ GRUPOS = {
     'parcela': 'Fotos de la parcela y el entorno',
     'mapa': 'Mapa',
     'obra': 'Situación de la obra (21/10/2026)',
+    'obra-1111': 'Situación de la obra (11/11/2026)',
 }
 
 # fotos sueltas: md5 del original (12 primeros caracteres) → (id, grupo, título)
@@ -102,6 +103,21 @@ FOTOS = {
     '82625fbb5f21': ('obra-17-dron-cenital-2', 'obra', 'Dron en vertical (otra toma): muros al aire con el escombro dentro y la piscina desmontable al sur'),
     '768610a4f8bd': ('obra-18-dron-alto', 'obra', 'Dron más alto: la casa en obra entre los olivos'),
     '721733fc9dea': ('obra-19-dron-finca', 'obra', 'Dron: la finca entera con la casa en obra abajo y los invernaderos al lado'),
+    '0b238d139687': ('obra-20-zanjas-y-bano', 'obra-1111', 'Zanjas de cimentación con las armaduras puestas, el bloque del baño actual en pie y el muro de piedra detrás'),
+    'c03a0cb7ba56': ('obra-21-desde-olivar', 'obra-1111', 'La obra desde el olivar: el baño actual, el muro de piedra y el escombro, con perfiles metálicos en el suelo'),
+    'a05507050e54': ('obra-22-muro-y-zanja', 'obra-1111', 'Muro encalado que queda en pie con la zanja armada a su pie y el interior ya vaciado y nivelado'),
+    'a037a052e5c8': ('obra-23-zanja-frontal-b', 'obra-1111', 'Zanja armada a lo largo del muro largo, junto al baño actual, con un hueco bajo su solera'),
+    'f490315d3c97': ('obra-24-zanja-y-acopio', 'obra-1111', 'Zanja armada pegada al muro y segunda zanja paralela, con el acopio de bloques de hormigón'),
+    '5bd4d4b8294e': ('obra-25-zanja-frontal-b-2', 'obra-1111', 'Zanja armada junto al muro largo y el baño actual (otra toma, con el andamio)'),
+    '1e2e39056499': ('obra-26-zanjas-esquina', 'obra-1111', 'Esquina de las zanjas armadas delante del baño actual, con el relleno y el escombro dentro'),
+    'aef743fd22c3': ('obra-27-muro-piedra', 'obra-1111', 'Interior relleno de tierra y escombro hasta el muro de piedra y el muro encalado con la puerta'),
+    '510eaf6a7647': ('obra-28-cuarto-bano', 'obra-1111', 'Bloque del baño actual con las marcas «250» y «1,50» y la esquina de las zanjas armadas'),
+    '599ee5922fce': ('obra-29-piedra-de-cerca', 'obra-1111', 'Muro de mampostería con la cubierta ondulada que queda encima y el muro encalado al lado'),
+    'cab62bd11d96': ('obra-30-zanja-bajo-olivo', 'obra-1111', 'Zanja armada en esquina bajo las ramas del olivo, con el replanteo de cuerda'),
+    'a9423214eb6d': ('obra-31-muros-en-pie', 'obra-1111', 'Los dos muros que quedan en pie (piedra y encalado con la puerta) y la zanja armada delante'),
+    'fc5eb5a1d5bd': ('obra-32-muro-puerta', 'obra-1111', 'Muro encalado con la puerta y la mampostería a la vista en los extremos'),
+    'fb7ac88671ff': ('obra-33-muro-puerta-olivo', 'obra-1111', 'Muro encalado con la puerta visto desde la zanja, bajo el olivo'),
+    'a11a2d5125e5': ('obra-34-zanja-olivo', 'obra-1111', 'Zanja larga junto al olivo, con raíces a la vista en la pared de la zanja y la armadura todavía fuera'),
 }
 
 

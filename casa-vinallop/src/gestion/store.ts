@@ -5,7 +5,7 @@
  * colaboración multiusuario). Se guarda con retardo tras cada cambio y al ocultar la página.
  */
 import { create } from 'zustand';
-import { ADDED_PARTIDAS, CARGOS_CONSTRUCTOR, EXTRAS_PARTIDAS, MOTIVO_RECRECIDO, OFERTA_PEB5, PEB5_DOCUMENTO, PEB5_PARTIDAS, sustituir, ADDED_TAREAS, DECISION_FOSA, DECISION_PUERTA_FINCA, DEP_CODIGO, DEMOLICION_PAGADA, DEP_DOCUMENTO, TAREA_LED_VIGAS, ENTREGAS_CUENTA, PAGO_DEMOLICION, FASE1_FIN, FASE2, FASE2_PARTIDAS, FASE_2, FASE_PAC, OFERTA_PEB, PEB_DOCUMENTO, PEB_F202, PEB_FECHA, PEB_PARTIDAS, PEB_PROVEEDOR, PEB_PROVEEDOR_ANTES, PEB_REF, PEB_TAREAS, OFERTA_DEPOSITO, SEGUIMIENTO_2026_10_21, SEGUIMIENTO_ALZADO_ID, SEGUIMIENTO_DESCARTADO, SEGUIMIENTO_DRON_ID, seedGestion, TAREAS_FOSA } from './seed';
+import { ADDED_PARTIDAS, CARGOS_CONSTRUCTOR, EXTRAS_PARTIDAS, MOTIVO_RECRECIDO, OFERTA_PEB5, PEB5_DOCUMENTO, PEB5_PARTIDAS, sustituir, ADDED_TAREAS, DECISION_FOSA, DECISION_PUERTA_FINCA, DEP_CODIGO, DEMOLICION_PAGADA, DEP_DOCUMENTO, TAREA_LED_VIGAS, ENTREGAS_CUENTA, PAGO_DEMOLICION, FASE1_FIN, FASE2, FASE2_PARTIDAS, FASE_2, FASE_PAC, OFERTA_PEB, PEB_DOCUMENTO, PEB_F202, PEB_FECHA, PEB_PARTIDAS, PEB_PROVEEDOR, PEB_PROVEEDOR_ANTES, PEB_REF, PEB_TAREAS, OFERTA_DEPOSITO, SEGUIMIENTO_2026_10_21, SEGUIMIENTO_2026_11_11, SEGUIMIENTO_ALZADO_ID, SEGUIMIENTO_DESCARTADO, SEGUIMIENTO_DRON_ID, seedGestion, TAREAS_FOSA } from './seed';
 import type {
   Asignacion, Bloqueo, Cargo, Comentario, EntregaCuenta, Decision, Documento, Fase, GestionData, Oferta, Pago, Partida, Presupuesto, Reserva, Seguimiento, Tarea,
 } from './types';
@@ -444,6 +444,22 @@ function migrate20(data: GestionData): GestionData {
   return { ...data, presupuesto: { ...pr, partidas, aCuenta, ofertas } };
 }
 
+/** Fotos de la obra del 11/11/2026: derribo de paredes y zanjas de cimentación armadas (seguimiento de la fase 1). */
+function migrate21(data: GestionData): GestionData {
+  let done: string[] = [];
+  try { done = JSON.parse(window.localStorage.getItem(MIGRATIONS_KEY) ?? '[]') as string[]; } catch { /* sin almacenamiento */ }
+  const id = '2026-11-11-seguimiento-obra';
+  if (done.includes(id)) return data;
+  try { window.localStorage.setItem(MIGRATIONS_KEY, JSON.stringify([...done, id])); } catch { /* sin almacenamiento */ }
+  const obs = SEGUIMIENTO_2026_11_11();
+  const fases = data.fases.map((f) => {
+    if (f.id !== FASE_PAC) return f;
+    const nuevos = obs.filter((x) => !f.seguimiento.some((y) => y.id === x.id));
+    return nuevos.length ? { ...f, seguimiento: [...f.seguimiento, ...nuevos] } : f;
+  });
+  return { ...data, fases };
+}
+
 function load(): { data: GestionData; aviso: string | null } {
   if (typeof window === 'undefined') return { data: seedGestion(), aviso: null };
   let raw: string | null = null;
@@ -456,7 +472,7 @@ function load(): { data: GestionData; aviso: string | null } {
   try {
     const parsed = JSON.parse(raw) as unknown;
     const base = parseGestion(parsed, false);
-    const data = migrate20(migrate19(migrate18(migrate17(migrate16(migrate15(migrate14(migrate13(migrate12(migrate11(migrate10(migrate9(migrate8(migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base))))))))))))))))))));
+    const data = migrate21(migrate20(migrate19(migrate18(migrate17(migrate16(migrate15(migrate14(migrate13(migrate12(migrate11(migrate10(migrate9(migrate8(migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base)))))))))))))))))))));
     // las migraciones se marcan como hechas: hay que guardar ya su resultado o se perderían al recargar sin editar
     if (data !== base) try { window.localStorage.setItem(GESTION_KEY, JSON.stringify(envelope(data))); } catch { /* sin almacenamiento */ }
     let aviso: string | null = null;

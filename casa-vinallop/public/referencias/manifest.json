@@ -7,7 +7,8 @@
   "casa": "Fotos de la casa y el algarrobo",
   "parcela": "Fotos de la parcela y el entorno",
   "mapa": "Mapa",
-  "obra": "Situación de la obra (21/10/2026)"
+  "obra": "Situación de la obra (21/10/2026)",
+  "obra-1111": "Situación de la obra (11/11/2026)"
  },
  "refs": {
   "01": {
@@ -506,6 +507,126 @@
    "h": 1013,
    "grupo": "obra",
    "titulo": "Dron: la finca entera con la casa en obra abajo y los invernaderos al lado"
+  },
+  {
+   "id": "obra-20-zanjas-y-bano",
+   "src": "referencias/obra-20-zanjas-y-bano.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1111",
+   "titulo": "Zanjas de cimentación con las armaduras puestas, el bloque del baño actual en pie y el muro de piedra detrás"
+  },
+  {
+   "id": "obra-21-desde-olivar",
+   "src": "referencias/obra-21-desde-olivar.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1111",
+   "titulo": "La obra desde el olivar: el baño actual, el muro de piedra y el escombro, con perfiles metálicos en el suelo"
+  },
+  {
+   "id": "obra-22-muro-y-zanja",
+   "src": "referencias/obra-22-muro-y-zanja.jpg",
+   "w": 1800,
+   "h": 1350,
+   "grupo": "obra-1111",
+   "titulo": "Muro encalado que queda en pie con la zanja armada a su pie y el interior ya vaciado y nivelado"
+  },
+  {
+   "id": "obra-23-zanja-frontal-b",
+   "src": "referencias/obra-23-zanja-frontal-b.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1111",
+   "titulo": "Zanja armada a lo largo del muro largo, junto al baño actual, con un hueco bajo su solera"
+  },
+  {
+   "id": "obra-24-zanja-y-acopio",
+   "src": "referencias/obra-24-zanja-y-acopio.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1111",
+   "titulo": "Zanja armada pegada al muro y segunda zanja paralela, con el acopio de bloques de hormigón"
+  },
+  {
+   "id": "obra-25-zanja-frontal-b-2",
+   "src": "referencias/obra-25-zanja-frontal-b-2.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1111",
+   "titulo": "Zanja armada junto al muro largo y el baño actual (otra toma, con el andamio)"
+  },
+  {
+   "id": "obra-26-zanjas-esquina",
+   "src": "referencias/obra-26-zanjas-esquina.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1111",
+   "titulo": "Esquina de las zanjas armadas delante del baño actual, con el relleno y el escombro dentro"
+  },
+  {
+   "id": "obra-27-muro-piedra",
+   "src": "referencias/obra-27-muro-piedra.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1111",
+   "titulo": "Interior relleno de tierra y escombro hasta el muro de piedra y el muro encalado con la puerta"
+  },
+  {
+   "id": "obra-28-cuarto-bano",
+   "src": "referencias/obra-28-cuarto-bano.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1111",
+   "titulo": "Bloque del baño actual con las marcas «250» y «1,50» y la esquina de las zanjas armadas"
+  },
+  {
+   "id": "obra-29-piedra-de-cerca",
+   "src": "referencias/obra-29-piedra-de-cerca.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1111",
+   "titulo": "Muro de mampostería con la cubierta ondulada que queda encima y el muro encalado al lado"
+  },
+  {
+   "id": "obra-30-zanja-bajo-olivo",
+   "src": "referencias/obra-30-zanja-bajo-olivo.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1111",
+   "titulo": "Zanja armada en esquina bajo las ramas del olivo, con el replanteo de cuerda"
+  },
+  {
+   "id": "obra-31-muros-en-pie",
+   "src": "referencias/obra-31-muros-en-pie.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1111",
+   "titulo": "Los dos muros que quedan en pie (piedra y encalado con la puerta) y la zanja armada delante"
+  },
+  {
+   "id": "obra-32-muro-puerta",
+   "src": "referencias/obra-32-muro-puerta.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1111",
+   "titulo": "Muro encalado con la puerta y la mampostería a la vista en los extremos"
+  },
+  {
+   "id": "obra-33-muro-puerta-olivo",
+   "src": "referencias/obra-33-muro-puerta-olivo.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1111",
+   "titulo": "Muro encalado con la puerta visto desde la zanja, bajo el olivo"
+  },
+  {
+   "id": "obra-34-zanja-olivo",
+   "src": "referencias/obra-34-zanja-olivo.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1111",
+   "titulo": "Zanja larga junto al olivo, con raíces a la vista en la pared de la zanja y la armadura todavía fuera"
   }
  ]
 }

@@ -452,6 +452,29 @@ export const SEGUIMIENTO_2026_10_21 = (): Record<string, Seguimiento[]> => ({
   ],
 });
 
+/**
+ * Fotos de la propiedad del 11/11/2026 (Referencias → «Situación de la obra (11/11/2026)»). Solo lo que se ve;
+ * sin % de avance ni fechas. Las dudas técnicas quedan «a comprobar» con el constructor.
+ */
+export const SEGUIMIENTO_FECHA_1111 = '2026-11-11';
+const seg11 = (n: number, partida: string, estado: Seguimiento['estado'], texto: string, motivo: string, fotos: string[]): Seguimiento => ({
+  id: `seg-${SEGUIMIENTO_FECHA_1111}-${String(n).padStart(2, '0')}`, fecha: SEGUIMIENTO_FECHA_1111, texto, partida, motivo, estado, fotos: fotos.map((f) => `obra-${f}`),
+});
+export const SEGUIMIENTO_2026_11_11 = (): Seguimiento[] => [
+  seg11(1, 'PAC-01', 'en curso', 'Cubierta de la casa retirada; sobre el muro de mampostería queda todavía un trozo de cubierta de placa ondulada.',
+    'Demolición del techo actual (PAC-01): falta retirar lo que queda sobre el muro de piedra.', ['29-piedra-de-cerca', '31-muros-en-pie', '27-muro-piedra']),
+  seg11(2, EXTRAS_CODIGO, 'en curso', 'Derribo de las paredes actuales empezado: quedan en pie el bloque del baño actual, el muro de mampostería y el muro encalado con la puerta.',
+    'Los extras pactados (EXT-01) incluyen el derribo de las paredes actuales y los muros nuevos de bloque en toda la casa.', ['31-muros-en-pie', '32-muro-puerta', '28-cuarto-bano', '20-zanjas-y-bano']),
+  seg11(3, EXTRAS_CODIGO, 'en curso', 'Zanjas de la cimentación corrida abiertas y replanteadas con cuerda, con las armaduras colocadas (a lo largo del muro largo, en las esquinas y junto al olivo). Aún sin hormigonar.',
+    'Cimentación de los muros nuevos, dentro de los extras pactados (EXT-01); cimiento previsto de 30 × 40 cm.', ['20-zanjas-y-bano', '23-zanja-frontal-b', '24-zanja-y-acopio', '26-zanjas-esquina', '30-zanja-bajo-olivo', '34-zanja-olivo']),
+  seg11(4, EXTRAS_CODIGO, 'a comprobar', 'En las fotos las armaduras están apoyadas sobre el fondo de tierra de la zanja.',
+    'Antes de hormigonar, confirmar con el constructor el hormigón de limpieza y los separadores para que la armadura quede recubierta, y quién ha calculado el cimiento de 30 × 40 cm (EXT-01).', ['26-zanjas-esquina', '28-cuarto-bano', '30-zanja-bajo-olivo', '22-muro-y-zanja']),
+  seg11(5, EXTRAS_CODIGO, 'a comprobar', 'Zanja pegada al olivo con raíces a la vista en la pared de la zanja.',
+    'Excavación de la cimentación (EXT-01): pedir que las raíces gruesas se corten limpias y no se arranquen, y que la zanja no quede abierta mucho tiempo.', ['34-zanja-olivo', '30-zanja-bajo-olivo']),
+  seg11(6, 'PAC-11', 'en curso', 'Interior vaciado y con tierra y piedra extendidas; montones de escombro mezclado (teja, cerámica, enlucido) dentro del perímetro.',
+    'Relleno del alzado de 36 cm (PAC-11). Según el presupuesto, la piedra y la tierra se quedan en la finca y lo que no es natural va a vertedero: confirmar que el escombro mezclado no se usa como relleno.', ['27-muro-piedra', '32-muro-puerta', '33-muro-puerta-olivo', '21-desde-olivar']),
+];
+
 /** Observación añadida después de la primera carga del seguimiento: alzado de 36 cm en curso. */
 export const SEGUIMIENTO_ALZADO_ID = `seg-${SEGUIMIENTO_FECHA}-10`;
 export const SEGUIMIENTO_DRON_ID = `seg-${SEGUIMIENTO_FECHA}-11`;
@@ -501,7 +524,7 @@ function fases(): Fase[] {
         estado: 'en curso',
         // previsión de fin indicada por la propiedad (22/10/2026)
         previstoFin: FASE1_FIN,
-        seguimiento: obs[FASE_PAC],
+        seguimiento: [...obs[FASE_PAC], ...SEGUIMIENTO_2026_11_11()],
       }),
     FASE2(),
     fase('f03', '3 · Preparación, protección y desmontajes', 'Retirada de cubiertas y demoliciones conforme al proyecto y secuencia técnica.',
