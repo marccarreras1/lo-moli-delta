@@ -199,7 +199,7 @@ function outdoorSvg(layout: Layout, od: NonNullable<Layout['outdoor']>, labels: 
     if (labels) g.push(`<text x="${n4(c[0])}" y="${n4(c[1] + r + 0.22)}" font-size="0.13" fill="#687066" text-anchor="middle">alcorque permeable Ø ${fmtM(2 * r)}</text>`);
   }
   // focos empotrables de suelo en la solera: posición numerada (L1, L2…), distancias entre los del mismo frente y a la fachada
-  const suelo = (layout.lighting?.points ?? []).filter((p) => p.kind === 'empotrable-suelo').sort((a, b) => Number(a.zone === 'Algarrobo') - Number(b.zone === 'Algarrobo'));
+  const suelo = (layout.lighting?.points ?? []).filter((p) => p.kind === 'empotrable-suelo').sort((a, b) => Number(a.zone === 'Algarrobo') - Number(b.zone === 'Algarrobo') || Number(a.c[1] > layout.bounds.maxY) - Number(b.c[1] > layout.bounds.maxY) || a.c[0] - b.c[0]);
   if (suelo.length) {
     const { minY, maxY } = layout.bounds;
     const st = layout.lighting!.status;
@@ -216,7 +216,11 @@ function outdoorSvg(layout: Layout, od: NonNullable<Layout['outdoor']>, labels: 
       const off = lado === 'A' ? -0.35 : 0.35;
       for (let i = 1; i < fila.length; i++) g.push(dim([fila[i - 1].c[0], y], [fila[i].c[0], y], off, `${fmtM(fila[i].c[0] - fila[i - 1].c[0])} m`, st));
       const fy = lado === 'A' ? minY : maxY;
-      g.push(dim([fila[0].c[0], fy], [fila[0].c[0], y], lado === 'A' ? 0.3 : -0.3, `${fmtM(Math.abs(y - fy))} m`, st));
+      // distancia a la fachada: una cota por cada alineación (p. ej. borde de grava y solera de la entrada)
+      for (const yy of [...new Set(fila.map((p) => p.c[1]))]) {
+        const p0 = fila.find((p) => p.c[1] === yy)!;
+        g.push(dim([p0.c[0], fy], [p0.c[0], yy], lado === 'A' ? 0.3 : -0.3, `${fmtM(Math.abs(yy - fy))} m`, st));
+      }
     }
     if (labels) {
       const alg = suelo.filter((p) => p.zone === 'Algarrobo');
@@ -229,13 +233,17 @@ function outdoorSvg(layout: Layout, od: NonNullable<Layout['outdoor']>, labels: 
       g.push(`<text x="${n4(layout.bounds.minX + 0.15)}" y="${n4(ySol + 0.3)}" font-size="0.13" fill="#8a5a12">L1–L${suelo.length}: focos empotrables de suelo (EfectoLED ref. 6181, Ø 110 mm) · propuesta de posición</text>`);
     }
   }
+  // tiras LED de la escalera de la solera (bajo el canto de cada peldaño)
+  for (const t of (layout.lighting?.points ?? []).filter((p) => p.zone === 'Escalera de la solera' && p.kind === 'tira' && p.b)) {
+    g.push(`<line x1="${n4(t.c[0])}" y1="${n4(t.c[1] - 0.04)}" x2="${n4(t.b![0])}" y2="${n4(t.b![1] - 0.04)}" stroke="${AMBER}" stroke-width="0.05" data-light="${esc(t.id)}"/>`);
+  }
   // escalera de la solera (añadido): ancho acotado y rótulo
   const escalera = od.pavements.filter((v) => v.id.startsWith('escalera-'));
   if (escalera.length) {
     const ex0 = Math.min(...escalera.map((v) => v.rect[0])), ex1 = Math.max(...escalera.map((v) => v.rect[2]));
     const ey0 = Math.min(...escalera.map((v) => v.rect[1]));
     g.push(dim([ex0, ey0], [ex1, ey0], -0.3, `${fmtM(ex1 - ex0)} m`, escalera[0].status));
-    if (labels) g.push(`<text x="${n4((ex0 + ex1) / 2)}" y="${n4(ey0 - 0.55)}" font-size="0.14" fill="#7a5a3a" text-anchor="middle">escalera centrada (añadido) · ${escalera.length === 1 ? '1 peldaño' : `${escalera.length} peldaños`}</text>`);
+    if (labels) g.push(`<text x="${n4((ex0 + ex1) / 2)}" y="${n4(ey0 - 0.75)}" font-size="0.14" fill="#7a5a3a" text-anchor="middle">escalera centrada (añadido) · ${escalera.length === 1 ? '1 peldaño' : `${escalera.length} peldaños`} · tira LED bajo cada canto</text>`);
   }
   // depósitos enterrados: contorno oculto (discontinuo), boca de hombre y medidas
   for (const tk of od.tanks ?? []) {

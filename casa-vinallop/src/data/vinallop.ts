@@ -388,6 +388,11 @@ const CONTORNO_SUELO: Vec2[] = [
   ...[0.6, 3.63, 7.15, 9.68, 12.7, 15.73].map((x) => [x, -0.4] as Vec2),
   ...[12.9, 15.9].map((x) => [x, r2(W + 0.75)] as Vec2),
 ];
+/**
+ * frontal B a la izquierda de la puerta de entrada, sin solera (propiedad, 11/11/2026): empotrados en el borde de grava,
+ * a 0,30 m de la fachada, cada ≈2,5–2,8 m; libres del paseo de la puerta del baño y de la tinaja de la entrada.
+ */
+const CONTORNO_GRAVA: Vec2[] = [0.7, 3.4, 6.2, 8.75].map((x) => [x, r2(W + 0.3)] as Vec2);
 const lp = (id: string, label: string, zone: string, kind: LightPoint['kind'], c: Vec2, z: number, watts: number, extra: Partial<LightPoint> = {}): LightPoint => ({ id, label, zone, kind, c, z: r2(z), watts, ...extra });
 const ALT_EL = r2(PB_EL + ALTELL);
 const LIGHTING: LightingPlan = {
@@ -414,8 +419,16 @@ const LIGHTING: LightingPlan = {
     // árboles
     // focos empotrados en la solera (EfectoLED ref. 6181, propiedad 11/11/2026): 3 en el algarrobo, hacia la copa
     ...ALGARROBO_SUELO.map((c, i) => lp(`suelo-algarrobo-${i + 1}`, `Foco empotrable de suelo al algarrobo (${FOCO_SUELO})`, 'Algarrobo', 'empotrable-suelo', c, SOL_TOP, 5, { aim: 5.5 })),
+    // escalera de la cristalera (propiedad, 11/11/2026): tira LED oculta bajo el canto de la solera y de cada peldaño
+    ...Array.from({ length: Math.max(2, Math.ceil(SOL_TOP / 0.17)) }, (_, i) => {
+      const n = Math.max(2, Math.ceil(SOL_TOP / 0.17));
+      const y = r2(-SOL_TRASERA - ESC_SOLERA_HUELLA * i);
+      const x0 = r2(L / 2 - ESC_SOLERA_ANCHO / 2 + 0.05);
+      return lp(`tira-escalera-solera-${i + 1}`, i === 0 ? 'Tira LED bajo el canto de la solera (escalera)' : `Tira LED bajo el canto del peldaño ${i} (escalera)`, 'Escalera de la solera', 'tira', [x0, y], r2(SOL_TOP * (n - i) / n - 0.03), 5 * 1.9, { b: [r2(x0 + 1.9), y] });
+    }),
     // y por el contorno de la casa, cada ≈3 m sobre la solera, bañando la fachada
     ...CONTORNO_SUELO.map((c, i) => lp(`suelo-contorno-${i + 1}`, `Foco empotrable de suelo (${FOCO_SUELO})`, 'Contorno de la casa', 'empotrable-suelo', c, SOL_TOP, 5, { aim: 4.0 })),
+    ...CONTORNO_GRAVA.map((c, i) => lp(`suelo-grava-${i + 1}`, `Foco empotrable de suelo en la grava (${FOCO_SUELO})`, 'Contorno de la casa', 'empotrable-suelo', c, 0, 5, { aim: 4.0 })),
     ...PARCELA.trees.filter((t) => t.id === 'olivo-cristalera').map((t) => lp(`pin-${t.id}`, 'Foco de pincho al olivo', 'Olivos', 'pincho-arbol', [r2(t.c[0] - 0.7), r2(t.c[1] - 0.5)], 0.23, 5, { aim: (t.h ?? 5) * 0.7 })),
     ...OLIVOS_LUZ.map((c, i) => lp(`pin-olivo-${i + 1}`, 'Foco de pincho al olivo', 'Olivos', 'pincho-arbol', [r2(c[0] - 0.8), r2(c[1] - 0.4)], 0.05, 5, { aim: 3.2 })),
     // camino y entrada
@@ -435,8 +448,8 @@ const LIGHTING: LightingPlan = {
     { id: 'E1', label: 'E1 · Porche', zones: ['Porche'], control: 'Canal KNX regulable', exterior: true },
     { id: 'E2', label: 'E2 · Fachada de la entrada y cuarto técnico', zones: ['Fachada de la entrada', 'Cuarto técnico'], control: 'Crepuscular + reloj; estanca con detector', exterior: true },
     { id: 'E3', label: 'E3 · Árboles (algarrobo y olivos)', zones: ['Algarrobo', 'Olivos'], control: 'Crepuscular + reloj (apagado a medianoche)', exterior: true },
-    { id: 'E5', label: 'E5 · Contorno de la casa (focos de suelo)', zones: ['Contorno de la casa'], control: 'Crepuscular + reloj; canal KNX', exterior: true,
-      note: 'Focos empotrables de suelo EfectoLED ref. 6181 (propiedad, 11/11/2026): inox 304 y policarbonato, IP67, IK10, GU10 a 220–240 V, Ø 110 mm, corte Ø 103 mm, alto 108 mm, 16,95 €/u en la web (no dice si con IVA), sin bombilla. Bombilla GU10 LED de ≈5 W y 2700 K propuesta. Dejar tubo y caja estanca en cada punto antes de hormigonar la solera, con lecho de grava drenante bajo cada foco.' },
+    { id: 'E5', label: 'E5 · Contorno de la casa y escalera de la solera', zones: ['Contorno de la casa', 'Escalera de la solera'], control: 'Crepuscular + reloj; canal KNX', exterior: true,
+      note: 'Focos empotrables de suelo EfectoLED ref. 6181 (propiedad, 11/11/2026): inox 304 y policarbonato, IP67, IK10, GU10 a 220–240 V, Ø 110 mm, corte Ø 103 mm, alto 108 mm, 16,95 €/u en la web (no dice si con IVA), sin bombilla. Bombilla GU10 LED de ≈5 W y 2700 K propuesta. Dejar tubo y caja estanca en cada punto antes de hormigonar la solera, con lecho de grava drenante bajo cada foco. Escalera de la cristalera: tira LED de 24 V, 2700 K, IP67 en perfil de aluminio con difusor, oculta bajo el canto de la solera y de cada peldaño (luz hacia la huella, sin deslumbrar); fuente de 24 V en caja estanca o en el cuarto técnico (propuesta).' },
     { id: 'E4', label: 'E4 · Balizas del camino', zones: ['Camino'], control: 'Crepuscular + reloj', exterior: true },
   ],
   status: 'propuesto',
