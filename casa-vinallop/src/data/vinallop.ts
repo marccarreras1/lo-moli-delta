@@ -332,6 +332,13 @@ const OLIVO_GRANDE = PARCELA.trees.find((t) => t.id === 'olivo-cristalera')!.c;
 const PORCHE_X0 = 0;
 /** solera de la entrada, decidida: ≈2 m de fondo desde el algarrobo hasta la puerta de entrada (propiedad, 11/11/2026) */
 const SOL_INV: [number, number, number, number] = [r2(X_PUERTA - 0.2), W, r2(L + SOL_LATERAL), r2(W + 2.0)];
+/**
+ * escalera de la solera de la cristalera (propiedad, 11/11/2026; será un añadido): ≈2 m de ancho, centrada en el frontal A,
+ * para bajar del borde de la solera (a 6 m de la fachada) al terreno. Contrahuellas ≤ 0,17 m y huellas de 0,35 m.
+ */
+const ESC_SOLERA_ANCHO = 2.0;
+const ESC_SOLERA_HUELLA = 0.35;
+const fmtNum = (x: number) => (Math.round(x * 100) / 100).toLocaleString('es-ES', { minimumFractionDigits: 2 });
 /** Soleras elevadas 0,18 m sobre el terreno (escalón en el borde) y otro escalón de 0,18 m hasta el suelo interior (+0,36). */
 const SOL_TOP = 0.18;
 /** la mesa va justo bajo el algarrobo (propiedad), entre el tronco y el tramo del frontal A: el alcorque y las sillas no se tocan */
@@ -447,6 +454,17 @@ const outdoor: Outdoor = {
       id: 'solera-sol-invierno', label: 'Solera de la entrada (sol de invierno)', rect: SOL_INV, joints: 2.2, top: SOL_TOP, status: 'confirmado',
       note: 'Indicación de la propiedad: a la derecha de la puerta de entrada, mirando la fachada, una pequeña zona de solera con un banco de obra pegado a la pared para tomar el sol en la época de frío. El frontal B mira al sur-suroeste: en invierno recibe sol casi todo el día y el muro de 0,60 m guarda calor. De cemento claro, como la solera en L, delante de la puerta de entrada (un solo escalón de 0,18 m hasta el interior), unida al paseo y continua con el tramo del algarrobo (propiedad: «la solera delantera la juntaría con la del algarrobo»). Decidida (propiedad, 11/11/2026): ≈2 m de fondo, desde el algarrobo hasta la puerta de entrada (antes se proponían 2,40 m); medida aproximada.',
     },
+    // escalera de la cristalera: peldaños intermedios entre la solera y el terreno (con 0,18 m, uno: dos contrahuellas de 0,09 m)
+    ...(() => {
+      const n = Math.max(2, Math.ceil(SOL_TOP / 0.17));
+      const x0 = r2(L / 2 - ESC_SOLERA_ANCHO / 2);
+      return Array.from({ length: n - 1 }, (_, i) => ({
+        id: `escalera-cristalera-${i + 1}`, label: 'Escalera de la solera de la cristalera (añadido)',
+        rect: [x0, r2(-SOL_TRASERA - ESC_SOLERA_HUELLA * (n - 1 - i)), r2(x0 + ESC_SOLERA_ANCHO), r2(-SOL_TRASERA - ESC_SOLERA_HUELLA * (n - 2 - i))] as [number, number, number, number],
+        joints: ESC_SOLERA_ANCHO, top: r2((SOL_TOP * (i + 1)) / n), status: 'propuesto' as const,
+        note: `Indicación de la propiedad (11/11/2026): escalera de ≈2 m de ancho centrada en la solera de la cristalera, para bajar al terreno; será un añadido al presupuesto (sin precio todavía). Con la solera a ${fmtNum(SOL_TOP)} m sobre el terreno queda ${n - 1 === 1 ? 'un peldaño' : `${n - 1} peldaños`} de ${fmtNum(ESC_SOLERA_HUELLA)} m de huella (contrahuellas de ${fmtNum(SOL_TOP / n)} m); si el terreno baja en ese borde, hacen falta más peldaños: medir el desnivel real.`,
+      }));
+    })(),
     {
       id: 'solera-l-frontal-a', label: 'Solera en L · tramo del frontal A (cristalera)', rect: [0, r2(-SOL_TRASERA), L, 0], joints: 3.3, top: SOL_TOP, status: 'confirmado',
       // con 6 m de fondo el olivo grande de la cristalera queda dentro: alcorque alrededor del tronco

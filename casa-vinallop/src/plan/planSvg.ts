@@ -4,7 +4,7 @@
  * Unidades: metros (viewBox en metros, Y hacia abajo = sentido del papel).
  */
 import { pitsOf } from '../model/pits';
-import type { DataStatus, Layout, Vec2 } from '../data/types';
+import type { DataStatus, Layout, LightPoint, Vec2 } from '../data/types';
 import {
   bbox, centroid, doorSwing, fmtM, furnitureFootprint, pointOnWall, polygonArea, wallDir, wallLength, wallNormal, wallPieces, wallSegmentRect,
 } from '../model/geometry';
@@ -197,6 +197,45 @@ function outdoorSvg(layout: Layout, od: NonNullable<Layout['outdoor']>, labels: 
   for (const { c, r } of od.pavements.filter((x) => x.joints > 0).flatMap((x) => pitsOf(x))) {
     g.push(`<circle cx="${n4(c[0])}" cy="${n4(c[1])}" r="${n4(r)}" fill="#efe9de" stroke="#3a3833" stroke-width="0.02"/>`);
     if (labels) g.push(`<text x="${n4(c[0])}" y="${n4(c[1] + r + 0.22)}" font-size="0.13" fill="#687066" text-anchor="middle">alcorque permeable Ø ${fmtM(2 * r)}</text>`);
+  }
+  // focos empotrables de suelo en la solera: posición numerada (L1, L2…), distancias entre los del mismo frente y a la fachada
+  const suelo = (layout.lighting?.points ?? []).filter((p) => p.kind === 'empotrable-suelo').sort((a, b) => Number(a.zone === 'Algarrobo') - Number(b.zone === 'Algarrobo'));
+  if (suelo.length) {
+    const { minY, maxY } = layout.bounds;
+    const st = layout.lighting!.status;
+    suelo.forEach((p, i) => {
+      const [x, y] = p.c;
+      g.push(`<circle cx="${n4(x)}" cy="${n4(y)}" r="0.11" fill="#fff6d6" stroke="${AMBER}" stroke-width="0.03" data-light="${esc(p.id)}"/><circle cx="${n4(x)}" cy="${n4(y)}" r="0.04" fill="${AMBER}"/>`);
+      g.push(`<text x="${n4(x + 0.15)}" y="${n4(y > maxY ? y + 0.3 : y - 0.13)}" font-size="0.16" font-weight="700" fill="#8a5a12">L${i + 1}</text>`);
+    });
+    // cadenas de cotas por frente: frontal A (y < fachada) y entrada (y > fachada), con la distancia a la fachada
+    for (const [lado, sel] of [['A', (p: LightPoint) => p.c[1] < minY && p.zone !== 'Algarrobo'], ['B', (p: LightPoint) => p.c[1] > maxY && p.zone !== 'Algarrobo']] as const) {
+      const fila = suelo.filter(sel).sort((a, b) => a.c[0] - b.c[0]);
+      if (!fila.length) continue;
+      const y = fila[0].c[1];
+      const off = lado === 'A' ? -0.35 : 0.35;
+      for (let i = 1; i < fila.length; i++) g.push(dim([fila[i - 1].c[0], y], [fila[i].c[0], y], off, `${fmtM(fila[i].c[0] - fila[i - 1].c[0])} m`, st));
+      const fy = lado === 'A' ? minY : maxY;
+      g.push(dim([fila[0].c[0], fy], [fila[0].c[0], y], lado === 'A' ? 0.3 : -0.3, `${fmtM(Math.abs(y - fy))} m`, st));
+    }
+    if (labels) {
+      const alg = suelo.filter((p) => p.zone === 'Algarrobo');
+      if (alg.length) {
+        const cx = alg.reduce((s2, p) => s2 + p.c[0], 0) / alg.length;
+        const cy = Math.max(...alg.map((p) => p.c[1])) + 0.35;
+        g.push(`<text x="${n4(cx)}" y="${n4(cy)}" font-size="0.12" fill="#8a5a12" text-anchor="middle">${alg.length} focos al algarrobo a 1,70 m del tronco</text>`);
+      }
+      const ySol = Math.min(minY, ...od.pavements.filter((v) => v.joints > 0).map((v) => v.rect[1]));
+      g.push(`<text x="${n4(layout.bounds.minX + 0.15)}" y="${n4(ySol + 0.3)}" font-size="0.13" fill="#8a5a12">L1–L${suelo.length}: focos empotrables de suelo (EfectoLED ref. 6181, Ø 110 mm) · propuesta de posición</text>`);
+    }
+  }
+  // escalera de la solera (añadido): ancho acotado y rótulo
+  const escalera = od.pavements.filter((v) => v.id.startsWith('escalera-'));
+  if (escalera.length) {
+    const ex0 = Math.min(...escalera.map((v) => v.rect[0])), ex1 = Math.max(...escalera.map((v) => v.rect[2]));
+    const ey0 = Math.min(...escalera.map((v) => v.rect[1]));
+    g.push(dim([ex0, ey0], [ex1, ey0], -0.3, `${fmtM(ex1 - ex0)} m`, escalera[0].status));
+    if (labels) g.push(`<text x="${n4((ex0 + ex1) / 2)}" y="${n4(ey0 - 0.55)}" font-size="0.14" fill="#7a5a3a" text-anchor="middle">escalera centrada (añadido) · ${escalera.length === 1 ? '1 peldaño' : `${escalera.length} peldaños`}</text>`);
   }
   // depósitos enterrados: contorno oculto (discontinuo), boca de hombre y medidas
   for (const tk of od.tanks ?? []) {
