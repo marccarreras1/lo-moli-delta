@@ -33,20 +33,23 @@ export function LightingPlan3D({ plan, bounds, mats, level }: { plan: LightingPl
   const tex = useMemo(() => glowTexture(), []);
   const halo = useMemo(() => new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.55, side: THREE.DoubleSide }), [tex]);
   const beam = useMemo(() => new THREE.MeshBasicMaterial({ color: '#ffb46b', transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.018, side: THREE.FrontSide }), []);
-  useEffect(() => () => { tex.dispose(); halo.dispose(); beam.dispose(); }, [tex, halo, beam]);
+  const inox = useMemo(() => new THREE.MeshStandardMaterial({ color: '#c4c7c9', metalness: 0.85, roughness: 0.32 }), []);
+  useEffect(() => () => { tex.dispose(); halo.dispose(); beam.dispose(); inox.dispose(); }, [tex, halo, beam, inox]);
   // luz real solo en las luminarias de interior y exterior inmediato y en los 10 árboles más cercanos a la casa
   const real = useMemo(() => {
     const trees = plan.points.filter((p) => p.kind === 'pincho-arbol').sort((a, b) => dist(a.c, bounds) - dist(b.c, bounds)).slice(0, 6).map((p) => p.id);
-    return new Set([...trees, ...plan.points.filter((p) => p.kind !== 'pincho-arbol' && p.kind !== 'baliza-camino' && p.kind !== 'baliza-escalera').map((p) => p.id)]);
+    // de los empotrables de suelo solo dan luz real los del algarrobo: el resto, haz y halo (muchas luces ralentizan el visor)
+    const suelo = plan.points.filter((p) => p.kind === 'empotrable-suelo' && p.zone === 'Algarrobo').map((p) => p.id);
+    return new Set([...trees, ...suelo, ...plan.points.filter((p) => p.kind !== 'pincho-arbol' && p.kind !== 'baliza-camino' && p.kind !== 'baliza-escalera' && p.kind !== 'empotrable-suelo').map((p) => p.id)]);
   }, [plan, bounds]);
   return (
     <group>
-      {plan.points.map((p) => <Fixture key={p.id} p={p} mats={mats} on={on} level={level} real={real.has(p.id)} halo={halo} beam={beam} />)}
+      {plan.points.map((p) => <Fixture key={p.id} p={p} mats={mats} on={on} level={level} real={real.has(p.id)} halo={halo} beam={beam} inox={inox} />)}
     </group>
   );
 }
 
-function Fixture({ p, mats, on, level, real, halo, beam }: { p: LightPoint; mats: MaterialSet; on: boolean; level: number; real: boolean; halo: THREE.Material; beam: THREE.Material }) {
+function Fixture({ p, mats, on, level, real, halo, beam, inox }: { p: LightPoint; mats: MaterialSet; on: boolean; level: number; real: boolean; halo: THREE.Material; beam: THREE.Material; inox: THREE.Material }) {
   const [x, y] = p.c;
   switch (p.kind) {
     case 'pincho-arbol':
@@ -111,6 +114,23 @@ function Fixture({ p, mats, on, level, real, halo, beam }: { p: LightPoint; mats
             const t = (i + 0.5) / n;
             return <pointLight key={i} position={[x + (b[0] - x) * t, p.z + (p.aim ? 0.15 : -0.1), y + (b[1] - y) * t]} color={WARM} intensity={level * (p.aim ? 1.4 : 1.2)} distance={p.aim ? 4 : 2.5} decay={2} />;
           })}
+        </group>
+      );
+    }
+    case 'empotrable-suelo': {
+      // foco empotrado enrasado en la solera: aro de inox de Ø 110 mm y vidrio; haz hacia la fachada o la copa
+      const h = Math.max(1, (p.aim ?? 3) - p.z);
+      return (
+        <group position={[x, p.z, y]}>
+          <mesh material={inox} position={[0, 0.004, 0]} receiveShadow><cylinderGeometry args={[0.055, 0.055, 0.008, 24]} /></mesh>
+          <mesh material={mats.lampGlow} position={[0, 0.0085, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.04, 20]} /></mesh>
+          {on && (
+            <>
+              <mesh material={beam} position={[0, h / 2, 0]}><coneGeometry args={[p.zone === 'Algarrobo' ? 0.9 : 0.55, h, 20, 1, true]} /></mesh>
+              <mesh material={halo} position={[0, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[0.7, 0.7]} /></mesh>
+              {real && <SpotUp at={[x, p.z + 0.05, y]} to={[x, p.z + h, y]} intensity={level * 5} angle={0.5} />}
+            </>
+          )}
         </group>
       );
     }

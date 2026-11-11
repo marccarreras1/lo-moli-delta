@@ -322,17 +322,16 @@ const ALGARROBO: Vec2 = [r2(L + 2.64 + ALGARROBO_TRONCO_R), r2(W - 3.5 - ALGARRO
  * y tramo de 4 m en el lateral del algarrobo; sin solera en el frontal B (puerta de entrada).
  */
 const SOL_LATERAL = 4;
-/** fondo del tramo del frontal A, el de la cristalera: 5,00 m (propiedad, 25/10/2026; antes 3,40 m) */
-const SOL_TRASERA = 5.0;
+/** fondo del tramo del frontal A, el de la cristalera: 6,00 m, decidido (propiedad, 11/11/2026; antes 5,00 y 3,40 m) */
+const SOL_TRASERA = 6.0;
 /** fondo del porche de la cristalera: se mantiene en 3,40 m (la solera sigue 1,60 m más allá, al sol) */
 const PORCHE_FONDO = 3.4;
-/** olivos medidos que quedan dentro de la solera de 5 m: alcorque alrededor del tronco */
+/** olivo grande medido que queda dentro de la solera de 6 m: alcorque alrededor del tronco (el pequeño se ha quitado) */
 const OLIVO_GRANDE = PARCELA.trees.find((t) => t.id === 'olivo-cristalera')!.c;
-const OLIVO_PEQUENO = PARCELA.trees.find((t) => t.id === 'olivo-pequeno')!.c;
 /** el porche cubre toda la solera del frontal A, hasta el dormitorio (propiedad, 10/10/2026) */
 const PORCHE_X0 = 0;
-/** solera de sol de invierno a la derecha de la puerta de entrada, con banco de obra contra la fachada (propiedad) */
-const SOL_INV: [number, number, number, number] = [r2(X_PUERTA - 0.2), W, r2(L + SOL_LATERAL), r2(W + 2.4)];
+/** solera de la entrada, decidida: ≈2 m de fondo desde el algarrobo hasta la puerta de entrada (propiedad, 11/11/2026) */
+const SOL_INV: [number, number, number, number] = [r2(X_PUERTA - 0.2), W, r2(L + SOL_LATERAL), r2(W + 2.0)];
 /** Soleras elevadas 0,18 m sobre el terreno (escalón en el borde) y otro escalón de 0,18 m hasta el suelo interior (+0,36). */
 const SOL_TOP = 0.18;
 /** la mesa va justo bajo el algarrobo (propiedad), entre el tronco y el tramo del frontal A: el alcorque y las sillas no se tocan */
@@ -369,6 +368,19 @@ const BALIZAS: Vec2[] = (() => {
   }
   return out;
 })();
+/** foco elegido por la propiedad (11/11/2026): EfectoLED ref. 6181 «Foco exterior empotrable suelo circular inox GU10 Cenit» */
+const FOCO_SUELO = 'EfectoLED ref. 6181, inox, GU10';
+/** 3 empotrables al algarrobo, a 1,70 m del tronco, fuera de la zona permeable (Ø 3 m) y dentro de la solera lateral */
+const ALGARROBO_SUELO: Vec2[] = [[r2(ALGARROBO[0] - 1.7), ALGARROBO[1]], [ALGARROBO[0], r2(ALGARROBO[1] - 1.7)], [ALGARROBO[0], r2(ALGARROBO[1] + 1.7)]];
+/**
+ * contorno de la casa sobre la solera, cada ≈3 m (propiedad): a 0,40 m del frontal A, de punta a punta (el de 6,65 m se corre
+ * a 7,15 m para salir de debajo del sofá del porche), y en la solera de la entrada, delante del banco hasta la esquina.
+ * El lateral del algarrobo lo cubren los 3 del algarrobo.
+ */
+const CONTORNO_SUELO: Vec2[] = [
+  ...[0.6, 3.63, 7.15, 9.68, 12.7, 15.73].map((x) => [x, -0.4] as Vec2),
+  ...[12.9, 15.9].map((x) => [x, r2(W + 0.75)] as Vec2),
+];
 const lp = (id: string, label: string, zone: string, kind: LightPoint['kind'], c: Vec2, z: number, watts: number, extra: Partial<LightPoint> = {}): LightPoint => ({ id, label, zone, kind, c, z: r2(z), watts, ...extra });
 const ALT_EL = r2(PB_EL + ALTELL);
 const LIGHTING: LightingPlan = {
@@ -393,8 +405,11 @@ const LIGHTING: LightingPlan = {
     lp('tira-porche', 'Tira LED oculta en la viga del porche (hacia el cañizo)', 'Porche', 'tira', [0.4, -3.0], H_VENTANAL + PB_EL - 0.02, 9 * 15.7, { b: [16.1, -3.0], aim: H_VENTANAL + PB_EL + 0.3 }),
     ...[4.4, 8.2, 12.0].map((x, i) => lp(`col-porche-${i + 1}`, 'Colgante de exterior del porche', 'Porche', 'colgante', [x, -1.7], 2.35, 8)),
     // árboles
-    ...[[-1.2, 0], [0.9, 0.9], [0.6, -1.1]].map(([dx, dy], i) => lp(`pin-algarrobo-${i + 1}`, 'Foco de pincho al algarrobo', 'Algarrobo', 'pincho-arbol', [r2(ALGARROBO[0] + dx), r2(ALGARROBO[1] + dy)], 0.05, 5, { aim: 5.5 })),
-    ...PARCELA.trees.filter((t) => t.id === 'olivo-cristalera' || t.id === 'olivo-pequeno').map((t) => lp(`pin-${t.id}`, 'Foco de pincho al olivo', 'Olivos', 'pincho-arbol', [r2(t.c[0] - 0.7), r2(t.c[1] - 0.5)], 0.23, 5, { aim: (t.h ?? 5) * 0.7 })),
+    // focos empotrados en la solera (EfectoLED ref. 6181, propiedad 11/11/2026): 3 en el algarrobo, hacia la copa
+    ...ALGARROBO_SUELO.map((c, i) => lp(`suelo-algarrobo-${i + 1}`, `Foco empotrable de suelo al algarrobo (${FOCO_SUELO})`, 'Algarrobo', 'empotrable-suelo', c, SOL_TOP, 5, { aim: 5.5 })),
+    // y por el contorno de la casa, cada ≈3 m sobre la solera, bañando la fachada
+    ...CONTORNO_SUELO.map((c, i) => lp(`suelo-contorno-${i + 1}`, `Foco empotrable de suelo (${FOCO_SUELO})`, 'Contorno de la casa', 'empotrable-suelo', c, SOL_TOP, 5, { aim: 4.0 })),
+    ...PARCELA.trees.filter((t) => t.id === 'olivo-cristalera').map((t) => lp(`pin-${t.id}`, 'Foco de pincho al olivo', 'Olivos', 'pincho-arbol', [r2(t.c[0] - 0.7), r2(t.c[1] - 0.5)], 0.23, 5, { aim: (t.h ?? 5) * 0.7 })),
     ...OLIVOS_LUZ.map((c, i) => lp(`pin-olivo-${i + 1}`, 'Foco de pincho al olivo', 'Olivos', 'pincho-arbol', [r2(c[0] - 0.8), r2(c[1] - 0.4)], 0.05, 5, { aim: 3.2 })),
     // camino y entrada
     ...BALIZAS.map((c, i) => lp(`bal-camino-${i + 1}`, 'Baliza del camino', 'Camino', 'baliza-camino', c, 0.05, 3)),
@@ -413,6 +428,8 @@ const LIGHTING: LightingPlan = {
     { id: 'E1', label: 'E1 · Porche', zones: ['Porche'], control: 'Canal KNX regulable', exterior: true },
     { id: 'E2', label: 'E2 · Fachada de la entrada y cuarto técnico', zones: ['Fachada de la entrada', 'Cuarto técnico'], control: 'Crepuscular + reloj; estanca con detector', exterior: true },
     { id: 'E3', label: 'E3 · Árboles (algarrobo y olivos)', zones: ['Algarrobo', 'Olivos'], control: 'Crepuscular + reloj (apagado a medianoche)', exterior: true },
+    { id: 'E5', label: 'E5 · Contorno de la casa (focos de suelo)', zones: ['Contorno de la casa'], control: 'Crepuscular + reloj; canal KNX', exterior: true,
+      note: 'Focos empotrables de suelo EfectoLED ref. 6181 (propiedad, 11/11/2026): inox 304 y policarbonato, IP67, IK10, GU10 a 220–240 V, Ø 110 mm, corte Ø 103 mm, alto 108 mm, 16,95 €/u en la web (no dice si con IVA), sin bombilla. Bombilla GU10 LED de ≈5 W y 2700 K propuesta. Dejar tubo y caja estanca en cada punto antes de hormigonar la solera, con lecho de grava drenante bajo cada foco.' },
     { id: 'E4', label: 'E4 · Balizas del camino', zones: ['Camino'], control: 'Crepuscular + reloj', exterior: true },
   ],
   status: 'propuesto',
@@ -427,14 +444,14 @@ const outdoor: Outdoor = {
       note: 'Tramo de 4 m junto al lateral derecho, bajo el algarrobo, continuo con el del frontal A y al mismo nivel; termina al ras del frontal B (la propiedad pidió quitar el trozo que sobresalía). La mesa va bajo la copa, entre el tronco y el tramo del frontal A. Se recorta alrededor del tronco para dejar zona permeable sobre las raíces; posición del tronco medida por la propiedad (2,64 m del lateral y 3,50 m del frontal B).',
     },
     {
-      id: 'solera-sol-invierno', label: 'Solera del sol de invierno (entrada)', rect: SOL_INV, joints: 2.2, top: SOL_TOP, status: 'propuesto',
-      note: 'Indicación de la propiedad: a la derecha de la puerta de entrada, mirando la fachada, una pequeña zona de solera con un banco de obra pegado a la pared para tomar el sol en la época de frío. El frontal B mira al sur-suroeste: en invierno recibe sol casi todo el día y el muro de 0,60 m guarda calor. De cemento claro, como la solera en L, delante de la puerta de entrada (un solo escalón de 0,18 m hasta el interior), unida al paseo y continua con el tramo del algarrobo (propiedad: «la solera delantera la juntaría con la del algarrobo»), 2,40 m de fondo. Medidas propuestas.',
+      id: 'solera-sol-invierno', label: 'Solera de la entrada (sol de invierno)', rect: SOL_INV, joints: 2.2, top: SOL_TOP, status: 'confirmado',
+      note: 'Indicación de la propiedad: a la derecha de la puerta de entrada, mirando la fachada, una pequeña zona de solera con un banco de obra pegado a la pared para tomar el sol en la época de frío. El frontal B mira al sur-suroeste: en invierno recibe sol casi todo el día y el muro de 0,60 m guarda calor. De cemento claro, como la solera en L, delante de la puerta de entrada (un solo escalón de 0,18 m hasta el interior), unida al paseo y continua con el tramo del algarrobo (propiedad: «la solera delantera la juntaría con la del algarrobo»). Decidida (propiedad, 11/11/2026): ≈2 m de fondo, desde el algarrobo hasta la puerta de entrada (antes se proponían 2,40 m); medida aproximada.',
     },
     {
       id: 'solera-l-frontal-a', label: 'Solera en L · tramo del frontal A (cristalera)', rect: [0, r2(-SOL_TRASERA), L, 0], joints: 3.3, top: SOL_TOP, status: 'confirmado',
-      // con 5 m de fondo los dos olivos medidos de la cristalera quedan dentro: alcorque alrededor de cada tronco
-      pits: [{ c: OLIVO_GRANDE, r: 1.0 }, { c: OLIVO_PEQUENO, r: 0.35 }],
-      note: 'Fondo de 5,00 m desde la fachada (propiedad, 25/10/2026; antes 3,40 m): el porche sigue cubriendo los primeros 3,40 m y el resto queda al sol. Los dos olivos medidos (el grande a 3,60 m de la fachada y el pequeño a 4,50 m) quedan dentro: alcorques permeables de Ø 2,00 m y Ø 0,70 m alrededor de los troncos; al hormigonar, no cortar raíces gruesas y no subir el nivel del terreno sobre ellas. Solera a lo largo de todo el frontal A, de punta a punta de la casa, con el porche delante de la cristalera (indicaciones de la propiedad: «en la parte de la cristalera pon la solera y un porche» y «la solera de punta a punta de la casa y elimina la solera de la parte de la puerta de entrada»). Cemento claro mate, mismo nivel que el tramo lateral, con el que se une en la esquina del algarrobo. Fondo de 3,40 m propuesto; juntas cada ≈3,3 m; pendiente del 1,5–2 % hacia fuera y canaleta en el borde (propuesta de evacuación, pendiente de desarrollo técnico).',
+      // con 6 m de fondo el olivo grande de la cristalera queda dentro: alcorque alrededor del tronco
+      pits: [{ c: OLIVO_GRANDE, r: 1.0 }],
+      note: 'Fondo de 6,00 m desde la fachada, decidido (propiedad, 11/11/2026; antes 5,00 y 3,40 m): el porche sigue cubriendo los primeros 3,40 m y el resto queda al sol. El olivo pequeño (a 4,50 m de la fachada) se ha quitado; el grande (a 3,60 m) queda dentro con un alcorque permeable de Ø 2,00 m alrededor del tronco; al hormigonar, no cortar raíces gruesas y no subir el nivel del terreno sobre ellas. Solera a lo largo de todo el frontal A, de punta a punta de la casa, con el porche delante de la cristalera (indicaciones de la propiedad: «en la parte de la cristalera pon la solera y un porche» y «la solera de punta a punta de la casa y elimina la solera de la parte de la puerta de entrada»). Cemento claro mate, mismo nivel que el tramo lateral, con el que se une en la esquina del algarrobo. Juntas cada ≈3,3 m; pendiente del 1,5–2 % hacia fuera y canaleta en el borde (propuesta de evacuación, pendiente de desarrollo técnico).',
     },
   ],
   // cuarto técnico previsto por la propiedad: 2,50 m × el ancho de la casa × 3,00 m de alto, con acceso solo por el exterior

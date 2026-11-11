@@ -611,7 +611,7 @@ export interface Layout extends ProjectData {
 }
 
 /** Plan de iluminación (propuesta): LED en las vigas de la volta y puntos de luz interiores y exteriores. */
-export type LightKind = 'pincho-arbol' | 'baliza-camino' | 'baliza-escalera' | 'aplique' | 'colgante' | 'tira' | 'rasante' | 'estanca';
+export type LightKind = 'pincho-arbol' | 'baliza-camino' | 'baliza-escalera' | 'aplique' | 'colgante' | 'tira' | 'rasante' | 'estanca' | 'empotrable-suelo';
 export interface LightPoint {
   id: string;
   label: string;

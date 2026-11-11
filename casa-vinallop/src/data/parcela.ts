@@ -38,14 +38,12 @@ export const PARCELA: Site = {
     { id: 'algarrobo', label: 'Algarrobo', c: [19.47, 1.22], r: 5.4, h: 8.0, medido: true, copa: { yMin: -2.0 }, note: 'Algarrobo grande y viejo (fotos de dron y de suelo): tronco muy grueso (≈1 m en la base) y retorcido, con raíces vistas; se abre en ramas gruesas a 2–2,5 m; copa ancha y baja. Posición medida por la propiedad: tronco a 2,64 m del lateral derecho de la casa y a 3,50 m de la fachada de la entrada (frontal B), medidas hasta el tronco; centro supuesto a 0,50 m más (radio del tronco). Por el lado de la cristalera la copa solo sale 2,00 m de la línea de la fachada A (medida de la propiedad).' },
     // olivos frente a la cristalera (frontal A, y = 0), medidos por la propiedad (16/10/2026) hasta el tronco:
     // el grande a 3,60 m de la fachada y a 2,60 m del extremo de la casa (x = 16,33), medido a lo largo de la fachada;
-    // el pequeño a 4,50 m de la fachada y a 4,60 m del grande, hacia el centro.
     // Olivo grande según su foto: tronco viejo y retorcido de ≈0,70 m en el pie (radio 0,35), cruz a ≈1,8 m, copa de ≈7 m
     // de ancho y ≈6,5 m de alto con ramas largas hacia la casa. Olivo pequeño según su foto: tronco fino (radio ≈0,10 m)
     // que se abre en dos a ≈0,5 m, copa de ≈4,5 m de ancho y ≈5 m de alto.
     { id: 'olivo-cristalera', label: 'Olivo grande de la cristalera', kind: 'olivo', medido: true, c: [13.38, -3.95], r: 3.5, h: 6.5, trunk: { r: 0.3, h: 1.8, viejo: true },
       note: 'Olivo viejo frente a la cristalera (frontal A): tronco a 3,60 m de la fachada y a 2,60 m del extremo derecho de la casa, a lo largo de la fachada (medidas de la propiedad hasta el tronco). Según su foto: tronco grueso y retorcido (≈0,70 m en el pie) que se abre a ≈1,8 m, copa de ≈7 m de ancho y ≈6,5 m de alto. Queda a ≈0,55 m del borde de la solera y su copa pasa por encima del porche: hay que podar las ramas que toquen la pérgola y cuidar las raíces al hacer la solera (no excavar ni compactar junto al tronco).' },
-    { id: 'olivo-pequeno', label: 'Olivo pequeño', kind: 'olivo', medido: true, c: [8.37, -4.6], r: 2.25, h: 5.0, trunk: { r: 0.09, h: 0.5 },
-      note: 'Olivo joven frente a la cristalera: tronco a 4,50 m de la fachada y a 4,60 m del olivo grande, hacia el centro de la casa (medidas de la propiedad hasta el tronco). Según su foto (confirmada por la propiedad): tronco fino que se abre en dos a ≈0,5 m, copa ligera de ≈4,5 m de ancho y ≈5 m de alto.' },
+    // el olivo pequeño (a 4,50 m de la fachada A) se ha quitado al hacer la solera de 6 m (propiedad, 11/11/2026)
     // foto de la entrada desde fuera (17/10/2026): árbol grande y oscuro dentro de la finca, a la izquierda del hueco
     { id: 'arbol-entrada', label: 'Árbol grande junto a la entrada', kind: 'algarrobo', c: [74.0, 89.7], r: 4.5, h: 9.0, note: 'Árbol grande de copa oscura dentro de la finca, a la izquierda de la entrada vista desde fuera (foto de la propiedad). Posición y tamaño aproximados sobre la foto.' },
   ],
