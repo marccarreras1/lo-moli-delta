@@ -387,7 +387,10 @@ const ALGARROBO_SUELO: Vec2[] = [0.9, 2.6, 4.3].map((y) => [r2(L + 0.3), y] as V
 const CONTORNO_SUELO: Vec2[] = [
   // los dos que caían delante de la cristalera de 7 m se quitan (propiedad, 11/11/2026)
   ...[0.6, 3.63, 7.15, 15.73].map((x) => [x, -0.4] as Vec2),
-  ...[12.9, 15.9].map((x) => [x, r2(W + 0.75)] as Vec2),
+  // entrada: el foco que quedaba delante del banco pasa a su lateral izquierdo, pegado a la fachada, entre la tinaja y el banco
+  // (propiedad, 11/11/2026; el banco se acorta 0,35 m por ese lado); el otro sigue pasado el extremo derecho del banco
+  [r2(X_PUERTA + 2.18), r2(W + 0.3)],
+  [15.9, r2(W + 0.75)],
 ];
 /**
  * frontal B a la izquierda de la puerta de entrada, sin solera (propiedad, 11/11/2026): empotrados en el borde de grava,
@@ -540,8 +543,8 @@ const outdoor: Outdoor = {
     ...[r2(X_PUERTA - 0.5), r2(X_PUERTA + 1.2 + 0.5)].map((x, i) => f({ id: `maceta-entrada-${i + 1}`, type: 'maceta', label: 'Tinaja de barro con olivo (decoración propuesta)', roomId: 'exterior', x, y: r2(W + 0.45), w: 0.62, d: 0.62, h: 1.55, rot: 0, status: 'propuesto', note: 'Decoración propuesta junto a la puerta de entrada; se puede quitar.' })),
     ...[r2(X_PUERTA - 0.3), r2(X_PUERTA + 1.2 + 0.3)].map((x, i) => f({ id: `aplique-entrada-${i + 1}`, type: 'aplique', label: 'Aplique exterior (propuesta)', roomId: 'exterior', x, y: r2(W + 0.07), w: 0.14, d: 0.14, h: 2.25, rot: 0, status: 'propuesto', note: 'Luz cálida a ambos lados de la entrada (propuesta; ubicación y modelo por decidir).' })),
     // banco de obra contra el frontal B en la solera del sol de invierno (propiedad)
-    f({ id: 'banco-sol', type: 'banco', label: 'Banco de obra al sol (frontal B)', roomId: 'exterior', x: r2((X_PUERTA + 2.0 + 15.6) / 2), y: r2(W + 0.23), w: r2(15.6 - X_PUERTA - 2.0), d: 0.46, h: 0.45, rot: 0, status: 'propuesto',
-      note: 'Banco corrido de obra encalado, pegado a la fachada de la entrada, con asiento de 0,45 m de fondo y alto y remate de piedra o terracota; para tomar el sol de invierno (indicación de la propiedad). Deja libre la tinaja junto a la puerta.' }),
+    f({ id: 'banco-sol', type: 'banco', label: 'Banco de obra al sol (frontal B)', roomId: 'exterior', x: r2((X_PUERTA + 2.35 + 15.6) / 2), y: r2(W + 0.23), w: r2(15.6 - X_PUERTA - 2.35), d: 0.46, h: 0.45, rot: 0, status: 'propuesto',
+      note: 'Banco corrido de obra encalado, pegado a la fachada de la entrada, con asiento de 0,45 m de fondo y alto y remate de piedra o terracota; para tomar el sol de invierno (indicación de la propiedad). Deja libre la tinaja junto a la puerta y, entre ambos, el foco empotrado de suelo (el banco se acorta 0,35 m por ese lado, propiedad 11/11/2026).' }),
     // propuesta de mobiliario (02/11/2026): rincón de estar en el porche, delante del muro ciego del baño y la escalera
     f({ id: 'sofa-porche', type: 'sofa', label: 'Sofá de obra con colchonetas de exterior (propuesta)', roomId: 'exterior', x: 5.6, y: -0.48, w: 2.6, d: 0.8, h: 0.75, rot: 180, status: 'propuesto', note: 'Propuesta de mobiliario (02/11/2026): pieza orientativa, se puede quitar o mover. Banco-sofá de obra encalado contra la fachada, a la sombra del porche.' }),
     f({ id: 'mesa-baja-porche', type: 'mesa-centro', label: 'Mesa baja de exterior (propuesta)', roomId: 'exterior', x: 5.6, y: -1.5, w: 1.0, d: 0.6, h: 0.4, rot: 0, status: 'propuesto', color: '#8d5c3c', note: 'Propuesta de mobiliario (02/11/2026): pieza orientativa, se puede quitar o mover.' }),
