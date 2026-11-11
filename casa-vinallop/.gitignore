@@ -6,3 +6,4 @@ screenshots
 docs-privados/
 *.pdf
 *.tsbuildinfo
+__pycache__/
