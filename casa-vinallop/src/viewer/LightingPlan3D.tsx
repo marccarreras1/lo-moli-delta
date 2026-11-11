@@ -38,9 +38,10 @@ export function LightingPlan3D({ plan, bounds, mats, level }: { plan: LightingPl
   // luz real solo en las luminarias de interior y exterior inmediato y en los 10 árboles más cercanos a la casa
   const real = useMemo(() => {
     const trees = plan.points.filter((p) => p.kind === 'pincho-arbol').sort((a, b) => dist(a.c, bounds) - dist(b.c, bounds)).slice(0, 6).map((p) => p.id);
-    // de los empotrables de suelo solo dan luz real los del algarrobo: el resto, haz y halo (muchas luces ralentizan el visor)
-    const suelo = plan.points.filter((p) => p.kind === 'empotrable-suelo' && p.zone === 'Algarrobo').map((p) => p.id);
-    return new Set([...trees, ...suelo, ...plan.points.filter((p) => p.kind !== 'pincho-arbol' && p.kind !== 'baliza-camino' && p.kind !== 'baliza-escalera' && p.kind !== 'empotrable-suelo').map((p) => p.id)]);
+    // los focos empotrables de suelo y la tira de la escalera de la solera no dan luz real (solo haz y halo): cada luz real
+    // encarece los sombreadores y en equipos modestos puede tumbar WebGL; así el visor tiene las mismas luces que antes
+    const sinLuz = (p: LightPoint) => p.kind === 'pincho-arbol' || p.kind === 'baliza-camino' || p.kind === 'baliza-escalera' || p.kind === 'empotrable-suelo' || p.zone === 'Escalera de la solera';
+    return new Set([...trees, ...plan.points.filter((p) => !sinLuz(p)).map((p) => p.id)]);
   }, [plan, bounds]);
   return (
     <group>
