@@ -225,9 +225,9 @@ function outdoorSvg(layout: Layout, od: NonNullable<Layout['outdoor']>, labels: 
     if (labels) {
       const alg = suelo.filter((p) => p.zone === 'Algarrobo');
       if (alg.length) {
-        const cx = alg.reduce((s2, p) => s2 + p.c[0], 0) / alg.length;
-        const cy = Math.max(...alg.map((p) => p.c[1])) + 0.35;
-        g.push(`<text x="${n4(cx)}" y="${n4(cy)}" font-size="0.12" fill="#8a5a12" text-anchor="middle">${alg.length} focos al algarrobo a 1,70 m del tronco</text>`);
+        const ax = Math.max(...alg.map((p) => p.c[0])) + 0.25;
+        const ay = alg.reduce((s2, p) => s2 + p.c[1], 0) / alg.length;
+        g.push(`<text x="${n4(ax)}" y="${n4(ay)}" font-size="0.12" fill="#8a5a12" transform="rotate(90 ${n4(ax)} ${n4(ay)})" text-anchor="middle">${alg.length} focos pegados a la fachada (a ${fmtM(alg[0].c[0] - layout.bounds.maxX)} m) · zona del algarrobo</text>`);
       }
       const ySol = Math.min(minY, ...od.pavements.filter((v) => v.joints > 0).map((v) => v.rect[1]));
       g.push(`<text x="${n4(layout.bounds.minX + 0.15)}" y="${n4(ySol + 0.3)}" font-size="0.13" fill="#8a5a12">L1–L${suelo.length}: focos empotrables de suelo (EfectoLED ref. 6181, Ø 110 mm) · propuesta de posición</text>`);

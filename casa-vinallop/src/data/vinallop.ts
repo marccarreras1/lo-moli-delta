@@ -377,15 +377,16 @@ const BALIZAS: Vec2[] = (() => {
 })();
 /** foco elegido por la propiedad (11/11/2026): EfectoLED ref. 6181 «Foco exterior empotrable suelo circular inox GU10 Cenit» */
 const FOCO_SUELO = 'EfectoLED ref. 6181, inox, GU10';
-/** 3 empotrables al algarrobo, a 1,70 m del tronco, fuera de la zona permeable (Ø 3 m) y dentro de la solera lateral */
-const ALGARROBO_SUELO: Vec2[] = [[r2(ALGARROBO[0] - 1.7), ALGARROBO[1]], [ALGARROBO[0], r2(ALGARROBO[1] - 1.7)], [ALGARROBO[0], r2(ALGARROBO[1] + 1.7)]];
+/** 3 empotrables en la zona del algarrobo, pegados a la fachada lateral (a 0,30 m), repartidos a lo largo de ella (propiedad, 11/11/2026) */
+const ALGARROBO_SUELO: Vec2[] = [0.9, 2.6, 4.3].map((y) => [r2(L + 0.3), y] as Vec2);
 /**
- * contorno de la casa sobre la solera, cada ≈3 m (propiedad): a 0,40 m del frontal A, de punta a punta (el de 6,65 m se corre
- * a 7,15 m para salir de debajo del sofá del porche), y en la solera de la entrada, delante del banco hasta la esquina.
- * El lateral del algarrobo lo cubren los 3 del algarrobo.
+ * contorno de la casa sobre la solera, cada ≈3 m (propiedad): a 0,40 m del frontal A (el de 6,65 m se corre a 7,15 m para salir
+ * de debajo del sofá del porche; sin focos delante de la cristalera de 7 m), y en la solera de la entrada, delante del banco
+ * hasta la esquina. El lateral del algarrobo lleva sus 3 focos pegados a la fachada.
  */
 const CONTORNO_SUELO: Vec2[] = [
-  ...[0.6, 3.63, 7.15, 9.68, 12.7, 15.73].map((x) => [x, -0.4] as Vec2),
+  // los dos que caían delante de la cristalera de 7 m se quitan (propiedad, 11/11/2026)
+  ...[0.6, 3.63, 7.15, 15.73].map((x) => [x, -0.4] as Vec2),
   ...[12.9, 15.9].map((x) => [x, r2(W + 0.75)] as Vec2),
 ];
 /**
@@ -417,8 +418,8 @@ const LIGHTING: LightingPlan = {
     lp('tira-porche', 'Tira LED oculta en la viga del porche (hacia el cañizo)', 'Porche', 'tira', [0.4, -3.0], H_VENTANAL + PB_EL - 0.02, 9 * 15.7, { b: [16.1, -3.0], aim: H_VENTANAL + PB_EL + 0.3 }),
     ...[4.4, 8.2, 12.0].map((x, i) => lp(`col-porche-${i + 1}`, 'Colgante de exterior del porche', 'Porche', 'colgante', [x, -1.7], 2.35, 8)),
     // árboles
-    // focos empotrados en la solera (EfectoLED ref. 6181, propiedad 11/11/2026): 3 en el algarrobo, hacia la copa
-    ...ALGARROBO_SUELO.map((c, i) => lp(`suelo-algarrobo-${i + 1}`, `Foco empotrable de suelo al algarrobo (${FOCO_SUELO})`, 'Algarrobo', 'empotrable-suelo', c, SOL_TOP, 5, { aim: 5.5 })),
+    // focos empotrados en la solera (EfectoLED ref. 6181, propiedad 11/11/2026): 3 en la zona del algarrobo, pegados a la fachada lateral
+    ...ALGARROBO_SUELO.map((c, i) => lp(`suelo-algarrobo-${i + 1}`, `Foco empotrable de suelo junto a la fachada lateral, zona del algarrobo (${FOCO_SUELO})`, 'Algarrobo', 'empotrable-suelo', c, SOL_TOP, 5, { aim: 4.0 })),
     // escalera de la cristalera (propiedad, 11/11/2026): tira LED oculta bajo el canto de la solera y de cada peldaño
     ...Array.from({ length: Math.max(2, Math.ceil(SOL_TOP / 0.17)) }, (_, i) => {
       const n = Math.max(2, Math.ceil(SOL_TOP / 0.17));
