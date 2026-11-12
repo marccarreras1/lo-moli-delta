@@ -65,9 +65,10 @@ describe('partidas sin valorar', () => {
     // cuentan las 8 partidas seleccionadas, PAC-11 (alzado de 36 cm, 2.500, pasa a la fase 1) y los añadidos de la propiedad
     // (+2.000 recrecido hasta 6 m, 3.500 zanja) y el depósito de agua potable (2.282); las 3 no seleccionadas son referencia
     // y la fase 2: el PEB26-0001 sin la escalera ni el porche (13.900 − 7.200), los extras pactados (26.000) y el PEB26-0005
-    // (16 líneas, 43.700; sus 3 primeras son las fosas ya registradas); la caseta F2-01 va dentro de los extras
-    expect(r.previsto.n).toBe(32);
-    expect(r.previsto.base).toBe(37900 + 2500 + 2000 + 3500 + 2282 + (13900 - 7200) + 26000 + 43700);
+    // (16 líneas, 43.700; sus 3 primeras son las fosas ya registradas); la caseta F2-01 va dentro de los extras;
+    // y la acometida eléctrica del presupuesto 056/026 (8.643)
+    expect(r.previsto.n).toBe(33);
+    expect(r.previsto.base).toBe(37900 + 2500 + 2000 + 3500 + 2282 + (13900 - 7200) + 26000 + 43700 + 8643);
     expect(r.revisado.base).toBe(r.previsto.base);
     // no seleccionadas: las 3 del PAC y las 6 sustituidas por los extras (escalera y porche del PEB, caseta y solera)
     expect(r.noSeleccionadas).toEqual({ n: 9, base: 13200 + 7200 + 8000 });
@@ -207,6 +208,17 @@ describe('seguimiento de obra (fotos del 21/10 y del 11/11/2026)', () => {
     const data = exportGestion();
     expect(importGestion(data)).toEqual({ ok: true });
     expect(useGestion.getState().fases.flatMap((f) => f.seguimiento).length).toBe(14);
+  });
+});
+
+describe('acometida eléctrica (presupuesto 056/026)', () => {
+  const g = seedGestion();
+  it('partida y oferta de 8.643 € sin IVA, recibida, sin pagos y sin datos bancarios', () => {
+    const p = g.presupuesto.partidas.find((x) => x.codigo === 'ELE-01')!;
+    expect([p.precio, p.impuesto, p.condicion, p.pagos.length]).toEqual([8643, 0, 'oferta recibida', 0]);
+    const o = g.presupuesto.ofertas.find((x) => x.id === 'o-ele-056-026')!;
+    expect([o.estado, o.impuestoPct, o.partidas]).toEqual(['recibida', 0, ['ELE-01']]);
+    expect(JSON.stringify(g)).not.toMatch(/2100 0140|46\.669/);
   });
 });
 

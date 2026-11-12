@@ -333,6 +333,49 @@ export const OFERTA_DEPOSITO = (): Oferta => ({
   ],
 });
 
+/**
+ * Presupuesto 056/026 del electricista (30/10/2026): acometida eléctrica desde la entrada de la finca hasta la casa.
+ * Se registran solo los datos de la oferta; NIF, dirección y cuenta bancaria del documento no se guardan.
+ */
+export const ELE_CODIGO = 'ELE-01';
+export const ELE_REF = '056/026';
+export const ELE_PROVEEDOR = 'Montsià Elèctric (Xavier Armesto Vendrell)';
+export const ELE_FECHA = '2026-10-30';
+export const ELE_DOCUMENTO = { id: 'doc-ele-056-026', titulo: `Presupuesto ${ELE_REF} · acometida eléctrica`, referencia: `${ELE_PROVEEDOR} · documento Word de la propiedad`, fecha: ELE_FECHA, nota: 'Oferta recibida, no aceptada ni pagada. El documento indica «IVA 21 % no incluido»; según la propiedad, todo va sin IVA.' };
+export const ELE_PARTIDAS = (): Partida[] => [{
+  id: 'p-acometida-electrica', codigo: ELE_CODIGO,
+  descripcion: 'Acometida eléctrica desde la entrada de la finca (armario del contador) hasta el cuadro general de la casa: tubo de 63 mm enterrado en zanja con cinta de señalización, cable fase y neutro de 25 mm² libre de halógenos (hasta 120 m, para 8 kW), poste galvanizado de 4" con tubo de 40 mm desde el punto de conexión aérea, tierra del neutro en la caja, caja CPM monofásica, puerta metálica homologada, cuadro de 16 módulos con protección contra sobretensiones permanentes y transitorias y diferencial 2P 40 A/30 mA, comprobación y legalización',
+  capitulo: CAP.electricidad, fase: FASE_PAC,
+  cantidad: 1, unidad: 'PA', precio: 8643,
+  proveedor: ELE_PROVEEDOR, referencia: ELE_REF, contratado: null, extras: null, real: null, pagos: [],
+  notas: 'No incluye: la zanja (la acometida va «a través de rassa»: ¿es la de ZAN-01?), la caseta de obra del contador ni la colocación del poste (las hace la constructora), la instalación interior de la casa ni nada que no esté descrito. Pago: 60 % al aceptar (5.185,80 €) y 40 % al final de la obra (3.457,20 €). A aclarar con el electricista: caída de tensión con 25 mm² en 120 m a 8 kW, conductor de protección de la derivación y toma de tierra de la casa.',
+  origenPrecio: `Presupuesto ${ELE_REF} (importe sin IVA)`, fechaPrecio: ELE_FECHA,
+  condicion: 'oferta recibida', impuesto: 0, base: null,
+}];
+export const OFERTA_ELE = (): Oferta => ({
+  id: 'o-ele-056-026',
+  proveedor: ELE_PROVEEDOR,
+  referencia: ELE_REF,
+  fecha: ELE_FECHA,
+  alcance: 'Acometida eléctrica desde el contador en la entrada de la finca hasta el cuadro general de la casa (≈120 m), con poste, caja CPM, cuadro de protecciones y legalización, para 8 kW.',
+  partidas: [ELE_CODIGO],
+  importeBase: null,
+  descuentoPct: null,
+  ajuste: null,
+  ajusteNota: '',
+  impuestoPct: 0,
+  estado: 'recibida',
+  documentos: [`Presupuesto ${ELE_REF} (${ELE_PROVEEDOR}, 30/10/2026)`],
+  notas: 'Oferta recibida: no aceptada ni pagada. Total presupuestado 8.643,00 € (el documento dice «IVA 21 % no incluido»).',
+  totalesImpresos: null,
+  condiciones: 'No incluye ningún trabajo ni material no descrito. Forma de pago: 60 % a la aceptación del presupuesto y 40 % al final de la obra. La caseta de obra del contador y la colocación del poste corren a cargo de la constructora.',
+  avisos: [
+    'Con 25 mm² en 120 m y 8 kW (≈35 A) la caída de tensión sale ≈2,6 %; para una derivación individual de un solo usuario el REBT (ITC-BT-15) pide ≤1,5 %: pedir el cálculo al electricista (puede hacer falta 50 mm² o menos potencia).',
+    'Solo cita fase y neutro: confirmar el conductor de protección de la derivación y quién hace la toma de tierra de la casa.',
+    'La zanja no está incluida: confirmar que es la de ZAN-01 (agua y electricidad, 3.500 €) para no pagarla dos veces, y que el tubo de 63 mm no se cobra también ahí.',
+  ],
+});
+
 /** Tareas de la fase 1 para las partidas añadidas. */
 /** Tarea de la fase 1 para el LED de las vigas (25/10/2026): hay que hacerla antes de cerrar la cubierta. */
 export const TAREA_LED_VIGAS: [string, string] = ['PAC-06', 'Antes de cerrar la cubierta: dejar tubos y cajas registrables para el LED de las vigas (salida en cada viga o cada dos, transformadores accesibles)'];
@@ -370,6 +413,7 @@ function partidas(): Partida[] {
     ...PEB_PARTIDAS(),
     ...EXTRAS_PARTIDAS(),
     ...PEB5_PARTIDAS(),
+    ...ELE_PARTIDAS(),
     {
       id: 'p-solera-l', codigo: SOLERA_CODIGO,
       descripcion: 'Solera continua de cemento en L (frontal A de punta a punta y lateral del algarrobo)',
@@ -412,7 +456,7 @@ function ofertas(): Oferta[] {
       'La cubierta plana propuesta difiere del informe (cubierta inclinada con panel sándwich): coordinar documentos antes de obras.',
       'El zuncho de 40 × 70 cm es una característica propuesta por el constructor, no un cálculo estructural validado.',
     ],
-  }, OFERTA_DEPOSITO(), OFERTA_PEB(), OFERTA_PEB5()];
+  }, OFERTA_DEPOSITO(), OFERTA_PEB(), OFERTA_PEB5(), OFERTA_ELE()];
 }
 
 // ---------------------------------------------------------------- seguimiento de obra
@@ -589,7 +633,7 @@ export function seedGestion(): GestionData {
       capitulos: capitulos(),
       partidas: partidas().map(sustituir),
       ofertas: ofertas(),
-      documentos: [{ id: 'doc-pac26-0052', titulo: `Presupuesto ${PAC_REF}`, referencia: `${PAC_PROVEEDOR} · documento en papel con nota manuscrita`, fecha: PAC_FECHA, nota: 'Oferta recibida, no aceptada ni pagada.' }, { ...DEP_DOCUMENTO }, { ...PEB_DOCUMENTO }, { ...PEB5_DOCUMENTO }],
+      documentos: [{ id: 'doc-pac26-0052', titulo: `Presupuesto ${PAC_REF}`, referencia: `${PAC_PROVEEDOR} · documento en papel con nota manuscrita`, fecha: PAC_FECHA, nota: 'Oferta recibida, no aceptada ni pagada.' }, { ...DEP_DOCUMENTO }, { ...PEB_DOCUMENTO }, { ...PEB5_DOCUMENTO }, { ...ELE_DOCUMENTO }],
       reserva: { importe: null, nota: '', asignaciones: [] },
       aCuenta: ENTREGAS_CUENTA(),
       cargos: CARGOS_CONSTRUCTOR(),
