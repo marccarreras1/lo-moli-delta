@@ -606,8 +606,8 @@ export const ENTREGAS_CUENTA = (): EntregaCuenta[] => [
     nota: 'A cuenta de la obra, sin partida. Sin IVA (autoliquidación por inversión del sujeto pasivo). El concepto de la factura no corresponde a la obra y va a nombre de una empresa: revisar con el gestor. Pagada: el constructor la da por cobrada en su mensaje de fin de octubre («amb els 3.500 € pagats queden 28.000 €»); fecha del pago sin indicar.',
   },
   {
-    id: 'ac-fem26-0032', fecha: '2026-11-01', importe: 10000, emisor: 'Euromed Bat (Narbonne, Francia)', documento: 'Factura FEM26-0032', pagado: true,
-    nota: 'A cuenta de la obra, sin partida (indicado por la propiedad: «otra factura para pagar»). Sin IVA (autoliquidación por inversión del sujeto pasivo). Igual que la FEM26-0031, el concepto no corresponde a la obra (mantenimiento del suelo de una nave) y va a nombre de una empresa: revisar con el gestor. Pagada (indicado por la propiedad, 14/11/2026; fecha del pago sin indicar).',
+    id: 'ac-fem26-0032', fecha: '2026-11-11', importe: 10000, emisor: 'Euromed Bat (Narbonne, Francia)', documento: 'Factura FEM26-0032', pagado: true,
+    nota: 'A cuenta de la obra, sin partida (indicado por la propiedad: «otra factura para pagar»). Sin IVA (autoliquidación por inversión del sujeto pasivo). Igual que la FEM26-0031, el concepto no corresponde a la obra (mantenimiento del suelo de una nave) y va a nombre de una empresa: revisar con el gestor. Factura del 01/11/2026, pagada el miércoles 11/11/2026 (indicado por la propiedad).',
   },
 ];
 

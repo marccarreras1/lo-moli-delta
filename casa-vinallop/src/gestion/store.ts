@@ -497,6 +497,21 @@ function migrate23(data: GestionData): GestionData {
   return { ...data, presupuesto: { ...pr, aCuenta } };
 }
 
+/** Fecha del pago de la FEM26-0032: miércoles 11/11/2026 (propiedad); antes figuraba la fecha de la factura. */
+function migrate24(data: GestionData): GestionData {
+  let done: string[] = [];
+  try { done = JSON.parse(window.localStorage.getItem(MIGRATIONS_KEY) ?? '[]') as string[]; } catch { /* sin almacenamiento */ }
+  const id = '2026-11-14-fem26-0032-fecha-pago';
+  if (done.includes(id)) return data;
+  try { window.localStorage.setItem(MIGRATIONS_KEY, JSON.stringify([...done, id])); } catch { /* sin almacenamiento */ }
+  const pr = data.presupuesto;
+  const s32 = ENTREGAS_CUENTA().find((x) => x.id === 'ac-fem26-0032')!;
+  const toca = (x: GestionData['presupuesto']['aCuenta'][number]) => x.id === s32.id && x.pagado && x.fecha === '2026-11-01';
+  if (!pr.aCuenta.some(toca)) return data;
+  const aCuenta = pr.aCuenta.map((x) => (toca(x) ? { ...x, fecha: s32.fecha, nota: x.nota.includes('fecha del pago sin indicar') ? s32.nota : x.nota } : x));
+  return { ...data, presupuesto: { ...pr, aCuenta } };
+}
+
 function load(): { data: GestionData; aviso: string | null } {
   if (typeof window === 'undefined') return { data: seedGestion(), aviso: null };
   let raw: string | null = null;
@@ -509,7 +524,7 @@ function load(): { data: GestionData; aviso: string | null } {
   try {
     const parsed = JSON.parse(raw) as unknown;
     const base = parseGestion(parsed, false);
-    const data = migrate23(migrate22(migrate21(migrate20(migrate19(migrate18(migrate17(migrate16(migrate15(migrate14(migrate13(migrate12(migrate11(migrate10(migrate9(migrate8(migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base)))))))))))))))))))))));
+    const data = migrate24(migrate23(migrate22(migrate21(migrate20(migrate19(migrate18(migrate17(migrate16(migrate15(migrate14(migrate13(migrate12(migrate11(migrate10(migrate9(migrate8(migrate7(migrate6(migrate5(migrate4(migrate3(migrate2(migrate(base))))))))))))))))))))))));
     // las migraciones se marcan como hechas: hay que guardar ya su resultado o se perderían al recargar sin editar
     if (data !== base) try { window.localStorage.setItem(GESTION_KEY, JSON.stringify(envelope(data))); } catch { /* sin almacenamiento */ }
     let aviso: string | null = null;
