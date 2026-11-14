@@ -10,9 +10,9 @@ describe('pagos y facturas', () => {
   it('reúne los pagos por partida y las entregas a cuenta; el total pagado cuadra', () => {
     const ms = movimientos(g.presupuesto);
     const t = totalesMovimientos(ms);
-    expect(t.pagado).toBe(9500);
-    expect(t.pendiente).toBe(10000);
-    expect(ms.some((m) => m.documento === 'Factura FEM26-0032' && !m.pagado)).toBe(true);
+    expect(t.pagado).toBe(19500);
+    expect(t.pendiente).toBe(0);
+    expect(ms.some((m) => m.documento === 'Factura FEM26-0032' && m.pagado)).toBe(true);
     expect(ms.some((m) => m.codigo === 'PAC-01' && m.importe === 1500)).toBe(true);
   });
   it('genera un libro de Excel con tres hojas, fórmulas y fechas', () => {
@@ -31,11 +31,11 @@ describe('pagos y facturas', () => {
 });
 
 describe('cuenta con el constructor (debe y haber)', () => {
-  it('debe = lo pactado (37.500 + 26.000), haber = lo pagado, saldo = 54.000 como dice el constructor', () => {
+  it('debe = lo pactado (37.500 + 26.000), haber = lo pagado; los 54.000 del constructor menos la FEM26-0032 pagada', () => {
     const cc = cuentaConstructor(g.presupuesto);
-    expect([cc.debe, cc.haber, cc.saldo]).toEqual([63500, 9500, 54000]);
-    expect(cc.lineas[cc.lineas.length - 1].saldo).toBe(54000);
-    expect(cc.porPagarFacturado).toBe(10000);
+    expect([cc.debe, cc.haber, cc.saldo]).toEqual([63500, 19500, 44000]);
+    expect(cc.lineas[cc.lineas.length - 1].saldo).toBe(44000);
+    expect(cc.porPagarFacturado).toBe(0);
   });
   it('un pago a cuenta se puede repartir entre partidas sin cambiar el saldo', () => {
     useGestion.getState().resetGestion();
@@ -47,7 +47,7 @@ describe('cuenta con el constructor (debe y haber)', () => {
     const l = cc.lineas.find((x) => x.entregaId === 'ac-fem26-0031')!;
     expect(l.partidas.map((x) => [x.codigo, x.importe])).toEqual([['PAC-03', 2000]]);
     expect(l.sinAsignar).toBe(1500);
-    expect(cc.saldo).toBe(54000);
+    expect(cc.saldo).toBe(44000);
     expect(pagadoPorPartida(pr).get(pac03.id)).toBe(2000);
     useGestion.getState().resetGestion();
   });

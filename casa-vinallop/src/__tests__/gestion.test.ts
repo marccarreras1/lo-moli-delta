@@ -224,14 +224,14 @@ describe('acometida eléctrica (presupuesto 056/026)', () => {
 
 describe('entregas a cuenta (sin partida)', () => {
   const g = seedGestion();
-  it('6.000 € pagados en agosto (sin fecha exacta), la FEM26-0031 de 3.500 € pagada y la FEM26-0032 de 10.000 € por pagar', () => {
+  it('6.000 € pagados en agosto (sin fecha exacta), la FEM26-0031 de 3.500 € y la FEM26-0032 de 10.000 € pagadas', () => {
     const ac = g.presupuesto.aCuenta;
     // de los 6.000 € de agosto, 1.500 € (sin IVA) se imputan a la demolición del techo (PAC-01)
-    expect(ac.map((x) => [x.importe, x.pagado])).toEqual([[4500, true], [3500, true], [10000, false]]);
+    expect(ac.map((x) => [x.importe, x.pagado])).toEqual([[4500, true], [3500, true], [10000, true]]);
     expect(ac[0].fecha).toBe('');
-    expect(aCuentaTotales(g.presupuesto)).toEqual({ n: 3, pagado: 8000, porPagar: 10000 });
+    expect(aCuentaTotales(g.presupuesto)).toEqual({ n: 3, pagado: 18000, porPagar: 0 });
     const pagadoPartidas = g.presupuesto.partidas.reduce((a, p) => a + p.pagos.reduce((b, x) => b + x.importe, 0), 0);
-    expect(pagadoPartidas + aCuentaTotales(g.presupuesto).pagado).toBe(9500);
+    expect(pagadoPartidas + aCuentaTotales(g.presupuesto).pagado).toBe(19500);
   });
   it('se exportan e importan', () => {
     useGestion.getState().resetGestion();
