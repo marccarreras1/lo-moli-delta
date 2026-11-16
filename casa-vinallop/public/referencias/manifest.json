@@ -8,7 +8,8 @@
   "parcela": "Fotos de la parcela y el entorno",
   "mapa": "Mapa",
   "obra": "Situación de la obra (21/10/2026)",
-  "obra-1111": "Situación de la obra (11/11/2026)"
+  "obra-1111": "Situación de la obra (11/11/2026)",
+  "obra-1116": "Situación de la obra (16/11/2026)"
  },
  "refs": {
   "01": {
@@ -627,6 +628,134 @@
    "h": 1800,
    "grupo": "obra-1111",
    "titulo": "Zanja larga junto al olivo, con raíces a la vista en la pared de la zanja y la armadura todavía fuera"
+  },
+  {
+   "id": "obra-35-acopio-grava",
+   "src": "referencias/obra-35-acopio-grava.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1116",
+   "titulo": "Acopio: montón de grava, palés de bloque de 20 y material tapado con plástico; al fondo el muro encalado y la puerta del baño actual"
+  },
+  {
+   "id": "obra-36-zanja-algarrobo",
+   "src": "referencias/obra-36-zanja-algarrobo.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1116",
+   "titulo": "Zanja armada junto al baño actual, bajo el algarrobo, con las esperas de dos pilares en la esquina y bloques acopiados"
+  },
+  {
+   "id": "obra-37-esperas-esquina",
+   "src": "referencias/obra-37-esperas-esquina.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1116",
+   "titulo": "Esquina de la zapata ya hormigonada contra el baño actual, con las esperas de dos pilares"
+  },
+  {
+   "id": "obra-38-zapata-frontal-b",
+   "src": "referencias/obra-38-zapata-frontal-b.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1116",
+   "titulo": "Zapata hormigonada a lo largo del muro largo con esperas de pilares; hueco bajo la solera del baño actual junto a la zapata"
+  },
+  {
+   "id": "obra-39-zapata-frontal-b-2",
+   "src": "referencias/obra-39-zapata-frontal-b-2.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1116",
+   "titulo": "Zapata hormigonada a lo largo del muro largo con esperas de pilares (otra toma)"
+  },
+  {
+   "id": "obra-40-zapatas-cuarto",
+   "src": "referencias/obra-40-zapatas-cuarto.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1116",
+   "titulo": "Zapatas hormigonadas en esquina delante del bloque del baño actual, con esperas de pilares y bloques de arranque"
+  },
+  {
+   "id": "obra-41-zapata-esperas",
+   "src": "referencias/obra-41-zapata-esperas.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1116",
+   "titulo": "Zapata hormigonada con esperas de pilares y primeros bloques, hacia el muro de mampostería"
+  },
+  {
+   "id": "obra-42-zanja-olivar",
+   "src": "referencias/obra-42-zanja-olivar.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1116",
+   "titulo": "Vista desde el olivar: zanja armada todavía abierta, interior relleno de piedra y el bloque del baño con una cara nueva de bloque blanco"
+  },
+  {
+   "id": "obra-43-zanja-olivo",
+   "src": "referencias/obra-43-zanja-olivo.jpg",
+   "w": 1800,
+   "h": 1350,
+   "grupo": "obra-1116",
+   "titulo": "Zanja todavía abierta junto al olivo grande, con palés de bloque repartidos"
+  },
+  {
+   "id": "obra-44-zanja-esquina-algarrobo",
+   "src": "referencias/obra-44-zanja-esquina-algarrobo.jpg",
+   "w": 1800,
+   "h": 1350,
+   "grupo": "obra-1116",
+   "titulo": "Zanja en L todavía abierta con la armadura, entre el olivo grande y el algarrobo"
+  },
+  {
+   "id": "obra-45-zapata-muro-piedra",
+   "src": "referencias/obra-45-zapata-muro-piedra.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1116",
+   "titulo": "Zapata hormigonada pegada al muro de mampostería, con una espera de pilar"
+  },
+  {
+   "id": "obra-46-esperas-en-fila",
+   "src": "referencias/obra-46-esperas-en-fila.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1116",
+   "titulo": "Zapata hormigonada con las esperas de los pilares en fila hacia el olivar"
+  },
+  {
+   "id": "obra-47-zapata-caseta",
+   "src": "referencias/obra-47-zapata-caseta.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1116",
+   "titulo": "Zapata hormigonada con esperas junto al interior ya rellenado; al fondo el bloque del baño con la cara de bloque blanco"
+  },
+  {
+   "id": "obra-48-zapata-muro-encalado",
+   "src": "referencias/obra-48-zapata-muro-encalado.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1116",
+   "titulo": "Zapata hormigonada pegada al muro encalado, con las esperas de los pilares"
+  },
+  {
+   "id": "obra-49-arranque-pilar",
+   "src": "referencias/obra-49-arranque-pilar.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1116",
+   "titulo": "Arranque de pilar sobre la zapata, en la esquina del bloque del baño actual"
+  },
+  {
+   "id": "obra-50-zapata-muro-encalado-2",
+   "src": "referencias/obra-50-zapata-muro-encalado-2.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1116",
+   "titulo": "Zapata hormigonada pegada al muro encalado (otra toma)"
   }
  ]
 }

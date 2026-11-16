@@ -44,6 +44,7 @@ GRUPOS = {
     'mapa': 'Mapa',
     'obra': 'Situación de la obra (21/10/2026)',
     'obra-1111': 'Situación de la obra (11/11/2026)',
+    'obra-1116': 'Situación de la obra (16/11/2026)',
 }
 
 # fotos sueltas: md5 del original (12 primeros caracteres) → (id, grupo, título)
@@ -118,6 +119,22 @@ FOTOS = {
     'fc5eb5a1d5bd': ('obra-32-muro-puerta', 'obra-1111', 'Muro encalado con la puerta y la mampostería a la vista en los extremos'),
     'fb7ac88671ff': ('obra-33-muro-puerta-olivo', 'obra-1111', 'Muro encalado con la puerta visto desde la zanja, bajo el olivo'),
     'a11a2d5125e5': ('obra-34-zanja-olivo', 'obra-1111', 'Zanja larga junto al olivo, con raíces a la vista en la pared de la zanja y la armadura todavía fuera'),
+    '18c992c7fbef': ('obra-35-acopio-grava', 'obra-1116', 'Acopio: montón de grava, palés de bloque de 20 y material tapado con plástico; al fondo el muro encalado y la puerta del baño actual'),
+    '9f1977317517': ('obra-36-zanja-algarrobo', 'obra-1116', 'Zanja armada junto al baño actual, bajo el algarrobo, con las esperas de dos pilares en la esquina y bloques acopiados'),
+    'fa37f26c5d94': ('obra-37-esperas-esquina', 'obra-1116', 'Esquina de la zapata ya hormigonada contra el baño actual, con las esperas de dos pilares'),
+    '0014c6727291': ('obra-38-zapata-frontal-b', 'obra-1116', 'Zapata hormigonada a lo largo del muro largo con esperas de pilares; hueco bajo la solera del baño actual junto a la zapata'),
+    '131ce876fed9': ('obra-39-zapata-frontal-b-2', 'obra-1116', 'Zapata hormigonada a lo largo del muro largo con esperas de pilares (otra toma)'),
+    'fc159e67f71f': ('obra-40-zapatas-cuarto', 'obra-1116', 'Zapatas hormigonadas en esquina delante del bloque del baño actual, con esperas de pilares y bloques de arranque'),
+    'd3c0584a6d76': ('obra-41-zapata-esperas', 'obra-1116', 'Zapata hormigonada con esperas de pilares y primeros bloques, hacia el muro de mampostería'),
+    '98f85a28fecb': ('obra-42-zanja-olivar', 'obra-1116', 'Vista desde el olivar: zanja armada todavía abierta, interior relleno de piedra y el bloque del baño con una cara nueva de bloque blanco'),
+    '2565cbf28d78': ('obra-43-zanja-olivo', 'obra-1116', 'Zanja todavía abierta junto al olivo grande, con palés de bloque repartidos'),
+    '5d3a870fde07': ('obra-44-zanja-esquina-algarrobo', 'obra-1116', 'Zanja en L todavía abierta con la armadura, entre el olivo grande y el algarrobo'),
+    '430bd66b50cc': ('obra-45-zapata-muro-piedra', 'obra-1116', 'Zapata hormigonada pegada al muro de mampostería, con una espera de pilar'),
+    '29f56caee0f6': ('obra-46-esperas-en-fila', 'obra-1116', 'Zapata hormigonada con las esperas de los pilares en fila hacia el olivar'),
+    'a179252dac92': ('obra-47-zapata-caseta', 'obra-1116', 'Zapata hormigonada con esperas junto al interior ya rellenado; al fondo el bloque del baño con la cara de bloque blanco'),
+    '2420ca663fb4': ('obra-48-zapata-muro-encalado', 'obra-1116', 'Zapata hormigonada pegada al muro encalado, con las esperas de los pilares'),
+    'b1163423e1d3': ('obra-49-arranque-pilar', 'obra-1116', 'Arranque de pilar sobre la zapata, en la esquina del bloque del baño actual'),
+    '857db8e3dd1a': ('obra-50-zapata-muro-encalado-2', 'obra-1116', 'Zapata hormigonada pegada al muro encalado (otra toma)'),
 }
 
 

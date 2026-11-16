@@ -519,6 +519,26 @@ export const SEGUIMIENTO_2026_11_11 = (): Seguimiento[] => [
     'Relleno del alzado de 36 cm (PAC-11). Según el presupuesto, la piedra y la tierra se quedan en la finca y lo que no es natural va a vertedero: confirmar que el escombro mezclado no se usa como relleno.', ['27-muro-piedra', '32-muro-puerta', '33-muro-puerta-olivo', '21-desde-olivar']),
 ];
 
+/** Fotos de la propiedad del 16/11/2026 (Referencias → «Situación de la obra (16/11/2026)»): cimentación hormigonada y esperas de pilares. */
+export const SEGUIMIENTO_FECHA_1116 = '2026-11-16';
+const seg16 = (n: number, partida: string, estado: Seguimiento['estado'], texto: string, motivo: string, fotos: string[]): Seguimiento => ({
+  id: `seg-${SEGUIMIENTO_FECHA_1116}-${String(n).padStart(2, '0')}`, fecha: SEGUIMIENTO_FECHA_1116, texto, partida, motivo, estado, fotos: fotos.map((f) => `obra-${f}`),
+});
+export const SEGUIMIENTO_2026_11_16 = (): Seguimiento[] => [
+  seg16(1, EXTRAS_CODIGO, 'en curso', 'Zapatas corridas hormigonadas en buena parte del perímetro: a lo largo del muro largo (pegadas al muro encalado y al de mampostería) y en las esquinas delante del baño actual.',
+    'Cimentación de los muros nuevos, dentro de los extras pactados (EXT-01).', ['38-zapata-frontal-b', '39-zapata-frontal-b-2', '40-zapatas-cuarto', '45-zapata-muro-piedra', '48-zapata-muro-encalado', '50-zapata-muro-encalado-2']),
+  seg16(2, EXTRAS_CODIGO, 'en curso', 'Esperas de pilares (jaulas de 4 barras con estribos) sobre la zapata, en las esquinas y en fila cada ≈2–3 m; en algunos arranques ya hay bloques de 20 con la armadura pasando por los huecos.',
+    'El muro nuevo de bloque lleva pilares armados (EXT-01): responde a la duda de si llevaba pilares. Confirmar con el constructor que se atan arriba al cinturón de hormigón (PAC-04) y quién los ha calculado.', ['37-esperas-esquina', '41-zapata-esperas', '46-esperas-en-fila', '49-arranque-pilar', '47-zapata-caseta']),
+  seg16(3, EXTRAS_CODIGO, 'pendiente', 'Quedan tramos de zanja abiertos con la armadura sin hormigonar: junto al olivo grande y en la esquina entre el olivo y el algarrobo.',
+    'Resto de la cimentación de los muros nuevos (EXT-01).', ['42-zanja-olivar', '43-zanja-olivo', '44-zanja-esquina-algarrobo', '36-zanja-algarrobo']),
+  seg16(4, EXTRAS_CODIGO, 'a comprobar', 'Hueco bajo la solera del baño actual, justo al lado de la zapata nueva.',
+    'Confirmar que se rellena y compacta (o se hormigona) antes de levantar el muro (EXT-01): no debe quedar un vacío debajo del arranque.', ['38-zapata-frontal-b', '39-zapata-frontal-b-2']),
+  seg16(5, EXTRAS_CODIGO, 'a comprobar', 'En el bloque del baño actual se ve una cara nueva de bloque blanco con un hueco marcado.',
+    'Preguntar al constructor qué es: si es un cierre provisional o el arranque de la caseta del cuarto técnico (incluida en EXT-01).', ['42-zanja-olivar', '47-zapata-caseta']),
+  seg16(6, EXTRAS_CODIGO, 'en curso', 'Acopio en obra: grava, palés de bloque de hormigón de 20 repartidos alrededor de la casa y material tapado con plástico.',
+    'Material para la cimentación y los muros nuevos de bloque de 20 (EXT-01).', ['35-acopio-grava', '43-zanja-olivo']),
+];
+
 /** Observación añadida después de la primera carga del seguimiento: alzado de 36 cm en curso. */
 export const SEGUIMIENTO_ALZADO_ID = `seg-${SEGUIMIENTO_FECHA}-10`;
 export const SEGUIMIENTO_DRON_ID = `seg-${SEGUIMIENTO_FECHA}-11`;
@@ -568,7 +588,7 @@ function fases(): Fase[] {
         estado: 'en curso',
         // previsión de fin indicada por la propiedad (22/10/2026)
         previstoFin: FASE1_FIN,
-        seguimiento: [...obs[FASE_PAC], ...SEGUIMIENTO_2026_11_11()],
+        seguimiento: [...obs[FASE_PAC], ...SEGUIMIENTO_2026_11_11(), ...SEGUIMIENTO_2026_11_16()],
       }),
     FASE2(),
     fase('f03', '3 · Preparación, protección y desmontajes', 'Retirada de cubiertas y demoliciones conforme al proyecto y secuencia técnica.',
