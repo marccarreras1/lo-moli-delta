@@ -170,10 +170,11 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     expect(layout.furniture.some((f) => f.type === 'isla')).toBe(true);
     expect(layout.furniture.some((f) => f.id === 'encimera')).toBe(true);
   });
-  it('5,22 m de ancho (informe), muro del frontal B de 0,60 m y resto de 0,30 m', () => {
-    expect(layout.bounds.maxY - layout.bounds.minY).toBeCloseTo(5.22, 5);
-    expect(layout.walls.find((w) => w.id === 'muro-B')!.thickness).toBe(0.6);
-    expect(layout.walls.filter((w) => w.kind === 'exterior' && w.id !== 'muro-B').every((w) => w.thickness === 0.3)).toBe(true);
+  it('5,83 m de ancho (5,43 m por dentro del bloque de 20, propiedad 19/11/2026) y muros de 0,30 m (20 + 10 de acabado)', () => {
+    expect(layout.bounds.maxY - layout.bounds.minY).toBeCloseTo(5.83, 5);
+    expect(layout.walls.filter((w) => w.kind === 'exterior').every((w) => w.thickness === 0.3)).toBe(true);
+    // libre entre caras interiores: ≈5,23 m
+    expect(layout.bounds.maxY - layout.bounds.minY - 0.6).toBeCloseTo(5.23, 5);
   });
   it('altell a 2,80 m (2,50 m libres por planta con forjado de 0,30 m) solo sobre dormitorio y baño', () => {
     const lvl = layout.levels.find((l) => l.id === 'altell')!;
@@ -270,11 +271,12 @@ describe('Casa Vinallop (bocetos del 04/10/2026)', () => {
     let a = 0;
     for (let i = 0; i < poly.length; i++) { const [x0, y0] = poly[i]; const [x1, y1] = poly[(i + 1) % poly.length]; a += x0 * y1 - x1 * y0; }
     expect(Math.abs(a / 2)).toBeCloseTo(23162, -1);
-    for (const p of [[0, 0], [16.33, 0], [16.33, 5.22], [0, 5.22], site.trees[0].c] as [number, number][]) expect(pointInPolygon(p, poly)).toBe(true);
+    for (const p of [[0, 0], [16.33, 0], [16.33, 5.83], [0, 5.83], site.trees[0].c] as [number, number][]) expect(pointInPolygon(p, poly)).toBe(true);
     const xs = site.edificioCatastro!.poligono.map((p) => p[0]);
     const ys = site.edificioCatastro!.poligono.map((p) => p[1]);
     expect((Math.min(...xs) + Math.max(...xs)) / 2).toBeCloseTo(16.33 / 2, 1);
-    expect((Math.min(...ys) + Math.max(...ys)) / 2).toBeCloseTo(5.22 / 2, 1);
+    // la huella antigua queda 0,30 m hacia dentro: la casa nueva crece 0,30 m por el frontal A
+    expect((Math.min(...ys) + Math.max(...ys)) / 2).toBeCloseTo(5.22 / 2 + 0.3, 1);
   });
   it('genera vistas interiores por estancia, incluido el altell a su cota', () => {
     const cams = cameraPresets(layout);
@@ -348,11 +350,13 @@ describe('carpinterías', () => {
 
 describe('Casa Vinallop · estado actual (fotos antes de la reforma)', () => {
   const layout = resolveLayout(VINALLOP_ACTUAL, baseVariant());
-  it('sin errores ni conflictos y con la misma huella que la reforma', () => {
+  it('sin errores ni conflictos; la reforma la contiene, 0,30 m más ancha por el frontal A y el resto hacia el B', () => {
     const bad = validateLayout(layout).filter((i) => i.level !== 'aviso');
     expect(bad, JSON.stringify(bad, null, 2)).toEqual([]);
     const ref = resolveLayout(VINALLOP, baseVariant()).bounds;
-    expect(layout.bounds).toEqual(ref);
+    expect([layout.bounds.minX, layout.bounds.maxX]).toEqual([ref.minX, ref.maxX]);
+    expect(layout.bounds.maxY - layout.bounds.minY).toBeCloseTo(5.22, 5);
+    expect(layout.bounds.maxY + 0.3).toBeLessThanOrEqual(ref.maxY + 1e-9);
   });
   it('cuatro volúmenes (con la habitación pequeña) y cubiertas a un agua escalonadas hacia el frontal B', () => {
     const segs = layout.roofSegments!;
@@ -381,7 +385,8 @@ describe('Casa Vinallop · estado actual (fotos antes de la reforma)', () => {
     const reforma = resolveLayout(VINALLOP, baseVariant());
     // la solera antigua se quita; se mantiene solo la zona de aparcamiento de grava
     expect(reforma.site!.pavements.map((p) => p.id)).toEqual(['aparcamiento']);
-    expect(reforma.site!.trees[0].c).toEqual(layout.site!.trees[0].c);
+    // el entorno es el mismo: en la reforma queda 0,30 m más lejos de la fachada A nueva
+    expect(reforma.site!.trees[0].c).toEqual([layout.site!.trees[0].c[0], Math.round((layout.site!.trees[0].c[1] + 0.3) * 100) / 100]);
     expect(layout.phase).toBe('actual');
     expect(VINALLOP.phase).toBe('reforma');
   });
@@ -539,9 +544,9 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
     const r = layout.outdoor!.pavements.find((p) => p.permeable)!.permeable!.r;
     expect(r * 2).toBeGreaterThan(2.4);
     expect(r * 2).toBeLessThan(4);
-    // cuarto técnico de 2,50 × ancho de la casa × 3,00 con acceso exterior
+    // cuarto técnico: 2,66 m por dentro del bloque de 20 → 2,86 m de fondo, el ancho de la casa, con acceso exterior
     const ct = layout.outdoor!.annexes![0];
-    expect(ct.rect[2] - ct.rect[0]).toBeCloseTo(2.5, 5);
+    expect(ct.rect[2] - ct.rect[0]).toBeCloseTo(2.86, 5);
     expect(ct.rect[3] - ct.rect[1]).toBeCloseTo(layout.bounds.maxY - layout.bounds.minY, 5);
     expect(ct.height).toBe(3.11);
     // cristalera de 7 m por defecto
@@ -613,7 +618,8 @@ describe('Casa Vinallop · vistas, propuestas y mobiliario', () => {
     expect(layout.site!.trees[0].c).toEqual(la.permeable!.c);
     const q = soleraQuantities(layout)!;
     expect(q.overlap).toBeCloseTo(0, 1); // los tramos se tocan en la esquina sin solaparse
-    expect(q.area).toBeCloseTo(q.grossSum - q.overlap - q.excluded, 1);
+    // cálculo por celdas de 5 cm: con bordes fuera de la retícula hay un error de pocas décimas de m²
+    expect(Math.abs(q.area - (q.grossSum - q.overlap - q.excluded))).toBeLessThan(0.5);
     // mesa redonda de Ø 1,80 con pie cilíndrico y lámpara de cúpula con anclaje sin resolver
     const mesa = o.furniture.find((f) => f.type === 'mesa-exterior')!;
     expect(mesa.w).toBe(1.8);

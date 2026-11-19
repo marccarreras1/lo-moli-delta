@@ -5,7 +5,7 @@
  *
  * ORIENTACIÓN: la de los textos del boceto («PLANTA BAIXA» legible). X crece hacia
  * la derecha del papel (el dormitorio queda a la izquierda) e Y hacia abajo.
- * Y = 0 es la cara exterior del frontal A (lado superior); Y = 5,22 m, la del frontal B.
+ * Y = 0 es la cara exterior del frontal A (lado superior); Y = 5,83 m, la del frontal B (antes 5,22 m).
  *
  * MEDIDAS: envolvente exterior de 16,33 × 5,22 m según el informe del arquitecto (cifras
  * transmitidas por la propiedad; el informe no se ha adjuntado). La cadena de cotas del boceto
@@ -26,7 +26,7 @@
 import { FOTOS_PARCELA, PARCELA, SITUACION, VISTAS_DRON } from './parcela';
 import { NORTE_CATASTRO } from './catastro';
 import { CAMINO_FINCA, OLIVOS_FINCA } from './olivarFinca';
-import type { CameraPreset, DataStatus, LightPoint, LightingPlan, DesignReference, Furniture, MesaComedor, Opening, Outdoor, PendantGroup, ProjectData, Room, Trace, Vec2, Wall } from './types';
+import type { CameraPreset, DataStatus, Site, LightPoint, LightingPlan, DesignReference, Furniture, MesaComedor, Opening, Outdoor, PendantGroup, ProjectData, Room, Trace, Vec2, Wall } from './types';
 
 const r2 = (x: number) => Math.round(x * 100) / 100;
 const rect = (x0: number, y0: number, x1: number, y1: number): Vec2[] => [[r2(x0), r2(y0)], [r2(x1), r2(y0)], [r2(x1), r2(y1)], [r2(x0), r2(y1)]];
@@ -34,16 +34,23 @@ const rect = (x0: number, y0: number, x1: number, y1: number): Vec2[] => [[r2(x0
 // ---------- cotas principales ----------
 /** Cadena de cotas del frontal B: 3,5 + 2,5 + 3,5 + 1,20 + 5 = 15,70 m (documentado, interpretada como interior). */
 const CHAIN = [3.5, 2.5, 3.5, 1.2, 5];
-/** Largo y ancho exteriores del informe del arquitecto: 16,33 × 5,22 m. */
+/**
+ * Largo exterior del informe del arquitecto: 16,33 m. Ancho: 5,43 m por dentro del bloque medidos en obra (propiedad,
+ * 19/11/2026), con muros nuevos de bloque de 20 → 5,83 m por fuera; quitando ≈10 cm por muro de acabado interior quedan
+ * ≈5,23 m libres (antes 5,22 m por fuera y 4,32 m libres).
+ */
 const L = 16.33;
-const W = 5.22;
+const W = 5.83;
 /** origen de la cadena: cara interior del lateral izquierdo */
 const XI = 0.3;
 /** el estar gana los 3 cm de diferencia entre la cadena y el informe */
 const XR = r2(L - 0.3 - (XI + CHAIN.reduce((a, b) => a + b, 0)));
-/** Muro del frontal B (el de la puerta de entrada): 0,60 m; el resto, 0,30 m (propiedad). */
+/**
+ * Muros: bloque de 20 nuevo en toda la casa + ≈10 cm de acabado interior = 0,30 m (propiedad, 19/11/2026). El frontal B
+ * ya no es el muro viejo de 0,60 m: se ha derribado y rehecho como el resto.
+ */
 const T = 0.3;
-const TB = 0.6;
+const TB = 0.3;
 const TP = 0.1;
 /** Altura total desde el terreno: 6,00 m (propiedad, 10/10/2026; los alzados del boceto marcaban 6,20 m). */
 const H_TOTAL = 6.0;
@@ -57,7 +64,7 @@ const SLAB = r2(ALTELL - H_LIBRE);
 const H_PB = r2(ALTELL - SLAB);
 
 const h = T / 2;
-const x0 = T, x1 = r2(L - T), y0 = T, y1 = r2(W - TB); // interior: 0,30–16,03 × 0,30–4,62
+const x0 = T, x1 = r2(L - T), y0 = T, y1 = r2(W - TB); // interior: 0,30–16,03 × 0,30–5,53
 /** posición sobre la cadena de cotas (medida desde la cara interior del lateral izquierdo) */
 const cx = (v: number) => r2(XI + v);
 /** posición en el estar, referida al lateral derecho (gana los 3 cm del informe) */
@@ -313,10 +320,40 @@ const traces: Trace[] = [
   { id: 'doble-altura', levelId: 'altell', kind: 'nota', label: 'Doble altura (cocina y estar)', sourceId: S.prop, points: [[rx(10.7), 2.46]], note: 'Zona de día de doble altura (propiedad).' },
 ];
 
+// ---------- cuarto técnico ----------
+/**
+ * Cuarto técnico (propiedad, 19/11/2026): 2,66 × 5,43 m por dentro del bloque de 20; quitando ≈10 cm por muro de acabado
+ * quedan ≈2,46 × 5,23 m libres. Mismo ancho que la casa (no sobresale): 2,86 m de fondo desde la fachada lateral, muro exterior de 0,30 (20 + 10).
+ */
+const CT_FONDO = r2(2.66 + 0.2); // 2,66 por dentro + bloque de 20 exterior (el otro bloque es el lateral de la casa)
+const CT_X0 = r2(-CT_FONDO);
+
+// ---------- entorno referido a la casa nueva ----------
+/**
+ * El entorno (árboles, olivar, camino, Catastro) está referido a la casa antigua: su frontal A en y = 0. La casa nueva crece
+ * 0,30 m por el frontal A (propiedad) y el resto hacia el frontal B (5,83 m por fuera), así que, respecto a la fachada A nueva,
+ * todo el entorno queda 0,30 m más lejos. El estado actual sigue usando el entorno sin desplazar.
+ */
+const DY_ENTORNO = 0.3;
+const mv = (p: Vec2): Vec2 => [p[0], r2(p[1] + DY_ENTORNO)];
+const mvR = (r: [number, number, number, number]): [number, number, number, number] => [r[0], r2(r[1] + DY_ENTORNO), r[2], r2(r[3] + DY_ENTORNO)];
+const OLIVOS_FINCA_R: [number, number, number][] = OLIVOS_FINCA.map(([x, y, d]) => [x, r2(y + DY_ENTORNO), d]);
+const CAMINO_FINCA_R: Vec2[] = CAMINO_FINCA.map(mv);
+const SITE_REFORMA: Site = {
+  ...PARCELA,
+  parcela: PARCELA.parcela && { ...PARCELA.parcela, poligono: PARCELA.parcela.poligono.map(mv) },
+  edificioCatastro: PARCELA.edificioCatastro && { ...PARCELA.edificioCatastro, poligono: PARCELA.edificioCatastro.poligono.map(mv) },
+  olives: { ...PARCELA.olives, clear: mvR(PARCELA.olives.clear), fijos: OLIVOS_FINCA_R, zonaFoto: PARCELA.olives.zonaFoto?.map(mv) },
+  trees: PARCELA.trees.map((t) => ({ ...t, c: mv(t.c), copa: t.copa && { ...t.copa, yMin: t.copa.yMin == null ? undefined : r2(t.copa.yMin + DY_ENTORNO), yMax: t.copa.yMax == null ? undefined : r2(t.copa.yMax + DY_ENTORNO) } })),
+  acceso: PARCELA.acceso && { ...PARCELA.acceso, entrada: mv(PARCELA.acceso.entrada), camino: PARCELA.acceso.camino.map(mv), exterior: PARCELA.acceso.exterior?.map(mv), esquina: PARCELA.acceso.esquina && mv(PARCELA.acceso.esquina) },
+  pavements: PARCELA.pavements.map((p) => ({ ...p, rect: mvR(p.rect) })),
+};
+
 // ---------- exterior: solera en L y comedor bajo el algarrobo (decisiones confirmadas; medidas propuestas) ----------
 /** algarrobo: medido por la propiedad (16/10/2026), tronco a 2,64 m del lateral derecho y a 3,50 m del frontal B; +0,50 m de radio del tronco */
 const ALGARROBO_TRONCO_R = 0.5;
-const ALGARROBO: Vec2 = [r2(L + 2.64 + ALGARROBO_TRONCO_R), r2(W - 3.5 - ALGARROBO_TRONCO_R)];
+// medido desde el frontal B antiguo (y = 5,22 en el entorno, 5,52 respecto a la casa nueva)
+const ALGARROBO: Vec2 = [r2(L + 2.64 + ALGARROBO_TRONCO_R), r2(DY_ENTORNO + 5.22 - 3.5 - ALGARROBO_TRONCO_R)];
 /**
  * solera en L (propiedad): tramo a lo largo de todo el frontal A, el de la cristalera, de punta a punta,
  * y tramo de 4 m en el lateral del algarrobo; sin solera en el frontal B (puerta de entrada).
@@ -327,7 +364,7 @@ const SOL_TRASERA = 6.0;
 /** fondo del porche de la cristalera: se mantiene en 3,40 m (la solera sigue 1,60 m más allá, al sol) */
 const PORCHE_FONDO = 3.4;
 /** olivo grande medido que queda dentro de la solera de 6 m: alcorque alrededor del tronco (el pequeño se ha quitado) */
-const OLIVO_GRANDE = PARCELA.trees.find((t) => t.id === 'olivo-cristalera')!.c;
+const OLIVO_GRANDE = SITE_REFORMA.trees.find((t) => t.id === 'olivo-cristalera')!.c;
 /** el porche cubre toda la solera del frontal A, hasta el dormitorio (propiedad, 10/10/2026) */
 const PORCHE_X0 = 0;
 /** solera de la entrada, decidida: ≈2 m de fondo desde el algarrobo hasta la puerta de entrada (propiedad, 11/11/2026) */
@@ -347,23 +384,23 @@ const SOL_TOP = 0.18;
 const MESA_EXT: Vec2 = [r2(L + 1.52), r2(Math.max(ALGARROBO[1] - 2.72, -SOL_TRASERA + 1.5))];
 // ---------------------------------------------------------------- iluminación (propuesta, 25/10/2026)
 /** distancia de un punto al rectángulo de la casa con el cuarto técnico */
-const dCasa = ([x, y]: Vec2) => Math.hypot(Math.max(-2.5 - x, 0, x - L), Math.max(-y, 0, y - W));
+const dCasa = ([x, y]: Vec2) => Math.hypot(Math.max(CT_X0 - x, 0, x - L), Math.max(-y, 0, y - W));
 const dSeg = (p: Vec2, a: Vec2, b: Vec2) => {
   const [dx, dy] = [b[0] - a[0], b[1] - a[1]];
   const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (dx * dx + dy * dy || 1)));
   return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
 };
-const dCamino = (p: Vec2) => Math.min(...CAMINO_FINCA.slice(1).map((b, i) => dSeg(p, CAMINO_FINCA[i], b)));
-const APARC: [number, number, number, number] = [1.5, 14.6, 15.5, 17.8];
+const dCamino = (p: Vec2) => Math.min(...CAMINO_FINCA_R.slice(1).map((b, i) => dSeg(p, CAMINO_FINCA_R[i], b)));
+const APARC: [number, number, number, number] = SITE_REFORMA.pavements.find((p) => p.id === 'aparcamiento')!.rect;
 const enAparc = ([x, y]: Vec2) => x > APARC[0] - 0.8 && x < APARC[2] + 0.8 && y > APARC[1] - 0.8 && y < APARC[3] + 0.8;
 /** olivos iluminados: los que rodean la casa (≤ 20 m) y los del borde del camino (≤ 6 m), fuera del aparcamiento */
-const OLIVOS_LUZ: Vec2[] = OLIVOS_FINCA.map(([x, y]) => [x, y] as Vec2).filter((p) => dCasa(p) > 0.6 && !enAparc(p) && (dCasa(p) <= 20 || dCamino(p) <= 6));
+const OLIVOS_LUZ: Vec2[] = OLIVOS_FINCA_R.map(([x, y]) => [x, y] as Vec2).filter((p) => dCasa(p) > 0.6 && !enAparc(p) && (dCasa(p) <= 20 || dCamino(p) <= 6));
 /** balizas del camino: cada 4 m, al tresbolillo a 0,8 m del eje */
 const BALIZAS: Vec2[] = (() => {
   const out: Vec2[] = [];
   let acc = 0, k = 0;
-  for (let i = 1; i < CAMINO_FINCA.length; i++) {
-    const a = CAMINO_FINCA[i - 1], b = CAMINO_FINCA[i];
+  for (let i = 1; i < CAMINO_FINCA_R.length; i++) {
+    const a = CAMINO_FINCA_R[i - 1], b = CAMINO_FINCA_R[i];
     const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
     if (len < 1e-6) continue;
     const [ux, uy] = [(b[0] - a[0]) / len, (b[1] - a[1]) / len];
@@ -433,13 +470,13 @@ const LIGHTING: LightingPlan = {
     // y por el contorno de la casa, cada ≈3 m sobre la solera, bañando la fachada
     ...CONTORNO_SUELO.map((c, i) => lp(`suelo-contorno-${i + 1}`, `Foco empotrable de suelo (${FOCO_SUELO})`, 'Contorno de la casa', 'empotrable-suelo', c, SOL_TOP, 5, { aim: 4.0 })),
     ...CONTORNO_GRAVA.map((c, i) => lp(`suelo-grava-${i + 1}`, `Foco empotrable de suelo en la grava (${FOCO_SUELO})`, 'Contorno de la casa', 'empotrable-suelo', c, 0, 5, { aim: 4.0 })),
-    ...PARCELA.trees.filter((t) => t.id === 'olivo-cristalera').map((t) => lp(`pin-${t.id}`, 'Foco de pincho al olivo', 'Olivos', 'pincho-arbol', [r2(t.c[0] - 0.7), r2(t.c[1] - 0.5)], 0.23, 5, { aim: (t.h ?? 5) * 0.7 })),
+    ...SITE_REFORMA.trees.filter((t) => t.id === 'olivo-cristalera').map((t) => lp(`pin-${t.id}`, 'Foco de pincho al olivo', 'Olivos', 'pincho-arbol', [r2(t.c[0] - 0.7), r2(t.c[1] - 0.5)], 0.23, 5, { aim: (t.h ?? 5) * 0.7 })),
     ...OLIVOS_LUZ.map((c, i) => lp(`pin-olivo-${i + 1}`, 'Foco de pincho al olivo', 'Olivos', 'pincho-arbol', [r2(c[0] - 0.8), r2(c[1] - 0.4)], 0.05, 5, { aim: 3.2 })),
     // camino y entrada
     ...BALIZAS.map((c, i) => lp(`bal-camino-${i + 1}`, 'Baliza del camino', 'Camino', 'baliza-camino', c, 0.05, 3)),
     // cadena de lluvia y cuarto técnico
-    lp('rasante-cadena', 'Foco rasante a la cadena de tejas', 'Fachada de la entrada', 'rasante', [-2.3, r2(W + 0.35)], 0.05, 5, { aim: r2(PB_EL + ALTELL - 0.05) }),
-    lp('estanca-cuarto', 'Luz estanca con sensor sobre la puerta del cuarto técnico', 'Cuarto técnico', 'estanca', [-2.55, 3.62], 2.35, 10),
+    lp('rasante-cadena', 'Foco rasante a la cadena de tejas', 'Fachada de la entrada', 'rasante', [r2(CT_X0 + 0.2), r2(W + 0.35)], 0.05, 5, { aim: r2(PB_EL + ALTELL - 0.05) }),
+    lp('estanca-cuarto', 'Luz estanca con sensor sobre la puerta del cuarto técnico', 'Cuarto técnico', 'estanca', [r2(CT_X0 - 0.05), r2(W - 0.3 - 0.85 - 0.45)], 2.35, 10),
   ],
   // circuitos propuestos (25/10/2026): uno por escena; los LED de 24 V, con su fuente y un canal regulable KNX por zona
   circuits: [
@@ -462,7 +499,7 @@ const LIGHTING: LightingPlan = {
 
 const outdoor: Outdoor = {
   pavements: [
-    { id: 'grava-comedor', label: 'Transición de grava', rect: [-3.0, r2(-SOL_TRASERA - 0.5), r2(L + SOL_LATERAL + 0.5), r2(W + 0.5)], joints: 0, status: 'propuesto', note: 'Borde de grava de 0,50 m entre la solera y la tierra; también a lo largo del frontal B y la entrada, que quedan sin solera.' },
+    { id: 'grava-comedor', label: 'Transición de grava', rect: [r2(CT_X0 - 0.5), r2(-SOL_TRASERA - 0.5), r2(L + SOL_LATERAL + 0.5), r2(W + 0.5)], joints: 0, status: 'propuesto', note: 'Borde de grava de 0,50 m entre la solera y la tierra; también a lo largo del frontal B y la entrada, que quedan sin solera.' },
     {
       id: 'solera-l-lateral', label: 'Solera en L · tramo lateral', rect: [L, r2(-SOL_TRASERA), r2(L + SOL_LATERAL), W], joints: 2, top: SOL_TOP, permeable: { c: ALGARROBO, r: 1.5 }, status: 'confirmado',
       note: 'Tramo de 4 m junto al lateral derecho, bajo el algarrobo, continuo con el del frontal A y al mismo nivel; termina al ras del frontal B (la propiedad pidió quitar el trozo que sobresalía). La mesa va bajo la copa, entre el tronco y el tramo del frontal A. Se recorta alrededor del tronco para dejar zona permeable sobre las raíces; posición del tronco medida por la propiedad (2,64 m del lateral y 3,50 m del frontal B).',
@@ -486,14 +523,14 @@ const outdoor: Outdoor = {
       id: 'solera-l-frontal-a', label: 'Solera en L · tramo del frontal A (cristalera)', rect: [0, r2(-SOL_TRASERA), L, 0], joints: 3.3, top: SOL_TOP, status: 'confirmado',
       // con 6 m de fondo el olivo grande de la cristalera queda dentro: alcorque alrededor del tronco
       pits: [{ c: OLIVO_GRANDE, r: 1.0 }],
-      note: 'Fondo de 6,00 m desde la fachada, decidido (propiedad, 11/11/2026; antes 5,00 y 3,40 m): el porche sigue cubriendo los primeros 3,40 m y el resto queda al sol. El olivo pequeño (a 4,50 m de la fachada) se ha quitado; el grande (a 3,60 m) queda dentro con un alcorque permeable de Ø 2,00 m alrededor del tronco; al hormigonar, no cortar raíces gruesas y no subir el nivel del terreno sobre ellas. Solera a lo largo de todo el frontal A, de punta a punta de la casa, con el porche delante de la cristalera (indicaciones de la propiedad: «en la parte de la cristalera pon la solera y un porche» y «la solera de punta a punta de la casa y elimina la solera de la parte de la puerta de entrada»). Cemento claro mate, mismo nivel que el tramo lateral, con el que se une en la esquina del algarrobo. Juntas cada ≈3,3 m; pendiente del 1,5–2 % hacia fuera y canaleta en el borde (propuesta de evacuación, pendiente de desarrollo técnico).',
+      note: 'Fondo de 6,00 m desde la fachada, decidido (propiedad, 11/11/2026; antes 5,00 y 3,40 m): el porche sigue cubriendo los primeros 3,40 m y el resto queda al sol. El olivo pequeño (a 4,50 m de la fachada) se ha quitado; el grande (a 3,30 m de la fachada nueva) queda dentro con un alcorque permeable de Ø 2,00 m alrededor del tronco; al hormigonar, no cortar raíces gruesas y no subir el nivel del terreno sobre ellas. Solera a lo largo de todo el frontal A, de punta a punta de la casa, con el porche delante de la cristalera (indicaciones de la propiedad: «en la parte de la cristalera pon la solera y un porche» y «la solera de punta a punta de la casa y elimina la solera de la parte de la puerta de entrada»). Cemento claro mate, mismo nivel que el tramo lateral, con el que se une en la esquina del algarrobo. Juntas cada ≈3,3 m; pendiente del 1,5–2 % hacia fuera y canaleta en el borde (propuesta de evacuación, pendiente de desarrollo técnico).',
     },
   ],
-  // cuarto técnico previsto por la propiedad: 2,50 m × el ancho de la casa × 3,00 m de alto, con acceso solo por el exterior
+  // cuarto técnico: 2,66 × 5,43 m por dentro del bloque (propiedad, 19/11/2026), el ancho de la casa, con acceso solo por el exterior
   // cadena de lluvia de tejas (referencia de la propiedad, 21/10/2026): en el frontal B, encima del aljibe de pluviales
   rainChains: [
     {
-      id: 'cadena-tejas', label: 'Cadena de lluvia de tejas', face: { axis: 'y', at: W, outward: 1 }, at: -2.3, top: r2(PB_EL + ALTELL - 0.05),
+      id: 'cadena-tejas', label: 'Cadena de lluvia de tejas', face: { axis: 'y', at: W, outward: 1 }, at: r2(CT_X0 + 0.2), top: r2(PB_EL + ALTELL - 0.05),
       tile: 0.42, pitch: 0.3, tilt: 0.5, basin: 0.5, status: 'propuesto',
       pipeTo: { at: [-0.55, 0.85], label: 'tubo enterrado al aljibe (registro)' },
       note: 'Propuesta de la propiedad (foto de referencia, 21–22/10/2026): bajante decorativa de tejas árabes empotradas en la fachada en zigzag; el agua sale por una gárgola y cae de teja en teja hasta una arqueta con rejilla al pie. Va en la esquina izquierda del frontal B (fachada de la entrada), en el cuarto técnico: recoge la terraza del altell (≈13 m²) por una gárgola a ras de su suelo (≈3,1 m), con ≈9 tejas, como en la referencia. Desde la arqueta, tubo enterrado con pendiente (≥1–2 %) por debajo de la solera del cuarto técnico hasta el registro del aljibe de pluviales (fosa recuperada bajo el baño); el depósito de 12.000 l de agua potable no recibe pluviales. Para recoger también la cubierta de la casa haría falta otra salida (gárgola a la terraza o bajante): pendiente de decidir. En la arqueta, filtro de hojas y arenero; rebosadero en el aljibe. Tejas recibidas con mortero en rozas del muro; caudal y anclajes sin comprobar.',
@@ -501,7 +538,7 @@ const outdoor: Outdoor = {
   ],
   annexes: [
     {
-      id: 'cuarto-tecnico', label: 'Cuarto técnico y lavadero', rect: [-2.5, 0, 0, W], height: r2(PB_EL + ALTELL - 0.05), wall: 0.3,
+      id: 'cuarto-tecnico', label: 'Cuarto técnico y lavadero', rect: [CT_X0, 0, 0, W], height: r2(PB_EL + ALTELL - 0.05), wall: 0.3,
       // puerta en el lateral exterior (propiedad, 22/10/2026), a 0,85 m de la esquina del frontal B por dentro
       door: { side: 'x0', at: r2(W - 0.3 - 0.85 - 0.45), width: 0.9, height: 2.1 }, status: 'confirmado',
       terrace: { parapet: 1.0, label: 'Terraza del altell', status: 'propuesto' },
@@ -509,7 +546,7 @@ const outdoor: Outdoor = {
         id: 'registro-fosa-pluviales', label: 'Registro del aljibe de pluviales (fosa recuperada)', c: [-0.55, 0.85], size: 0.6, status: 'propuesto',
         note: 'Propuesta (propiedad, 14/10/2026): recuperar la fosa séptica que hay bajo el baño actual como aljibe de agua de lluvia para riego y jardín, con el acceso fuera de la vivienda, en el cuarto técnico: tapa de registro estanca de ≈60 × 60 cm junto al lateral de la casa, con la bomba sumergible, el filtro y la salida al riego por goteo en el propio cuarto. Posición, medidas, capacidad y estado de la fosa SIN COMPROBAR: hay que localizarla, vaciarla con gestor autorizado, limpiarla, desinfectarla y probar la estanqueidad; anular la entrada de aguas negras; prever filtro en la bajante, rebosadero al terreno y rejilla antimosquitos. El suelo de la casa sobre la fosa necesita losa calculada por el técnico. Agua no potable.',
       }],
-      note: 'Previsto por la propiedad: 2,50 m de fondo por el ancho total de la casa (5,22 m); con la cubierta 5 cm por debajo del suelo del altell para que la terraza quede enrasada con él (con el interior elevado 0,36 m, ≈3,11 m de alto), con acceso por el exterior. Colocado en el lateral izquierdo (el derecho lo ocupan el algarrobo y el comedor): posición a confirmar. Interior ≈2,20 × 4,62 m para lavadora, termo o aerotermia, cuadro eléctrico y almacén. Puerta exterior de 0,90 m en el lateral exterior, a 0,85 m de la esquina del lado de la entrada (propiedad, 22/10/2026), abriendo hacia fuera; antes estaba en la cara de la entrada. Deja libre la pared corta del frontal B para las bicis y la esquina para la cadena de lluvia.',
+      note: 'Medidas de la propiedad (19/11/2026): 2,66 × 5,43 m por dentro del bloque de 20 y ≈2,46 × 5,23 m libres quitando ≈10 cm por muro de acabado; mismo ancho que la casa (5,83 m por fuera) y 2,86 m de fondo desde la fachada lateral (antes 2,50 × 5,22 m); con la cubierta 5 cm por debajo del suelo del altell para que la terraza quede enrasada con él (con el interior elevado 0,36 m, ≈3,11 m de alto), con acceso por el exterior. Colocado en el lateral izquierdo (el derecho lo ocupan el algarrobo y el comedor): posición a confirmar. Interior ≈2,46 × 5,23 m libres para lavadora, termo o aerotermia, cuadro eléctrico y almacén. Puerta exterior de 0,90 m en el lateral exterior, a 0,85 m de la esquina del lado de la entrada (propiedad, 22/10/2026), abriendo hacia fuera; antes estaba en la cara de la entrada. Deja libre la pared corta del frontal B para las bicis y la esquina para la cadena de lluvia.',
     },
   ],
   // jardín seco delante de la fachada de la entrada, hasta los primeros olivos (propiedad; referencia «11 plantes qui
@@ -600,7 +637,7 @@ const views: CameraPreset[] = [
   view({ id: 'v05-algarrobo', label: '5 · Mesa y lámpara bajo el algarrobo', group: 'exterior', position: [14.6, -8.2, 1.6], target: [MESA_EXT[0] + 0.3, MESA_EXT[1] + 1.0, 1.5], fov: 56 }),
   view({ id: 'v06-desde-comedor', label: '6 · La casa desde el comedor exterior', group: 'exterior', position: [21.4, -5.4, 1.6], target: [10, -0.6, 2.2], fov: 56 }),
   view({ id: 'v06b-deposito', label: '6b · Cuarto técnico y depósito de agua', group: 'exterior', position: [-12.8, 10.2, 6.2], target: [-4.4, 2.0, 0.4], fov: 52 }),
-  view({ id: 'v00-interior-cenital', label: 'Interior · vista cenital 3D', group: 'interior', topDown: true, position: [8.2, 5.6, 19.5], target: [8.2, 2.5, 0], fov: 44 }),
+  view({ id: 'v00-interior-cenital', label: 'Interior · vista cenital 3D', group: 'interior', topDown: true, position: [8.2, r2(W / 2 + 3.1), 19.5], target: [8.2, r2(W / 2), 0], fov: 44 }),
   view({ id: 'v07-salon-ventanal', label: '7 · Salón: sofá de obra y ventanal', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: PB_EL, position: [12.3, 1.2, 1.6], target: [15.4, 3.9, 0.7], fov: 66 }),
   view({ id: 'v07b-fuego', label: '7b · Rincón de la cristalera (estufa, chimenea o comedor)', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: PB_EL, position: [12.7, 2.15, 1.6], target: [16.0, 1.15, 1.25], fov: 62 }),
   view({ id: 'v08-ventanal-cocina', label: '8 · Del ventanal hacia cocina e isla', group: 'interior', eyeLevel: true, roomId: 'dia', elevation: PB_EL, position: [12.4, 0.8, 1.6], target: [9.2, 3.6, 1.0], fov: 60 }),
@@ -655,8 +692,8 @@ const PROJECT: ProjectData = {
   phase: 'reforma',
   // la solera antigua del frontal B se elimina: la solera en L del proyecto va por el frontal A y el lateral
   // la solera actual se sustituye por la del proyecto; la zona de aparcamiento (grava) se mantiene
-  site: { ...PARCELA, pavements: PARCELA.pavements.filter((p) => p.firme === 'grava'), trees: PARCELA.trees.map((t) => (t.id === 'algarrobo' ? { ...t, c: ALGARROBO } : t)) },
-  version: '1.0 · bocetos, respuestas, fotos de la parcela, informe (16,33 × 5,22 m) y referencias de diseño',
+  site: { ...SITE_REFORMA, pavements: SITE_REFORMA.pavements.filter((p) => p.firme === 'grava'), trees: SITE_REFORMA.trees.map((t) => (t.id === 'algarrobo' ? { ...t, c: ALGARROBO } : t)) },
+  version: '1.0 · bocetos, respuestas, fotos de la parcela, informe (16,33 m), ancho medido en obra (5,83 m) y referencias de diseño',
   levels: [
     { id: 'pb', name: 'Planta baja', elevation: PB_EL, wallHeight: H_PB, elevationStatus: 'documentado' },
     { id: 'altell', name: 'Altell', elevation: r2(PB_EL + ALTELL), wallHeight: r2(H_TOTAL - PB_EL - ALTELL), elevationStatus: 'documentado' },
@@ -680,11 +717,11 @@ const PROJECT: ProjectData = {
   views,
   references,
   checks: [
-    { label: 'Dimensiones exteriores', items: [{ source: 'Informe del arquitecto (transmitido por la propiedad)', value: '16,33 × 5,22 m exteriores' }, { source: 'Modelo anterior (cadena del boceto y «5 de ancho»)', value: '15,70 × 5,00 m' }, { source: 'Especificación inicial del estudio', value: '17 × 4,5 × 5 m' }], status: 'documentado', note: 'Se adopta el informe: 16,33 × 5,22 m. La cadena de 15,70 m se interpreta como interior (15,70 + 2 × 0,30 = 16,30 m, a 3 cm del informe; los 3 cm van al estar). El ancho de 5,22 m deja 4,32 m interiores con el muro de 0,60 m del frontal B.' },
+    { label: 'Dimensiones exteriores', items: [{ source: 'Informe del arquitecto (transmitido por la propiedad)', value: '16,33 × 5,22 m exteriores' }, { source: 'Modelo anterior (cadena del boceto y «5 de ancho»)', value: '15,70 × 5,00 m' }, { source: 'Especificación inicial del estudio', value: '17 × 4,5 × 5 m' }, { source: 'Medida en obra (propiedad, 19/11/2026)', value: '5,43 m de ancho por dentro del bloque de 20 → 5,83 m por fuera; ≈5,23 m libres' }], status: 'documentado', note: 'Largo del informe: 16,33 m. Ancho medido en obra (19/11/2026): 5,43 m por dentro de los muros nuevos de bloque de 20, 5,83 m por fuera (0,30 m más por el frontal A y el resto hacia el B) y ≈5,23 m libres quitando ≈10 cm de acabado por muro. Antes: 16,33 × 5,22 m del informe. La cadena de 15,70 m se interpreta como interior (15,70 + 2 × 0,30 = 16,30 m, a 3 cm del informe; los 3 cm van al estar). El ancho de 5,22 m deja 4,32 m interiores con el muro de 0,60 m del frontal B.' },
     { label: 'Superficie construida', items: [{ source: 'Informe del arquitecto', value: '79,48 m² construidos (estado actual)' }, { source: 'Rectángulo del informe', value: '16,33 × 5,22 = 85,24 m²' }], status: 'pendiente', note: 'No coinciden: la edificación actual no es un rectángulo completo (el anexo es más estrecho en las fotos) o la superficie excluye algún tramo. Pendiente de contrastar con el informe completo.' },
     { label: 'Ventanal del frontal A', items: [{ source: 'Boceto (planta y alzado A)', value: '«OBERTURA 7 M»' }, { source: 'Propiedad / especificación', value: 'Ventanal de 9 m' }, { source: 'Presupuesto PAC26-0052', value: 'Zuncho 40 × 70 cm para el hueco (propuesta del constructor)' }], status: 'pendiente', note: 'Por defecto se dibuja 9 m (6,85–15,85 m, machones de 0,50 y 0,48 m); la variante de 7 m se conserva. Antes de fijarlo: cálculo estructural del arquitecto (dintel, machones, apoyos) y comprobación de que el altell y la escalera no interfieren.' },
     { label: 'Altura del altell (sección)', items: [{ source: 'Propiedad', value: '2,50 m libres por planta + forjado 0,30 m' }, { source: 'Propiedad', value: 'Coronación 6,00 m sobre el terreno; interior elevado 0,36 m' }], status: 'interpretado', note: 'Suelo de planta baja a +0,36 (interior elevado) y suelo del altell a +3,16 sobre el terreno (2,80 m sobre el suelo interior). Libre bajo cubierta: 6,00 − 3,16 − canto de cubierta (0,25) − flecha de la volta (0,10) ≈ 2,49 m en el centro y ≈2,39 m bajo las vigas: justo. Verificable en la vista «Corte longitudinal».' },
-    { label: 'Superficie del altell', items: [{ source: 'Calculada sobre el modelo', value: '≈24,6 m² (5,70 × 4,32 m interior)' }], status: 'interpretado', note: 'Resultado del cálculo, no una medida tomada.' },
+    { label: 'Superficie del altell', items: [{ source: 'Calculada sobre el modelo', value: '≈29,8 m² (5,70 × 5,23 m interior)' }], status: 'interpretado', note: 'Resultado del cálculo, no una medida tomada.' },
   ],
   railings: [
     {
