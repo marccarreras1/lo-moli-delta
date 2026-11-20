@@ -33,8 +33,8 @@ describe('pagos y facturas', () => {
 describe('cuenta con el constructor (debe y haber)', () => {
   it('debe = lo pactado (37.500 + 26.000), haber = lo pagado; los 54.000 del constructor menos la FEM26-0032 pagada', () => {
     const cc = cuentaConstructor(g.presupuesto);
-    expect([cc.debe, cc.haber, cc.saldo]).toEqual([63500, 19500, 44000]);
-    expect(cc.lineas[cc.lineas.length - 1].saldo).toBe(44000);
+    expect([cc.debe, cc.haber, cc.saldo]).toEqual([65500, 19500, 46000]);
+    expect(cc.lineas[cc.lineas.length - 1].saldo).toBe(46000);
     expect(cc.porPagarFacturado).toBe(0);
   });
   it('un pago a cuenta se puede repartir entre partidas sin cambiar el saldo', () => {
@@ -47,7 +47,7 @@ describe('cuenta con el constructor (debe y haber)', () => {
     const l = cc.lineas.find((x) => x.entregaId === 'ac-fem26-0031')!;
     expect(l.partidas.map((x) => [x.codigo, x.importe])).toEqual([['PAC-03', 2000]]);
     expect(l.sinAsignar).toBe(1500);
-    expect(cc.saldo).toBe(44000);
+    expect(cc.saldo).toBe(46000);
     expect(pagadoPorPartida(pr).get(pac03.id)).toBe(2000);
     useGestion.getState().resetGestion();
   });

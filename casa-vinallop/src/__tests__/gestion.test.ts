@@ -69,7 +69,8 @@ describe('partidas sin valorar', () => {
     // y la acometida eléctrica del presupuesto 056/026 (8.643)
     expect(r.previsto.n).toBe(33);
     expect(r.previsto.base).toBe(37900 + 2500 + 2000 + 3500 + 2282 + (13900 - 7200) + 26000 + 43700 + 8643);
-    expect(r.revisado.base).toBe(r.previsto.base);
+    // revisado = previsto + la desviación de 2.000 € de la cimentación (EXT-01)
+    expect(r.revisado.base).toBe(r.previsto.base + 2000);
     // no seleccionadas: las 3 del PAC y las 6 sustituidas por los extras (escalera y porche del PEB, caseta y solera)
     expect(r.noSeleccionadas).toEqual({ n: 9, base: 13200 + 7200 + 8000 });
     expect(pres.partidas.filter((p) => p.noSeleccionada).map((p) => p.codigo)).toEqual([...PAC_NO_SELECCION, 'F2-01', 'PEB-04', 'PEB-05', 'PEB-06', 'PEB-07', 'SOL-01']);
@@ -82,7 +83,7 @@ describe('partidas sin valorar', () => {
     expect(r.reserva.disponible).toBeNull();
     // solo los extras pactados por mensaje (26.000) están contratados; no se inventan más obligaciones
     expect(r.obligaciones.n).toBe(1);
-    expect(r.obligaciones.base).toBe(26000);
+    expect(r.obligaciones.base).toBe(26000 + 2000); // extras pactados + desviación de la cimentación
     expect(r.pagado).toBe(1500);
   });
   it('no suma previsto, contratado y real como gastos distintos', () => {

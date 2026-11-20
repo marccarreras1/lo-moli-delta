@@ -195,7 +195,7 @@ export const EXTRAS_PARTIDAS = (): Partida[] => [{
   descripcion: 'Extras pactados: derribo de las paredes actuales, cimentación y muros nuevos de bloque en toda la casa, ampliación de 30 cm por el frontal A, escalera de hormigón, caseta del cuarto técnico y porche elevado a 3 cm del suelo de la casa (≈185–200 m²)',
   capitulo: CAP.estructura, fase: FASE_PAC,
   cantidad: 1, unidad: 'PA', precio: 26000,
-  proveedor: PAC_PROVEEDOR, referencia: 'Acuerdo por WhatsApp', contratado: 26000, extras: null, real: null, pagos: [],
+  proveedor: PAC_PROVEEDOR, referencia: 'Acuerdo por WhatsApp', contratado: 26000, extras: DESVIACION_CIMENTACION.importe, real: null, pagos: [],
   notas: 'Pactado por mensaje con el constructor: «Pactats 26.000 euros extres». Según su último mensaje quedan 28.000 € de lo pactado + 26.000 € de extras = 54.000 €, todo sin IVA (indicado por la propiedad). Pendiente de aclarar: si los 4.000 € que el constructor añadió al porche al pasar la solera a 6 m están dentro de los 26.000 €; si el muro nuevo lleva pilares y zuncho intermedio; quién calcula el cimiento de 30 × 40 cm. Sustituye a la escalera y al porche del PEB26-0001 (PEB-04 a PEB-07), a la caseta F2-01 y a la solera SOL-01.',
   origenPrecio: 'Acuerdo con el constructor por mensaje (sin IVA)', fechaPrecio: '2026-10-29',
   condicion: 'contratado', impuesto: 0, base: null,
@@ -651,6 +651,12 @@ export const ENTREGAS_CUENTA = (): EntregaCuenta[] => [
   },
 ];
 
+/** Desviación de la cimentación indicada por la propiedad (20/11/2026): +2.000 € sobre los extras (EXT-01), sin IVA. */
+export const DESVIACION_CIMENTACION: Cargo = {
+  id: 'cargo-desviacion-cimentacion', fecha: '2026-11-20', concepto: 'Desviación en la cimentación (sobre los extras EXT-01)', importe: 2000, proveedor: PAC_PROVEEDOR,
+  nota: 'Indicado por la propiedad (20/11/2026): la cimentación ha subido 2.000 € sin IVA. Pedir al constructor el motivo por escrito (más metros, más hormigón o hierro, zapatas más grandes, cuarto técnico más grande…).',
+};
+
 /** Cuenta con el constructor (debe): lo pactado según sus mensajes; los pagos son el haber. Sin IVA (indicado por la propiedad). */
 export const CARGOS_CONSTRUCTOR = (): Cargo[] => [
   {
@@ -661,6 +667,7 @@ export const CARGOS_CONSTRUCTOR = (): Cargo[] => [
     id: 'cargo-extras', fecha: '2026-10-29', concepto: 'Extras pactados (cimentación y muros nuevos, ampliación de 30 cm, escalera, caseta y porche elevado)', importe: 26000, proveedor: PAC_PROVEEDOR,
     nota: 'Sin IVA (propiedad). Pendiente: si incluye los 4.000 € que el constructor añadió al porche con la solera de 6 m.',
   },
+  { ...DESVIACION_CIMENTACION },
 ];
 
 export const AVISO_FASES = 'Secuencia propuesta de planificación, no un calendario de obra aprobado; la secuencia y las fechas las fija el técnico. La sustitución de muros portantes o la retirada de cubierta no son trabajos simples sin secuencia técnica.';

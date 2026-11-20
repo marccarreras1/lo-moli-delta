@@ -12,13 +12,13 @@ const base: Partida = {
 };
 
 describe('situación de la obra', () => {
-  it('solo los extras pactados están contratados: coste a término = previsto, sin desviación (no se inventan datos); solo la demolición consta pagada', () => {
+  it('solo los extras pactados están contratados, con la desviación de 2.000 € de la cimentación; solo la demolición consta pagada', () => {
     const s = situacionObra(seed.presupuesto, seed.fases);
     expect(s.totales.pagado).toBe(1500);
     expect(s.totales.nComprometido).toBe(1);
     expect(s.totales.nDesviacion).toBe(1);
-    expect(s.totales.desviacion).toBe(0);
-    expect(s.totales.aTermino).toBe(s.totales.referencia);
+    expect(s.totales.desviacion).toBe(2000);
+    expect(s.totales.aTermino).toBe(s.totales.referencia + 2000);
     expect(s.grupos.flatMap((g) => g.filas).length).toBe(s.totales.partidas);
   });
   it('desviación, avance, ejecutado y pendiente por partida', () => {
