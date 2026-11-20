@@ -539,6 +539,26 @@ export const SEGUIMIENTO_2026_11_16 = (): Seguimiento[] => [
     'Material para la cimentación y los muros nuevos de bloque de 20 (EXT-01).', ['35-acopio-grava', '43-zanja-olivo']),
 ];
 
+/** Fotos de la propiedad del 19–20/11/2026 (Referencias → «Situación de la obra (19–20/11/2026)»): muros de bloque en marcha. */
+export const SEGUIMIENTO_FECHA_1120 = '2026-11-20';
+const seg20 = (n: number, partida: string, estado: Seguimiento['estado'], texto: string, motivo: string, fotos: string[]): Seguimiento => ({
+  id: `seg-${SEGUIMIENTO_FECHA_1120}-${String(n).padStart(2, '0')}`, fecha: SEGUIMIENTO_FECHA_1120, texto, partida, motivo, estado, fotos: fotos.map((f) => `obra-${f}`),
+});
+export const SEGUIMIENTO_2026_11_20 = (): Seguimiento[] => [
+  seg20(1, EXTRAS_CODIGO, 'en curso', 'Muros nuevos de bloque de 20 levantándose en el extremo de la casa contrario al algarrobo: unas 7 hiladas (≈1,5 m) en parte del recinto y 1–2 hiladas en el resto, a cordel, con los pilares armados metidos en los huecos del bloque.',
+    'Muros nuevos de bloque en toda la casa (EXT-01).', ['51-muros-bloque', '53-muros-bloque-3', '56-muro-alto-pilares', '58-muros-atardecer', '59-albanil-hilada', '66-dron-cenital']),
+  seg20(2, EXTRAS_CODIGO, 'hecho', 'Perímetro de zapatas completo: los tramos que el 16/11 seguían abiertos junto al olivo grande ya están hormigonados.',
+    'Cimentación de los muros nuevos (EXT-01).', ['63-zapata-olivo', '64-zapata-olivo-2', '54-zapata-frontal-a', '66-dron-cenital']),
+  seg20(3, EXTRAS_CODIGO, 'en curso', 'El bloque del baño antiguo se está derribando (se ven sus azulejos) y el muro nuevo llega hasta él.',
+    'Derribo de las paredes actuales (EXT-01).', ['60-bano-antiguo', '61-muro-bano-antiguo', '59-albanil-hilada']),
+  seg20(4, EXTRAS_CODIGO, 'a comprobar', 'Siguen en pie el muro de mampostería y el muro encalado con la puerta.',
+    'Los extras pactados incluyen el derribo de las paredes actuales (EXT-01): confirmar cuándo se derriban o si alguno se conserva, y cómo se une con el muro nuevo.', ['55-muros-viejos', '52-muros-bloque-2', '65-dron-oblicua']),
+  seg20(5, EXTRAS_CODIGO, 'a comprobar', 'Pequeños huecos en la primera hilada de bloque, a ras de la zapata.',
+    'Preguntar al constructor para qué son (desagüe, ventilación o paso de tubos) y si se cierran después (EXT-01).', ['51-muros-bloque', '53-muros-bloque-3', '52-muros-bloque-2']),
+  seg20(6, 'PAC-11', 'a comprobar', 'Interior relleno de piedra y tierra con trozos de teja, cerámica y azulejo mezclados.',
+    'Relleno del alzado de 36 cm (PAC-11): el presupuesto deja en la finca solo la piedra y la tierra; confirmar que el escombro mezclado no queda bajo la solera.', ['62-relleno-interior', '54-zapata-frontal-a', '53-muros-bloque-3']),
+];
+
 /** Observación añadida después de la primera carga del seguimiento: alzado de 36 cm en curso. */
 export const SEGUIMIENTO_ALZADO_ID = `seg-${SEGUIMIENTO_FECHA}-10`;
 export const SEGUIMIENTO_DRON_ID = `seg-${SEGUIMIENTO_FECHA}-11`;
@@ -588,7 +608,7 @@ function fases(): Fase[] {
         estado: 'en curso',
         // previsión de fin indicada por la propiedad (22/10/2026)
         previstoFin: FASE1_FIN,
-        seguimiento: [...obs[FASE_PAC], ...SEGUIMIENTO_2026_11_11(), ...SEGUIMIENTO_2026_11_16()],
+        seguimiento: [...obs[FASE_PAC], ...SEGUIMIENTO_2026_11_11(), ...SEGUIMIENTO_2026_11_16(), ...SEGUIMIENTO_2026_11_20()],
       }),
     FASE2(),
     fase('f03', '3 · Preparación, protección y desmontajes', 'Retirada de cubiertas y demoliciones conforme al proyecto y secuencia técnica.',

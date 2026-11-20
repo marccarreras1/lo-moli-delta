@@ -45,6 +45,7 @@ GRUPOS = {
     'obra': 'Situación de la obra (21/10/2026)',
     'obra-1111': 'Situación de la obra (11/11/2026)',
     'obra-1116': 'Situación de la obra (16/11/2026)',
+    'obra-1120': 'Situación de la obra (19–20/11/2026)',
 }
 
 # fotos sueltas: md5 del original (12 primeros caracteres) → (id, grupo, título)
@@ -135,6 +136,22 @@ FOTOS = {
     '2420ca663fb4': ('obra-48-zapata-muro-encalado', 'obra-1116', 'Zapata hormigonada pegada al muro encalado, con las esperas de los pilares'),
     'b1163423e1d3': ('obra-49-arranque-pilar', 'obra-1116', 'Arranque de pilar sobre la zapata, en la esquina del bloque del baño actual'),
     '857db8e3dd1a': ('obra-50-zapata-muro-encalado-2', 'obra-1116', 'Zapata hormigonada pegada al muro encalado (otra toma)'),
+    '64152696bddf': ('obra-51-muros-bloque', 'obra-1120', 'Muros nuevos de bloque de 20 levantados en el extremo de la casa contrario al algarrobo, junto al bloque del baño antiguo, con las armaduras de los pilares'),
+    '40528682c7f8': ('obra-52-muros-bloque-2', 'obra-1120', 'Muros de bloque de 20 a distintas alturas, con esperas de pilares, y al fondo el muro de mampostería y el muro encalado que siguen en pie'),
+    '64fc4f41a508': ('obra-53-muros-bloque-3', 'obra-1120', 'Recinto de bloque de 20 con el interior lleno de escombro y tierra; pilares armados en las esquinas'),
+    'a89803112328': ('obra-54-zapata-frontal-a', 'obra-1120', 'Zapata hormigonada a lo largo del frontal A con los primeros bloques; interior relleno de piedra y tierra'),
+    'f9864545d9bd': ('obra-55-muros-viejos', 'obra-1120', 'Muro de mampostería y muro encalado con la puerta todavía en pie, con tubos de PVC acopiados delante'),
+    '034bf018c864': ('obra-56-muro-alto-pilares', 'obra-1120', 'Muro de bloque de ≈1,5 m con pilares armados y andamio con palés de bloque encima'),
+    '746582558bc6': ('obra-57-muro-alto-pilares-2', 'obra-1120', 'Muro de bloque de ≈1,5 m con pilares armados (otra toma)'),
+    '011f8858dda6': ('obra-58-muros-atardecer', 'obra-1120', 'Vista general de los muros nuevos de bloque y los pilares armados, con el andamio cargado de bloque'),
+    '525b308b7ac9': ('obra-59-albanil-hilada', 'obra-1120', 'Albañil levantando el muro largo de bloque a cordel, junto al bloque del baño antiguo'),
+    '38784b1690eb': ('obra-60-bano-antiguo', 'obra-1120', 'Bloque del baño antiguo medio derribado (se ven sus azulejos) y el muro nuevo arrimándose a él'),
+    '3c39db6675b0': ('obra-61-muro-bano-antiguo', 'obra-1120', 'Muro nuevo de bloque llegando al bloque del baño antiguo'),
+    '3ca9513d52d6': ('obra-62-relleno-interior', 'obra-1120', 'Interior relleno de piedra, tierra y escombro mezclado, delante del muro de mampostería'),
+    'af3cd54ce631': ('obra-63-zapata-olivo', 'obra-1120', 'Zapata ya hormigonada junto al olivo grande, donde antes estaba la zanja abierta'),
+    '33ae6d29a05b': ('obra-64-zapata-olivo-2', 'obra-1120', 'Zapata hormigonada junto al olivo grande y relleno de piedra en el interior'),
+    '6a4c6dd8ecbe': ('obra-65-dron-oblicua', 'obra-1120', 'Dron (19/11/2026): la casa entre el algarrobo y los olivos, con los muros nuevos de bloque en un extremo y los muros viejos aún en pie'),
+    'd01115ac39ca': ('obra-66-dron-cenital', 'obra-1120', 'Dron en vertical (19/11/2026): perímetro de zapatas completo, muros de bloque en el extremo contrario al algarrobo y acopios alrededor'),
 }
 
 

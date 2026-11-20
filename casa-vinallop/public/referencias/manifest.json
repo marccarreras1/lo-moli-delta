@@ -9,7 +9,8 @@
   "mapa": "Mapa",
   "obra": "Situación de la obra (21/10/2026)",
   "obra-1111": "Situación de la obra (11/11/2026)",
-  "obra-1116": "Situación de la obra (16/11/2026)"
+  "obra-1116": "Situación de la obra (16/11/2026)",
+  "obra-1120": "Situación de la obra (19–20/11/2026)"
  },
  "refs": {
   "01": {
@@ -756,6 +757,134 @@
    "h": 1800,
    "grupo": "obra-1116",
    "titulo": "Zapata hormigonada pegada al muro encalado (otra toma)"
+  },
+  {
+   "id": "obra-51-muros-bloque",
+   "src": "referencias/obra-51-muros-bloque.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1120",
+   "titulo": "Muros nuevos de bloque de 20 levantados en el extremo de la casa contrario al algarrobo, junto al bloque del baño antiguo, con las armaduras de los pilares"
+  },
+  {
+   "id": "obra-52-muros-bloque-2",
+   "src": "referencias/obra-52-muros-bloque-2.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1120",
+   "titulo": "Muros de bloque de 20 a distintas alturas, con esperas de pilares, y al fondo el muro de mampostería y el muro encalado que siguen en pie"
+  },
+  {
+   "id": "obra-53-muros-bloque-3",
+   "src": "referencias/obra-53-muros-bloque-3.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1120",
+   "titulo": "Recinto de bloque de 20 con el interior lleno de escombro y tierra; pilares armados en las esquinas"
+  },
+  {
+   "id": "obra-54-zapata-frontal-a",
+   "src": "referencias/obra-54-zapata-frontal-a.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1120",
+   "titulo": "Zapata hormigonada a lo largo del frontal A con los primeros bloques; interior relleno de piedra y tierra"
+  },
+  {
+   "id": "obra-55-muros-viejos",
+   "src": "referencias/obra-55-muros-viejos.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1120",
+   "titulo": "Muro de mampostería y muro encalado con la puerta todavía en pie, con tubos de PVC acopiados delante"
+  },
+  {
+   "id": "obra-56-muro-alto-pilares",
+   "src": "referencias/obra-56-muro-alto-pilares.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1120",
+   "titulo": "Muro de bloque de ≈1,5 m con pilares armados y andamio con palés de bloque encima"
+  },
+  {
+   "id": "obra-57-muro-alto-pilares-2",
+   "src": "referencias/obra-57-muro-alto-pilares-2.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1120",
+   "titulo": "Muro de bloque de ≈1,5 m con pilares armados (otra toma)"
+  },
+  {
+   "id": "obra-58-muros-atardecer",
+   "src": "referencias/obra-58-muros-atardecer.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1120",
+   "titulo": "Vista general de los muros nuevos de bloque y los pilares armados, con el andamio cargado de bloque"
+  },
+  {
+   "id": "obra-59-albanil-hilada",
+   "src": "referencias/obra-59-albanil-hilada.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1120",
+   "titulo": "Albañil levantando el muro largo de bloque a cordel, junto al bloque del baño antiguo"
+  },
+  {
+   "id": "obra-60-bano-antiguo",
+   "src": "referencias/obra-60-bano-antiguo.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1120",
+   "titulo": "Bloque del baño antiguo medio derribado (se ven sus azulejos) y el muro nuevo arrimándose a él"
+  },
+  {
+   "id": "obra-61-muro-bano-antiguo",
+   "src": "referencias/obra-61-muro-bano-antiguo.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1120",
+   "titulo": "Muro nuevo de bloque llegando al bloque del baño antiguo"
+  },
+  {
+   "id": "obra-62-relleno-interior",
+   "src": "referencias/obra-62-relleno-interior.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1120",
+   "titulo": "Interior relleno de piedra, tierra y escombro mezclado, delante del muro de mampostería"
+  },
+  {
+   "id": "obra-63-zapata-olivo",
+   "src": "referencias/obra-63-zapata-olivo.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1120",
+   "titulo": "Zapata ya hormigonada junto al olivo grande, donde antes estaba la zanja abierta"
+  },
+  {
+   "id": "obra-64-zapata-olivo-2",
+   "src": "referencias/obra-64-zapata-olivo-2.jpg",
+   "w": 1350,
+   "h": 1800,
+   "grupo": "obra-1120",
+   "titulo": "Zapata hormigonada junto al olivo grande y relleno de piedra en el interior"
+  },
+  {
+   "id": "obra-65-dron-oblicua",
+   "src": "referencias/obra-65-dron-oblicua.jpg",
+   "w": 1800,
+   "h": 1013,
+   "grupo": "obra-1120",
+   "titulo": "Dron (19/11/2026): la casa entre el algarrobo y los olivos, con los muros nuevos de bloque en un extremo y los muros viejos aún en pie"
+  },
+  {
+   "id": "obra-66-dron-cenital",
+   "src": "referencias/obra-66-dron-cenital.jpg",
+   "w": 1800,
+   "h": 1013,
+   "grupo": "obra-1120",
+   "titulo": "Dron en vertical (19/11/2026): perímetro de zapatas completo, muros de bloque en el extremo contrario al algarrobo y acopios alrededor"
   }
  ]
 }
